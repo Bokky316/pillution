@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module external.linked.project.id="student:test" external.linked.project.path="$MODULE_DIR$/../../student_backend" external.root.project.path="$MODULE_DIR$/../../student_backend" external.system.id="GRADLE" external.system.module.group="com.javalab" external.system.module.type="sourceSet" external.system.module.version="0.0.1-SNAPSHOT" type="JAVA_MODULE" version="4">
-  <component name="NewModuleRootManager">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_17">
     <output-test url="file://$MODULE_DIR$/../../student_backend/out/test/classes" />
     <exclude-output />
     <content url="file://$MODULE_DIR$/../../student_backend/src/test">
@@ -8,7 +8,7 @@
       <sourceFolder url="file://$MODULE_DIR$/../../student_backend/src/test/java" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../../student_backend/src/test/resources" type="java-test-resource" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="temurin-17" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="student.main" />
     <orderEntry type="library" name="Gradle: org.springframework.boot:spring-boot-starter-data-jdbc:3.4.1" level="project" />
