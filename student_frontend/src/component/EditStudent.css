@@ -1,0 +1,11 @@
+/* EditStudent.css */
+.edit-student-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 50px; /* 헤더와의 여백 추가 */
+    gap: 20px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
