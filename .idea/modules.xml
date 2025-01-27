@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/springboot_react_student_jwt.iml" filepath="$PROJECT_DIR$/springboot_react_student_jwt.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/student.iml" filepath="$PROJECT_DIR$/.idea/modules/student.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/student.main.iml" filepath="$PROJECT_DIR$/.idea/modules/student.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/student.test.iml" filepath="$PROJECT_DIR$/.idea/modules/student.test.iml" />
+    </modules>
+  </component>
+</project>

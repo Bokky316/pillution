@@ -1,0 +1,71 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.1'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.javalab'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // SQL 로그 의존성
+    implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
+
+    // 위의 두 의존성을 모두 포함하는 밸리데이션 의존성
+    implementation 'org.springframework.boot:spring-boot-starter-validation:3.4.0'
+
+    // modelmapper Dto To Entity 변환작업을 해주는 클래스
+    implementation 'org.modelmapper:modelmapper:3.2.0'
+
+    // 롬복 의존성 추가
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    // Test Case 에서 롬복 사용
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
+    // Spring Security
+    implementation 'org.springframework.boot:spring-boot-starter-security:3.3.6'
+
+    // 이를 통해 실제 인증 메커니즘을 테스트할 필요 없이 가상의 인증 정보를 제공하여 테스트를 작성할 수 있습니다.
+    testImplementation 'org.springframework.security:spring-security-test'
+
+    // 소셜 로그인
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+
+    // JWT 설정(Json Web Token 관련 의존성)
+    implementation 'io.jsonwebtoken:jjwt:0.9.1'
+    // xml json 변환
+    implementation 'javax.xml.bind:jaxb-api:2.3.1'
+
+
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
