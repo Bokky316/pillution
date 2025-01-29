@@ -1,0 +1,42 @@
+.cart-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.cart-item img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  margin-right: 20px;
+}
+
+.item-info {
+  flex: 1;
+}
+
+.item-name {
+  font-weight: bold;
+}
+
+.quantity-control {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.quantity-btn {
+  width: 30px;
+  height: 30px;
+}
+
+.quantity {
+  margin: 0 10px;
+}
+
+.remove-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
