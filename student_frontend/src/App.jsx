@@ -6,6 +6,7 @@ import Footer from "./component/layout/Footer";
 import RecommendationPage from "./pages/survey/RecommendationPage";
 import ProductDetailPage from "./pages/product/ProductDetailPage";
 import CartPage from "./pages/cart/CartPage";
+import BoardPage from "./pages/board/BoardPage";
 import StudentList from "./features/student/StudentList";
 import AddStudent from "./features/student/AddStudent";
 import Login from "./features/auth/components/Login";
@@ -104,6 +105,7 @@ function App() {
                         <Typography variant="h3" style={{ flexGrow: 1 }}>
                             <Button color="inherit" component={Link} to="/">학생 목록</Button>
                             <Button color="inherit" component={Link} to="/addStudent">학생 등록</Button>
+                            <Button color="inherit" component={Link} to="/board">필루션 소식</Button>
                             {isLoggedIn && (
                                 <Button color="inherit" component={Link} to="/mypage">마이페이지</Button>
                             )}
@@ -133,6 +135,7 @@ function App() {
                     <Route path="/recommendations" element={<RecommendationPage />} />
                     <Route path="/products/:productId" element={<ProductDetailPage />} />
                     <Route path="/cart" element={<CartPage />} />
+                    <Route path="/board/*" element={<BoardPage />} />
                 </Routes>
             </div>
         </Router>
