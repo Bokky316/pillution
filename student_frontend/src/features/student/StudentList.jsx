@@ -1,9 +1,9 @@
-import { DataGrid } from '@mui/x-data-grid'; // 격자무니 = 그리드, 필터링 옵션도 포함되어 있다.
+import { DataGrid } from '@mui/x-data-grid'; // MUI DataGrid 컴포넌트를 사용하여 데이터 테이블 생성
 import { Button, Snackbar } from '@mui/material';
 import { useState, useEffect } from 'react';
-import { API_URL } from "../constant";
-import EditStudent from './EditStudent';
 import { useNavigate, Link } from "react-router-dom";
+import { API_URL } from '../../constant'; // constant.js 파일에서 API_URL 가져오기
+import EditStudent from './EditStudent'; // 같은 디렉토리에 있는 EditStudent 컴포넌트 가져오기
 
 export default function StudentList() {
     // 학생 목록을 저장할 상태 변수

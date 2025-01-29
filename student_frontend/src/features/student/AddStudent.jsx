@@ -1,7 +1,8 @@
-import { Button, TextField } from '@mui/material';
 import { useState } from 'react';
-import { API_URL } from "../constant";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from 'react-router-dom';
+import { Button, TextField } from '@mui/material';
+import { API_URL } from '../../constant';
+
 
 /**
     * 학생 정보 등록 컴포넌트

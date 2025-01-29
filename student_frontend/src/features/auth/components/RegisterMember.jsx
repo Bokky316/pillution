@@ -1,9 +1,9 @@
 import { Button, TextField } from "@mui/material";
-import { useState } from "react";
-import { API_URL } from "../../constant";
+import { useState, useEffect } from "react";
+import { API_URL } from "../../../constant";
 import { useNavigate } from "react-router-dom";
-import useDebounce from '../../hook/useDebounce'; // useDebounce 훅을 임포트합니다
-import { useEffect } from "react";
+import useDebounce from '../../../hook/useDebounce';
+
 
 export default function RegisterMember() {
     const [member, setMember] = useState({

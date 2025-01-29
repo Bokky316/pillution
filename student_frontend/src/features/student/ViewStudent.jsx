@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { API_URL } from "../constant";
+import { API_URL } from "../../constant";
 import { Button, TextField, Typography, Box } from '@mui/material';
+
 
 export default function ViewStudent() {
     const { id } = useParams();

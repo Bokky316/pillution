@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { AppBar, Toolbar, Typography, Button } from "@mui/material";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
-import StudentList from "./component/StudentList";
-import AddStudent from "./component/AddStudent";
-import Login from "./component/Login";
-import MyPage from "./component/MyPage";
-import ViewStudent from "./component/ViewStudent";
-import EditStudent from "./component/EditStudent";
-import RegisterMember from "./component/member/RegisterMember";
+import Header from "./component/layout/Header";
+import Footer from "./component/layout/Footer";
+import RecommendationPage from "./pages/survey/RecommendationPage";
+import ProductDetailPage from "./pages/product/ProductDetailPage";
+import CartPage from "./pages/cart/CartPage";
+import StudentList from "./features/student/StudentList";
+import AddStudent from "./features/student/AddStudent";
+import Login from "./features/auth/components/Login";
+import MyPage from "./features/auth/components/MyPage";
+import ViewStudent from "./features/student/ViewStudent";
+import EditStudent from "./features/student/EditStudent";
+import RegisterMember from "./features/auth/components/RegisterMember";
 import { API_URL } from "./constant";
-import { fetchWithAuth } from "./common/fetchWithAuth";
-import { setTokenAndUser, getUserFromLocalStorage, removeAuthData } from "./common/authUtil";
+import { fetchWithAuth } from "./features/auth/utils/fetchWithAuth";
+import { setTokenAndUser, getUserFromLocalStorage, removeAuthData } from "./features/auth/utils/authUtil";
+
 
 function App() {
     // 로그인 상태를 저장할 상태변수
@@ -124,6 +130,9 @@ function App() {
                     <Route path="/login" element={<Login onLogin={handleLogin} />} />
                     <Route path="/registerMember" element={<RegisterMember />} />
                     <Route path="/mypage" element={<MyPage />} />
+                    <Route path="/recommendations" element={<RecommendationPage />} />
+                    <Route path="/products/:productId" element={<ProductDetailPage />} />
+                    <Route path="/cart" element={<CartPage />} />
                 </Routes>
             </div>
         </Router>

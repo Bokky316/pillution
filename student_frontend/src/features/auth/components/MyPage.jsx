@@ -1,6 +1,7 @@
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { clearUser } from "../redux/userSlice";
+import { clearUser } from "../../../redux/userSlice";
+
 
 export default function MyPage() {
     const student = useSelector((state) => state.user);
