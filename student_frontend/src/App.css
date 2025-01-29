@@ -1,9 +1,15 @@
+/* 전체 적용되는 폰트 설정 */
+body {
+  font-family: SUIT, Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+}
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
 }
+
 .App {
   text-align: center;
 }
@@ -19,19 +25,8 @@
   }
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
 .App-link {
-  color: #61dafb;
+  color: #62c6e0;
 }
 
 @keyframes App-logo-spin {
@@ -41,4 +36,33 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* 공통 스타일 */
+.button {
+  background-color: #62c6e0;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.section {
+  padding: 4rem 0;
+}
+
+.section-title {
+  font-size: 2.5rem;
+  color: #333333;
+  margin-bottom: 2rem;
+}
+
+.card {
+  background-color: #f8f8f8;
+  border-radius: 10px;
+  padding: 2rem;
+  margin: 1rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }

@@ -1,52 +1,107 @@
-import React, { useState, useEffect } from 'react';
-import { getCartItems, removeFromCart, updateCartItemQuantity } from '../../features/auth/api/api';
-import CartItem from '../../features/cart/CartItem';
+import React, { useState, useEffect } from "react";
+import CartItem from "@features/cart/CartItem";
+import CartSummary from "@features/cart/CartSummary";
+import { getCartItems, updateCartItemQuantity, removeFromCart } from "@features/auth/api/api";
+import "@styles/CartPage.css";
+
 
 const CartPage = () => {
   const [cartItems, setCartItems] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchCartItems();
   }, []);
 
+  useEffect(() => {
+    const allSelected = cartItems.every(item => item.selected);
+    setSelectAll(allSelected);
+  }, [cartItems]);
+
   const fetchCartItems = async () => {
+    setIsLoading(true);
     try {
-      const data = await getCartItems();
-      setCartItems(data);
+      const items = await getCartItems();
+      setCartItems(items);
     } catch (error) {
-      console.error('장바구니 데이터를 가져오는 중 오류 발생:', error);
+      console.error('Failed to fetch cart items:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleRemoveItem = async (itemId) => {
+  const handleSelectAll = () => {
+    const newSelectAll = !selectAll;
+    setSelectAll(newSelectAll);
+    setCartItems(cartItems.map(item => ({ ...item, selected: newSelectAll })));
+  };
+
+  const handleItemSelect = async (id) => {
+    const updatedItems = cartItems.map(item =>
+      item.id === id ? { ...item, selected: !item.selected } : item
+    );
+    setCartItems(updatedItems);
     try {
-      await removeFromCart(itemId);
-      fetchCartItems();
+      await updateCartItem(id, { selected: !cartItems.find(item => item.id === id).selected });
     } catch (error) {
-      console.error('장바구니 아이템 삭제 중 오류 발생:', error);
+      console.error('Failed to update item selection:', error);
     }
   };
 
-  const handleUpdateQuantity = async (itemId, newQuantity) => {
+  const handleQuantityChange = async (id, change) => {
+    const updatedItems = cartItems.map(item =>
+      item.id === id ? { ...item, quantity: Math.max(1, item.quantity + change) } : item
+    );
+    setCartItems(updatedItems);
     try {
-      await updateCartItemQuantity(itemId, newQuantity);
-      fetchCartItems();
+      const updatedItem = updatedItems.find(item => item.id === id);
+      await updateCartItem(id, { quantity: updatedItem.quantity });
     } catch (error) {
-      console.error('장바구니 아이템 수량 업데이트 중 오류 발생:', error);
+      console.error('Failed to update item quantity:', error);
     }
   };
+
+  const handleRemoveItem = async (id) => {
+    try {
+      await removeCartItem(id);
+      setCartItems(cartItems.filter(item => item.id !== id));
+    } catch (error) {
+      console.error('Failed to remove item:', error);
+    }
+  };
+
+  const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const shippingFee = 3000;
+
+  if (isLoading) return <div>Loading...</div>;
 
   return (
     <div className="cart-page">
-      <h1>장바구니</h1>
-      {cartItems.map((item) => (
-        <CartItem
-          key={item.id}
-          item={item}
-          onRemove={handleRemoveItem}
-          onUpdateQuantity={handleUpdateQuantity}
-        />
-      ))}
+      <h2>CART</h2>
+      <main className="cart-container">
+        <section className="cart-items">
+          <div className="select-all-container">
+            <input
+              type="checkbox"
+              id="select-all"
+              checked={selectAll}
+              onChange={handleSelectAll}
+            />
+            <label htmlFor="select-all" className="checkbox-label">전체 선택</label>
+          </div>
+          {cartItems.map((item) => (
+            <CartItem
+              key={item.id}
+              item={item}
+              onSelect={handleItemSelect}
+              onQuantityChange={handleQuantityChange}
+              onRemove={handleRemoveItem}
+            />
+          ))}
+        </section>
+        <CartSummary totalPrice={totalPrice} shippingFee={shippingFee} />
+      </main>
     </div>
   );
 };
