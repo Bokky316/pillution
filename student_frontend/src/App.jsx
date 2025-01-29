@@ -5,6 +5,7 @@ import Header from "./component/layout/Header";
 import Footer from "./component/layout/Footer";
 import RecommendationPage from "./pages/survey/RecommendationPage";
 import ProductDetailPage from "./pages/product/ProductDetailPage";
+import ProductListPage from "./pages/product/ProductListPage";
 import CartPage from "./pages/cart/CartPage";
 import StudentList from "./features/student/StudentList";
 import AddStudent from "./features/student/AddStudent";
@@ -102,6 +103,7 @@ function App() {
                 <AppBar position="static">
                     <Toolbar>
                         <Typography variant="h3" style={{ flexGrow: 1 }}>
+                            <Button color="inherit" component={Link} to="/productList">상품 목록</Button>
                             <Button color="inherit" component={Link} to="/">학생 목록</Button>
                             <Button color="inherit" component={Link} to="/addStudent">학생 등록</Button>
                             {isLoggedIn && (
@@ -132,6 +134,7 @@ function App() {
                     <Route path="/mypage" element={<MyPage />} />
                     <Route path="/recommendations" element={<RecommendationPage />} />
                     <Route path="/products/:productId" element={<ProductDetailPage />} />
+                    <Route path="/productList" element={<ProductListPage />} />
                     <Route path="/cart" element={<CartPage />} />
                 </Routes>
             </div>
