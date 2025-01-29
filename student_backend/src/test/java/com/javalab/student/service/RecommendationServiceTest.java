@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.annotation.Commit;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -23,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Transactional
+// @Commit // 클래스 전체에 대해 트랜잭션 커밋을 수행합니다. 이로 인해 테스트 데이터가 DB에 유지됩니다.
 public class RecommendationServiceTest {
 
     @Autowired
@@ -75,6 +77,7 @@ public class RecommendationServiceTest {
 
     @Test
     @DisplayName("추천 상품 생성 테스트")
+    // @Rollback(false) // 개별 테스트 메서드에 대해 롤백을 방지하고 싶다면 이 주석을 해제하세요.
     public void testGenerateRecommendations() {
         // Given
         assertNotNull(testMember, "Test member should not be null");
