@@ -1,3 +1,4 @@
+/*
 package com.javalab.student.config;
 
 import com.javalab.student.entity.*;
@@ -455,3 +456,4 @@ public class DataInitializer implements CommandLineRunner {
         ));
     }
 }
+*/

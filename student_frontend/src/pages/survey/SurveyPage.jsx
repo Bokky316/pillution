@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Button, CircularProgress,
   RadioGroup, FormControlLabel, Radio,
   Checkbox, TextField
 } from "@mui/material";
 import axios from "axios";
-import { API_URL } from "@/constant";
 import { useNavigate } from 'react-router-dom';
 
-const QuestionComponent = React.memo(({ question, response, onResponseChange }) => {
+const API_URL = "http://localhost:8080/api/"; // API URL을 여기에 정의합니다.
+
+const QuestionComponent = ({ question, response, onResponseChange }) => {
   switch (question.questionType) {
     case 'TEXT':
       return (
@@ -65,7 +66,7 @@ const QuestionComponent = React.memo(({ question, response, onResponseChange }) 
     default:
       return null;
   }
-});
+};
 
 const SurveyPage = () => {
   const [categories, setCategories] = useState([]);
@@ -79,52 +80,58 @@ const SurveyPage = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const fetchCategories = useCallback(async () => {
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await axios.get(`${API_URL}survey/categories`, { withCredentials: true });
+      const response = await axios.get(`${API_URL}survey/categories`, {
+        withCredentials: true,
+      });
+
+      // 기존 카테고리와 서브카테고리 인덱스를 유지하도록 수정
       setCategories(response.data);
-      if (response.data.length > 0 && response.data[0].subCategories?.length > 0) {
-        setCurrentCategoryIndex(0);
-        setCurrentSubCategoryIndex(0);
-      } else {
-        setError('설문 데이터가 비어있습니다.');
+
+      // 현재 카테고리의 다음 서브카테고리 로드
+      const currentCategory = response.data[currentCategoryIndex];
+      if (currentCategory?.subCategories?.length > 0) {
+        const nextSubCategoryId = currentCategory.subCategories[currentSubCategoryIndex + 1]?.id;
+        if (nextSubCategoryId) {
+          fetchQuestions(nextSubCategoryId);
+        }
       }
     } catch (error) {
+      console.error('카테고리 로딩 오류:', error);
       setError('설문 데이터를 불러오는데 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  };
 
-  const fetchQuestions = useCallback(async (subCategoryId) => {
+
+  const fetchQuestions = async (subCategoryId) => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await axios.get(`${API_URL}survey/subcategories/${subCategoryId}/questions`, { withCredentials: true });
+      const response = await axios.get(`${API_URL}survey/subcategories/${subCategoryId}/questions`, {
+        withCredentials: true,
+      });
       setQuestions(response.data);
     } catch (error) {
+      console.error('질문 로딩 오류:', error);
       setError('질문을 불러오는데 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  };
 
-  useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
-
-  useEffect(() => {
-    if (categories.length > 0 && categories[currentCategoryIndex]?.subCategories?.length > 0) {
-      const subCategoryId = categories[currentCategoryIndex].subCategories[currentSubCategoryIndex].id;
-      fetchQuestions(subCategoryId);
-    }
-  }, [categories, currentCategoryIndex, currentSubCategoryIndex, fetchQuestions]);
-
-  const handleResponseChange = useCallback((questionId, value) => {
+  const handleResponseChange = (questionId, value) => {
     setResponses(prev => {
       const newResponses = { ...prev, [questionId]: value };
+
       const genderQuestion = questions.find(q => q.questionText.includes('성별'));
       if (genderQuestion && questionId === genderQuestion.id) {
         const selectedOption = genderQuestion.options.find(opt => opt.id.toString() === value);
@@ -132,54 +139,60 @@ const SurveyPage = () => {
         setGender(newGender);
         fetchCategories();
       }
+
       const symptomsQuestion = questions.find(q => q.questionText.includes('최대 3가지'));
       if (symptomsQuestion && questionId === symptomsQuestion.id) {
         setSelectedSymptoms(Array.isArray(value) ? value : []);
       }
+
       return newResponses;
     });
-  }, [questions, fetchCategories]);
+  };
 
-  const validateResponses = useCallback(() => {
+  const validateResponses = () => {
     return questions.every(question => {
       const response = responses[question.id];
       return response !== undefined && response !== null &&
              (typeof response === 'string' ? response.trim() !== '' : response.length > 0);
     });
-  }, [questions, responses]);
+  };
 
-  const handleNext = useCallback(() => {
+  const handleNext = () => {
     if (!validateResponses()) {
       alert('모든 질문에 답해주세요.');
       return;
     }
 
     const currentCategory = categories[currentCategoryIndex];
+
     if (currentCategory?.subCategories[currentSubCategoryIndex]?.name === "주요 증상") {
       const filteredSubCategories = currentCategory.subCategories.filter(sub =>
         sub.name === "주요 증상" || sub.name === "추가 증상" ||
         selectedSymptoms.some(symptomId =>
-          questions.find(q => q.id === parseInt(symptomId))?.options.some(opt => sub.name.includes(opt.optionText))
+          questions.find(q => q.id === parseInt(Object.keys(responses)[0]))
+                   ?.options.some(opt => opt.id.toString() === symptomId && sub.name.includes(opt.optionText))
         )
       );
-      setCategories(prev => {
-        const newCategories = [...prev];
-        newCategories[currentCategoryIndex] = { ...currentCategory, subCategories: filteredSubCategories };
-        return newCategories;
-      });
+
+      currentCategory.subCategories = filteredSubCategories;
     }
 
     if (currentSubCategoryIndex < currentCategory.subCategories.length - 1) {
       setCurrentSubCategoryIndex(prev => prev + 1);
+      fetchQuestions(currentCategory.subCategories[currentSubCategoryIndex + 1].id);
     } else if (currentCategoryIndex < categories.length - 1) {
       setCurrentCategoryIndex(prev => prev + 1);
       setCurrentSubCategoryIndex(0);
+      const nextCategory = categories[currentCategoryIndex + 1];
+      if (nextCategory?.subCategories?.length > 0) {
+        fetchQuestions(nextCategory.subCategories[0].id);
+      }
     } else {
       submitSurvey();
     }
-  }, [categories, currentCategoryIndex, currentSubCategoryIndex, questions, responses, selectedSymptoms, validateResponses]);
+  };
 
-  const submitSurvey = useCallback(async () => {
+  const submitSurvey = async () => {
     try {
       const submissionData = Object.entries(responses).map(([questionId, response]) => ({
         questionId: parseInt(questionId),
@@ -188,13 +201,19 @@ const SurveyPage = () => {
         selectedOptions: Array.isArray(response) ? response : null,
       }));
 
-      await axios.post(`${API_URL}survey/submit`, { responses: submissionData }, { withCredentials: true });
+      await axios.post(
+        `${API_URL}survey/submit`,
+        { responses: submissionData },
+        { withCredentials: true }
+      );
+
       alert('설문이 성공적으로 제출되었습니다.');
       navigate('/');
     } catch (error) {
+      console.error('설문 제출 오류:', error);
       alert('설문 제출에 실패했습니다.');
     }
-  }, [responses, navigate]);
+  };
 
   if (isLoading) return <CircularProgress />;
   if (error) return <Typography color="error">{error}</Typography>;
