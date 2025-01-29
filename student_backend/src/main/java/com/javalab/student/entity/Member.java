@@ -4,10 +4,14 @@ import com.javalab.student.constant.Role;
 import com.javalab.student.dto.MemberFormDto;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -95,3 +99,34 @@ public class Member extends BaseEntity{
         return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + this.role.name()));
     }
 }
+
+
+//// 추가: BaseEntity 클래스
+//@MappedSuperclass
+//@EntityListeners(AuditingEntityListener.class)
+//@Getter
+//public abstract class BaseEntity {
+//
+//    @CreatedDate
+//    @Column(updatable = false)
+//    private LocalDateTime createdDate;
+//
+//    @LastModifiedDate
+//    private LocalDateTime lastModifiedDate;
+//}
+//
+//// 추가: Role 열거형
+//public enum Role {
+//    USER, ADMIN
+//}
+//
+//// 추가: MemberFormDto 클래스
+//@Getter @Setter
+//public class MemberFormDto {
+//    private String name;
+//    private String email;
+//    private String password;
+//    private String address;
+//    private String phone;
+//    private Role role;
+//}

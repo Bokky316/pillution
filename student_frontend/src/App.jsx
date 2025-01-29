@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { AppBar, Toolbar, Typography, Button } from "@mui/material";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import Header from './component/Header';
+import Footer from './component/Footer';
+// import RecommendationPage from './pages/RecommendationPage';
+// import ProductDetailPage from './pages/ProductDetailPage';
+// import CartPage from './pages/CartPage';
+import RecommendationPage from './component/RecommendationPage';
+import ProductDetailPage from './component/ProductDetailPage';
+import CartPage from './component/CartPage';
 import StudentList from "./component/StudentList";
 import AddStudent from "./component/AddStudent";
 import Login from "./component/Login";
@@ -124,6 +132,9 @@ function App() {
                     <Route path="/login" element={<Login onLogin={handleLogin} />} />
                     <Route path="/registerMember" element={<RegisterMember />} />
                     <Route path="/mypage" element={<MyPage />} />
+                    <Route path="/recommendations" element={<RecommendationPage />} />
+                    <Route path="/products/:productId" element={<ProductDetailPage />} />
+                    <Route path="/cart" element={<CartPage />} />
                 </Routes>
             </div>
         </Router>
