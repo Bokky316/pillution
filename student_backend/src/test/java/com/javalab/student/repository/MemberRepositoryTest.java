@@ -50,7 +50,7 @@ class MemberRepositoryTest {
      */
     @Test
     @DisplayName("회원 저장 테스트")
-    @Commit
+    // @Commit
     void saveMemberTest() {
         // Given : 회원 엔티티 생성
         Member member = createMember();

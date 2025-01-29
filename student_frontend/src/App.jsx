@@ -6,7 +6,9 @@ import Header from "./component/layout/Header";
 import Footer from "./component/layout/Footer";
 import './App.css';
 import RecommendationPage from "./pages/survey/RecommendationPage";
+import SurveyPage from "./pages/survey/SurveyPage";
 import ProductDetailPage from "./pages/product/ProductDetailPage";
+import ProductListPage from "./pages/product/ProductListPage";
 import CartPage from "./pages/cart/CartPage";
 import Login from "./features/auth/components/Login";
 import MyPage from "./features/auth/components/MyPage";
@@ -91,6 +93,8 @@ function App() {
                         <Route path="/registerMember" element={<RegisterMember />} />
                         <Route path="/mypage" element={<MyPage />} />
                         <Route path="/recommendations" element={<RecommendationPage />} />
+                        <Route path="/survey" element={<SurveyPage />} />
+                        <Route path="/products" element={<ProductListPage />} />
                         <Route path="/products/:productId" element={<ProductDetailPage />} />
                         <Route path="/cart" element={<CartPage />} />
                     </Routes>

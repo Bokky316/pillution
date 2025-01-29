@@ -2,27 +2,36 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import Button from '../../component/common/Button';
 import Card from '../../component/common/Card';
-import { getRecommendations } from '../../services/api';
+import { submitSurveyResponses, getRecommendations } from '../../services/api';
 
 const SurveyResults = () => {
   const [recommendations, setRecommendations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const location = useLocation();
-  const answers = location.state?.answers;
+  const responses = location.state?.responses;
 
   useEffect(() => {
     const fetchRecommendations = async () => {
-      if (answers) {
+      if (responses) {
         try {
-          const data = await getRecommendations(answers);
+          await submitSurveyResponses(responses);
+          const data = await getRecommendations(/* memberId */); // memberId 필요
           setRecommendations(data);
+          setLoading(false);
         } catch (error) {
           console.error('Error fetching recommendations:', error);
+          setError('추천 정보를 가져오는데 실패했습니다.');
+          setLoading(false);
         }
       }
     };
 
     fetchRecommendations();
-  }, [answers]);
+  }, [responses]);
+
+  if (loading) return <div>로딩 중...</div>;
+  if (error) return <div>{error}</div>;
 
   return (
     <div className="section">

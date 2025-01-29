@@ -12,7 +12,7 @@ const Header = ({ isLoggedIn, loggedInUser, handleLogout }) => {
 
     return (
         <AppBar position="static" className="nav-bar" sx={{
-            width: '100vw', // 전체 너비
+            width: '100vw',
             boxShadow: 'none',
             position: 'relative',
             left: '50%',
@@ -24,9 +24,9 @@ const Header = ({ isLoggedIn, loggedInUser, handleLogout }) => {
                 minHeight: '80px',
                 display: 'flex',
                 justifyContent: 'space-between',
-                maxWidth: '1280px', // 최대 너비 설정
-                margin: '0 auto', // 중앙 정렬
-                width: '100%', // 전체 너비
+                maxWidth: '1280px',
+                margin: '0 auto',
+                width: '100%',
             }}>
                 {/* 메뉴 버튼 */}
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -46,6 +46,7 @@ const Header = ({ isLoggedIn, loggedInUser, handleLogout }) => {
                     >
                         <MenuItem onClick={handleMenuClose} component={Link} to="/recommendations">추천</MenuItem>
                         <MenuItem onClick={handleMenuClose} component={Link} to="/cart">장바구니</MenuItem>
+                        <MenuItem onClick={handleMenuClose} component={Link} to="/survey">설문조사</MenuItem>
                     </Menu>
                 </Box>
 
