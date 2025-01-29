@@ -1,18 +1,14 @@
-import React, { useState } from "react";
-import { Button, TextField } from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import { API_URL } from "../../constant";
-import { fetchWithAuth } from "../../features/auth/utils/fetchWithAuth";
-
+import React, { useState, useEffect } from 'react';
+import { getRecommendations } from "../../features/auth/api/api";
+import RecommendationList from '../../features/survey/RecommendationList';
 
 const RecommendationPage = () => {
   const [recommendations, setRecommendations] = useState([]);
-  const memberId = 1; // 임시로 설정된 멤버 ID
 
   useEffect(() => {
     const fetchRecommendations = async () => {
       try {
-        const data = await getRecommendations(memberId);
+        const data = await getRecommendations();
         setRecommendations(data);
       } catch (error) {
         console.error('추천 데이터를 가져오는 중 오류 발생:', error);
@@ -20,18 +16,12 @@ const RecommendationPage = () => {
     };
 
     fetchRecommendations();
-  }, [memberId]);
+  }, []);
 
   return (
-    <div>
+    <div className="recommendation-page">
       <h1>맞춤형 추천</h1>
-      {recommendations.map((product) => (
-        <Link key={product.id} to={`/products/${product.id}`}>
-          <div>{product.name}</div>
-          <div>{product.mainIngredient}</div>
-          <div>{product.price}원</div>
-        </Link>
-      ))}
+      <RecommendationList recommendations={recommendations} />
     </div>
   );
 };

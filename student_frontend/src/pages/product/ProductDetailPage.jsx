@@ -1,9 +1,6 @@
-import React, { useState } from "react";
-import { Button, TextField } from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import { API_URL } from "../../constant";
-import { fetchWithAuth } from "../../features/auth/utils/fetchWithAuth";
-
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { getProductDetails, addToCart } from "../../features/auth/api/api";
 
 const ProductDetailPage = () => {
   const { productId } = useParams();
@@ -25,7 +22,7 @@ const ProductDetailPage = () => {
 
   const handleAddToCart = async () => {
     try {
-      await addToCart({ memberId: 1, product, quantity });
+      await addToCart({ productId, quantity });
       alert('장바구니에 추가되었습니다!');
     } catch (error) {
       console.error('장바구니 추가 중 오류 발생:', error);
@@ -35,11 +32,10 @@ const ProductDetailPage = () => {
   if (!product) return <div>로딩 중...</div>;
 
   return (
-    <div>
+    <div className="product-detail-page">
       <h1>{product.name}</h1>
       <p>{product.description}</p>
       <p>가격: {product.price}원</p>
-
       <label>수량: </label>
       <input
         type="number"
@@ -47,7 +43,6 @@ const ProductDetailPage = () => {
         onChange={(e) => setQuantity(Number(e.target.value))}
         min="1"
       />
-
       <button onClick={handleAddToCart}>장바구니 추가</button>
     </div>
   );
