@@ -1,9 +1,10 @@
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { API_URL } from '../constant';
-import { fetchWithAuth } from '../common/fetchWithAuth';
-import { getUserFromLocalStorage } from '../common/authUtil';
+import { API_URL } from '../../constant';
+import { fetchWithAuth } from '../../features/auth/utils/fetchWithAuth';
+import { getUserFromLocalStorage } from '../../features/auth/utils/authUtil';
+
 
 export default function EditStudent({ studentData = null, updateStudent, onClose }) {
     const { id } = useParams(); // 학생 정보 조회 화면에서 수정버튼 클릭 시 navigate("/editStudent/109"),  -> 이 말은 곧 웹 브라우저의 주소창에 "/editStudent/109"이 요청이 간다는 것. 그러면 EditStudent 컴포넌트에서는 주소창의 /:id 로 되어있는 값을 추출한다. (URL에서 학생 ID 추출)

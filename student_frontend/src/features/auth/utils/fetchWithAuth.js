@@ -8,7 +8,8 @@
  * - 401 상태 발생 시 리프레시 토큰으로 새로운 액세스 토큰 발급 및 요청 재시도
  */
 
-import { API_URL } from "../constant";
+import { API_URL } from "../../../constant";
+
 
 // 리프레시 토큰을 사용해 새로운 액세스 토큰 발급
 const refreshAccessToken = async () => {

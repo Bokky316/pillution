@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Button, TextField } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { API_URL } from "../constant";
-import { fetchWithAuth } from "../common/fetchWithAuth";
+import { API_URL } from "../../constant";
+import { fetchWithAuth } from "../../features/auth/utils/fetchWithAuth";
+
 
 const CartPage = () => {
   const [cartItems, setCartItems] = useState([]);
