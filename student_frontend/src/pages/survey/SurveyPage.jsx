@@ -5,6 +5,7 @@ import QuestionComponent from '@features/survey/QuestionComponent';
 import { fetchCategories, fetchQuestions, submitSurvey } from '@features/survey/surveyApi';
 import { validateResponses } from '@features/survey/surveyUtils';
 
+
 const SurveyPage = () => {
   const [categories, setCategories] = useState([]);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
@@ -24,7 +25,6 @@ const SurveyPage = () => {
   const handleResponseChange = (questionId, value) => {
     setResponses(prev => {
       const newResponses = { ...prev, [questionId]: value };
-
       const genderQuestion = questions.find(q => q.questionText.includes('성별'));
       if (genderQuestion && questionId === genderQuestion.id) {
         const selectedOption = genderQuestion.options.find(opt => opt.id.toString() === value);
@@ -32,12 +32,10 @@ const SurveyPage = () => {
         setGender(newGender);
         fetchCategories(setCategories, setError, setIsLoading, currentCategoryIndex, currentSubCategoryIndex, fetchQuestions);
       }
-
       const symptomsQuestion = questions.find(q => q.questionText.includes('최대 3가지'));
       if (symptomsQuestion && questionId === symptomsQuestion.id) {
         setSelectedSymptoms(Array.isArray(value) ? value : []);
       }
-
       return newResponses;
     });
   };
@@ -47,9 +45,7 @@ const SurveyPage = () => {
       alert('모든 질문에 답해주세요.');
       return;
     }
-
     const currentCategory = categories[currentCategoryIndex];
-
     if (currentCategory?.subCategories[currentSubCategoryIndex]?.name === "주요 증상") {
       const filteredSubCategories = currentCategory.subCategories.filter(sub =>
         sub.name === "주요 증상" || sub.name === "추가 증상" ||
@@ -58,10 +54,8 @@ const SurveyPage = () => {
                    ?.options.some(opt => opt.id.toString() === symptomId && sub.name.includes(opt.optionText))
         )
       );
-
       currentCategory.subCategories = filteredSubCategories;
     }
-
     if (currentSubCategoryIndex < currentCategory.subCategories.length - 1) {
       setCurrentSubCategoryIndex(prev => prev + 1);
       fetchQuestions(currentCategory.subCategories[currentSubCategoryIndex + 1].id, setQuestions, setError, setIsLoading);
@@ -89,7 +83,6 @@ const SurveyPage = () => {
     <Box sx={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
       <Typography variant="h5" sx={{ mb: 3 }}>{currentCategory?.name}</Typography>
       <Typography variant="h6" sx={{ mb: 2 }}>{currentSubCategory?.name}</Typography>
-
       {questions.map((question) => (
         <QuestionComponent
           key={question.id}
@@ -98,7 +91,6 @@ const SurveyPage = () => {
           onResponseChange={handleResponseChange}
         />
       ))}
-
       <Button
         variant="contained"
         onClick={handleNext}
