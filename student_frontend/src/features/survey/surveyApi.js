@@ -7,7 +7,7 @@ const axiosInstance = axios.create({
   withCredentials: true,
 });
 
-export const fetchCategories = async (setCategories, setError, setIsLoading, currentCategoryIndex, currentSubCategoryIndex, fetchQuestions) => {
+export const fetchCategories = async (setCategories, setError, setIsLoading, currentCategoryIndex, currentSubCategoryIndex, fetchQuestions, setQuestions) => {
   try {
     setIsLoading(true);
     setError(null);
@@ -15,7 +15,7 @@ export const fetchCategories = async (setCategories, setError, setIsLoading, cur
     setCategories(response.data);
     const currentCategory = response.data[currentCategoryIndex];
     if (currentCategory?.subCategories?.length > 0) {
-      const nextSubCategoryId = currentCategory.subCategories[currentSubCategoryIndex + 1]?.id;
+      const nextSubCategoryId = currentCategory.subCategories[currentSubCategoryIndex]?.id;
       if (nextSubCategoryId) {
         fetchQuestions(nextSubCategoryId, setQuestions, setError, setIsLoading);
       }
