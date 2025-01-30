@@ -1,13 +1,20 @@
+// features/auth/api.js
+
 import axios from 'axios';
 import { API_URL } from '@/constant';
 
-// Axios 인스턴스 생성
+/**
+ * Axios 인스턴스 생성
+ */
 const axiosInstance = axios.create({
-  baseURL: API_URL,  // API_URL 사용
+  baseURL: API_URL,
   withCredentials: true,
 });
 
-// 에러 처리 함수
+/**
+ * 에러 처리 함수
+ * @param {Error} error API 호출 중 발생한 에러
+ */
 const handleError = (error) => {
   console.error('API 호출 오류:', error);
   if (error.response) {
@@ -17,7 +24,10 @@ const handleError = (error) => {
   throw error;
 };
 
-// 설문 카테고리 데이터를 가져오는 함수
+/**
+ * 설문 카테고리 데이터를 가져옵니다.
+ * @returns {Promise<Array>} 설문 카테고리 배열
+ */
 export const getSurveyCategories = async () => {
   try {
     const response = await axiosInstance.get('survey/categories');
@@ -27,25 +37,44 @@ export const getSurveyCategories = async () => {
   }
 };
 
-// 설문 응답을 제출하는 함수
+/**
+ * 설문 응답 데이터를 제출합니다.
+ * @param {Object} responses 사용자 응답 데이터
+ * @returns {Promise<void>}
+ */
 export const submitSurveyResponses = async (responses) => {
   try {
-    const response = await axiosInstance.post('survey/submit', { responses });
+    const token = localStorage.getItem('token');
+    if (!token) throw new Error('인증 토큰이 없습니다.');
+
+    const response = await axiosInstance.post(
+      'survey/submit',
+      { responses },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
     return response.data;
   } catch (error) {
     handleError(error);
   }
 };
 
-// 추천 데이터를 가져오는 함수
-export const getRecommendations = async (memberId) => {
+/**
+ * 추천 데이터를 가져옵니다.
+ * @returns {Promise<Array>} 추천 데이터 배열
+ */
+export const getRecommendations = async () => {
   try {
-    const response = await axiosInstance.get(`recommendations/${memberId}`);
+    const response = await axiosInstance.get('recommendations');
     return response.data;
   } catch (error) {
     handleError(error);
   }
 };
+
 
 // 제품 상세 정보를 가져오는 함수
 export const getProductDetails = async (productId) => {
