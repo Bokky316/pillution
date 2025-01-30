@@ -192,28 +192,37 @@ const SurveyPage = () => {
     }
   };
 
-  const submitSurvey = async () => {
-    try {
-      const submissionData = Object.entries(responses).map(([questionId, response]) => ({
-        questionId: parseInt(questionId),
-        responseType: typeof response === 'string' ? 'TEXT' : 'MULTIPLE_CHOICE',
-        responseText: typeof response === 'string' ? response : null,
-        selectedOptions: Array.isArray(response) ? response : null,
-      }));
+   const submitSurvey = async () => {
+      try {
+        const submissionData = Object.entries(responses).map(([questionId, response]) => ({
+          questionId: parseInt(questionId),
+          responseType: typeof response === 'string' ? 'TEXT' : 'MULTIPLE_CHOICE',
+          responseText: typeof response === 'string' ? response : null,
+          selectedOptions: Array.isArray(response) ? response : null,
+        }));
 
-      await axios.post(
-        `${API_URL}survey/submit`,
-        { responses: submissionData },
-        { withCredentials: true }
-      );
+        const token = localStorage.getItem('token'); // JWT를 로컬 스토리지에서 가져옴
 
-      alert('설문이 성공적으로 제출되었습니다.');
-      navigate('/');
-    } catch (error) {
-      console.error('설문 제출 오류:', error);
-      alert('설문 제출에 실패했습니다.');
-    }
-  };
+        await axios.post(
+          `${API_URL}survey/submit`,
+          { responses: submissionData },
+          {
+            headers: {
+              'Authorization': `Bearer ${token}` // JWT를 Authorization 헤더에 포함
+            },
+            withCredentials: true
+          }
+        );
+
+        alert('설문이 성공적으로 제출되었습니다.');
+        navigate('/');
+      } catch (error) {
+        console.error('설문 제출 오류:', error);
+        alert('설문 제출에 실패했습니다.');
+      }
+    };
+
+
 
   if (isLoading) return <CircularProgress />;
   if (error) return <Typography color="error">{error}</Typography>;
