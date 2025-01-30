@@ -36,16 +36,23 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
       return (
         <Box sx={{ mb: 2 }}>
           <Typography>{question.questionText}</Typography>
-          {question.options.map((option) => (
+          {question.options.map((option, index) => (
             <FormControlLabel
               key={option.id}
               control={
                 <Checkbox
                   checked={(response || []).includes(option.id.toString())}
                   onChange={(e) => {
-                    const newResponse = e.target.checked
-                      ? [...(response || []), option.id.toString()]
-                      : (response || []).filter((id) => id !== option.id.toString());
+                    let newResponse;
+                    if (index === question.options.length - 1) {
+                      // 마지막 선택지를 선택한 경우
+                      newResponse = e.target.checked ? [option.id.toString()] : [];
+                    } else {
+                      // 다른 선택지를 선택한 경우
+                      newResponse = e.target.checked
+                        ? [...(response || []).filter(id => id !== question.options[question.options.length - 1].id.toString()), option.id.toString()]
+                        : (response || []).filter((id) => id !== option.id.toString());
+                    }
                     onResponseChange(question.id, newResponse);
                   }}
                 />
@@ -55,6 +62,7 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
           ))}
         </Box>
       );
+
     default:
       return null;
   }
