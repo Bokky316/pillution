@@ -1,72 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box, Typography, Button, CircularProgress,
-  RadioGroup, FormControlLabel, Radio,
-  Checkbox, TextField
-} from "@mui/material";
-import axios from "axios";
+import { Box, Typography, Button, CircularProgress } from "@mui/material";
 import { useNavigate } from 'react-router-dom';
-
-const API_URL = "http://localhost:8080/api/"; // API URL을 여기에 정의합니다.
-
-const QuestionComponent = ({ question, response, onResponseChange }) => {
-  switch (question.questionType) {
-    case 'TEXT':
-      return (
-        <TextField
-          fullWidth
-          label={question.questionText}
-          value={response || ''}
-          onChange={(e) => onResponseChange(question.id, e.target.value)}
-          margin="normal"
-        />
-      );
-    case 'SINGLE_CHOICE':
-      return (
-        <Box sx={{ mb: 2 }}>
-          <Typography>{question.questionText}</Typography>
-          <RadioGroup
-            value={response || ''}
-            onChange={(e) => onResponseChange(question.id, e.target.value)}
-          >
-            {question.options.map((option) => (
-              <FormControlLabel
-                key={option.id}
-                value={option.id.toString()}
-                control={<Radio />}
-                label={option.optionText}
-              />
-            ))}
-          </RadioGroup>
-        </Box>
-      );
-    case 'MULTIPLE_CHOICE':
-      return (
-        <Box sx={{ mb: 2 }}>
-          <Typography>{question.questionText}</Typography>
-          {question.options.map((option) => (
-            <FormControlLabel
-              key={option.id}
-              control={
-                <Checkbox
-                  checked={(response || []).includes(option.id.toString())}
-                  onChange={(e) => {
-                    const newResponse = e.target.checked
-                      ? [...(response || []), option.id.toString()]
-                      : (response || []).filter((id) => id !== option.id.toString());
-                    onResponseChange(question.id, newResponse);
-                  }}
-                />
-              }
-              label={option.optionText}
-            />
-          ))}
-        </Box>
-      );
-    default:
-      return null;
-  }
-};
+import QuestionComponent from '@features/survey/QuestionComponent';
+import { fetchCategories, fetchQuestions, submitSurvey } from '@features/survey/surveyApi';
+import { validateResponses } from '@features/survey/surveyUtils';
 
 const SurveyPage = () => {
   const [categories, setCategories] = useState([]);
@@ -81,52 +18,8 @@ const SurveyPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchCategories();
+    fetchCategories(setCategories, setError, setIsLoading, currentCategoryIndex, currentSubCategoryIndex, fetchQuestions);
   }, []);
-
-  const fetchCategories = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await axios.get(`${API_URL}survey/categories`, {
-        withCredentials: true,
-      });
-
-      // 기존 카테고리와 서브카테고리 인덱스를 유지하도록 수정
-      setCategories(response.data);
-
-      // 현재 카테고리의 다음 서브카테고리 로드
-      const currentCategory = response.data[currentCategoryIndex];
-      if (currentCategory?.subCategories?.length > 0) {
-        const nextSubCategoryId = currentCategory.subCategories[currentSubCategoryIndex + 1]?.id;
-        if (nextSubCategoryId) {
-          fetchQuestions(nextSubCategoryId);
-        }
-      }
-    } catch (error) {
-      console.error('카테고리 로딩 오류:', error);
-      setError('설문 데이터를 불러오는데 실패했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-
-  const fetchQuestions = async (subCategoryId) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await axios.get(`${API_URL}survey/subcategories/${subCategoryId}/questions`, {
-        withCredentials: true,
-      });
-      setQuestions(response.data);
-    } catch (error) {
-      console.error('질문 로딩 오류:', error);
-      setError('질문을 불러오는데 실패했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleResponseChange = (questionId, value) => {
     setResponses(prev => {
@@ -137,7 +30,7 @@ const SurveyPage = () => {
         const selectedOption = genderQuestion.options.find(opt => opt.id.toString() === value);
         const newGender = selectedOption?.optionText === '남성' ? 'male' : 'female';
         setGender(newGender);
-        fetchCategories();
+        fetchCategories(setCategories, setError, setIsLoading, currentCategoryIndex, currentSubCategoryIndex, fetchQuestions);
       }
 
       const symptomsQuestion = questions.find(q => q.questionText.includes('최대 3가지'));
@@ -149,16 +42,8 @@ const SurveyPage = () => {
     });
   };
 
-  const validateResponses = () => {
-    return questions.every(question => {
-      const response = responses[question.id];
-      return response !== undefined && response !== null &&
-             (typeof response === 'string' ? response.trim() !== '' : response.length > 0);
-    });
-  };
-
   const handleNext = () => {
-    if (!validateResponses()) {
+    if (!validateResponses(questions, responses)) {
       alert('모든 질문에 답해주세요.');
       return;
     }
@@ -179,49 +64,18 @@ const SurveyPage = () => {
 
     if (currentSubCategoryIndex < currentCategory.subCategories.length - 1) {
       setCurrentSubCategoryIndex(prev => prev + 1);
-      fetchQuestions(currentCategory.subCategories[currentSubCategoryIndex + 1].id);
+      fetchQuestions(currentCategory.subCategories[currentSubCategoryIndex + 1].id, setQuestions, setError, setIsLoading);
     } else if (currentCategoryIndex < categories.length - 1) {
       setCurrentCategoryIndex(prev => prev + 1);
       setCurrentSubCategoryIndex(0);
       const nextCategory = categories[currentCategoryIndex + 1];
       if (nextCategory?.subCategories?.length > 0) {
-        fetchQuestions(nextCategory.subCategories[0].id);
+        fetchQuestions(nextCategory.subCategories[0].id, setQuestions, setError, setIsLoading);
       }
     } else {
-      submitSurvey();
+      submitSurvey(responses, navigate);
     }
   };
-
-  const submitSurvey = async () => {
-    try {
-      const submissionData = Object.entries(responses).map(([questionId, response]) => ({
-        questionId: parseInt(questionId),
-        responseType: typeof response === 'string' ? 'TEXT' : 'MULTIPLE_CHOICE',
-        responseText: typeof response === 'string' ? response : null,
-        selectedOptions: Array.isArray(response) ? response : null,
-      }));
-
-      const token = localStorage.getItem('token'); // JWT를 로컬 스토리지에서 가져옴
-
-      await axios.post(
-        `${API_URL}survey/submit`,
-        { responses: submissionData },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}` // JWT를 Authorization 헤더에 포함
-          },
-          withCredentials: true
-        }
-      );
-
-      alert('설문이 성공적으로 제출되었습니다.');
-      navigate('/');
-    } catch (error) {
-      console.error('설문 제출 오류:', error);
-      alert('설문 제출에 실패했습니다.');
-    }
-  };
-
 
   if (isLoading) return <CircularProgress />;
   if (error) return <Typography color="error">{error}</Typography>;
