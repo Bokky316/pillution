@@ -96,6 +96,9 @@ public class SecurityConfig {
         http.authorizeHttpRequests(request -> request
                 .requestMatchers("/", "/api/auth/login", "/api/auth/logout").permitAll()  // 홈, 로그인, 로그아웃 URL 접근 허용
                 .requestMatchers("/api/auth/userInfo", "/api/auth/login/error").permitAll()  // 사용자 정보, 로그인 에러 URL 접근 허용
+                .requestMatchers("/api/members/register").permitAll() // 회원가입 요청 허용
+                .requestMatchers("/api/members/checkEmail").permitAll() // 이메일 중복 체크 요청 허용
+                .requestMatchers("/api/email/send", "/api/email/verify").permitAll() // 이메일 인증 관련 API 허용
                 .requestMatchers("/api/students/**").permitAll()  // 학생 관련 API 접근 허용
                 .requestMatchers("/api/students/add").hasRole("ADMIN")  // 학생 추가는 관리자만 가능
                 .requestMatchers("/images/**", "/static-images/**", "/css/**", "/favicon.ico", "/error", "/img/**").permitAll()  // 정적 리소스 접근 허용
