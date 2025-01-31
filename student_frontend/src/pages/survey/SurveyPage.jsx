@@ -6,7 +6,6 @@ import { fetchCategories, fetchQuestions, submitSurvey } from '@features/survey/
 import { validateResponses } from '@features/survey/surveyUtils';
 
 const SurveyPage = () => {
-  // 상태 관리
   const [categories, setCategories] = useState([]);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   const [currentSubCategoryIndex, setCurrentSubCategoryIndex] = useState(0);
@@ -18,26 +17,26 @@ const SurveyPage = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // 초기 데이터 로드
   useEffect(() => {
     fetchCategories(setCategories, setError, setIsLoading, currentCategoryIndex, currentSubCategoryIndex, fetchQuestions, setQuestions);
   }, []);
 
-  // 응답 변경 처리
+  useEffect(() => {
+    console.log('Current responses:', responses);
+  }, [responses]);
+
   const handleResponseChange = (questionId, value) => {
     setResponses(prev => {
       const newResponses = { ...prev, [questionId]: value };
+      console.log('Updated responses:', newResponses);
 
-      // 성별 질문 처리 (questionId가 2인 경우)
       if (questionId === 2) {
         const newGender = value === '1' ? 'female' : 'male';
         setGender(newGender);
         console.log("Gender set to:", newGender);
-        // 성별 선택 후 카테고리 다시 불러오기
         fetchCategories(setCategories, setError, setIsLoading, currentCategoryIndex, currentSubCategoryIndex, fetchQuestions, setQuestions);
       }
 
-      // 증상 선택 질문 처리
       const symptomsQuestion = questions.find(q => q.questionText.includes('최대 3가지'));
       if (symptomsQuestion && questionId === symptomsQuestion.id) {
         setSelectedSymptoms(Array.isArray(value) ? value : []);
@@ -47,7 +46,6 @@ const SurveyPage = () => {
     });
   };
 
-  // 특정 서브카테고리를 건너뛰어야 하는지 확인
   const shouldSkipSubCategory = (category, subCategory) => {
     console.log("Checking skip for:", category.name, subCategory.name, "Gender:", gender);
     if (category.name === "3. 생활 습관") {
@@ -57,79 +55,80 @@ const SurveyPage = () => {
     return false;
   };
 
-  // 다음 카테고리로 이동
-  const handleNextCategory = () => {
-    if (currentCategoryIndex < categories.length - 1) {
-      setCurrentCategoryIndex(prev => prev + 1);
-      setCurrentSubCategoryIndex(0);
-      const nextCategory = categories[currentCategoryIndex + 1];
-      if (nextCategory?.subCategories?.length > 0) {
-        let nextSubCategoryIndex = 0;
-        while (nextSubCategoryIndex < nextCategory.subCategories.length) {
-          if (shouldSkipSubCategory(nextCategory, nextCategory.subCategories[nextSubCategoryIndex])) {
-            nextSubCategoryIndex++;
-          } else {
-            break;
-          }
-        }
-        if (nextSubCategoryIndex < nextCategory.subCategories.length) {
-          setCurrentSubCategoryIndex(nextSubCategoryIndex);
-          const nextSubCategoryId = nextCategory.subCategories[nextSubCategoryIndex].id;
-          fetchQuestions(nextSubCategoryId, setQuestions, setError, setIsLoading);
-        } else {
-          // 다음 카테고리의 모든 서브카테고리를 건너뛰어야 하는 경우
-          handleNextCategory(); // 재귀적으로 다음 카테고리 처리
-        }
-      }
-    } else {
-      submitSurvey(responses, navigate);
-    }
-  };
-
-  // 다음 질문으로 이동
   const handleNext = () => {
+    if (!questions || questions.length === 0) {
+      console.error('No questions available');
+      return;
+    }
+
     if (!validateResponses(questions, responses)) {
       alert('모든 질문에 답해주세요.');
       return;
     }
 
     const currentCategory = categories[currentCategoryIndex];
-    const currentSubCategory = currentCategory?.subCategories[currentSubCategoryIndex];
 
-    // 주요 증상 카테고리 필터링
-    if (currentSubCategory?.name === "주요 증상") {
-      const filteredSubCategories = currentCategory.subCategories.filter(sub =>
-        sub.name === "주요 증상" || sub.name === "추가 증상" ||
-        selectedSymptoms.some(symptomId =>
-          questions.find(q => q.id === parseInt(symptomId))
-                   ?.options.some(opt => sub.name.includes(opt.optionText))
-        )
-      );
-      currentCategory.subCategories = filteredSubCategories;
-    }
+    if (currentCategory?.name === "2. 증상·불편") {
+      const mainSymptomSubCategory = currentCategory.subCategories.find(sub => sub.name === "주요 증상");
+      if (mainSymptomSubCategory && currentSubCategoryIndex === currentCategory.subCategories.indexOf(mainSymptomSubCategory)) {
+        const mainSymptomQuestion = questions.find(q => q.questionText.includes('불편하거나 걱정되는 것'));
+        const selectedMainSymptomIds = responses[mainSymptomQuestion.id] || [];
 
-    // 다음 서브카테고리로 이동
-    if (currentSubCategoryIndex < currentCategory.subCategories.length - 1) {
-      let nextSubCategoryIndex = currentSubCategoryIndex + 1;
-      while (nextSubCategoryIndex < currentCategory.subCategories.length) {
-        const nextSubCategory = currentCategory.subCategories[nextSubCategoryIndex];
-        if (shouldSkipSubCategory(currentCategory, nextSubCategory)) {
-          console.log("Skipping subcategory:", nextSubCategory.name);
-          nextSubCategoryIndex++;
-        } else {
-          break;
+        if (selectedMainSymptomIds.length > 0) {
+          const selectedMainSymptoms = mainSymptomQuestion.options
+            .filter(opt => selectedMainSymptomIds.includes(opt.id.toString()))
+            .map(opt => opt.optionText);
+
+          const filteredSubCategories = currentCategory.subCategories.filter(sub =>
+            sub.name === "주요 증상" ||
+            sub.name === "추가 증상" ||
+            selectedMainSymptoms.includes(sub.name)
+          );
+
+          console.log("Selected main symptoms:", selectedMainSymptoms);
+          console.log("Filtered subcategories:", filteredSubCategories);
+
+          setCategories(prevCategories => {
+            const newCategories = [...prevCategories];
+            newCategories[currentCategoryIndex].subCategories = filteredSubCategories;
+            return newCategories;
+          });
+
+          setCurrentSubCategoryIndex(0);
         }
       }
-      if (nextSubCategoryIndex < currentCategory.subCategories.length) {
-        setCurrentSubCategoryIndex(nextSubCategoryIndex);
-        const nextSubCategoryId = currentCategory.subCategories[nextSubCategoryIndex].id;
-        fetchQuestions(nextSubCategoryId, setQuestions, setError, setIsLoading);
-      } else {
-        // 모든 서브카테고리를 건너뛰었다면 다음 카테고리로
-        handleNextCategory();
+    }
+
+    let nextSubCategoryIndex = currentSubCategoryIndex + 1;
+    while (nextSubCategoryIndex < currentCategory.subCategories.length) {
+      const nextSubCategory = currentCategory.subCategories[nextSubCategoryIndex];
+      if (currentCategory.name === "3. 생활 습관") {
+        if ((gender === 'female' && nextSubCategory.name === "남성건강") ||
+            (gender === 'male' && nextSubCategory.name === "여성건강")) {
+          nextSubCategoryIndex++;
+          continue;
+        }
+      }
+      break;
+    }
+
+    if (nextSubCategoryIndex < currentCategory.subCategories.length) {
+      setCurrentSubCategoryIndex(nextSubCategoryIndex);
+      fetchQuestions(currentCategory.subCategories[nextSubCategoryIndex].id, setQuestions, setError, setIsLoading);
+    } else if (currentCategoryIndex < categories.length - 1) {
+      setCurrentCategoryIndex(prev => prev + 1);
+      setCurrentSubCategoryIndex(0);
+      const nextCategory = categories[currentCategoryIndex + 1];
+      if (nextCategory?.subCategories?.length > 0) {
+        fetchQuestions(nextCategory.subCategories[0].id, setQuestions, setError, setIsLoading);
       }
     } else {
-      handleNextCategory();
+      console.log('Submitting responses:', responses);
+      if (Object.keys(responses).length === 0) {
+        setError('응답이 없습니다. 모든 질문에 답해주세요.');
+        return;
+      }
+      submitSurvey(responses, navigate);
     }
   };
 
