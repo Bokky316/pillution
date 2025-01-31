@@ -4,48 +4,41 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
-@Table(name = "product")
 @Getter
 @Setter
-@ToString
 @NoArgsConstructor
-@AllArgsConstructor
 public class Product {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
     private String name;
-
-    @Column(columnDefinition = "TEXT")
     private String description;
-
-    @Column(nullable = false)
     private BigDecimal price;
-
-    @Column(nullable = false)
     private Integer stock;
 
-    @Column(nullable = false)
-    private Boolean active = true;
+    @ManyToMany
+    @JoinTable(
+            name = "product_category_mapping",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id")
+    )
+    private Set<ProductCategory> categories = new HashSet<>();
 
-    @ManyToOne
-    @JoinColumn(name = "category_id")
-    private ProductCategory category;
-
-    public Product(String name, String description, BigDecimal price, Integer stock, ProductCategory category) {
+    public Product(String name, String description, BigDecimal price, Integer stock) {
         this.name = name;
         this.description = description;
         this.price = price;
         this.stock = stock;
-        this.category = category;
-        this.active = true;
+    }
+
+    public void addCategory(ProductCategory category) {
+        categories.add(category);
+        category.getProducts().add(this);
     }
 }
-
-
 
