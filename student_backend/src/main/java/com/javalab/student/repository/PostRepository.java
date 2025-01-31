@@ -12,11 +12,14 @@ import java.util.List;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
-    List<Post> findByBoardId(Long boardId);
-
     Page<Post> findByBoardId(Long boardId, Pageable pageable);
 
-    @Query("SELECT p FROM Post p WHERE p.board.id = :boardId AND p.title LIKE %:keyword%")
-    List<Post> searchByBoardIdAndKeyword(@Param("boardId") Long boardId, @Param("keyword") String keyword);
-
+    @Query("SELECT p FROM Post p WHERE " +
+            "(:types IS NULL OR " +
+            "(:types LIKE '%t%' AND p.title LIKE %:keyword%) OR " +
+            "(:types LIKE '%c%' AND p.content LIKE %:keyword%) OR " +
+            "(:types LIKE '%w%' AND CAST(p.authorId AS string) LIKE %:keyword%))")
+    Page<Post> searchByMultipleFields(@Param("types") String types,
+                                      @Param("keyword") String keyword,
+                                      Pageable pageable);
 }
