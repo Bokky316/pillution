@@ -99,6 +99,7 @@ function App() {
                         <Route path="/cart" element={<CartPage />} />
                     </Routes>
                     <Footer />
+                    <Footer />
                 </div>
             </Router>
         </ThemeProvider>

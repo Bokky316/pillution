@@ -469,6 +469,8 @@ import com.javalab.student.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
@@ -477,6 +479,7 @@ import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
+@Transactional
 public class DataInitializer implements CommandLineRunner {
 
     private final ProductCategoryRepository categoryRepository;
@@ -489,6 +492,7 @@ public class DataInitializer implements CommandLineRunner {
             createProducts();
         }
     }
+
 
     private void createProductCategories() {
         List<String> categories = Arrays.asList(
@@ -505,9 +509,13 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void createProducts() {
-
         Map<String, ProductCategory> categoryMap = categoryRepository.findAll().stream()
-                .collect(Collectors.toMap(ProductCategory::getName, category -> category));
+                .collect(Collectors.toMap(
+                        ProductCategory::getName,
+                        category -> category,
+                        (existing, replacement) -> existing // 중복 키 처리
+                ));
+
 
         //1 오메가-3
         Product omega3 = new Product("오메가-3", "혈관 건강, 염증 감소에 도움을 줍니다.", new BigDecimal("25000"), 100);
