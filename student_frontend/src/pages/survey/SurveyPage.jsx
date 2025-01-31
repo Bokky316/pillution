@@ -29,13 +29,13 @@ const SurveyPage = () => {
       const newResponses = { ...prev, [questionId]: value };
 
       // 성별 질문 처리 (questionId가 2인 경우)
-          if (questionId === 2) {
-            const newGender = value === '1' ? 'female' : 'male';
-            setGender(newGender);
-            console.log("Gender set to:", newGender);
-            // 성별 선택 후 카테고리 다시 불러오기
-            fetchCategories(setCategories, setError, setIsLoading, currentCategoryIndex, currentSubCategoryIndex, fetchQuestions, setQuestions);
-          }
+      if (questionId === 2) {
+        const newGender = value === '1' ? 'female' : 'male';
+        setGender(newGender);
+        console.log("Gender set to:", newGender);
+        // 성별 선택 후 카테고리 다시 불러오기
+        fetchCategories(setCategories, setError, setIsLoading, currentCategoryIndex, currentSubCategoryIndex, fetchQuestions, setQuestions);
+      }
 
       // 증상 선택 질문 처리
       const symptomsQuestion = questions.find(q => q.questionText.includes('최대 3가지'));
@@ -49,13 +49,42 @@ const SurveyPage = () => {
 
   // 특정 서브카테고리를 건너뛰어야 하는지 확인
   const shouldSkipSubCategory = (category, subCategory) => {
-      console.log("Checking skip for:", category.name, subCategory.name, "Gender:", gender);
-      if (category.name === "3. 생활 습관") {
-        if (gender === 'female' && subCategory.name === "남성건강") return true;
-        if (gender === 'male' && subCategory.name === "여성건강") return true;
+    console.log("Checking skip for:", category.name, subCategory.name, "Gender:", gender);
+    if (category.name === "3. 생활 습관") {
+      if (gender === 'female' && subCategory.name === "남성건강") return true;
+      if (gender === 'male' && subCategory.name === "여성건강") return true;
+    }
+    return false;
+  };
+
+  // 다음 카테고리로 이동
+  const handleNextCategory = () => {
+    if (currentCategoryIndex < categories.length - 1) {
+      setCurrentCategoryIndex(prev => prev + 1);
+      setCurrentSubCategoryIndex(0);
+      const nextCategory = categories[currentCategoryIndex + 1];
+      if (nextCategory?.subCategories?.length > 0) {
+        let nextSubCategoryIndex = 0;
+        while (nextSubCategoryIndex < nextCategory.subCategories.length) {
+          if (shouldSkipSubCategory(nextCategory, nextCategory.subCategories[nextSubCategoryIndex])) {
+            nextSubCategoryIndex++;
+          } else {
+            break;
+          }
+        }
+        if (nextSubCategoryIndex < nextCategory.subCategories.length) {
+          setCurrentSubCategoryIndex(nextSubCategoryIndex);
+          const nextSubCategoryId = nextCategory.subCategories[nextSubCategoryIndex].id;
+          fetchQuestions(nextSubCategoryId, setQuestions, setError, setIsLoading);
+        } else {
+          // 다음 카테고리의 모든 서브카테고리를 건너뛰어야 하는 경우
+          handleNextCategory(); // 재귀적으로 다음 카테고리 처리
+        }
       }
-      return false;
-    };
+    } else {
+      submitSurvey(responses, navigate);
+    }
+  };
 
   // 다음 질문으로 이동
   const handleNext = () => {
@@ -79,47 +108,28 @@ const SurveyPage = () => {
       currentCategory.subCategories = filteredSubCategories;
     }
 
-   // 다음 서브카테고리로 이동
-     if (currentSubCategoryIndex < currentCategory.subCategories.length - 1) {
-       let nextSubCategoryIndex = currentSubCategoryIndex + 1;
-       // 건너뛰어야 할 서브카테고리 확인
-       while (nextSubCategoryIndex < currentCategory.subCategories.length) {
-         const nextSubCategory = currentCategory.subCategories[nextSubCategoryIndex];
-         if (shouldSkipSubCategory(currentCategory, nextSubCategory)) {
-           console.log("Skipping subcategory:", nextSubCategory.name);
-           nextSubCategoryIndex++;
-         } else {
-           break;
-         }
-       }
-       if (nextSubCategoryIndex < currentCategory.subCategories.length) {
-         setCurrentSubCategoryIndex(nextSubCategoryIndex);
-         const nextSubCategoryId = currentCategory.subCategories[nextSubCategoryIndex].id;
-         fetchQuestions(nextSubCategoryId, setQuestions, setError, setIsLoading);
-       } else {
-         // 모든 서브카테고리를 건너뛰었다면 다음 카테고리로
-         setCurrentCategoryIndex(prev => prev + 1);
-         setCurrentSubCategoryIndex(0);
-         const nextCategory = categories[currentCategoryIndex + 1];
-         if (nextCategory?.subCategories?.length > 0) {
-           const nextSubCategoryId = nextCategory.subCategories[0].id;
-           fetchQuestions(nextSubCategoryId, setQuestions, setError, setIsLoading);
-         }
-       }
-     }
-     // 다음 카테고리로 이동
-     else if (currentCategoryIndex < categories.length - 1) {
-      setCurrentCategoryIndex(prev => prev + 1);
-      setCurrentSubCategoryIndex(0);
-      const nextCategory = categories[currentCategoryIndex + 1];
-      if (nextCategory?.subCategories?.length > 0) {
-        const nextSubCategoryId = nextCategory.subCategories[0].id;
-        fetchQuestions(nextSubCategoryId, setQuestions, setError, setIsLoading);
+    // 다음 서브카테고리로 이동
+    if (currentSubCategoryIndex < currentCategory.subCategories.length - 1) {
+      let nextSubCategoryIndex = currentSubCategoryIndex + 1;
+      while (nextSubCategoryIndex < currentCategory.subCategories.length) {
+        const nextSubCategory = currentCategory.subCategories[nextSubCategoryIndex];
+        if (shouldSkipSubCategory(currentCategory, nextSubCategory)) {
+          console.log("Skipping subcategory:", nextSubCategory.name);
+          nextSubCategoryIndex++;
+        } else {
+          break;
+        }
       }
-    }
-    // 설문 제출
-    else {
-      submitSurvey(responses, navigate);
+      if (nextSubCategoryIndex < currentCategory.subCategories.length) {
+        setCurrentSubCategoryIndex(nextSubCategoryIndex);
+        const nextSubCategoryId = currentCategory.subCategories[nextSubCategoryIndex].id;
+        fetchQuestions(nextSubCategoryId, setQuestions, setError, setIsLoading);
+      } else {
+        // 모든 서브카테고리를 건너뛰었다면 다음 카테고리로
+        handleNextCategory();
+      }
+    } else {
+      handleNextCategory();
     }
   };
 
