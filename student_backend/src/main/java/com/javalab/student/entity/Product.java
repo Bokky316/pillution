@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Entity
 @Table(name = "product")
@@ -14,6 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Product {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -21,19 +21,21 @@ public class Product {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
-    private String mainIngredient;
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
     @Column(nullable = false)
     private BigDecimal price;
 
     @Column(nullable = false)
-    private String description;
+    private Integer stock;
 
-    @OneToMany(mappedBy = "product")
-    private List<Recommendation> recommendations;
+    @Column(nullable = false)
+    private Boolean active = true;
 
-    @OneToMany(mappedBy = "product")
-    private List<CartItem> cartItems;
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private ProductCategory category;
 }
+
 

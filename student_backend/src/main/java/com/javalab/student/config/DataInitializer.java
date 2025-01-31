@@ -457,3 +457,63 @@ public class DataInitializer implements CommandLineRunner {
     }
 }
 */
+
+package com.javalab.student.config;
+
+import com.javalab.student.entity.Product;
+import com.javalab.student.entity.ProductCategory;
+import com.javalab.student.repository.ProductCategoryRepository;
+import com.javalab.student.repository.ProductRepository;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.math.BigDecimal;
+import java.util.Arrays;
+
+@Configuration
+public class DataInitializer {
+
+    @Bean
+    public CommandLineRunner initData(ProductCategoryRepository categoryRepository, ProductRepository productRepository) {
+        return args -> {
+            if (categoryRepository.count() == 0 && productRepository.count() == 0) {
+                ProductCategory category = new ProductCategory("영양제");
+                categoryRepository.save(category);
+
+                Product[] products = {
+                        new Product("오메가-3", "혈관 및 두뇌 건강에 도움을 줍니다.", new BigDecimal("25000"), 100, category),
+                        new Product("코엔자임Q10", "혈관 건강과 피로 회복에 도움을 줍니다.", new BigDecimal("30000"), 100, category),
+                        new Product("비타민B군", "피부, 두뇌, 피로 회복에 도움을 줍니다.", new BigDecimal("20000"), 100, category),
+                        new Product("비타민C", "혈관 건강과 면역력 강화에 도움을 줍니다.", new BigDecimal("15000"), 100, category),
+                        new Product("철분", "혈액 건강과 피로 회복에 도움을 줍니다.", new BigDecimal("18000"), 100, category),
+                        new Product("아연", "면역력 강화와 피부 건강에 도움을 줍니다.", new BigDecimal("22000"), 100, category),
+                        new Product("마그네슘", "눈 건강과 두뇌 건강에 도움을 줍니다.", new BigDecimal("20000"), 100, category),
+                        new Product("비오틴", "모발 건강에 도움을 줍니다.", new BigDecimal("25000"), 100, category),
+                        new Product("루테인", "눈 건강에 도움을 줍니다.", new BigDecimal("28000"), 100, category),
+                        new Product("인지질(PS)", "두뇌 건강에 도움을 줍니다.", new BigDecimal("35000"), 100, category),
+                        new Product("GABA", "두뇌 건강과 스트레스 완화에 도움을 줍니다.", new BigDecimal("30000"), 100, category),
+                        new Product("칼슘", "뼈 건강에 도움을 줍니다.", new BigDecimal("18000"), 100, category),
+                        new Product("비타민D", "뼈 건강과 면역력 강화에 도움을 줍니다.", new BigDecimal("20000"), 100, category),
+                        new Product("크랜베리 추출물", "비뇨기 건강에 도움을 줍니다.", new BigDecimal("25000"), 100, category),
+                        new Product("글루타민", "소화 건강에 도움을 줍니다.", new BigDecimal("28000"), 100, category),
+                        new Product("콜라겐", "피부 건강에 도움을 줍니다.", new BigDecimal("32000"), 100, category),
+                        new Product("엽산", "여성 건강에 도움을 줍니다.", new BigDecimal("20000"), 100, category),
+                        new Product("감마리놀렌산(GLA)", "여성 건강과 피부 건강에 도움을 줍니다.", new BigDecimal("30000"), 100, category),
+                        new Product("쏘팔메토", "남성 건강에 도움을 줍니다.", new BigDecimal("28000"), 100, category),
+                        new Product("아르기닌", "남성 건강에 도움을 줍니다.", new BigDecimal("25000"), 100, category),
+                        new Product("비타민B6", "PMS 증상 완화에 도움을 줍니다.", new BigDecimal("18000"), 100, category),
+                        new Product("비타민B2", "구강 건강에 도움을 줍니다.", new BigDecimal("18000"), 100, category),
+                        new Product("판토텐산(비타민B5)", "모발 건강과 지방 대사에 도움을 줍니다.", new BigDecimal("22000"), 100, category),
+                        new Product("프로바이오틱스", "장 건강에 도움을 줍니다.", new BigDecimal("30000"), 100, category),
+                        new Product("비타민A", "눈 건강에 도움을 줍니다.", new BigDecimal("20000"), 100, category),
+                        new Product("아스타잔틴", "눈 건강에 도움을 줍니다.", new BigDecimal("35000"), 100, category),
+                        new Product("비타민B12", "혈액 생성에 도움을 줍니다.", new BigDecimal("22000"), 100, category),
+                        new Product("구리", "모발 건강에 도움을 줍니다.", new BigDecimal("20000"), 100, category)
+                };
+
+                productRepository.saveAll(Arrays.asList(products));
+            }
+        };
+    }
+}
