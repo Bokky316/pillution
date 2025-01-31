@@ -18,4 +18,9 @@ public class ProductCategory {
 
     @Column(nullable = false, unique = true)
     private String name;
+
+    public ProductCategory(String name) {
+        this.name = name;
+    }
 }
+

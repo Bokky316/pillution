@@ -36,6 +36,16 @@ public class Product {
     @ManyToOne
     @JoinColumn(name = "category_id")
     private ProductCategory category;
+
+    public Product(String name, String description, BigDecimal price, Integer stock, ProductCategory category) {
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.stock = stock;
+        this.category = category;
+        this.active = true;
+    }
 }
+
 
 
