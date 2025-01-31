@@ -30,6 +30,8 @@ public class EmailController {
     /**
      * 이메일 인증 코드 요청 API
      * 기존 인증 코드가 있으면 (UPDATE OR DELETE 후 INSERT 하는 방식)
+     * @param request 클라이언트에서 전달한 이메일 정보를 포함한 요청 객체
+     * @return 인증 코드 전송 결과 메시지
      */
 //    @PostMapping("/send")
 //    public ResponseEntity<Map<String, String>> sendVerificationCode(@RequestBody Map<String, String> request) {
@@ -89,10 +91,10 @@ public class EmailController {
 
             verificationCode.setEmail(email);
             verificationCode.setCode(code);
-            verificationCode.setExpirationTime(LocalDateTime.now().plusMinutes(5));
+            verificationCode.setExpirationTime(LocalDateTime.now().plusMinutes(5)); // 5분 후 만료 설정
             verificationCodeRepository.save(verificationCode);
 
-            emailService.sendVerificationCode(email, code);
+            emailService.sendVerificationCode(email, code); // 이메일로 인증 코드 전송
 
             return ResponseEntity.ok(Map.of("message", "인증 코드가 이메일로 전송되었습니다."));
         } catch (Exception e) {
@@ -104,6 +106,8 @@ public class EmailController {
 
     /**
      * 인증 코드 확인 API
+     * @param requestBody 클라이언트에서 전송한 이메일과 인증 코드
+     * @return 인증 결과 메시지
      */
     @PostMapping("/verify")
     public ResponseEntity<Map<String, String>> verifyCode(@RequestBody Map<String, String> requestBody) {
