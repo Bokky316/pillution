@@ -1,0 +1,20 @@
+.cart-summary {
+  background-color: #f8f8f8;
+  padding: 20px;
+  border-radius: 5px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.total {
+  font-weight: bold;
+}
+
+.checkout-btn {
+  width: calc(100% - 20px);
+  padding: 10px;
+}
