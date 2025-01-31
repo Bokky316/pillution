@@ -6,6 +6,7 @@ import { fetchCategories, fetchQuestions, submitSurvey } from '@features/survey/
 import { validateResponses } from '@features/survey/surveyUtils';
 
 const SurveyPage = () => {
+  // 상태 관리
   const [categories, setCategories] = useState([]);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   const [currentSubCategoryIndex, setCurrentSubCategoryIndex] = useState(0);
@@ -17,28 +18,46 @@ const SurveyPage = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  // 초기 데이터 로드
   useEffect(() => {
     fetchCategories(setCategories, setError, setIsLoading, currentCategoryIndex, currentSubCategoryIndex, fetchQuestions, setQuestions);
   }, []);
 
+  // 응답 변경 처리
   const handleResponseChange = (questionId, value) => {
     setResponses(prev => {
       const newResponses = { ...prev, [questionId]: value };
-      const genderQuestion = questions.find(q => q.questionText.includes('성별'));
-      if (genderQuestion && questionId === genderQuestion.id) {
-        const selectedOption = genderQuestion.options.find(opt => opt.id.toString() === value);
-        const newGender = selectedOption?.optionText === '남성' ? 'male' : 'female';
-        setGender(newGender);
-        fetchCategories(setCategories, setError, setIsLoading, currentCategoryIndex, currentSubCategoryIndex, fetchQuestions, setQuestions);
-      }
+
+      // 성별 질문 처리 (questionId가 2인 경우)
+          if (questionId === 2) {
+            const newGender = value === '1' ? 'female' : 'male';
+            setGender(newGender);
+            console.log("Gender set to:", newGender);
+            // 성별 선택 후 카테고리 다시 불러오기
+            fetchCategories(setCategories, setError, setIsLoading, currentCategoryIndex, currentSubCategoryIndex, fetchQuestions, setQuestions);
+          }
+
+      // 증상 선택 질문 처리
       const symptomsQuestion = questions.find(q => q.questionText.includes('최대 3가지'));
       if (symptomsQuestion && questionId === symptomsQuestion.id) {
         setSelectedSymptoms(Array.isArray(value) ? value : []);
       }
+
       return newResponses;
     });
   };
 
+  // 특정 서브카테고리를 건너뛰어야 하는지 확인
+  const shouldSkipSubCategory = (category, subCategory) => {
+      console.log("Checking skip for:", category.name, subCategory.name, "Gender:", gender);
+      if (category.name === "3. 생활 습관") {
+        if (gender === 'female' && subCategory.name === "남성건강") return true;
+        if (gender === 'male' && subCategory.name === "여성건강") return true;
+      }
+      return false;
+    };
+
+  // 다음 질문으로 이동
   const handleNext = () => {
     if (!validateResponses(questions, responses)) {
       alert('모든 질문에 답해주세요.');
@@ -48,7 +67,7 @@ const SurveyPage = () => {
     const currentCategory = categories[currentCategoryIndex];
     const currentSubCategory = currentCategory?.subCategories[currentSubCategoryIndex];
 
-    // 주요 증상 카테고리에 대한 필터링 로직
+    // 주요 증상 카테고리 필터링
     if (currentSubCategory?.name === "주요 증상") {
       const filteredSubCategories = currentCategory.subCategories.filter(sub =>
         sub.name === "주요 증상" || sub.name === "추가 증상" ||
@@ -60,14 +79,36 @@ const SurveyPage = () => {
       currentCategory.subCategories = filteredSubCategories;
     }
 
-    // 다음 서브카테고리로 이동
-    if (currentSubCategoryIndex < currentCategory.subCategories.length - 1) {
-      const nextSubCategoryId = currentCategory.subCategories[currentSubCategoryIndex + 1].id;
-      setCurrentSubCategoryIndex(prev => prev + 1);
-      fetchQuestions(nextSubCategoryId, setQuestions, setError, setIsLoading);
-    }
-    // 다음 카테고리로 이동
-    else if (currentCategoryIndex < categories.length - 1) {
+   // 다음 서브카테고리로 이동
+     if (currentSubCategoryIndex < currentCategory.subCategories.length - 1) {
+       let nextSubCategoryIndex = currentSubCategoryIndex + 1;
+       // 건너뛰어야 할 서브카테고리 확인
+       while (nextSubCategoryIndex < currentCategory.subCategories.length) {
+         const nextSubCategory = currentCategory.subCategories[nextSubCategoryIndex];
+         if (shouldSkipSubCategory(currentCategory, nextSubCategory)) {
+           console.log("Skipping subcategory:", nextSubCategory.name);
+           nextSubCategoryIndex++;
+         } else {
+           break;
+         }
+       }
+       if (nextSubCategoryIndex < currentCategory.subCategories.length) {
+         setCurrentSubCategoryIndex(nextSubCategoryIndex);
+         const nextSubCategoryId = currentCategory.subCategories[nextSubCategoryIndex].id;
+         fetchQuestions(nextSubCategoryId, setQuestions, setError, setIsLoading);
+       } else {
+         // 모든 서브카테고리를 건너뛰었다면 다음 카테고리로
+         setCurrentCategoryIndex(prev => prev + 1);
+         setCurrentSubCategoryIndex(0);
+         const nextCategory = categories[currentCategoryIndex + 1];
+         if (nextCategory?.subCategories?.length > 0) {
+           const nextSubCategoryId = nextCategory.subCategories[0].id;
+           fetchQuestions(nextSubCategoryId, setQuestions, setError, setIsLoading);
+         }
+       }
+     }
+     // 다음 카테고리로 이동
+     else if (currentCategoryIndex < categories.length - 1) {
       setCurrentCategoryIndex(prev => prev + 1);
       setCurrentSubCategoryIndex(0);
       const nextCategory = categories[currentCategoryIndex + 1];
@@ -76,12 +117,11 @@ const SurveyPage = () => {
         fetchQuestions(nextSubCategoryId, setQuestions, setError, setIsLoading);
       }
     }
-    // 마지막 페이지 - 설문 제출
+    // 설문 제출
     else {
       submitSurvey(responses, navigate);
     }
   };
-
 
   if (isLoading) return <CircularProgress />;
   if (error) return <Typography color="error">{error}</Typography>;
