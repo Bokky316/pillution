@@ -3,6 +3,9 @@ package com.javalab.student.controller;
 import com.javalab.student.dto.LoginFormDto;
 import com.javalab.student.dto.MemberFormDto;
 import com.javalab.student.entity.Member;
+import com.javalab.student.entity.VerificationCode;
+import com.javalab.student.repository.VerificationCodeRepository;
+import com.javalab.student.service.EmailVerificationService;
 import com.javalab.student.service.MemberService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/members")
@@ -19,6 +23,8 @@ import java.util.Map;
 public class MemberController {
 
     private final MemberService memberService;
+    private final VerificationCodeRepository verificationCodeRepository; // 이메일 인증 확인을 위한 리포지토리 추가
+    private final EmailVerificationService emailVerificationService; // 이메일 인증을 관리하는 클래스
 
     /**
      * 회원가입 처리
@@ -27,8 +33,17 @@ public class MemberController {
      */
     @PostMapping("/register")
     public ResponseEntity<String> registerMember(@Valid @RequestBody MemberFormDto memberFormDto) {
+        //  이메일 인증 여부 확인
+        if (!emailVerificationService.isVerified(memberFormDto.getEmail())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("이메일 인증이 필요합니다.");
+        }
+
         try {
             memberService.registerMember(memberFormDto);
+
+            //  회원가입 완료 후 인증 정보 삭제
+            emailVerificationService.removeVerified(memberFormDto.getEmail());
+
             return ResponseEntity.ok("회원가입이 완료되었습니다.");
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
