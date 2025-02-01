@@ -1,0 +1,22 @@
+.cart-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.cart-container {
+  display: flex;
+  gap: 20px;
+}
+
+.cart-items {
+  flex: 2;
+}
+
+.select-all-container {
+  margin-bottom: 20px;
+}
+
+.checkbox-label {
+  margin-left: 8px;
+}

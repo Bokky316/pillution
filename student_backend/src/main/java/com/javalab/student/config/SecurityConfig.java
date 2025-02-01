@@ -45,19 +45,27 @@ public class SecurityConfig {
     private final TokenProvider tokenProvider;  // 토큰 생성 및 검증
 
 
+    /**
+     * Spring Security 필터 체인 구성을 정의하는 빈입니다.
+     * 이 설정은 애플리케이션의 보안 정책을 정의합니다.
+     *
+     * @param http HttpSecurity 객체, 보안 설정을 구성하는 데 사용됩니다.
+     * @return 구성된 SecurityFilterChain 객체
+     * @throws Exception 보안 구성 중 발생할 수 있는 예외
+     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
+        // 폼 로그인 설정
         http.formLogin(form -> form
-                .loginPage("/api/auth/login")   // 인증되지 않은 사용자가 보호된 리소스에 접근하면 /api/auth/login으로 리다이렉트됩니다.
-                // Spring Security가 인증 처리할 URL(로그인 요청을 처리하는 URL)을 설정, 리액트에서 로그인을 요청할때 사용(/api/auth/login)
-                .loginProcessingUrl("/api/auth/login")
-                .successHandler(customAuthenticationSuccessHandler)
-                .failureHandler((request, response, exception) -> {
-                            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                            response.setContentType("application/json");
-                            response.getWriter().write("{\"error\":\"login failure!\"}");})
-                .permitAll()
+                .loginPage("/api/auth/login")  // 커스텀 로그인 페이지 URL
+                .loginProcessingUrl("/api/auth/login")  // 로그인 처리 URL
+                .successHandler(customAuthenticationSuccessHandler)  // 로그인 성공 핸들러
+                .failureHandler((request, response, exception) -> {  // 로그인 실패 핸들러
+                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"error\":\"login failure!\"}");
+                })
+                .permitAll()  // 로그인 관련 URL은 모든 사용자에게 접근 허용
         );
 
         /*
@@ -67,11 +75,11 @@ public class SecurityConfig {
             * - 로그아웃 성공 시 / 경로로 리디렉트
          */
         http.logout(logout -> logout
-                .logoutUrl("/api/auth/logout")
-                .logoutSuccessHandler((request, response, authentication) -> {  //[수정]
+                .logoutUrl("/api/auth/logout")  // 로그아웃 URL
+                .logoutSuccessHandler((request, response, authentication) -> {  // 로그아웃 성공 핸들러
                     response.setStatus(HttpServletResponse.SC_OK);
                 })
-                .permitAll()
+                .permitAll()  // 로그아웃 URL은 모든 사용자에게 접근 허용
         );
 
         /*
@@ -84,16 +92,16 @@ public class SecurityConfig {
             * authenticated() : 인증된 사용자만 접근을 허용
             * favicon.ico : 파비콘 요청은 인증 없이 접근 가능, 이코드 누락시키면 계속 서버에 요청을 보내서 서버에 부하를 줄 수 있다.
          */
+        // URL 별 접근 권한 설정
         http.authorizeHttpRequests(request -> request
-                .requestMatchers("/", "/api/auth/login", "/api/auth/logout").permitAll() // 로그인 API 허용 [수정] 로그인 요청은 아무나 할 수 있음
-
-                .requestMatchers( "/api/auth/userInfo", "/api/auth/login/error").permitAll() // 로그인 API 허용
-                .requestMatchers("/api/students/**").permitAll()
-                .requestMatchers("/api/students/add").hasRole("ADMIN") // 학생 등록 API에 ROLE_ADMIN 요구
-                .requestMatchers("/api/posts/**", "/api/faq/**").permitAll() // 게시판
-                .requestMatchers("/images/**", "/static-images/**", "/css/**", "/favicon.ico", "/error", "/img/**").permitAll()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
+                .requestMatchers("/", "/api/auth/login", "/api/auth/logout").permitAll()  // 홈, 로그인, 로그아웃 URL 접근 허용
+                .requestMatchers("/api/auth/userInfo", "/api/auth/login/error").permitAll()  // 사용자 정보, 로그인 에러 URL 접근 허용
+                .requestMatchers("/api/students/**").permitAll()  // 학생 관련 API 접근 허용
+                .requestMatchers("/api/students/add").hasRole("ADMIN")  // 학생 추가는 관리자만 가능
+                .requestMatchers("/images/**", "/static-images/**", "/css/**", "/favicon.ico", "/error", "/img/**").permitAll()  // 정적 리소스 접근 허용
+                .requestMatchers("/admin/**").hasRole("ADMIN")  // 관리자 페이지는 관리자만 접근 가능
+                .requestMatchers("/api/survey/**").permitAll()  // 설문 관련 API 접근 허용
+                .anyRequest().authenticated()  // 그 외 모든 요청은 인증 필요
         );
 
 
@@ -104,11 +112,13 @@ public class SecurityConfig {
         //http.addFilterBefore(tokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         // UsernamePasswordAuthenticationFilter 이후에 TokenAuthenticationFilter 추가
+        // 토큰 인증 필터 추가
         http.addFilterAfter(new TokenAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class);
 
         // 인증 실패 시 처리할 핸들러를 설정
         // 권한이 없는 페이지에 접근 시 처리할 핸들러를 설정
         //http.addFilterBefore(new TokenAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class);
+        // 예외 처리 설정
         http.exceptionHandling(exception -> exception
                 .authenticationEntryPoint(new CustomAuthenticationEntryPoint())
         );
@@ -176,3 +186,4 @@ public class SecurityConfig {
 
 
 }
+
