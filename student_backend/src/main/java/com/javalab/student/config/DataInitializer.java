@@ -1,4 +1,5 @@
 /*
+
 package com.javalab.student.config;
 
 import com.javalab.student.entity.*;
@@ -457,3 +458,120 @@ public class DataInitializer implements CommandLineRunner {
     }
 }
 */
+
+/*
+package com.javalab.student.config;
+
+import com.javalab.student.entity.Product;
+import com.javalab.student.entity.ProductCategory;
+import com.javalab.student.entity.ProductCategoryMapping;
+import com.javalab.student.repository.ProductCategoryMappingRepository;
+import com.javalab.student.repository.ProductCategoryRepository;
+import com.javalab.student.repository.ProductRepository;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
+
+@Component
+@RequiredArgsConstructor
+public class DataInitializer implements CommandLineRunner {
+
+    private final ProductCategoryRepository productCategoryRepository;
+    private final ProductRepository productRepository;
+    private final ProductCategoryMappingRepository productCategoryMappingRepository;
+
+    @Override
+    @Transactional
+    public void run(String... args) throws Exception {
+        initializeProductCategories();
+        initializeProducts();
+        initializeProductCategoryMappings();
+    }
+
+    private void initializeProductCategories() {
+        List<String> categories = Arrays.asList(
+                "여성 건강/PMS", "관절/뼈", "구강 관리", "다이어트", "마음 건강",
+                "피부", "노화/항산화", "피로/활력", "간 건강", "장 건강",
+                "위/소화", "눈 건강", "면역력", "빈혈", "수면",
+                "모발/두피", "만성질환"
+        );
+
+        categories.forEach(category -> {
+            ProductCategory productCategory = new ProductCategory();
+            productCategory.setName(category);
+            productCategoryRepository.save(productCategory);
+        });
+    }
+
+    private void initializeProducts() {
+        List<Product> products = Arrays.asList(
+                new Product(null, "종근당 황후의봄", "여성 건강을 위한 감마리놀렌산(GLA) 보충제", new BigDecimal("30000"), 50, true, null),
+                new Product(null, "뉴트라라이프 보라지 오일", "감마리놀렌산(GLA) 함유 보충제", new BigDecimal("28000"), 40, true, null),
+                new Product(null, "솔가 엽산 400mcg", "여성 건강과 임신 준비를 위한 엽산 보충제", new BigDecimal("15000"), 100, true, null),
+                new Product(null, "네이처메이드 엽산 800mcg", "체내 엽산 보충을 위한 제품", new BigDecimal("17000"), 80, true, null),
+                new Product(null, "페로글로빈 철분 시럽", "빈혈 예방을 위한 철분 보충제", new BigDecimal("20000"), 60, true, null),
+                new Product(null, "센트룸 철분 플러스", "철분과 비타민이 포함된 영양제", new BigDecimal("22000"), 70, true, null),
+                new Product(null, "네이처스웨이 크랜베리 프루트", "비뇨기 건강을 위한 크랜베리 추출물 보충제", new BigDecimal("25000"), 50, true, null),
+                new Product(null, "솔가 크랜베리 추출물", "비뇨기 건강에 도움을 주는 크랜베리 추출물", new BigDecimal("26000"), 40, true, null),
+                new Product(null, "나우푸드 GABA 500mg", "긴장 완화와 숙면을 위한 GABA 보충제", new BigDecimal("28000"), 90, true, null),
+                new Product(null, "솔가 GABA", "스트레스 완화 및 신경 안정 보충제", new BigDecimal("30000"), 85, true, null),
+                new Product(null, "솔가 비타민 B6 100mg", "PMS 및 신경 건강을 위한 비타민 B6 보충제", new BigDecimal("16000"), 100, true, null),
+                new Product(null, "네이처메이드 비타민 B6", "건강한 신경 기능을 지원하는 보충제", new BigDecimal("18000"), 95, true, null),
+                new Product(null, "센트룸 칼슘+D3", "뼈 건강을 위한 칼슘과 비타민D 보충제", new BigDecimal("22000"), 100, true, null),
+                new Product(null, "오스칼 칼슘", "뼈와 치아 건강을 위한 칼슘 보충제", new BigDecimal("21000"), 90, true, null),
+                new Product(null, "솔가 비타민 D3 1000IU", "뼈 건강과 면역력 향상을 위한 비타민D 보충제", new BigDecimal("19000"), 110, true, null),
+                new Product(null, "네이처메이드 비타민 D3 2000IU", "체내 비타민D 보충을 위한 제품", new BigDecimal("20000"), 100, true, null),
+                new Product(null, "닥터스베스트 고흡수 마그네슘", "근육 이완과 신경 안정에 도움을 주는 마그네슘", new BigDecimal("24000"), 100, true, null),
+                new Product(null, "나우푸드 마그네슘 캡슐", "마그네슘 보충을 위한 제품", new BigDecimal("23000"), 100, true, null),
+                new Product(null, "얼라이브 비타민 C 1000mg", "면역력 향상과 항산화 효과를 위한 비타민 C", new BigDecimal("18000"), 150, true, null),
+                new Product(null, "솔가 에스터-C 500mg", "흡수가 잘되는 비타민 C 보충제", new BigDecimal("19000"), 130, true, null),
+                new Product(null, "나우푸드 CoQ10 100mg", "항산화 및 심혈관 건강을 위한 CoQ10 보충제", new BigDecimal("29000"), 90, true, null),
+                new Product(null, "닥터스베스트 CoQ10", "에너지 생산과 세포 건강을 위한 CoQ10 보충제", new BigDecimal("28000"), 80, true, null),
+                new Product(null, "솔가 비타민 B2 100mg", "구강 건강 및 에너지 대사 지원", new BigDecimal("16000"), 100, true, null),
+                new Product(null, "네이처스웨이 리보플라빈", "비타민 B2 보충을 위한 제품", new BigDecimal("17000"), 90, true, null),
+                new Product(null, "솔가 비오틴 5000mcg", "모발 건강과 피부 강화를 위한 비오틴", new BigDecimal("25000"), 70, true, null),
+                new Product(null, "나우푸드 비오틴 5000mcg", "손톱 및 모발 건강을 위한 비오틴 보충제", new BigDecimal("24000"), 75, true, null)
+        );
+
+        productRepository.saveAll(products);
+    }
+
+    private void initializeProductCategoryMappings() {
+        List<ProductCategoryMapping> mappings = Arrays.asList(
+                new ProductCategoryMapping(null, 1L, 1L),
+                new ProductCategoryMapping(null, 2L, 1L),
+                new ProductCategoryMapping(null, 3L, 1L),
+                new ProductCategoryMapping(null, 4L, 1L),
+                new ProductCategoryMapping(null, 5L, 14L),
+                new ProductCategoryMapping(null, 6L, 14L),
+                new ProductCategoryMapping(null, 7L, 1L),
+                new ProductCategoryMapping(null, 8L, 1L),
+                new ProductCategoryMapping(null, 9L, 16L),
+                new ProductCategoryMapping(null, 10L, 16L),
+                new ProductCategoryMapping(null, 11L, 1L),
+                new ProductCategoryMapping(null, 12L, 1L),
+                new ProductCategoryMapping(null, 13L, 2L),
+                new ProductCategoryMapping(null, 14L, 2L),
+                new ProductCategoryMapping(null, 15L, 2L),
+                new ProductCategoryMapping(null, 16L, 2L),
+                new ProductCategoryMapping(null, 17L, 2L),
+                new ProductCategoryMapping(null, 18L, 2L),
+                new ProductCategoryMapping(null, 19L, 13L),
+                new ProductCategoryMapping(null, 20L, 13L),
+                new ProductCategoryMapping(null, 21L, 7L),
+                new ProductCategoryMapping(null, 22L, 7L),
+                new ProductCategoryMapping(null, 23L, 3L),
+                new ProductCategoryMapping(null, 24L, 3L),
+                new ProductCategoryMapping(null, 25L, 17L),
+                new ProductCategoryMapping(null, 26L, 17L)
+        );
+
+        productCategoryMappingRepository.saveAll(mappings);
+    }
+}
+*/
+

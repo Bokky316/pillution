@@ -1,101 +1,77 @@
-import React, { useState, useEffect } from 'react';
-import { Grid, Box, Typography, Card, CardMedia, CardContent, Button, CircularProgress } from '@mui/material';
-import { Link } from 'react-router-dom';
-import { fetchWithAuth } from '../../features/auth/utils/fetchWithAuth';
-import { API_URL } from '../../constant';
+import { useState, useEffect } from "react";
+import "./ProductListPage.css"; // CSS 파일 추가
 
 const ProductListPage = () => {
-    const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [page, setPage] = useState(1);
-    const [hasMore, setHasMore] = useState(true);
+  const [products, setProducts] = useState([]);
 
+  useEffect(() => {
     const fetchProducts = async () => {
-        try {
-            const response = await fetchWithAuth(`${API_URL}products?page=${page}&limit=12`);
-            if (!response.ok) {
-                throw new Error('제품 정보를 불러오는데 실패했습니다.');
-            }
-            const data = await response.json();
-            setProducts(prevProducts => [...prevProducts, ...data.products]);
-            setHasMore(data.hasMore);
-            setLoading(false);
-        } catch (err) {
-            setError(err.message);
-            setLoading(false);
-        }
+      try {
+        // 🔹 실제 API 대신 임의의 `mockData` 사용
+        const mockData = [
+          {
+            id: 1,
+            name: "GENMIX 젠믹스 산양유 단백질",
+            price: 44900,
+            image: "/images/vitamin-c.jpg",
+            category: { id: 1, name: "단백질" },
+          },
+          {
+            id: 2,
+            name: "필리 메가 프로폴리스 면역젤리",
+            price: 13500,
+            image: "/images/omega3.jpg",
+            category: { id: 3, name: "면역강화" },
+          },
+          {
+            id: 3,
+            name: "PHEW P 관절이약: 거침없이 이별 통보",
+            price: 29500,
+            image: "/images/probiotics.jpg",
+            category: { id: 4, name: "관절영양제" },
+          },
+          {
+            id: 4,
+            name: "PHEW P 속&프리: 그날의 극적 화해",
+            price: 32500,
+            image: "/images/probiotics.jpg",
+            category: { id: 5, name: "소화영양제" },
+          }
+        ];
+
+        setProducts(mockData);
+      } catch (error) {
+        console.error("상품 데이터를 불러오는 중 오류 발생:", error);
+      }
     };
 
-    useEffect(() => {
-        fetchProducts();
-    }, [page]);
+    fetchProducts();
+  }, []);
 
-    const loadMore = () => {
-        setPage(prevPage => prevPage + 1);
-    };
+  return (
+    <div className="product-list-page">
+      <h1 className="page-title">전체 상품</h1>
+      <div className="product-grid">
+        {products.map((product) => (
+          <div className="product-card" key={product.id}>
+            <img src={product.image} alt={product.name} className="product-image" />
+            <div className="product-details">
+              <p className="product-name">{product.name}</p>
+              <span className="product-price">{product.price.toLocaleString()}원</span>
 
-    if (loading && page === 1) {
-        return <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-            <CircularProgress />
-        </Box>;
-    }
+              {/* 🔹 단일 카테고리만 표시 */}
+              <div className="product-category">
+                <span className="category-tag">
+                  {product.category ? product.category.name : "카테고리 없음"}
+                </span>
+              </div>
 
-    if (error) {
-        return <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-            <Typography color="error">{error}</Typography>
-        </Box>;
-    }
-
-    return (
-        <Box sx={{ padding: '20px', maxWidth: '1280px', margin: '0 auto' }}>
-            <Typography variant="h4" sx={{ textAlign: 'center', marginBottom: '20px' }}>
-                제품 목록
-            </Typography>
-            <Grid container spacing={4}>
-                {products.map((product) => (
-                    <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
-                        <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                            <CardMedia
-                                component="img"
-                                height="200"
-                                image={product.imageUrl}
-                                alt={product.name}
-                            />
-                            <CardContent sx={{ flexGrow: 1 }}>
-                                <Typography gutterBottom variant="h6" component="div">
-                                    {product.name}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    {product.description}
-                                </Typography>
-                                <Typography variant="h6" sx={{ mt: 2 }}>
-                                    {product.price}원
-                                </Typography>
-                            </CardContent>
-                            <Box sx={{ p: 2 }}>
-                                <Button
-                                    component={Link}
-                                    to={`/products/${product.id}`}
-                                    variant="contained"
-                                    fullWidth
-                                >
-                                    상세 보기
-                                </Button>
-                            </Box>
-                        </Card>
-                    </Grid>
-                ))}
-            </Grid>
-            {hasMore && (
-                <Box sx={{ textAlign: 'center', mt: 4 }}>
-                    <Button variant="contained" onClick={loadMore} disabled={loading}>
-                        {loading ? <CircularProgress size={24} /> : '더 보기'}
-                    </Button>
-                </Box>
-            )}
-        </Box>
-    );
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 };
 
 export default ProductListPage;

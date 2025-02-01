@@ -1,3 +1,4 @@
+/*
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../component/common/Button';
@@ -69,7 +70,9 @@ const SurveyQuestions = () => {
                     ))}
                   </div>
                 )}
-                {/* 다른 질문 유형에 대한 처리 추가 */}
+                { */
+/* 다른 질문 유형에 대한 처리 추가 *//*
+}
               </div>
             ))}
           </div>
@@ -83,3 +86,4 @@ const SurveyQuestions = () => {
 };
 
 export default SurveyQuestions;
+ */
