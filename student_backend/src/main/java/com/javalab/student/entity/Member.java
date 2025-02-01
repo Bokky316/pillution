@@ -46,6 +46,19 @@ public class Member extends BaseEntity{
 
     private String address;
 
+    // 생년월일 (DB: birth_date DATE)
+    private LocalDateTime birthDate;
+
+    // 성별 (DB: gender VARCHAR(10))
+    private String gender;
+
+    // 계정 활성화 여부 (DB: activate BOOLEAN DEFAULT TRUE)
+    @Column(nullable = false)
+    private boolean activate = true;
+
+    // 사용자 포인트 (DB: points INT DEFAULT 0)
+    private int points = 0;
+
     @Builder
     public Member(String email, String password, String auth) {
         this.email = email;
