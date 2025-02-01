@@ -105,16 +105,18 @@ export default function RegisterMember() {
                 body: JSON.stringify({ email, code: verificationCode })
             });
 
+            // 서버 응답을 JSON 형식으로 변환
+            const data = await response.json();
+
             if (!response.ok) {
-                throw new Error("인증 코드 확인 실패");
+                throw new Error(data.error || "인증 코드 확인 실패"); // 서버에서 온 메시지 표시
             }
 
-            const data = await response.json();
             alert(data.message);
             setIsVerified(true); // 이메일 인증 성공 시 상태 업데이트
         } catch (error) {
             console.error("인증 코드 확인 오류:", error.message);
-            alert("인증 코드가 올바르지 않거나 만료되었습니다.");
+            alert(error.message); // 서버에서 온 오류 메시지를 표시
         }
     };
 
@@ -128,17 +130,20 @@ export default function RegisterMember() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(member),
         })
-            .then((response) => {
-                if (response.ok) {
-                    alert("회원가입이 완료되었습니다.");
-                    navigate("/login");
-                } else {
-                    return response.text().then((text) => {
-                        alert("회원가입 실패: " + text);
-                    });
-                }
-            })
-            .catch((error) => console.error("회원가입 중 오류 발생:", error));
+        .then(async (response) => {
+            const message = await response.text(); // 서버에서 받은 응답 메시지 가져오기
+
+            if (response.ok) {
+                alert(message);  // "회원가입이 완료되었습니다." 백엔드 응답 표시
+                navigate("/login"); // 회원가입 성공 시 로그인 페이지로 이동
+            } else {
+                alert("회원가입 실패: " + message); // 서버에서 반환된 실패 메시지 표시
+            }
+        })
+        .catch((error) => {
+            console.error("회원가입 중 오류 발생:", error);
+            alert("서버 오류가 발생했습니다. 다시 시도해주세요.");
+        });
     };
 
     return (
