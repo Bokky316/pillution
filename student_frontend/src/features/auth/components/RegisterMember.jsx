@@ -6,6 +6,7 @@ import useDebounce from '../../../hook/useDebounce';
 
 
 export default function RegisterMember() {
+    //  회원가입 정보 상태
     const [member, setMember] = useState({
         name: "",
         email: "",
@@ -13,11 +14,15 @@ export default function RegisterMember() {
         address: "",
         phone: "",
     });
-    const [email, setEmail] = useState("");
+    const [email, setEmail] = useState(""); // 이메일 상태
     const debouncedEmail = useDebounce(email, 500); // 500ms 디바운스 적용
 
-    const [emailError, setEmailError] = useState(""); // 이메일 중복 메시지
+    const [emailError, setEmailError] = useState(""); // 이메일 중복 체크 에러 메시지
     const navigate = useNavigate();
+
+    const [verificationCode, setVerificationCode] = useState(""); // 입력받은 인증 코드
+    const [isVerified, setIsVerified] = useState(false); // 인증 완료 여부
+
 
     // debounce된 이메일 값이 변경될 때마다 실행, 사용자가 입력할 때마다 실행되지 않고 500ms 후에 실행됩니다
     // 즉, 사용자가 입력을 멈추고 500ms 후에 실행됩니다
@@ -62,7 +67,61 @@ export default function RegisterMember() {
             });
     };
 
-    // 회원가입 처리
+    /**
+         * 이메일 인증 코드 요청
+         * - 사용자가 이메일 인증 코드 전송 버튼 클릭 시 실행
+         */
+    const sendVerificationCode = () => {
+        fetch(`${API_URL}email/send`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email: member.email }) // JSON body로 이메일 전달
+        })
+        .then((response) => response.json()) // JSON 응답으로 변환
+        .then((data) => {
+            if (data.error) {
+                alert(`인증 코드 전송 실패: ${data.details || data.error}`);
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch((error) => {
+            console.error("인증 코드 전송 오류:", error);
+            alert("서버 오류가 발생했습니다. 다시 시도해주세요.");
+        });
+    };
+
+    /**
+        * 인증 코드 확인 요청
+        * - 사용자가 인증 코드 입력 후 확인 버튼 클릭 시 실행
+     */
+    const verifyCode = async () => {
+        try {
+            const response = await fetch(`${API_URL}email/verify`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, code: verificationCode })
+            });
+
+            if (!response.ok) {
+                throw new Error("인증 코드 확인 실패");
+            }
+
+            const data = await response.json();
+            alert(data.message);
+            setIsVerified(true); // 이메일 인증 성공 시 상태 업데이트
+        } catch (error) {
+            console.error("인증 코드 확인 오류:", error.message);
+            alert("인증 코드가 올바르지 않거나 만료되었습니다.");
+        }
+    };
+
+    /**
+        *  회원가입 요청
+        * - 사용자가 모든 정보를 입력하고 회원가입 버튼을 클릭 시 실행
+     */
     const handleOnSubmit = () => {
         fetch(API_URL + "members/register", {
             method: "POST",
@@ -100,6 +159,25 @@ export default function RegisterMember() {
                 error={!!emailError}
                 helperText={emailError}
             />
+            <Button
+                variant="contained"
+                onClick={sendVerificationCode}
+                disabled={!member.email || !!emailError}>
+                인증 코드 전송
+            </Button>
+            <TextField
+                label="인증 코드 입력"
+                name="verificationCode"
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value)}
+                style={{ width: "400px", marginBottom: "10px", marginTop: "10px" }}
+            />
+            <Button
+                variant="contained"
+                onClick={verifyCode}
+                disabled={!verificationCode}>
+                인증 코드 확인
+            </Button>
             <TextField
                 label="Password"
                 name="password"
@@ -122,7 +200,7 @@ export default function RegisterMember() {
                 onChange={onMemberChange}
                 style={{ width: "400px", marginBottom: "10px" }}
             />
-            <Button variant="contained" onClick={handleOnSubmit}>
+            <Button variant="contained" onClick={handleOnSubmit} disabled={!isVerified}>
                 회원가입
             </Button>
         </div>

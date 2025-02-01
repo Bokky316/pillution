@@ -45,6 +45,7 @@ public class MemberFormDto {
             message = "Phone number should be in the format 010-XXXX-XXXX"
     )
     private String phone;
-    private Role role;
+
+    private Role role = Role.USER; // 기본값 USER로 설정  -> 이유 : 권한 없을경우 로그인 안됨
 
 }
