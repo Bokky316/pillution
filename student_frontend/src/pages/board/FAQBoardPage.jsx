@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Button, Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
+import {
+    Button,
+    Typography,
+    Box,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Paper
+} from '@mui/material';
 
 const categories = ["전체", "제품", "회원정보", "주문/결제", "교환/반품", "배송", "기타"];
 
@@ -88,12 +99,9 @@ function FAQBoardPage() {
                         {Array.isArray(filteredPosts) && filteredPosts.length > 0 ? (
                             filteredPosts.map(post => (
                                 <TableRow key={post.id} hover>
-                                    <TableCell>{post.category}</TableCell> {/* 카테고리 표시 */}
+                                    <TableCell>{post.category}</TableCell>
                                     <TableCell>
-                                        <Button
-                                            variant="text"
-                                            onClick={() => handlePostClick(post.id)}
-                                        >
+                                        <Button variant="text" onClick={() => handlePostClick(post.id)}>
                                             {post.title}
                                         </Button>
                                         {expandedPosts[post.id] && (
