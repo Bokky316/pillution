@@ -99,7 +99,7 @@ function PostDetailPage() {
         {/* 목록으로 가기 버튼 */}
         <button
           style={{ display: 'block', marginTop: '20px', cursor: 'pointer' }}
-          onClick={() => navigate('/news')}
+          onClick={() => navigate('/board')}
           className="text-blue-600 hover:text-blue-800"
         >
           목록으로 가기
