@@ -1,155 +1,170 @@
 package com.javalab.student.service;
 
+import com.javalab.student.entity.Member;
 import com.javalab.student.entity.Product;
 import com.javalab.student.entity.MemberResponse;
-import com.javalab.student.entity.MemberResponseOption;
+import com.javalab.student.repository.MemberRepository;
 import com.javalab.student.repository.ProductRepository;
 import com.javalab.student.repository.MemberResponseRepository;
-import com.javalab.student.repository.MemberResponseOptionRepository;
 import com.javalab.student.repository.QuestionOptionIngredientRepository;
-import lombok.RequiredArgsConstructor;
+import com.javalab.student.dto.ProductRecommendationDTO;
 import org.springframework.stereotype.Service;
-
+import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.persistence.EntityNotFoundException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * 제품 추천 관련 비즈니스 로직을 처리하는 서비스 클래스
+ */
 @Service
-@RequiredArgsConstructor
 public class RecommendationService {
 
-    private final ProductRepository productRepository;
-    private final MemberResponseRepository memberResponseRepository;
-    private final MemberResponseOptionRepository memberResponseOptionRepository;
-    private final QuestionOptionIngredientRepository ingredientRepository;
+    @Autowired
+    private MemberRepository memberRepository;
+    @Autowired
+    private ProductRepository productRepository;
+    @Autowired
+    private MemberResponseRepository memberResponseRepository;
+    @Autowired
+    private QuestionOptionIngredientRepository questionOptionIngredientRepository;
 
     /**
-     * 사용자 ID를 기반으로 추천 제품을 반환합니다.
-     * @param memberId 사용자 ID
-     * @return 필수 추천 및 추가 추천으로 분류된 제품 목록
+     * 사용자 이메일을 기반으로 제품을 추천합니다.
+     * @param userEmail 사용자 이메일
+     * @return 추천 제품 목록 (필수 추천 및 추가 추천으로 분류)
+     * @throws EntityNotFoundException 사용자를 찾을 수 없는 경우
      */
-    public Map<String, List<Product>> recommendProducts(Long memberId) {
-        // Step 1: 사용자 응답에서 추천된 영양성분과 중요도 계산
+    public Map<String, List<ProductRecommendationDTO>> recommendProducts(String userEmail) {
+        // 이메일을 사용하여 사용자 정보를 조회합니다.
+        Member member = memberRepository.findByEmail(userEmail);
+        if (member == null) {
+            throw new EntityNotFoundException("사용자를 찾을 수 없습니다: " + userEmail);
+        }
+
+        Long memberId = member.getId();
+
+        // 사용자 응답을 기반으로 성분 점수를 계산합니다.
         Map<String, Integer> ingredientScores = calculateIngredientScores(memberId);
-
-        // Step 2: 상품별 중요도 점수 계산
-        List<Product> scoredProducts = calculateProductScores(ingredientScores);
-
-        // Step 3: 점수 기준으로 정렬 후 필수/추가 추천으로 분류
+        // 모든 제품에 대해 점수를 계산합니다.
+        List<Product> scoredProducts = calculateProductScores(productRepository.findAll(), ingredientScores);
+        // 점수를 기준으로 제품을 분류합니다.
         return classifyRecommendations(scoredProducts);
     }
 
     /**
-     * 사용자의 응답을 분석하여 각 영양성분의 점수를 계산합니다.
-     * @param memberId 사용자 ID
-     * @return 영양성분별 점수 맵
+     * 특정 카테고리 내에서 사용자에 대한 제품을 추천합니다.
+     * @param categoryId 카테고리 ID
+     * @param userEmail 사용자 이메일
+     * @return 추천 제품 목록 (필수 추천 및 추가 추천으로 분류)
+     * @throws EntityNotFoundException 사용자를 찾을 수 없는 경우
      */
-    private Map<String, Integer> calculateIngredientScores(Long memberId) {
-        // 싱글초이스와 멀티플초이스 응답을 가져옵니다.
-        List<MemberResponse> singleChoiceResponses = memberResponseRepository.findByMember_IdAndQuestionQuestionTypeNot(memberId, "TEXT");
-        List<MemberResponseOption> multipleChoiceResponses = memberResponseOptionRepository.findByMember_Id(memberId);
-
-        Map<String, Integer> ingredientScores = new HashMap<>();
-
-        // 싱글초이스 응답 처리
-        for (MemberResponse response : singleChoiceResponses) {
-            updateIngredientScores(ingredientScores, response.getQuestion().getId(), response.getResponseText());
+    public Map<String, List<ProductRecommendationDTO>> recommendProductsByCategory(Long categoryId, String userEmail) {
+        // 이메일을 사용하여 사용자 정보를 조회합니다.
+        Member member = memberRepository.findByEmail(userEmail);
+        if (member == null) {
+            throw new EntityNotFoundException("사용자를 찾을 수 없습니다: " + userEmail);
         }
 
-        // 멀티플초이스 응답 처리
-        for (MemberResponseOption response : multipleChoiceResponses) {
-            updateIngredientScores(ingredientScores, response.getQuestion().getId(), response.getOption().getOptionText());
+        Long memberId = member.getId();
+
+        // 사용자 응답을 기반으로 성분 점수를 계산합니다.
+        Map<String, Integer> ingredientScores = calculateIngredientScores(memberId);
+        // 특정 카테고리의 제품만 조회합니다.
+        List<Product> categoryProducts = productRepository.findByCategoryId(categoryId);
+        // 카테고리 제품에 대해 점수를 계산합니다.
+        List<Product> scoredProducts = calculateProductScores(categoryProducts, ingredientScores);
+        // 점수를 기준으로 제품을 분류합니다.
+        return classifyRecommendations(scoredProducts);
+    }
+
+    /**
+     * 사용자 응답을 기반으로 각 성분의 점수를 계산합니다.
+     * @param memberId 회원 ID
+     * @return 성분별 점수 맵
+     */
+    private Map<String, Integer> calculateIngredientScores(Long memberId) {
+        // "PERSONAL" 타입이 아닌 질문에 대한 응답만 가져옵니다.
+        List<MemberResponse> responses = memberResponseRepository.findByMember_IdAndQuestionQuestionTypeNot(memberId, "PERSONAL");
+        Map<String, Integer> ingredientScores = new HashMap<>();
+
+        for (MemberResponse response : responses) {
+            // 각 응답에 대한 성분 목록을 조회합니다.
+            List<String> ingredients = questionOptionIngredientRepository.findIngredientsByQuestionIdAndResponseText(
+                    response.getQuestion().getId(), response.getResponseText());
+            // 각 성분의 점수를 증가시킵니다.
+            for (String ingredient : ingredients) {
+                ingredientScores.put(ingredient, ingredientScores.getOrDefault(ingredient, 0) + 1);
+            }
         }
 
         return ingredientScores;
     }
 
     /**
-     * 주어진 질문과 응답에 대한 영양성분 점수를 업데이트합니다.
-     * @param ingredientScores 현재까지의 영양성분 점수 맵
-     * @param questionId 질문 ID
-     * @param responseText 응답 텍스트
+     * 주어진 제품 목록에 대해 성분 점수를 기반으로 제품 점수를 계산합니다.
+     * @param products 제품 목록
+     * @param ingredientScores 성분별 점수 맵
+     * @return 점수가 계산된 제품 목록 (점수 내림차순 정렬)
      */
-    private void updateIngredientScores(Map<String, Integer> ingredientScores, Long questionId, String responseText) {
-        List<String> ingredients = ingredientRepository.findIngredientsByQuestionIdAndResponseText(questionId, responseText);
-        for (String ingredient : ingredients) {
-            ingredientScores.put(ingredient, ingredientScores.getOrDefault(ingredient, 0) + 1);
-        }
-    }
-
-    /**
-     * 영양성분 점수를 기반으로 각 제품의 점수를 계산합니다.
-     * @param ingredientScores 영양성분별 점수 맵
-     * @return 점수가 계산된 제품 리스트 (점수 내림차순 정렬)
-     */
-    private List<Product> calculateProductScores(Map<String, Integer> ingredientScores) {
-        List<Product> allProducts = productRepository.findAll();
-
-        for (Product product : allProducts) {
+    private List<Product> calculateProductScores(List<Product> products, Map<String, Integer> ingredientScores) {
+        for (Product product : products) {
             int score = 0;
+            // 제품의 주 성분을 조회합니다.
             String mainIngredient = productRepository.findMainIngredientByProductId(product.getId());
             if (mainIngredient != null) {
+                // 주 성분의 점수를 제품 점수에 추가합니다.
                 score += ingredientScores.getOrDefault(mainIngredient, 0);
             }
             product.setScore(score);
         }
 
-        return allProducts.stream()
-                .sorted(Comparator.comparingInt(Product::getScore).reversed())
+        // 점수를 기준으로 제품을 내림차순 정렬합니다.
+        return products.stream()
+                .sorted((p1, p2) -> Integer.compare(p2.getScore(), p1.getScore()))
                 .collect(Collectors.toList());
     }
 
-
     /**
-     * 점수가 계산된 제품들을 필수 추천과 추가 추천으로 분류합니다.
-     * @param scoredProducts 점수가 계산된 제품 리스트
-     * @return 필수 추천 및 추가 추천으로 분류된 제품 맵
+     * 점수가 계산된 제품 목록을 필수 추천과 추가 추천으로 분류합니다.
+     * @param scoredProducts 점수가 계산된 제품 목록
+     * @return 분류된 추천 제품 목록
      */
-    private Map<String, List<Product>> classifyRecommendations(List<Product> scoredProducts) {
-        Map<String, List<Product>> classifiedRecommendations = new HashMap<>();
+    private Map<String, List<ProductRecommendationDTO>> classifyRecommendations(List<Product> scoredProducts) {
+        Map<String, List<ProductRecommendationDTO>> recommendations = new HashMap<>();
+        List<ProductRecommendationDTO> essentialRecommendations = new ArrayList<>();
+        List<ProductRecommendationDTO> additionalRecommendations = new ArrayList<>();
 
-        // 점수가 3 이상인 상위 5개 제품을 필수 추천으로 분류
-        List<Product> essentialRecommendations = scoredProducts.stream()
-                .filter(p -> p.getScore() >= 3)
-                .limit(5)
-                .collect(Collectors.toList());
+        for (int i = 0; i < scoredProducts.size() && i < 8; i++) {
+            Product product = scoredProducts.get(i);
+            ProductRecommendationDTO dto = convertToDTO(product);
 
-        // 점수가 1-2인 상위 5개 제품을 추가 추천으로 분류
-        List<Product> additionalRecommendations = scoredProducts.stream()
-                .filter(p -> p.getScore() < 3 && p.getScore() > 0)
-                .limit(5)
-                .collect(Collectors.toList());
+            if (i < 3) {
+                // 상위 3개 제품을 필수 추천으로 분류
+                essentialRecommendations.add(dto);
+            } else {
+                // 그 다음 5개 제품을 추가 추천으로 분류
+                additionalRecommendations.add(dto);
+            }
+        }
 
-        classifiedRecommendations.put("essential", essentialRecommendations);
-        classifiedRecommendations.put("additional", additionalRecommendations);
-
-        return classifiedRecommendations;
+        recommendations.put("essential", essentialRecommendations);
+        recommendations.put("additional", additionalRecommendations);
+        return recommendations;
     }
 
     /**
-     * 특정 카테고리 내에서 사용자에게 추천할 제품을 반환합니다.
-     * @param categoryId 카테고리 ID
-     * @param memberId 사용자 ID
-     * @return 해당 카테고리 내에서 필수 추천 및 추가 추천으로 분류된 제품 맵
+     * Product 엔티티를 ProductRecommendationDTO로 변환합니다.
+     * @param product 변환할 Product 엔티티
+     * @return 변환된 ProductRecommendationDTO 객체
      */
-    public Map<String, List<Product>> recommendProductsByCategory(Long categoryId, Long memberId) {
-        // 전체 추천 제품을 가져옵니다.
-        Map<String, List<Product>> allRecommendations = recommendProducts(memberId);
-
-        // 해당 카테고리의 제품들을 가져옵니다.
-        List<Product> categoryProducts = productRepository.findByCategoryId(categoryId);
-
-        Map<String, List<Product>> categoryRecommendations = new HashMap<>();
-
-        // 필수 추천 제품 중 해당 카테고리에 속하는 제품만 필터링합니다.
-        categoryRecommendations.put("essential", allRecommendations.get("essential").stream()
-                .filter(categoryProducts::contains)
-                .collect(Collectors.toList()));
-
-        // 추가 추천 제품 중 해당 카테고리에 속하는 제품만 필터링합니다.
-        categoryRecommendations.put("additional", allRecommendations.get("additional").stream()
-                .filter(categoryProducts::contains)
-                .collect(Collectors.toList()));
-
-        return categoryRecommendations;
+    private ProductRecommendationDTO convertToDTO(Product product) {
+        ProductRecommendationDTO dto = new ProductRecommendationDTO();
+        dto.setId(product.getId());
+        dto.setName(product.getName());
+        dto.setDescription(product.getDescription());
+        dto.setPrice(product.getPrice());
+        dto.setScore(product.getScore());
+        return dto;
     }
 }

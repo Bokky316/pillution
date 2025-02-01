@@ -31,9 +31,9 @@ function App() {
         } else if (token) {
             fetchUserInfo();
         } else {
-            console.warn("로그인되지 않은 상태입니다.");
             removeAuthData();
             setIsLoggedIn(false);
+            console.warn("로그인되지 않은 상태입니다.");
         }
     }, []);
 
@@ -92,7 +92,7 @@ function App() {
                         <Route path="/login" element={<Login onLogin={handleLogin} />} />
                         <Route path="/registerMember" element={<RegisterMember />} />
                         <Route path="/mypage" element={<MyPage />} />
-                        <Route path="/recommendations" element={<RecommendationPage />} />
+                        <Route path="/recommendation" element={<RecommendationPage />} />
                         <Route path="/survey" element={<SurveyPage />} />
                         <Route path="/products" element={<ProductListPage />} />
                         <Route path="/products/:productId" element={<ProductDetailPage />} />
