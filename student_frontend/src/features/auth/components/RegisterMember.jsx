@@ -13,6 +13,8 @@ export default function RegisterMember() {
         password: "",
         address: "",
         phone: "",
+        birthDate: "",
+        gender: "",
     });
     const [email, setEmail] = useState(""); // 이메일 상태
     const debouncedEmail = useDebounce(email, 500); // 500ms 디바운스 적용
@@ -125,6 +127,7 @@ export default function RegisterMember() {
         * - 사용자가 모든 정보를 입력하고 회원가입 버튼을 클릭 시 실행
      */
     const handleOnSubmit = () => {
+        console.log("회원가입 요청 데이터:", member);  // 디버깅용 로그 추가
         fetch(API_URL + "members/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -205,6 +208,20 @@ export default function RegisterMember() {
                 onChange={onMemberChange}
                 style={{ width: "400px", marginBottom: "10px" }}
             />
+             <TextField
+                label="Birth Date"
+                name="birthDate"
+                type="date"
+                value={member.birthDate}
+                onChange={onMemberChange}
+            />
+
+            <select name="gender" value={member.gender} onChange={onMemberChange}>
+                <option value="">성별 선택</option>
+                <option value="M">남성</option>
+                <option value="F">여성</option>
+            </select>
+
             <Button variant="contained" onClick={handleOnSubmit} disabled={!isVerified}>
                 회원가입
             </Button>
