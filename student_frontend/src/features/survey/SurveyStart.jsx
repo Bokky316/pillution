@@ -1,3 +1,4 @@
+/*
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../../component/common/Button';
@@ -16,3 +17,4 @@ const SurveyStart = () => (
 );
 
 export default SurveyStart;
+ */

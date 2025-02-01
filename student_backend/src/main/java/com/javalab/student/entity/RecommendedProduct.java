@@ -1,28 +1,29 @@
 package com.javalab.student.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
+/**
+ * 추천된 상품 정보를 나타내는 엔티티
+ */
 @Entity
 @Table(name = "recommended_product")
-@Getter
-@Setter
+@Getter @Setter
+@ToString
 @NoArgsConstructor
+@AllArgsConstructor
 public class RecommendedProduct {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recommendation_id")
-    private Recommendation recommendation;
+    @Column(name = "recommendation_id")
+    private Long recommendationId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
-    private Product product;
+    @Column(name = "product_id")
+    private Long productId;
 
-    @Column(name = "reason")
+    @Column(columnDefinition = "TEXT")
     private String reason;
 }

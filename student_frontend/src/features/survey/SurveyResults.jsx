@@ -1,3 +1,4 @@
+/*
 import React, { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import Button from '../../component/common/Button';
@@ -16,7 +17,9 @@ const SurveyResults = () => {
       if (responses) {
         try {
           await submitSurveyResponses(responses);
-          const data = await getRecommendations(/* memberId */); // memberId 필요
+          const data = await getRecommendations( */
+/* memberId *//*
+); // memberId 필요
           setRecommendations(data);
           setLoading(false);
         } catch (error) {
@@ -56,3 +59,4 @@ const SurveyResults = () => {
 };
 
 export default SurveyResults;
+ */
