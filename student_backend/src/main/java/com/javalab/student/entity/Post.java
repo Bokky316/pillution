@@ -32,6 +32,9 @@ public class Post {
     @Column(nullable = false)
     private Long authorId;
 
+    @Column(nullable = false, length = 50)
+    private String category; // 카테고리 추가
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 

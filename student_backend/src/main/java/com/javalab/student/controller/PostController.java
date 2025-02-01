@@ -3,6 +3,7 @@ package com.javalab.student.controller;
 import com.javalab.student.dto.PageRequestDTO;
 import com.javalab.student.dto.PageResponseDTO;
 import com.javalab.student.dto.PostDto;
+import com.javalab.student.dto.PostNeighborsDTO;
 import com.javalab.student.entity.Post;
 import com.javalab.student.service.PostService;
 import jakarta.validation.Valid;
@@ -70,5 +71,19 @@ public class PostController {
     public ResponseEntity<Void> deletePost(@PathVariable("id") Long id) {
         postService.deletePost(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // FAQ 게시글 조회 (board_id = 2인 게시글만 조회)
+    @GetMapping("/faq")
+    public ResponseEntity<List<PostDto>> getFAQPosts() {
+        Long faqBoardId = 2L;  // FAQ 게시판 ID
+        List<PostDto> faqPosts = postService.getPostsByBoardId(faqBoardId);
+        return ResponseEntity.ok(faqPosts);
+    }
+
+    @GetMapping("/{id}/neighbors")
+    public ResponseEntity<PostNeighborsDTO> getPostNeighbors(@PathVariable("id") Long id) {
+        PostNeighborsDTO neighbors = postService.getPostNeighbors(id);
+        return ResponseEntity.ok(neighbors);
     }
 }

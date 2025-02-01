@@ -10,6 +10,10 @@ import SurveyPage from "./pages/survey/SurveyPage";
 import ProductDetailPage from "./pages/product/ProductDetailPage";
 import ProductListPage from "./pages/product/ProductListPage";
 import CartPage from "./pages/cart/CartPage";
+import BoardPage from "./pages/board/BoardPage";
+import NewsBoardPage from './pages/board/NewsBoardPage';
+import PostDetailPage from './pages/board/PostDetailPage';
+import PostCreatePage from './pages/board/PostCreatePage';
 import Login from "./features/auth/components/Login";
 import MyPage from "./features/auth/components/MyPage";
 import RegisterMember from "./features/auth/components/RegisterMember";
@@ -97,6 +101,10 @@ function App() {
                         <Route path="/products" element={<ProductListPage />} />
                         <Route path="/products/:productId" element={<ProductDetailPage />} />
                         <Route path="/cart" element={<CartPage />} />
+                        <Route path="/board/*" element={<BoardPage />} />
+                        <Route path="/news" element={<NewsBoardPage />} />
+                        <Route path="/post/:postId" element={<PostDetailPage />} />
+                        <Route path="/post/create" element={<PostCreatePage />} />
                     </Routes>
                     <Footer />
                 </div>

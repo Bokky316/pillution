@@ -3,6 +3,7 @@ package com.javalab.student.service;
 import com.javalab.student.dto.PageRequestDTO;
 import com.javalab.student.dto.PageResponseDTO;
 import com.javalab.student.dto.PostDto;
+import com.javalab.student.dto.PostNeighborsDTO;
 import com.javalab.student.entity.Board;
 import com.javalab.student.entity.Post;
 import com.javalab.student.exception.UnauthorizedException;
@@ -34,6 +35,13 @@ public class PostService {
         post.setBoard(board);
         post.setAuthorId(postDto.getAuthorId());
 
+        // category 설정
+        if (board.getName().equals("소식 게시판")) {
+            post.setCategory("소식");
+        } else if (board.getName().equals("자주 묻는 질문 게시판")) {
+            post.setCategory("FAQ");
+        }
+
         validatePost(post);
 
         Post savedPost = postRepository.save(post);
@@ -60,7 +68,9 @@ public class PostService {
     public PostDto getPostById(Long id) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("해당 게시글이 존재하지 않습니다."));
-        return PostDto.fromEntity(post);
+        PostDto dto = PostDto.fromEntity(post);
+        System.out.println("Category: " + dto.getCategory()); // category 값을 출력해 봅니다.
+        return dto;
     }
 
     public PageResponseDTO<PostDto> getPostsByBoard(Long boardId, PageRequestDTO pageRequestDTO) {
@@ -121,5 +131,30 @@ public class PostService {
             return null;
         }
         return input.replaceAll("<[^>]*>", "");
+    }
+
+    public List<PostDto> getPostsByBoardId(Long boardId) {
+        List<Post> posts = postRepository.findByBoardId(boardId);
+        return posts.stream()
+                .map(PostDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    //
+    public PostNeighborsDTO getPostNeighbors(Long postId) {
+        PostNeighborsDTO neighbors = new PostNeighborsDTO();
+
+        // 현재 게시물의 이전/다음 게시물 ID를 DB에서 조회하여 설정
+        List<Post> posts = postRepository.findAllByOrderByCreatedAtAsc();
+        int currentIndex = posts.indexOf(posts.stream().filter(p -> p.getId().equals(postId)).findFirst().orElse(null));
+
+        if (currentIndex > 0) {
+            neighbors.setPrevPostId(posts.get(currentIndex - 1).getId());
+        }
+        if (currentIndex < posts.size() - 1) {
+            neighbors.setNextPostId(posts.get(currentIndex + 1).getId());
+        }
+
+        return neighbors;
     }
 }

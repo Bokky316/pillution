@@ -13,6 +13,8 @@ import java.util.List;
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
     Page<Post> findByBoardId(Long boardId, Pageable pageable);
+    List<Post> findByBoardId(Long boardId);
+    List<Post> findAllByOrderByCreatedAtAsc();
 
     @Query("SELECT p FROM Post p WHERE " +
             "(:types IS NULL OR " +

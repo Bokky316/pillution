@@ -19,6 +19,7 @@ public class BoardController {
 
     @GetMapping
     public ResponseEntity<List<BoardDto>> getAllBoards() {
+
         List<BoardDto> boards = boardService.getAllBoards();
         return ResponseEntity.ok(boards);
     }

@@ -47,6 +47,7 @@ const Header = ({ isLoggedIn, loggedInUser, handleLogout }) => {
                         <MenuItem onClick={handleMenuClose} component={Link} to="/recommendations">추천</MenuItem>
                         <MenuItem onClick={handleMenuClose} component={Link} to="/cart">장바구니</MenuItem>
                         <MenuItem onClick={handleMenuClose} component={Link} to="/survey">설문조사</MenuItem>
+                        <MenuItem onClick={handleMenuClose} component={Link} to="/board/*">필루션소식</MenuItem>
                     </Menu>
                 </Box>
 
