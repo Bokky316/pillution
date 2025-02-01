@@ -54,9 +54,13 @@ public class MemberService {
         Member member = memberRepository.findByEmail(loginForm.getEmail());
 
         // 회원이 존재하지 않거나 비밀번호가 일치하지 않으면 실패
-        return member != null && passwordEncoder.matches(loginForm.getPassword(), member.getPassword());
+        // 이메일 존재 여부 & 비밀번호 일치 확인
+        if (member != null && passwordEncoder.matches(loginForm.getPassword(), member.getPassword())) {
+            updateLastLogin(loginForm.getEmail()); // 로그인 성공 시 마지막 로그인 시간 업데이트
+            return true;// 로그인 성공
+        }
+        return false;
 
-        // 로그인 성공
     }
 
     public Member findById(Long memberId) {
@@ -69,11 +73,15 @@ public class MemberService {
     }
 
     // 로그인 성공 시 마지막 로그인 날짜 업데이트
+    @Transactional
     public void updateLastLogin(String email) {
         Member member = memberRepository.findByEmail(email);
         if (member != null) {
             member.updateLastLogin(); // 마지막 로그인 날짜 업데이트
             memberRepository.save(member);
+            System.out.println("🔹 [updateLastLogin] 저장 완료: " + member.getLastLoginAt());
+        } else {
+            System.out.println("⚠ [updateLastLogin] 회원을 찾을 수 없음: " + email);
         }
     }
 

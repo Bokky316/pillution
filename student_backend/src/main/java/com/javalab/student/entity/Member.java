@@ -139,6 +139,7 @@ public class Member extends BaseEntity{
      */
     public void updateLastLogin() {
         this.lastLoginAt = LocalDateTime.now();
+        System.out.println("🔹 [Member] 마지막 로그인 시간 업데이트: " + this.lastLoginAt);
     }
 
 }
