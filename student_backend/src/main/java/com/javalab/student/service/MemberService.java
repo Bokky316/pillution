@@ -67,4 +67,24 @@ public class MemberService {
     public Member findByEmail(String email) {
         return memberRepository.findByEmail(email);
     }
+
+    // 로그인 성공 시 마지막 로그인 날짜 업데이트
+    public void updateLastLogin(String email) {
+        Member member = memberRepository.findByEmail(email);
+        if (member != null) {
+            member.updateLastLogin(); // 마지막 로그인 날짜 업데이트
+            memberRepository.save(member);
+        }
+    }
+
+    // 회원 비활성화 처리
+    public void deactivateMember(String email) {
+        Member member = memberRepository.findByEmail(email);
+        if (member == null) {
+            throw new IllegalArgumentException("존재하지 않는 이메일입니다.");
+        }
+        member.deactivateMember(); //  비활성화 및 탈퇴일 저장
+        memberRepository.save(member);
+    }
+
 }
