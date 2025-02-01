@@ -96,10 +96,8 @@ function App() {
                         <Route path="/survey" element={<SurveyPage />} />
                         <Route path="/products" element={<ProductListPage />} />
                         <Route path="/products/:productId" element={<ProductDetailPage />} />
-                        <Route path="/productList" element={<ProductListPage />} />
                         <Route path="/cart" element={<CartPage />} />
                     </Routes>
-                    <Footer />
                     <Footer />
                 </div>
             </Router>
