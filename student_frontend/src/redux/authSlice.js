@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { fetchWithAuth } from "../common/fetchWithAuth";
+import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
 import { API_URL } from "../constant";
 
 /**

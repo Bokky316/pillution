@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { fetchWithAuth } from "../common/fetchWithAuth";
+import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
 import { API_URL } from "../constant";
 
 // 서베이 응답 제출을 위한 비동기 액션
