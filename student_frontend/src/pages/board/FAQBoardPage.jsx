@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Link, useNavigate } from 'react-router-dom';
 import {
     Button,
     Typography,
@@ -22,8 +23,13 @@ function FAQBoardPage() {
     const [expandedPosts, setExpandedPosts] = useState({}); // 확장된 게시글 상태
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [userRole, setUserRole] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
+        const userData = JSON.parse(localStorage.getItem('loggedInUser') || '{}');
+        setUserRole(userData.authorities?.includes('ROLE_ADMIN') ? 'ADMIN' : 'USER');
+
         const fetchPosts = async () => {
             try {
                 const response = await axios.get("http://localhost:8080/api/posts/faq");
@@ -65,6 +71,25 @@ function FAQBoardPage() {
         }));
     };
 
+    const handleEditPost = (postId) => {
+        navigate(`/post/edit/${postId}`); // 수정 페이지로 이동
+    };
+
+    const handleDeletePost = async (postId) => {
+        if (window.confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
+            try {
+                await axios.delete(`http://localhost:8080/api/posts/faq/${postId}`);
+                alert("게시글이 삭제되었습니다.");
+                // 삭제 후 목록 갱신
+                setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+                setFilteredPosts(prevFilteredPosts => prevFilteredPosts.filter(post => post.id !== postId));
+            } catch (err) {
+                console.error('Error deleting post:', err);
+                alert("게시글 삭제에 실패했습니다.");
+            }
+        }
+    };
+
     return (
         <Box maxWidth="lg" mx="auto" p={3}>
             <Typography variant="h4" align="center" gutterBottom>자주 묻는 질문</Typography>
@@ -86,13 +111,28 @@ function FAQBoardPage() {
                 ))}
             </Box>
 
+            {userRole === 'ADMIN' && (
+                <Box display="flex" justifyContent="flex-end" mb={2}>
+                    <Button
+                        variant="contained"
+                        color="secondary"
+                        onClick={() => navigate('/post/create')}
+                    >
+                        게시물 등록
+                    </Button>
+                </Box>
+            )}
+
             {/* 게시글 목록 */}
-            <TableContainer component={Paper} elevation={3}>
+            <TableContainer component={Paper} elevation={3} sx={{ marginBottom: '120px' }}>
                 <Table>
                     <TableHead>
                         <TableRow>
                             <TableCell align="left" style={{ fontWeight: 'bold' }}>분류</TableCell>
                             <TableCell align="left" style={{ fontWeight: 'bold' }}>제목</TableCell>
+                            {userRole === 'ADMIN' && (
+                                <TableCell align="center" style={{ fontWeight: 'bold' }}>관리</TableCell>
+                            )}
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -118,11 +158,35 @@ function FAQBoardPage() {
                                             </Typography>
                                         )}
                                     </TableCell>
+                                    {userRole === 'ADMIN' && (
+                                        <TableCell align="center">
+                                            {/* 수정 버튼 */}
+                                            <Button
+                                                variant="outlined"
+                                                color="primary"
+                                                onClick={() => handleEditPost(post.id)}
+                                                sx={{ marginRight: 1 }}
+                                            >
+                                                수정
+                                            </Button>
+
+                                            {/* 삭제 버튼 */}
+                                            <Button
+                                                variant="outlined"
+                                                color="error"
+                                                onClick={() => handleDeletePost(post.id)}
+                                            >
+                                                삭제
+                                            </Button>
+                                        </TableCell>
+                                    )}
                                 </TableRow>
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={2} align="center">게시글이 없습니다.</TableCell>
+                                <TableCell colSpan={userRole === 'ADMIN' ? 3 : 2} align="center">
+                                    게시글이 없습니다.
+                                </TableCell>
                             </TableRow>
                         )}
                     </TableBody>

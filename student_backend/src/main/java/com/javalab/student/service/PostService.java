@@ -36,9 +36,9 @@ public class PostService {
         post.setAuthorId(postDto.getAuthorId());
 
         // category 설정
-        if (board.getName().equals("소식 게시판")) {
-            post.setCategory("소식");
-        } else if (board.getName().equals("자주 묻는 질문 게시판")) {
+        if (board.getName().equals("공지사항")) {
+            post.setCategory("공지사항");
+        } else if (board.getName().equals("자주 묻는 질문")) {
             post.setCategory("FAQ");
         }
 

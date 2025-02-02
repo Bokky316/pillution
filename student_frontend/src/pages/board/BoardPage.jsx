@@ -3,6 +3,7 @@ import { Container, Button, Typography, Box } from "@mui/material";
 import NewsBoardPage from "./NewsBoardPage";
 import FAQBoardPage from "./FAQBoardPage";
 import PostDetailPage from "./PostDetailPage";
+import PostEditPage from "./PostEditPage";
 
 function BoardPage() {
     const [currentBoard, setCurrentBoard] = useState("news"); // 기본: 소식 게시판

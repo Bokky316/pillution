@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Typography, Box } from '@mui/material';
 
 function NewsBoardPage() {
@@ -9,19 +9,21 @@ function NewsBoardPage() {
     const [error, setError] = useState(null);
     const [currentPage, setCurrentPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
+    const [userRole, setUserRole] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
+        const userData = JSON.parse(localStorage.getItem('loggedInUser') || '{}');
+        setUserRole(userData.authorities?.includes('ROLE_ADMIN') ? 'ADMIN' : 'USER');
+
         const fetchPosts = async () => {
             try {
                 const response = await axios.get(`http://localhost:8080/api/posts/board/1?page=${currentPage}&size=10`);
-
-                console.log("API 응답 데이터:", response.data);
-
+                console.log('API Response:', response.data);
                 setPosts(response.data.dtoList);
                 setTotalPages(response.data.totalPages);
                 setLoading(false);
             } catch (err) {
-                console.error('Error fetching posts:', err);
                 setError('게시글을 불러오는데 실패했습니다: ' + err.message);
                 setLoading(false);
             }
@@ -30,12 +32,28 @@ function NewsBoardPage() {
         fetchPosts();
     }, [currentPage]);
 
+    const handlePageClick = (page) => {
+        setCurrentPage(page);
+    };
+
     if (loading) return <Typography align="center" variant="h6">로딩 중...</Typography>;
     if (error) return <Typography align="center" color="error" variant="h6">{error}</Typography>;
 
     return (
         <Box maxWidth="lg" mx="auto" p={3}>
             <Typography variant="h4" align="center" gutterBottom>공지사항</Typography>
+
+            {userRole === 'ADMIN' && (
+                <Box display="flex" justifyContent="flex-end" mb={2}>
+                    <Button
+                        variant="contained"
+                        color="secondary"
+                        onClick={() => navigate('/post/create')}
+                    >
+                        게시물 등록
+                    </Button>
+                </Box>
+            )}
 
             <TableContainer component={Paper} elevation={3}>
                 <Table>
@@ -47,7 +65,7 @@ function NewsBoardPage() {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {Array.isArray(posts) && posts.length > 0 ? (
+                        {posts.length > 0 ? (
                             posts.map(post => (
                                 <TableRow key={post.id} hover>
                                     <TableCell>{post.category}</TableCell>
@@ -68,25 +86,21 @@ function NewsBoardPage() {
                 </Table>
             </TableContainer>
 
-            <Box display="flex" justifyContent="space-between" alignItems="center" mt={3}>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 0))}
-                    disabled={currentPage === 0}
-                >
-                    이전
-                </Button>
-                <Typography variant="body1">페이지 {currentPage + 1} / {totalPages}</Typography>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages - 1))}
-                    disabled={currentPage === totalPages - 1}
-                >
-                    다음
-                </Button>
+            <Box display="flex" justifyContent="center" gap={0.5} mt={3}>
+                {[...Array(totalPages)].map((_, index) => (
+                    <Button
+                        key={index}
+                        variant={currentPage === index ? "contained" : "outlined"}
+                        color="primary"
+                        size="small"
+                        sx={{ minWidth: '30px', padding: '4px 8px' }} // 최소 너비와 패딩 조정
+                        onClick={() => handlePageClick(index)}
+                    >
+                        {index + 1}
+                    </Button>
+                ))}
             </Box>
+
         </Box>
     );
 }

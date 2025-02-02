@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
@@ -104,7 +105,12 @@ public class SecurityConfig {
                 .requestMatchers("/images/**", "/static-images/**", "/css/**", "/favicon.ico", "/error", "/img/**").permitAll()  // 정적 리소스 접근 허용
                 .requestMatchers("/admin/**").hasRole("ADMIN")  // 관리자 페이지는 관리자만 접근 가능
                 .requestMatchers("/api/survey/**").permitAll()  // 설문 관련 API 접근 허용
-                .requestMatchers("/api/posts/**", "/api/faq/**").permitAll() // 게시판 관련 API 접근 허용
+                // 게시판 관련 권한 설정
+                .requestMatchers("/api/posts/**", "/api/faq/**").permitAll()    // 게시물 조회: 모든 사용자 허용
+                .requestMatchers("/api/posts/create").hasRole("ADMIN")  // 게시물 작성: 관리자만 허용
+                .requestMatchers("/api/posts/*/update").hasRole("ADMIN")  // 게시물 수정: 관리자만 허용
+                .requestMatchers("/api/posts/*/delete").hasRole("ADMIN")  // 게시물 삭제
+
                 .anyRequest().authenticated()  // 그 외 모든 요청은 인증 필요
         );
 
