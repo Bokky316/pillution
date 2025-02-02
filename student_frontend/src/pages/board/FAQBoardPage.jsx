@@ -72,20 +72,26 @@ function FAQBoardPage() {
     };
 
     const handleEditPost = (postId) => {
-        navigate(`/post/edit/${postId}`); // 수정 페이지로 이동
+        navigate(`/faq/post/${postId}/edit`); // 수정 페이지로 이동
     };
 
     const handleDeletePost = async (postId) => {
         if (window.confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
             try {
-                await axios.delete(`http://localhost:8080/api/posts/faq/${postId}`);
-                alert("게시글이 삭제되었습니다.");
-                // 삭제 후 목록 갱신
-                setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
-                setFilteredPosts(prevFilteredPosts => prevFilteredPosts.filter(post => post.id !== postId));
+                // URL을 /api/posts/{id}로 변경
+                const response = await axios.delete(`http://localhost:8080/api/posts/${postId}`);
+
+                if (response.status === 204) { // 204 No Content 상태코드 체크
+                    alert("게시글이 삭제되었습니다.");
+                    setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+                    setFilteredPosts(prevFilteredPosts =>
+                        prevFilteredPosts.filter(post => post.id !== postId)
+                    );
+                }
             } catch (err) {
                 console.error('Error deleting post:', err);
-                alert("게시글 삭제에 실패했습니다.");
+                const errorMessage = err.response?.data?.message || "게시글 삭제에 실패했습니다.";
+                alert(errorMessage);
             }
         }
     };
@@ -118,7 +124,7 @@ function FAQBoardPage() {
                         color="secondary"
                         onClick={() => navigate('/post/create')}
                     >
-                        게시물 등록
+                        게시글 등록
                     </Button>
                 </Box>
             )}

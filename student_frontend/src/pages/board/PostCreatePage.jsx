@@ -10,7 +10,7 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
-  DialogTitle,
+ DialogTitle,
   Select,
   MenuItem,
   InputLabel,
@@ -33,7 +33,6 @@ function PostCreatePage() {
   const faqCategories = ["전체", "제품", "회원정보", "주문/결제", "교환/반품", "배송", "기타"];
 
   useEffect(() => {
-    // 로그인 사용자 정보 확인
     const loggedInUser = localStorage.getItem("loggedInUser");
     if (loggedInUser) {
       try {
@@ -41,7 +40,7 @@ function PostCreatePage() {
         setIsAdmin(userData.authorities?.includes("ROLE_ADMIN") || false);
         setFormData((prev) => ({
           ...prev,
-          authorId: userData.id || 1, // 사용자 ID 설정
+          authorId: userData.id || 1,
         }));
       } catch (e) {
         console.error("Error parsing user data:", e);
@@ -55,9 +54,15 @@ function PostCreatePage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 필수 필드 검증
+    // 필수 필드 검증 ✅
     if (!formData.title.trim() || !formData.content.trim()) {
       alert("제목과 내용을 입력해주세요.");
+      return;
+    }
+
+    // 자주 묻는 질문 게시판일 경우 하위 카테고리 선택 필수 ✅
+    if (formData.category === "자주 묻는 질문" && !formData.subCategory) {
+      alert("FAQ 카테고리를 선택해주세요.");
       return;
     }
 
@@ -65,21 +70,19 @@ function PostCreatePage() {
       const userData = JSON.parse(localStorage.getItem("loggedInUser"));
       const token = userData.token;
 
-      // boardId 설정
-      const boardId = formData.category === "공지사항" ? 1 : 2; // 공지사항: 1, FAQ: 2
+      const boardId = formData.category === "공지사항" ? 1 : 2;
 
-      // FAQ 게시판일 경우 category에 subCategory를 저장
+      // 카테고리 설정 로직 개선 ✅
       const finalCategory =
         formData.category === "자주 묻는 질문" ? formData.subCategory : formData.category;
 
-      // 서버로 데이터 전송
       const response = await axios.post(
         "http://localhost:8080/api/posts",
         {
           title: formData.title,
           content: formData.content,
           boardId: boardId,
-          category: finalCategory, // 최종 카테고리 설정
+          category: finalCategory, // 수정된 부분
           authorId: formData.authorId,
         },
         {
@@ -93,6 +96,13 @@ function PostCreatePage() {
       if (response.status === 200 || response.status === 201) {
         alert("게시물이 등록되었습니다!");
         navigate("/board");
+        console.log({
+          title: formData.title,
+          content: formData.content,
+          boardId: boardId,
+          category: finalCategory, // ✅ 서버로 전송되는 카테고리 확인
+          authorId: formData.authorId,
+        });
       }
     } catch (error) {
       console.error("Error creating post:", error);
@@ -148,7 +158,6 @@ function PostCreatePage() {
       </Typography>
 
       <Box component="form" onSubmit={handleSubmit}>
-        {/* 게시판 선택 */}
         <Box mb={3}>
           <FormControl fullWidth variant="outlined">
             <InputLabel>게시판 선택</InputLabel>
@@ -159,7 +168,6 @@ function PostCreatePage() {
           </FormControl>
         </Box>
 
-        {/* FAQ 하위 카테고리 선택 (조건부 렌더링) */}
         {formData.category === "자주 묻는 질문" && (
           <Box mb={3}>
             <FormControl fullWidth variant="outlined">
@@ -180,7 +188,6 @@ function PostCreatePage() {
           </Box>
         )}
 
-        {/* 제목 입력 */}
         <Box mb={3}>
           <TextField
             fullWidth
@@ -193,7 +200,6 @@ function PostCreatePage() {
           />
         </Box>
 
-        {/* 내용 입력 */}
         <Box mb={3}>
           <TextField
             fullWidth
@@ -208,7 +214,6 @@ function PostCreatePage() {
           />
         </Box>
 
-        {/* 버튼 */}
         <Box display="flex" justifyContent="flex-end" gap={1}>
           <Button variant="contained" color="primary" type="submit">
             등록
@@ -219,7 +224,6 @@ function PostCreatePage() {
         </Box>
       </Box>
 
-      {/* 취소 확인 다이얼로그 */}
       <Dialog open={openDialog} onClose={handleCloseDialog}>
         <DialogTitle>취소 확인</DialogTitle>
         <DialogContent>

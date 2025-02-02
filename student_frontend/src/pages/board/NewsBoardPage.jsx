@@ -50,7 +50,7 @@ function NewsBoardPage() {
                         color="secondary"
                         onClick={() => navigate('/post/create')}
                     >
-                        게시물 등록
+                        게시글 등록
                     </Button>
                 </Box>
             )}

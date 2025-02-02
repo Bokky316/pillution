@@ -35,12 +35,8 @@ public class PostService {
         post.setBoard(board);
         post.setAuthorId(postDto.getAuthorId());
 
-        // category 설정
-        if (board.getName().equals("공지사항")) {
-            post.setCategory("공지사항");
-        } else if (board.getName().equals("자주 묻는 질문")) {
-            post.setCategory("FAQ");
-        }
+        // 수정된 부분 -> 프론트엔드에서 받은 카테고리로 설정
+        post.setCategory(postDto.getCategory());
 
         validatePost(post);
 

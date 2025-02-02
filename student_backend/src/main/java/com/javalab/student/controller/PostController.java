@@ -72,6 +72,12 @@ public class PostController {
         postService.deletePost(id);
         return ResponseEntity.noContent().build();
     }
+    // 게시글 삭제 (FAQ 게시글)
+    @DeleteMapping("/faq/{id}")
+    public ResponseEntity<Void> deleteFaqPost(@PathVariable("id") Long id) {
+        postService.deletePost(id);
+        return ResponseEntity.noContent().build();
+    }
 
     // FAQ 게시글 조회 (board_id = 2인 게시글만 조회)
     @GetMapping("/faq")

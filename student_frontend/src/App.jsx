@@ -11,10 +11,11 @@ import ProductDetailPage from "./pages/product/ProductDetailPage";
 import ProductListPage from "./pages/product/ProductListPage";
 import CartPage from "./pages/cart/CartPage";
 import BoardPage from "./pages/board/BoardPage";
-import NewsBoardPage from './pages/board/NewsBoardPage';
-import PostDetailPage from './pages/board/PostDetailPage';
-import PostCreatePage from './pages/board/PostCreatePage';
-import PostEditPage from './pages/board/PostEditPage';
+import NewsBoardPage from "./pages/board/NewsBoardPage";
+import FAQBoardPage from "./pages/board/FAQBoardPage";
+import PostDetailPage from "./pages/board/PostDetailPage";
+import PostCreatePage from "./pages/board/PostCreatePage";
+import PostEditPage from "./pages/board/PostEditPage";
 import Login from "./features/auth/components/Login";
 import MyPage from "./features/auth/components/MyPage";
 import RegisterMember from "./features/auth/components/RegisterMember";
@@ -104,9 +105,11 @@ function App() {
                         <Route path="/cart" element={<CartPage />} />
                         <Route path="/board/*" element={<BoardPage />} />
                         <Route path="/news" element={<NewsBoardPage />} />
+                        <Route path="/faq" element={<FAQBoardPage />} />
                         <Route path="/post/:postId" element={<PostDetailPage />} />
                         <Route path="/post/create" element={<PostCreatePage />} />
                         <Route path="/post/:postId/edit" element={<PostEditPage />} />
+                        <Route path="/faq/post/:postId/edit" element={<PostEditPage />} />
                     </Routes>
                     <Footer />
                 </div>
