@@ -121,7 +121,7 @@ public class EmailController {
                 && verificationCode.get().getCode().equals(code)
                 // 인증만료시간 체크 (생성 후 5분이내)
                 && verificationCode.get().getExpirationTime().isAfter(LocalDateTime.now())
-                // 인증코드 중복인증을 방지 하기위해 아직 인증되지 않은 경우에만 인증성공처리조건 추가 ... 어차피 인증 후 코드 삭제되어 의미없음 구현하려면 다른방법으로 구현
+            // 인증코드 중복인증을 방지 하기위해 아직 인증되지 않은 경우에만 인증성공처리조건 추가 ... 어차피 인증 후 코드 삭제되어 의미없음 구현하려면 다른방법으로 구현
             /*&&!emailVerificationService.isVerified(email)*/) {
             // 이메일 인증 성공 시, 인증 여부를 캐시에 저장
             emailVerificationService.setVerified(email);
