@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { Box, Typography, Button, CircularProgress, Container, Grid, Card, CardContent, CardMedia } from "@mui/material";
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Button, CircularProgress } from "@mui/material";
-import QuestionComponent from './QuestionComponent';
-import { fetchCategories, fetchQuestions, submitSurvey, updateResponse } from '../redux/surveySlice';
-import { validateResponses } from './surveyUtils';
+import QuestionComponent from '@features/survey/QuestionComponent';
+import { fetchCategories, fetchQuestions, submitSurvey } from '@features/survey/surveyApi';
+import { validateResponses } from '@features/survey/surveyUtils';
+
 
 const SurveyPage = () => {
   const dispatch = useDispatch();

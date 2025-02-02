@@ -1,5 +1,5 @@
-import { fetchWithAuth } from '../common/fetchWithAuth';
-import { API_URL } from '../constant';
+import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
+import { API_URL } from '@/constant';
 
 export const fetchCategories = async () => {
   const response = await fetchWithAuth(`${API_URL}survey/categories`);
