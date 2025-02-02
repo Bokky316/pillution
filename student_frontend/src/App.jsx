@@ -1,24 +1,22 @@
-import React, { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Link, Navigate } from "react-router-dom";
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from '@mui/material/styles';
-import { AppBar, Toolbar, Typography, Button } from '@mui/material';
-import theme from './theme';
-import Header from "./component/layout/Header";
-import Footer from "./component/layout/Footer";
-import './App.css';
-import RecommendationPage from "./pages/survey/RecommendationPage";
-import SurveyPage from "./pages/survey/SurveyPage";
-import ProductDetailPage from "./pages/product/ProductDetailPage";
-import ProductListPage from "./pages/product/ProductListPage";
-import CartPage from "./pages/cart/CartPage";
-import Login from "./features/auth/components/Login";
-import MyPage from "./features/auth/components/MyPage";
-import RegisterMember from "./features/auth/components/RegisterMember";
-import { API_URL } from "./constant";
-import { fetchWithAuth } from "./features/auth/utils/fetchWithAuth";
-import { fetchUserInfo, clearUser } from "./redux/authSlice";
-import { persistor } from "./redux/store";
+import theme from '@/theme';
+import Header from "@components/layout/Header";
+import Footer from "@components/layout/Footer";
+import '@/App.css';
+import RecommendationPage from "@/pages/survey/RecommendationPage";
+import SurveyPage from "@/pages/survey/SurveyPage";
+import ProductDetailPage from "@/pages/product/ProductDetailPage";
+import ProductListPage from "@/pages/product/ProductListPage";
+import CartPage from "@/pages/cart/CartPage";
+import Login from "@features/auth/components/Login";
+import MyPage from "@features/auth/components/MyPage";
+import RegisterMember from "@features/auth/components/RegisterMember";
+import { API_URL } from "@/constant";
+import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
+import { setTokenAndUser, getUserFromLocalStorage, removeAuthData } from "@features/auth/utils/authUtil";
+
 
 /**
  * App 컴포넌트
