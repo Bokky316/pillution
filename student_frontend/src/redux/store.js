@@ -3,6 +3,7 @@ import { persistStore, persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import authReducer from "./authSlice";
 import surveyReducer from "./surveySlice";
+import uiReducer from './uiSlice';
 
 /**
  * Redux Persist 설정
@@ -49,6 +50,7 @@ const persistedReducer = persistReducer(persistConfig, rootReducer);
  */
 export const store = configureStore({
     reducer: persistedReducer,
+    ui: uiReducer
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
             serializableCheck: {
