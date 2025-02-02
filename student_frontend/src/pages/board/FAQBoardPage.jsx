@@ -114,7 +114,7 @@ function FAQBoardPage() {
                                                     whiteSpace: "pre-wrap"
                                                 }}
                                             >
-                                                - {post.content}
+                                                {post.content}
                                             </Typography>
                                         )}
                                     </TableCell>
