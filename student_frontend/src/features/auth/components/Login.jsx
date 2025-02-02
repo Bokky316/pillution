@@ -102,6 +102,26 @@ export default function Login({ onLogin }) {
                 <Button variant="contained" onClick={handleLogin}>
                     로그인
                 </Button>
+
+                 {/* ✅ 카카오 로그인 버튼 - href로 Spring Boot OAuth2 엔드포인트 연결 */}
+                                <div className="social-login" style={{ width: "100%", textAlign: "center" }}>
+                                    <p>소셜 계정으로 로그인</p>
+                                    <a
+                                        href={`${API_URL}oauth2/authorization/kakao`}
+                                        style={{
+                                            display: "inline-block",
+                                            backgroundColor: "#FEE500",
+                                            color: "#000",
+                                            padding: "10px 20px",
+                                            borderRadius: "5px",
+                                            textDecoration: "none",
+                                            fontWeight: "bold",
+                                        }}
+                                    >
+                                        카카오로 로그인
+                                    </a>
+                                </div>
+
                 <Button variant="outlined" onClick={() => navigate("/registerMember")}>
                     회원가입
                 </Button>
