@@ -1,14 +1,23 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { AppBar, Toolbar, Button, IconButton, Menu, MenuItem, Box, Typography } from "@mui/material";
 import MenuIcon from '@mui/icons-material/Menu';
 import { Link } from "react-router-dom";
 import "../../assets/styles/header.css";
 
-const Header = ({ isLoggedIn, loggedInUser, handleLogout }) => {
-    const [anchorEl, setAnchorEl] = useState(null);
+const Header = ({ handleLogout }) => {
+    const dispatch = useDispatch();
+    const { user, isLoggedIn } = useSelector(state => state.auth);
 
-    const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
-    const handleMenuClose = () => setAnchorEl(null);
+    const handleMenuOpen = (event) => {
+        dispatch({ type: 'SET_MENU_ANCHOR', payload: event.currentTarget });
+    };
+
+    const handleMenuClose = () => {
+        dispatch({ type: 'SET_MENU_ANCHOR', payload: null });
+    };
+
+    const menuAnchorEl = useSelector(state => state.ui.menuAnchorEl);
 
     return (
         <AppBar position="static" className="nav-bar" sx={{
@@ -40,8 +49,8 @@ const Header = ({ isLoggedIn, loggedInUser, handleLogout }) => {
                         <MenuIcon />
                     </IconButton>
                     <Menu
-                        anchorEl={anchorEl}
-                        open={Boolean(anchorEl)}
+                        anchorEl={menuAnchorEl}
+                        open={Boolean(menuAnchorEl)}
                         onClose={handleMenuClose}
                     >
                         <MenuItem onClick={handleMenuClose} component={Link} to="/productList">상품</MenuItem>
@@ -67,14 +76,17 @@ const Header = ({ isLoggedIn, loggedInUser, handleLogout }) => {
                     {isLoggedIn ? (
                         <>
                             <Typography variant="body1" sx={{ mr: 2 }}>
-                                {loggedInUser.name}
-                                {loggedInUser.roles?.includes("ROLE_ADMIN") ? " (관리자)" : " (사용자)"}
-                            </Typography>
-                            <Button color="inherit" component={Link} to="/mypage">마이페이지</Button>
-                            <Button color="inherit" onClick={handleLogout}>로그아웃</Button>
+                                {user?.name}
+                                {user?.roles?.includes("ROLE_ADMIN") ? " (관리자)" : " (사용자)"}
+                                  </Typography>
+                                  <Button color="inherit" component={Link} to="/mypage">마이페이지</Button>
+                                  <Button color="inherit" onClick={handleLogout}>로그아웃</Button>
                         </>
                     ) : (
-                        <Button color="inherit" component={Link} to="/login">로그인</Button>
+                        <>
+                            <Button color="inherit" component={Link} to="/login" sx={{ mr: 1 }}>로그인</Button>
+                            <Button color="inherit" component={Link} to="/register">회원가입</Button>
+                        </>
                     )}
                 </Box>
             </Toolbar>
