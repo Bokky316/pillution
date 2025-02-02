@@ -80,18 +80,65 @@ function App() {
     };
 
     return (
-        <ThemeProvider theme={theme}>
-            <Router>
-                <div className="App">
-                    <Header
-                        isLoggedIn={isLoggedIn}
-                        loggedInUser={loggedInUser}
-                        handleLogout={handleLogout}
-                    />
+            <div className="App">
+                {/*헤더 부분*/}
+                <AppBar position="static">
+                    <Toolbar>
+                        <Typography variant="h3" style={{ flexGrow: 1 }}>
+                            <Button color="inherit" component={Link} to="/">홈</Button>
+                            <Button color="inherit" component={Link} to="/listStudent">학생목록</Button>
+                            {isLoggedIn && user?.roles?.includes("ROLE_ADMIN") && (
+                                <Button color="inherit" component={Link} to="/addStudent">학생 등록</Button>
+                            )}
+                            {isLoggedIn && (
+                                <Button color="inherit" component={Link} to={`/mypage/${user?.id}`}>
+                                    마이페이지
+                                </Button>
+                            )}
+
+                        </Typography>
+                        {isLoggedIn ? (
+                            <>
+                                <Typography
+                                    variant="body1"
+                                    style={{ marginRight: "10px", fontSize: "14px" }}
+                                >
+                                    {user.name}{" "}
+                                    {user.roles?.includes("ROLE_ADMIN") ? "(관리자)" : "(사용자)"}
+                                </Typography>
+                                <Button color="inherit" onClick={handleLogout}>로그아웃</Button>
+                            </>
+                        ) : (
+                            <Button color="inherit" component={Link} to="/login">로그인</Button>
+                        )}
+                    </Toolbar>
+                </AppBar>
+                    {/*라우팅 부분*/}
                     <Routes>
-                        <Route path="/login" element={<Login onLogin={handleLogin} />} />
+                        <Route path="/" element={<Home />} />
+                        <Route path="/listStudent" element={<StudentList />} />
+                        <Route
+                            path="/addStudent"
+                            element={
+                                user?.roles?.includes("ROLE_ADMIN") ? (
+                                    <AddStudent />
+                                ) : (
+                                    <Navigate to="/unauthorized" replace />
+                                )
+                            }
+                        />
+                        <Route path="/viewStudent/:id" element={<ViewStudent />} />
+                        {isLoggedIn && user?.roles?.includes("ROLE_ADMIN") && (
+                            <>
+                                <Route path="/editStudent/:id" element={<EditStudent />} />
+                            </>
+                        )}
                         <Route path="/registerMember" element={<RegisterMember />} />
-                        <Route path="/mypage" element={<MyPage />} />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/mypage/:id" element={<MyPage />} />
+                        {/* React Router는 상단부터 Routes에 정의된 Route를 순차적으로 검사. 모든 요청을 UnauthorizedPage로 리디렉션, 위에서 부터 순차적으로 진행됨 */}
+                        {/*<Route path="*" element={<UnauthorizedPage />} />*/}
+                        <Route path="/unauthorized" element={<UnauthorizedPage />} />
                         <Route path="/recommendation" element={<RecommendationPage />} />
                         <Route path="/survey" element={<SurveyPage />} />
                         <Route path="/products" element={<ProductListPage />} />

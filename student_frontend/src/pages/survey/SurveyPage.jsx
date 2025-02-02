@@ -1,66 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Button, CircularProgress } from "@mui/material";
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import QuestionComponent from '@features/survey/QuestionComponent';
-import { fetchCategories, fetchQuestions, submitSurvey } from '@features/survey/surveyApi';
-import { validateResponses } from '@features/survey/surveyUtils';
+import { Box, Typography, Button, CircularProgress } from "@mui/material";
+import QuestionComponent from './QuestionComponent';
+import { fetchCategories, fetchQuestions, submitSurvey, updateResponse } from '../redux/surveySlice';
+import { validateResponses } from './surveyUtils';
 
 const SurveyPage = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { responses, loading, error } = useSelector(state => state.survey);
   const [categories, setCategories] = useState([]);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   const [currentSubCategoryIndex, setCurrentSubCategoryIndex] = useState(0);
   const [questions, setQuestions] = useState([]);
-  const [responses, setResponses] = useState({});
-  const [selectedSymptoms, setSelectedSymptoms] = useState([]);
   const [gender, setGender] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const navigate = useNavigate();
+  const [selectedSymptoms, setSelectedSymptoms] = useState([]);
 
   useEffect(() => {
-    fetchCategories(setCategories, setError, setIsLoading, currentCategoryIndex, currentSubCategoryIndex, fetchQuestions, setQuestions);
-  }, []);
+    dispatch(fetchCategories()).then(action => {
+      if (fetchCategories.fulfilled.match(action)) {
+        setCategories(action.payload);
+      }
+    });
+  }, [dispatch]);
 
   useEffect(() => {
-    console.log('Current responses:', responses);
-  }, [responses]);
+    if (categories.length > 0) {
+      const currentCategory = categories[currentCategoryIndex];
+      if (currentCategory?.subCategories?.length > 0) {
+        const subCategoryId = currentCategory.subCategories[currentSubCategoryIndex].id;
+        dispatch(fetchQuestions(subCategoryId)).then(action => {
+          if (fetchQuestions.fulfilled.match(action)) {
+            setQuestions(action.payload);
+          }
+        });
+      }
+    }
+  }, [dispatch, categories, currentCategoryIndex, currentSubCategoryIndex]);
 
   const handleResponseChange = (questionId, value) => {
-    setResponses(prev => {
-      const newResponses = { ...prev, [questionId]: value };
-      console.log('Updated responses:', newResponses);
+    dispatch(updateResponse({ questionId, answer: value }));
 
-      if (questionId === 2) {
-        const newGender = value === '1' ? 'female' : 'male';
-        setGender(newGender);
-        console.log("Gender set to:", newGender);
-        fetchCategories(setCategories, setError, setIsLoading, currentCategoryIndex, currentSubCategoryIndex, fetchQuestions, setQuestions);
-      }
-
-      const symptomsQuestion = questions.find(q => q.questionText.includes('최대 3가지'));
-      if (symptomsQuestion && questionId === symptomsQuestion.id) {
-        setSelectedSymptoms(Array.isArray(value) ? value : []);
-      }
-
-      return newResponses;
-    });
-  };
-
-  const shouldSkipSubCategory = (category, subCategory) => {
-    console.log("Checking skip for:", category.name, subCategory.name, "Gender:", gender);
-    if (category.name === "3. 생활 습관") {
-      if (gender === 'female' && subCategory.name === "남성건강") return true;
-      if (gender === 'male' && subCategory.name === "여성건강") return true;
+    if (questionId === 2) {
+      const newGender = value === '1' ? 'female' : 'male';
+      setGender(newGender);
     }
-    return false;
+
+    const symptomsQuestion = questions.find(q => q.questionText.includes('최대 3가지'));
+    if (symptomsQuestion && questionId === symptomsQuestion.id) {
+      setSelectedSymptoms(Array.isArray(value) ? value : []);
+    }
   };
 
   const handleNext = () => {
-    if (!questions || questions.length === 0) {
-      console.error('No questions available');
-      return;
-    }
-
     if (!validateResponses(questions, responses)) {
       alert('모든 질문에 답해주세요.');
       return;
@@ -84,9 +77,6 @@ const SurveyPage = () => {
             sub.name === "추가 증상" ||
             selectedMainSymptoms.includes(sub.name)
           );
-
-          console.log("Selected main symptoms:", selectedMainSymptoms);
-          console.log("Filtered subcategories:", filteredSubCategories);
 
           setCategories(prevCategories => {
             const newCategories = [...prevCategories];
@@ -114,25 +104,17 @@ const SurveyPage = () => {
 
     if (nextSubCategoryIndex < currentCategory.subCategories.length) {
       setCurrentSubCategoryIndex(nextSubCategoryIndex);
-      fetchQuestions(currentCategory.subCategories[nextSubCategoryIndex].id, setQuestions, setError, setIsLoading);
     } else if (currentCategoryIndex < categories.length - 1) {
       setCurrentCategoryIndex(prev => prev + 1);
       setCurrentSubCategoryIndex(0);
-      const nextCategory = categories[currentCategoryIndex + 1];
-      if (nextCategory?.subCategories?.length > 0) {
-        fetchQuestions(nextCategory.subCategories[0].id, setQuestions, setError, setIsLoading);
-      }
     } else {
-      console.log('Submitting responses:', responses);
-      if (Object.keys(responses).length === 0) {
-        setError('응답이 없습니다. 모든 질문에 답해주세요.');
-        return;
-      }
-      submitSurvey(responses, navigate);
+      dispatch(submitSurvey(responses)).then(() => {
+        navigate('/recommendation');
+      });
     }
   };
 
-  if (isLoading) return <CircularProgress />;
+  if (loading) return <CircularProgress />;
   if (error) return <Typography color="error">{error}</Typography>;
 
   const currentCategory = categories[currentCategoryIndex];
@@ -156,7 +138,7 @@ const SurveyPage = () => {
         variant="contained"
         onClick={handleNext}
         sx={{ mt: 2 }}
-        disabled={isLoading}
+        disabled={loading}
       >
         {isLastPage ? '제출' : '다음'}
       </Button>
