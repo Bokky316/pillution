@@ -76,11 +76,11 @@ const Header = ({ handleLogout }) => {
                     {isLoggedIn ? (
                         <>
                             <Typography variant="body1" sx={{ mr: 2 }}>
-                                {user.name}
-                                {user.roles?.includes("ROLE_ADMIN") ? " (관리자)" : " (사용자)"}
-                            </Typography>
-                            <Button color="inherit" component={Link} to="/mypage">마이페이지</Button>
-                            <Button color="inherit" onClick={handleLogout}>로그아웃</Button>
+                                {user?.name}
+                                {user?.roles?.includes("ROLE_ADMIN") ? " (관리자)" : " (사용자)"}
+                                  </Typography>
+                                  <Button color="inherit" component={Link} to="/mypage">마이페이지</Button>
+                                  <Button color="inherit" onClick={handleLogout}>로그아웃</Button>
                         </>
                     ) : (
                         <>

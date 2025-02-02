@@ -1,10 +1,11 @@
-import { configureStore, combineReducers } from "@reduxjs/toolkit";
+
+import { configureStore } from "@reduxjs/toolkit";
 import { persistStore, persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
+import { combineReducers } from 'redux';
 import authReducer from "./authSlice";
 import surveyReducer from "./surveySlice";
 import uiReducer from './uiSlice';
-
 /**
  * Redux Persist 설정
  * - redux-persist를 사용하여 redux store를 생성하고 설정하는 역할
@@ -18,13 +19,13 @@ import uiReducer from './uiSlice';
 /**  Redux Persist의 설정을 정의합니다.
  * - key : localStorage에 저장될 키 이름을 지정합니다.
  * - storage: 상태를 저장할 스토리지를 정의합니다. 여기서는 localStorage를 사용합니다.
- * - whitelist: Redux의 어떤 리듀서를 저장할지 결정합니다. 여기서는 auth만 저장합니다.
+ * - whitelist: Redux의 어떤 리듀서를 저장할지 결정합니다. 여기서는 auth, survey를 저장합니다.
  * @type {{storage, whitelist: string[], version: number, key: string}}
  */
 const persistConfig = {
     key: "root",
-    storage, // 로컬스토리지를 사용하여 Redux 상태 저장
-    whitelist: ["auth", "survey"], // auth, survey 저장하도록 지정
+    storage,
+    whitelist: ["auth", "survey", "ui"],
 };
 
 /**
@@ -33,8 +34,9 @@ const persistConfig = {
  * - authReducer: authSlice에서 가져온 리듀서를 Redux persist 대상으로 포함
  */
 const rootReducer = combineReducers({
-    auth: authReducer, // auth 리듀서를 Redux persist 대상에 포함, 이렇게 포함시키면 auth 상태가 localStorage에 저장됨. 즉, authSlice에서 내보낸 authReducer를 rootReducer에 포함시켜서 Redux Persist에 저장하도록 설정
+    auth: authReducer,
     survey: surveyReducer,
+    ui: uiReducer
 });
 
 /**
@@ -50,7 +52,6 @@ const persistedReducer = persistReducer(persistConfig, rootReducer);
  */
 export const store = configureStore({
     reducer: persistedReducer,
-    ui: uiReducer
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
             serializableCheck: {
@@ -58,6 +59,7 @@ export const store = configureStore({
             },
         }),
 });
+
 
 /**
  * Redux Persistor 생성

@@ -1,13 +1,13 @@
 import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Link, Navigate } from "react-router-dom";
 import { ThemeProvider } from '@mui/material/styles';
 import '@/App.css';
 import theme from '@/theme';
 import Header from "@components/layout/Header";
 import Footer from "@components/layout/Footer";
 import { setUser, clearUser, fetchUserInfo } from "@/redux/authSlice";
-import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
+import { fetchWithoutAuth } from "@features/auth/utils/fetchWithAuth";
 import RecommendationPage from "@/pages/survey/RecommendationPage";
 import SurveyPage from "@/pages/survey/SurveyPage";
 import ProductDetailPage from "@/pages/product/ProductDetailPage";
@@ -19,6 +19,9 @@ import RegisterMember from "@features/auth/components/RegisterMember";
 import UnauthorizedPage from "@features/auth/components/UnAuthorizedPage";
 import Home from "@features/auth/components/Home";
 import { API_URL } from "@/constant";
+import { PersistGate } from "redux-persist/integration/react";
+import { persistor } from "@/redux/store";
+
 
 
 
@@ -51,9 +54,12 @@ import { API_URL } from "@/constant";
  * @returns App 컴포넌트 JSX
  */
 function App() {
+    console.log("App 컴포넌트 렌더링");
     // 리덕스 스토어의 상태를 가져오기 위해 useSelector 훅 사용, auth 슬라이스에서 user, isLoggedIn 상태를 가져옴
     // user: 사용자 정보 객체, isLoggedIn: 로그인 여부
     const { user, isLoggedIn } = useSelector((state) => state.auth);
+    console.log("Redux 상태:", { user, isLoggedIn });
+
     const dispatch = useDispatch();
 
     useEffect(() => {
@@ -79,11 +85,10 @@ function App() {
 
     return (
         <ThemeProvider theme={theme}>
-            <BrowserRouter>
                 <div className="App">
                     <Header
                         isLoggedIn={isLoggedIn}
-                        userName={userName}
+                        user={user}
                         handleLogout={handleLogout}
                     />
                     <Routes>
@@ -100,9 +105,9 @@ function App() {
                     </Routes>
                     <Footer />
                 </div>
-            </BrowserRouter>
         </ThemeProvider>
     );
 }
+
 
 export default App;

@@ -16,15 +16,20 @@ import { PersistGate } from 'redux-persist/integration/react'; // PersistGate �
  * - loading={null}은 로드 중일 때 표시할 UI를 지정합니다. 필요 시 로딩 스피너를 넣을 수 있습니다.
  */
 
+console.log("main.jsx 실행 시작");
+
 createRoot(document.getElementById('root')).render(
-    <Provider store={store}>
-        <PersistGate loading={null} persistor={persistor}>
-            <BrowserRouter>
-                <App />
-            </BrowserRouter>
-        </PersistGate>
-    </Provider>
+        <Provider store={store}>
+            <PersistGate loading={null} persistor={persistor}>
+                <BrowserRouter>
+                    <App />
+                </BrowserRouter>
+            </PersistGate>
+        </Provider>
 )
+
+console.log("main.jsx 렌더링 완료");
+console.log("Initial Redux State:", store.getState());
 
 persistor.subscribe(() => {
     console.log("main.jsx Persistor 상태:", store.getState());
