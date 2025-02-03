@@ -5,28 +5,30 @@ import { combineReducers } from 'redux';
 import authReducer from "./authSlice";
 import surveyReducer from "./surveySlice";
 import uiReducer from './uiSlice';
+import recommendationReducer from "./recommendationSlice";  // 추가된 부분
 
 /**
  * Redux Persist 설정을 정의합니다.
  * - key : localStorage에 저장될 키 이름을 지정합니다.
  * - storage: 상태를 저장할 스토리지를 정의합니다. 여기서는 localStorage를 사용합니다.
- * - whitelist: Redux의 어떤 리듀서를 저장할지 결정합니다. 여기서는 auth, survey를 저장합니다.
+ * - whitelist: Redux의 어떤 리듀서를 저장할지 결정합니다. 여기서는 auth, survey, ui, recommendations를 저장합니다.
  */
 const persistConfig = {
     key: "root",
     storage,
-    whitelist: ["auth", "survey", "ui"],
+    whitelist: ["auth", "survey", "ui", "recommendations"],  // recommendations 추가
 };
 
 /**
  * 루트 리듀서 생성
  * - combineReducers를 사용하여 여러 리듀서를 하나로 병합
- * - authReducer, surveyReducer, uiReducer를 통합
+ * - authReducer, surveyReducer, uiReducer, recommendationReducer를 통합
  */
 const rootReducer = combineReducers({
     auth: authReducer,
     survey: surveyReducer,
-    ui: uiReducer
+    ui: uiReducer,
+    recommendations: recommendationReducer  // 추가된 부분
 });
 
 /**

@@ -107,6 +107,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/members/register", "/api/members/checkEmail").permitAll()
                 .requestMatchers("/api/email/send", "/api/email/verify").permitAll()
                 .requestMatchers("/api/survey/**").permitAll()
+                .requestMatchers("/api/recommendations/**").authenticated()
                 .requestMatchers("/members/login").permitAll()
 
                 // 관리자 전용 엔드포인트

@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, createAction } from '@reduxjs/toolkit';
-import { fetchWithAuth } from '@/features/auth/utils/fetchWithAuth';
+import { fetchWithAuth } from '@features/auth/utils/fetchWithAuth';
 import { SERVER_URL } from "@/constant";
 
 export const fetchCategories = createAsyncThunk(

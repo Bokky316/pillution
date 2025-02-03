@@ -1,53 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
-import { API_URL } from '@/constant';
-
-const fetchRecommendations = async () => {
-  try {
-    const response = await fetchWithAuth(`${API_URL}recommendations`);
-    if (!response.ok) {
-      throw new Error('추천 데이터를 불러오는데 실패했습니다.');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('추천 데이터 조회 실패:', error);
-    throw error;
-  }
-};
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { Container, Typography, CircularProgress } from '@mui/material';
+import { fetchRecommendations } from '@/redux/recommendationSlice';
+import RecommendationSection from '@/features/survey/RecommendationSection';
 
 const RecommendationPage = () => {
-  const [recommendations, setRecommendations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  const { items, loading, error } = useSelector((state) => state.recommendations);
 
   useEffect(() => {
-    const loadRecommendations = async () => {
-      try {
-        setLoading(true);
-        const data = await fetchRecommendations();
-        setRecommendations(data);
-      } catch (err) {
-        setError(err.message || '추천 데이터를 불러오는데 실패했습니다.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadRecommendations();
-  }, []);
+    dispatch(fetchRecommendations());
+  }, [dispatch]);
 
-  if (loading) return <div>로딩 중...</div>;
-  if (error) return <div>에러: {error}</div>;
+  console.log('Recommendations:', items);
+
+  if (loading) {
+    return <CircularProgress />;
+  }
+
+  if (error) {
+    console.error('Error fetching recommendations:', error);
+    return <Typography color="error">추천 항목을 불러오는 데 실패했습니다: {error}</Typography>;
+  }
+
+  if (!items || (!items.essential && !items.additional)) {
+    return <Typography>추천 항목이 없습니다.</Typography>;
+  }
 
   return (
-    <div>
-      <h1>추천 결과</h1>
-      {recommendations.map((recommendation, index) => (
-        <div key={index}>
-          <h2>{recommendation.title}</h2>
-          <p>{recommendation.description}</p>
-        </div>
-      ))}
-    </div>
+    <Container>
+      <Typography variant="h4" gutterBottom>
+        추천 제품
+      </Typography>
+      <RecommendationSection title="필수 추천 제품" products={items.essential || []} />
+      <RecommendationSection title="추가 추천 제품" products={items.additional || []} />
+    </Container>
   );
 };
 
