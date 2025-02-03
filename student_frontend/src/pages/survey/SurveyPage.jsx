@@ -1,30 +1,9 @@
-<<<<<<< HEAD
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-=======
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Box, Typography, Button, CircularProgress } from "@mui/material";
->>>>>>> a0b50619fbdc91cdec82c215801f385839f43d9b
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Button, CircularProgress } from "@mui/material";
 import { fetchCategories, fetchQuestions, updateResponse, setCurrentCategoryIndex, setCurrentSubCategoryIndex, submitSurvey, filterSubCategories } from '@/redux/surveySlice';
 import QuestionComponent from '@features/survey/QuestionComponent';
-<<<<<<< HEAD
-=======
-import {
-  fetchCategories,
-  fetchQuestions,
-  submitSurvey,
-  updateResponse,
-  setGender,
-  setSelectedSymptoms,
-  setCurrentCategoryIndex,
-  setCurrentSubCategoryIndex,
-  setCategories
-} from '@/redux/surveySlice';
-import { validateResponses } from '@features/survey/surveyUtils';
->>>>>>> a0b50619fbdc91cdec82c215801f385839f43d9b
 
 const SurveyPage = () => {
   const dispatch = useDispatch();
@@ -35,29 +14,23 @@ const SurveyPage = () => {
     currentSubCategoryIndex,
     questions,
     responses,
-<<<<<<< HEAD
     categoriesLoading,
     questionsLoading,
     categoriesError,
     questionsError,
-    gender
+    gender,
+    filteredSubCategories
   } = useSelector(state => state.survey);
 
   const [selectedSymptoms, setSelectedSymptoms] = useState([]);
-=======
-    loading,
-    error,
-    gender,
-    selectedSymptoms
-  } = useSelector(state => state.survey);
->>>>>>> a0b50619fbdc91cdec82c215801f385839f43d9b
 
+  // 컴포넌트 마운트 시 카테고리 데이터 로드
   useEffect(() => {
     dispatch(fetchCategories());
   }, [dispatch]);
 
+  // 카테고리 또는 서브카테고리 변경 시 질문 데이터 로드
   useEffect(() => {
-<<<<<<< HEAD
     if (categories.length > 0 && currentCategoryIndex !== null && currentSubCategoryIndex !== null) {
       const subCategoryId = categories[currentCategoryIndex]?.subCategories?.[currentSubCategoryIndex]?.id;
       if (subCategoryId) {
@@ -66,144 +39,83 @@ const SurveyPage = () => {
     }
   }, [dispatch, categories, currentCategoryIndex, currentSubCategoryIndex]);
 
-  const handleResponseChange = (questionId, value) => {
-    const question = questions.find(q => q.id === questionId);
-
-    if (question.questionType === 'MULTIPLE_CHOICE') {
-      if (!Array.isArray(value)) value = [value];
-
-      // 주요 증상 질문에 대해서만 최대 3개 선택 제한 적용
-      const isMainSymptomQuestion = question.questionText.includes('주요 증상') || question.questionText.includes('불편하거나 걱정되는 것');
-      if (isMainSymptomQuestion && value.length > 3) {
-        value = value.slice(0, 3);
-      }
-
-      // 마지막 선택지 처리 (모든 멀티플 선택 질문에 적용)
-      const lastOptionId = question.options[question.options.length - 1].id.toString();
-      if (value.includes(lastOptionId)) {
-        value = [lastOptionId];
-      }
+  // 선택한 증상에 따른 서브카테고리 필터링
+  useEffect(() => {
+    if (categories[currentCategoryIndex]?.name === "2. 증상·불편" && selectedSymptoms.length > 0) {
+      dispatch(filterSubCategories(selectedSymptoms));
     }
+  }, [selectedSymptoms, categories, currentCategoryIndex, dispatch]);
 
-    dispatch(updateResponse({ questionId, answer: value }));
-
-    // 주요 증상 설정 (최대 3개로 제한)
-    if (question.questionText.includes('주요 증상') || question.questionText.includes('불편하거나 걱정되는 것')) {
-      setSelectedSymptoms(Array.isArray(value) ? value.slice(0, 3) : [value]);
+  // 렌더링 중 상태 업데이트 오류 해결을 위한 useEffect
+  useEffect(() => {
+    const currentCategory = categories[currentCategoryIndex];
+    const currentSubCategory = currentCategory?.subCategories?.[currentSubCategoryIndex];
+    if (!currentCategory || !currentSubCategory || shouldSkipSubCategory(currentCategory, currentSubCategory)) {
+      handleNext();
     }
-  };
+  }, [categories, currentCategoryIndex, currentSubCategoryIndex, gender]);
 
+  // 응답 변경 처리 함수
+ const handleResponseChange = (questionId, value) => {
+   dispatch(updateResponse({ questionId, answer: value }));
+
+   const question = questions.find(q => q.id === questionId);
+   if (question && (question.questionText.includes('주요 증상') || question.questionText.includes('불편하거나 걱정되는 것'))) {
+     const newSelectedSymptoms = Array.isArray(value) ? value.slice(0, 3) : [value];
+     setSelectedSymptoms(newSelectedSymptoms);
+     dispatch(filterSubCategories(newSelectedSymptoms));
+   }
+ };
+
+
+  // 다음 질문으로 이동 또는 설문 제출 처리 함수
   const handleNext = () => {
     const currentCategory = categories[currentCategoryIndex];
+    const subCategoriesToUse = filteredSubCategories || currentCategory?.subCategories;
 
-    // 주요 증상에 따른 서브카테고리 필터링
-    if (currentCategory?.name === "2. 증상·불편") {
-      const mainSymptomSubCategory = currentCategory.subCategories.find(sub => sub.name === "주요 증상");
-      if (mainSymptomSubCategory && currentSubCategoryIndex === currentCategory.subCategories.indexOf(mainSymptomSubCategory)) {
-        dispatch(filterSubCategories(selectedSymptoms));
-=======
-    if (categories.length > 0 && categories[currentCategoryIndex]?.subCategories?.length > 0) {
-      const subCategoryId = categories[currentCategoryIndex].subCategories[currentSubCategoryIndex].id;
-      dispatch(fetchQuestions(subCategoryId));
-    }
-  }, [dispatch, categories, currentCategoryIndex, currentSubCategoryIndex]);
-
-const handleResponseChange = (questionId, value) => {
-  console.log(`Response changed for question ${questionId}:`, value);
-
-  dispatch(updateResponse({ questionId, answer: value }));
-
-  const currentQuestion = questions.find(q => q.id === questionId);
-
-  if (currentQuestion?.questionText.includes('성별')) {
-    const newGender = value === 1 ? 'female' : 'male';
-    dispatch(setGender(newGender));
-  } else if (currentQuestion?.questionText.includes('최대 3가지')) {
-    dispatch(setSelectedSymptoms(Array.isArray(value) ? value : []));
-  }
-};
-
-
-
-  const handleNext = async () => {
-    if (!validateResponses(questions, responses)) {
-      alert('모든 질문에 답해주세요.');
-      return;
-    }
-
-    const currentCategory = categories[currentCategoryIndex];
-
-    if (currentCategory?.name === "2. 증상·불편") {
-      const mainSymptomQuestion = questions.find(q => q.questionText.includes('불편하거나 걱정되는 것'));
-      if (mainSymptomQuestion) {
-        const selectedMainSymptomIds = responses[mainSymptomQuestion.id] || [];
-        if (selectedMainSymptomIds.length > 0) {
-          const selectedMainSymptoms = mainSymptomQuestion.options
-            .filter(opt => selectedMainSymptomIds.includes(opt.id.toString()))
-            .map(opt => opt.optionText);
-
-          const filteredSubCategories = currentCategory.subCategories.filter(sub =>
-            sub.name === "주요 증상" ||
-            sub.name === "추가 증상" ||
-            selectedMainSymptoms.includes(sub.name)
-          );
-
-          dispatch(setCategories(categories.map((cat, index) =>
-            index === currentCategoryIndex
-              ? {...cat, subCategories: filteredSubCategories}
-              : cat
-          )));
-
-          dispatch(setCurrentSubCategoryIndex(0));
-          return;
-        }
-      }
-    }
-
-    let nextSubCategoryIndex = currentSubCategoryIndex + 1;
-    while (nextSubCategoryIndex < currentCategory?.subCategories?.length) {
-      const nextSubCategory = currentCategory.subCategories[nextSubCategoryIndex];
-      if (currentCategory.name === "3. 생활 습관") {
-        if ((gender === 'female' && nextSubCategory.name === "남성건강") ||
-            (gender === 'male' && nextSubCategory.name === "여성건강")) {
-          nextSubCategoryIndex++;
-          continue;
-        }
->>>>>>> a0b50619fbdc91cdec82c215801f385839f43d9b
-      }
-    }
-
-<<<<<<< HEAD
-    if (currentSubCategoryIndex < currentCategory.subCategories.length - 1) {
-      dispatch(setCurrentSubCategoryIndex(currentSubCategoryIndex + 1));
-=======
-    if (nextSubCategoryIndex < currentCategory?.subCategories?.length) {
-      dispatch(setCurrentSubCategoryIndex(nextSubCategoryIndex));
->>>>>>> a0b50619fbdc91cdec82c215801f385839f43d9b
-    } else if (currentCategoryIndex < categories.length - 1) {
-      dispatch(setCurrentCategoryIndex(currentCategoryIndex + 1));
-      dispatch(setCurrentSubCategoryIndex(0));
-    } else {
-<<<<<<< HEAD
+    if (currentCategoryIndex === categories.length - 1 &&
+        currentSubCategoryIndex === subCategoriesToUse.length - 1) {
+      // 응답 데이터를 서버 형식에 맞게 변환
       const formattedResponses = Object.entries(responses).map(([questionId, answer]) => {
         const question = questions.find(q => q.id.toString() === questionId);
         return {
-          questionId: parseInt(questionId),
+          questionId: parseInt(questionId, 10),
           responseType: question.questionType,
           responseText: question.questionType === 'TEXT' ? answer : null,
-          selectedOptions: question.questionType === 'MULTIPLE_CHOICE' ?
+          selectedOptions: ['MULTIPLE_CHOICE', 'SINGLE_CHOICE'].includes(question.questionType) ?
             (Array.isArray(answer) ? answer : [answer]) : null
         };
       });
 
+      console.log("Formatted Responses for Submission:", formattedResponses);
+
+      // 설문 제출 액션 디스패치
       dispatch(submitSurvey({ responses: formattedResponses }))
         .unwrap()
         .then(() => navigate('/survey-complete'))
-        .catch(error => console.error('Survey submission failed:', error));
+        .catch(error => {
+          console.error('Survey submission failed:', error);
+          alert('설문 제출 중 오류가 발생했습니다. 다시 시도해주세요.');
+        });
+    } else {
+      handleNextCategoryOrSubCategory();
     }
   };
 
-  // 성별에 따른 서브카테고리 스킵
+  // 다음 카테고리 또는 서브카테고리로 이동
+  const handleNextCategoryOrSubCategory = () => {
+    const currentCategory = categories[currentCategoryIndex];
+    const subCategoriesToUse = filteredSubCategories || currentCategory?.subCategories;
+
+    if (currentSubCategoryIndex < subCategoriesToUse.length - 1) {
+      dispatch(setCurrentSubCategoryIndex(currentSubCategoryIndex + 1));
+    } else if (currentCategoryIndex < categories.length - 1) {
+      dispatch(setCurrentCategoryIndex(currentCategoryIndex + 1));
+      dispatch(setCurrentSubCategoryIndex(0));
+    }
+  };
+
+  // 성별에 따른 서브카테고리 스킵 여부 확인 함수
   const shouldSkipSubCategory = (category, subCategory) => {
     if (category.name === "3. 생활 습관") {
       if (gender === 'female' && subCategory.name === "남성건강") return true;
@@ -212,34 +124,21 @@ const handleResponseChange = (questionId, value) => {
     return false;
   };
 
+  // 다음 버튼 비활성화 여부 확인 함수
+  const isNextButtonDisabled = () => {
+    return questions.some(question => !responses[question.id]);
+  };
+
   if (categoriesLoading || questionsLoading) {
     return <CircularProgress />;
   }
 
   if (categoriesError || questionsError) {
     return <Typography color="error">{categoriesError || questionsError}</Typography>;
-=======
-      try {
-        await dispatch(submitSurvey(responses)).unwrap();
-        navigate('/recommendation');
-      } catch (err) {
-        console.error('서베이 제출 실패:', err);
-      }
-    }
-  };
-
-  if (loading) {
-    return <CircularProgress />;
-  }
-
-  if (error) {
-    return <Typography color="error">{error}</Typography>;
->>>>>>> a0b50619fbdc91cdec82c215801f385839f43d9b
   }
 
   if (!categories || categories.length === 0) {
     return <Typography>카테고리가 없습니다. 관리자에게 문의하세요.</Typography>;
-<<<<<<< HEAD
   }
 
   if (currentCategoryIndex === null || currentSubCategoryIndex === null) {
@@ -247,17 +146,12 @@ const handleResponseChange = (questionId, value) => {
   }
 
   const currentCategory = categories[currentCategoryIndex];
-  const currentSubCategory = currentCategory?.subCategories?.[currentSubCategoryIndex];
+  const subCategoriesToDisplay = filteredSubCategories || currentCategory?.subCategories;
+  const currentSubCategory = subCategoriesToDisplay?.[currentSubCategoryIndex];
 
   if (!currentCategory || !currentSubCategory || shouldSkipSubCategory(currentCategory, currentSubCategory)) {
-    handleNext();
-    return null;
-=======
->>>>>>> a0b50619fbdc91cdec82c215801f385839f43d9b
+    return null; // handleNext는 useEffect에서 처리됨
   }
-
-  const currentCategory = categories[currentCategoryIndex];
-  const currentSubCategory = currentCategory?.subCategories?.[currentSubCategoryIndex];
 
   return (
     <Box sx={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
@@ -268,21 +162,21 @@ const handleResponseChange = (questionId, value) => {
           key={question.id}
           question={question}
           response={responses[question.id]}
-          onResponseChange={(value) => handleResponseChange(question.id, value)}
+          onResponseChange={handleResponseChange}
         />
       ))}
       <Button
         variant="contained"
         onClick={handleNext}
         sx={{ mt: 2 }}
-        disabled={categoriesLoading || questionsLoading}
+        disabled={isNextButtonDisabled() || categoriesLoading || questionsLoading}
       >
         {currentCategoryIndex === categories.length - 1 &&
-         currentSubCategoryIndex === currentCategory.subCategories.length - 1
+         currentSubCategoryIndex === subCategoriesToDisplay.length - 1
          ? '제출' : '다음'}
       </Button>
     </Box>
   );
 };
 
-export default SurveyPage;
+export default SurveyPage;import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';

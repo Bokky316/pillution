@@ -1,166 +1,197 @@
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Button, CircularProgress } from "@mui/material";
-import { fetchCategories, fetchQuestions, updateResponse, setCurrentCategoryIndex, setCurrentSubCategoryIndex, submitSurvey, filterSubCategories } from '@/redux/surveySlice';
-import QuestionComponent from '@features/survey/QuestionComponent';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { fetchWithAuth } from '@/features/auth/utils/fetchWithAuth';
+import { SERVER_URL } from "@/constant";
 
-const SurveyPage = () => {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const {
-    categories,
-    currentCategoryIndex,
-    currentSubCategoryIndex,
-    questions,
-    responses,
-    categoriesLoading,
-    questionsLoading,
-    categoriesError,
-    questionsError,
-    gender,
-    selectedSymptoms,
-    filteredSubCategories
-  } = useSelector(state => state.survey);
-
-  useEffect(() => {
-    dispatch(fetchCategories());
-  }, [dispatch]);
-
-  useEffect(() => {
-    if (categories.length > 0 && currentCategoryIndex !== null && currentSubCategoryIndex !== null) {
-      const subCategoryId = categories[currentCategoryIndex]?.subCategories?.[currentSubCategoryIndex]?.id;
-      if (subCategoryId) {
-        dispatch(fetchQuestions(subCategoryId));
+export const fetchCategories = createAsyncThunk(
+  'survey/fetchCategories',
+  async (_, { dispatch, rejectWithValue }) => {
+    try {
+      const response = await fetchWithAuth(`${SERVER_URL}api/survey/categories`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch categories');
       }
+      const data = await response.json();
+      if (data.length > 0) {
+        dispatch(setCurrentCategoryIndex(0));
+        dispatch(setCurrentSubCategoryIndex(0));
+        const firstSubCategoryId = data[0].subCategories[0]?.id;
+        if (firstSubCategoryId) {
+          dispatch(fetchQuestions(firstSubCategoryId));
+        }
+      }
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message);
     }
-  }, [dispatch, categories, currentCategoryIndex, currentSubCategoryIndex]);
+  }
+);
 
-  useEffect(() => {
-    if (categories[currentCategoryIndex]?.name === "2. 증상·불편" && selectedSymptoms.length > 0) {
-      dispatch(filterSubCategories(selectedSymptoms));
+export const fetchQuestions = createAsyncThunk(
+  'survey/fetchQuestions',
+  async (subCategoryId, { rejectWithValue }) => {
+    try {
+      const response = await fetchWithAuth(`${SERVER_URL}api/survey/subcategories/${subCategoryId}/questions`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch questions');
+      }
+      return await response.json();
+    } catch (error) {
+      return rejectWithValue(error.message);
     }
-  }, [selectedSymptoms, categories, currentCategoryIndex, dispatch]);
+  }
+);
 
-  useEffect(() => {
-    const currentCategory = categories[currentCategoryIndex];
-    const currentSubCategory = currentCategory?.subCategories?.[currentSubCategoryIndex];
-    if (!currentCategory || !currentSubCategory || shouldSkipSubCategory(currentCategory, currentSubCategory)) {
-      handleNext();
-    }
-  }, [categories, currentCategoryIndex, currentSubCategoryIndex, gender]);
-
-  const handleResponseChange = (questionId, value) => {
-    dispatch(updateResponse({ questionId, answer: value }));
-
-    const question = questions.find(q => q.id === questionId);
-    if (question && (question.questionText.includes('주요 증상') || question.questionText.includes('불편하거나 걱정되는 것'))) {
-      const newSelectedSymptoms = Array.isArray(value) ? value.slice(0, 3) : [value];
-      dispatch(filterSubCategories(newSelectedSymptoms));
-    }
-  };
-
-  const handleNext = () => {
-    const currentCategory = categories[currentCategoryIndex];
-    const subCategoriesToUse = filteredSubCategories || currentCategory?.subCategories;
-
-    if (currentCategoryIndex === categories.length - 1 &&
-        currentSubCategoryIndex === subCategoriesToUse.length - 1) {
-      const formattedResponses = Object.entries(responses).map(([questionId, answer]) => {
-        const question = questions.find(q => q.id.toString() === questionId);
-        return {
-          questionId: parseInt(questionId, 10),
-          responseType: question.questionType,
-          responseText: question.questionType === 'TEXT' ? answer : null,
-          selectedOptions: ['MULTIPLE_CHOICE', 'SINGLE_CHOICE'].includes(question.questionType) ?
-            (Array.isArray(answer) ? answer : [answer]) : null
-        };
+export const submitSurvey = createAsyncThunk(
+  'survey/submitSurvey',
+  async (submissionData, { rejectWithValue }) => {
+    try {
+      const response = await fetchWithAuth(`${SERVER_URL}api/survey/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submissionData),
       });
-
-      dispatch(submitSurvey({ responses: formattedResponses }))
-        .unwrap()
-        .then(() => navigate('/survey-complete'))
-        .catch(error => {
-          console.error('Survey submission failed:', error);
-          alert(`설문 제출 중 오류가 발생했습니다: ${error}`);
-        });
-    } else {
-      handleNextCategoryOrSubCategory();
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
+      return await response.json();
+    } catch (error) {
+      return rejectWithValue(error.message);
     }
-  };
-
-  const handleNextCategoryOrSubCategory = () => {
-    const currentCategory = categories[currentCategoryIndex];
-    const subCategoriesToUse = filteredSubCategories || currentCategory?.subCategories;
-
-    if (currentSubCategoryIndex < subCategoriesToUse.length - 1) {
-      dispatch(setCurrentSubCategoryIndex(currentSubCategoryIndex + 1));
-    } else if (currentCategoryIndex < categories.length - 1) {
-      dispatch(setCurrentCategoryIndex(currentCategoryIndex + 1));
-      dispatch(setCurrentSubCategoryIndex(0));
-    }
-  };
-
-  const shouldSkipSubCategory = (category, subCategory) => {
-    if (category.name === "3. 생활 습관") {
-      if (gender === 'female' && subCategory.name === "남성건강") return true;
-      if (gender === 'male' && subCategory.name === "여성건강") return true;
-    }
-    return false;
-  };
-
-  const isNextButtonDisabled = () => {
-    return questions.some(question => !responses[question.id]);
-  };
-
-  if (categoriesLoading || questionsLoading) {
-    return <CircularProgress />;
   }
+);
 
-  if (categoriesError || questionsError) {
-    return <Typography color="error">{categoriesError || questionsError}</Typography>;
-  }
+const surveySlice = createSlice({
+  name: 'survey',
+  initialState: {
+    categories: [],
+    currentCategoryIndex: null,
+    currentSubCategoryIndex: null,
+    questions: [],
+    responses: {},
+    categoriesLoading: false,
+    categoriesError: null,
+    questionsLoading: false,
+    questionsError: null,
+    submitLoading: false,
+    submitError: null,
+    gender: null,
+    selectedSymptoms: [],
+    filteredSubCategories: null,
+  },
+  reducers: {
+    updateResponse: (state, action) => {
+      const { questionId, answer } = action.payload;
+      const question = state.questions.find(q => q.id === questionId);
+      if (question) {
+        if (question.questionType === 'MULTIPLE_CHOICE') {
+          if (!Array.isArray(state.responses[questionId])) {
+            state.responses[questionId] = [];
+          }
+          const index = state.responses[questionId].indexOf(answer);
+          if (index > -1) {
+            state.responses[questionId].splice(index, 1);
+          } else {
+            state.responses[questionId].push(answer);
+          }
+        } else {
+          state.responses[questionId] = answer;
+        }
+        if (questionId === 2) {
+          state.gender = answer === '1' ? 'female' : 'male';
+        }
+        if (question.questionText.includes('주요 증상') || question.questionText.includes('불편하거나 걱정되는 것')) {
+          state.selectedSymptoms = Array.isArray(state.responses[questionId]) ?
+            state.responses[questionId].slice(0, 3) : [state.responses[questionId]];
+        }
+      }
+    },
+    setCurrentCategoryIndex: (state, action) => {
+      state.currentCategoryIndex = action.payload;
+      state.currentSubCategoryIndex = 0;
+      state.questions = [];
+      state.responses = {};
+      state.filteredSubCategories = null;
+    },
+    setCurrentSubCategoryIndex: (state, action) => {
+      state.currentSubCategoryIndex = action.payload;
+      state.questions = [];
+      state.responses = {};
+    },
+    clearResponses: (state) => {
+      state.responses = {};
+    },
+    filterSubCategories: (state, action) => {
+      const selectedSymptoms = action.payload;
+      const currentCategory = state.categories[state.currentCategoryIndex];
+      if (currentCategory && currentCategory.name === "2. 증상·불편") {
+        state.filteredSubCategories = currentCategory.subCategories.filter(sub =>
+          sub.name === "주요 증상" ||
+          sub.name === "추가 증상" ||
+          selectedSymptoms.includes(sub.id)
+        );
+      } else {
+        state.filteredSubCategories = null;
+      }
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchCategories.pending, (state) => {
+        state.categoriesLoading = true;
+        state.categoriesError = null;
+      })
+      .addCase(fetchCategories.fulfilled, (state, action) => {
+        state.categoriesLoading = false;
+        state.categories = action.payload;
+        state.categoriesError = null;
+        if (state.categories.length > 0) {
+          state.currentCategoryIndex = 0;
+          state.currentSubCategoryIndex = 0;
+        }
+      })
+      .addCase(fetchCategories.rejected, (state, action) => {
+        state.categoriesLoading = false;
+        state.categoriesError = action.payload;
+      })
+      .addCase(fetchQuestions.pending, (state) => {
+        state.questionsLoading = true;
+        state.questionsError = null;
+      })
+      .addCase(fetchQuestions.fulfilled, (state, action) => {
+        state.questionsLoading = false;
+        state.questions = action.payload;
+        state.questionsError = null;
+        state.responses = {};
+      })
+      .addCase(fetchQuestions.rejected, (state, action) => {
+        state.questionsLoading = false;
+        state.questionsError = action.payload;
+      })
+      .addCase(submitSurvey.pending, (state) => {
+        state.submitLoading = true;
+        state.submitError = null;
+      })
+      .addCase(submitSurvey.fulfilled, (state) => {
+        state.submitLoading = false;
+        state.responses = {};
+        state.submitError = null;
+      })
+      .addCase(submitSurvey.rejected, (state, action) => {
+        state.submitLoading = false;
+        state.submitError = action.payload;
+      });
+  },
+});
 
-  if (!categories || categories.length === 0) {
-    return <Typography>카테고리가 없습니다. 관리자에게 문의하세요.</Typography>;
-  }
+export const {
+  updateResponse,
+  setCurrentCategoryIndex,
+  setCurrentSubCategoryIndex,
+  clearResponses,
+  filterSubCategories
+} = surveySlice.actions;
 
-  if (currentCategoryIndex === null || currentSubCategoryIndex === null) {
-    return <Typography>설문을 불러오는 중입니다...</Typography>;
-  }
-
-  const currentCategory = categories[currentCategoryIndex];
-  const subCategoriesToDisplay = filteredSubCategories || currentCategory?.subCategories;
-  const currentSubCategory = subCategoriesToDisplay?.[currentSubCategoryIndex];
-
-  if (!currentCategory || !currentSubCategory || shouldSkipSubCategory(currentCategory, currentSubCategory)) {
-    return null;
-  }
-
-  return (
-    <Box sx={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-      <Typography variant="h5" sx={{ mb: 3 }}>{currentCategory.name}</Typography>
-      <Typography variant="h6" sx={{ mb: 2 }}>{currentSubCategory.name}</Typography>
-      {questions.map((question) => (
-        <QuestionComponent
-          key={question.id}
-          question={question}
-          response={responses[question.id]}
-          onResponseChange={handleResponseChange}
-        />
-      ))}
-      <Button
-        variant="contained"
-        onClick={handleNext}
-        sx={{ mt: 2 }}
-        disabled={isNextButtonDisabled()}
-      >
-        {currentCategoryIndex === categories.length - 1 &&
-         currentSubCategoryIndex === subCategoriesToDisplay.length - 1
-         ? '제출' : '다음'}
-      </Button>
-    </Box>
-  );
-};
-
-export default SurveyPage;
+export default surveySlice.reducer;

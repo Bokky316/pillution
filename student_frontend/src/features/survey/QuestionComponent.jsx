@@ -4,27 +4,16 @@ import { Box, Typography, RadioGroup, FormControlLabel, Radio, Checkbox, TextFie
 const QuestionComponent = ({ question, response, onResponseChange }) => {
   const handleChange = (event) => {
     let value;
-
     if (question.questionType === 'MULTIPLE_CHOICE') {
-      const selectedOptions = Array.isArray(response) ? [...response] : [];
       const optionId = parseInt(event.target.value, 10);
-
-      if (event.target.checked) {
-        selectedOptions.push(optionId);
-      } else {
-        const index = selectedOptions.indexOf(optionId);
-        if (index > -1) {
-          selectedOptions.splice(index, 1);
-        }
-      }
-      value = selectedOptions;
+      onResponseChange(question.id, optionId);
     } else if (question.questionType === 'SINGLE_CHOICE') {
       value = parseInt(event.target.value, 10);
+      onResponseChange(question.id, value);
     } else {
       value = event.target.value;
+      onResponseChange(question.id, value);
     }
-
-    onResponseChange(question.id, value);
   };
 
   switch (question.questionType) {
