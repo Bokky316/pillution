@@ -28,9 +28,9 @@ const SurveyPage = () => {
   }, [categories.length, categoriesLoading, categoriesError, dispatch]);
 
   const fetchQuestionsIfNeeded = useCallback(() => {
-    if (categories.length > 0 && currentCategoryIndex !== null && currentSubCategoryIndex !== null && !questionsLoading && !questionsError) {
+    if (categories.length > 0 && currentCategoryIndex !== null && currentSubCategoryIndex !== null) {
       const subCategoryId = categories[currentCategoryIndex]?.subCategories?.[currentSubCategoryIndex]?.id;
-      if (subCategoryId && questions.length === 0) {
+      if (subCategoryId && !questionsLoading && !questionsError && questions.length === 0) {
         console.log('Fetching questions for subCategoryId:', subCategoryId);
         dispatch(fetchQuestions(subCategoryId));
       }
@@ -43,7 +43,7 @@ const SurveyPage = () => {
 
   useEffect(() => {
     fetchQuestionsIfNeeded();
-  }, [fetchQuestionsIfNeeded]);
+  }, [fetchQuestionsIfNeeded, currentCategoryIndex, currentSubCategoryIndex]);
 
   const handleResponseChange = (questionId, value) => {
     dispatch(updateResponse({ questionId, answer: value }));
@@ -83,12 +83,20 @@ const SurveyPage = () => {
   const currentCategory = categories[currentCategoryIndex];
   const currentSubCategory = currentCategory?.subCategories?.[currentSubCategoryIndex];
 
+  if (!currentCategory || !currentSubCategory) {
+    return <Typography>현재 카테고리 또는 서브카테고리를 찾을 수 없습니다.</Typography>;
+  }
+
   return (
     <Box sx={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-      <Typography variant="h5" sx={{ mb: 3 }}>{currentCategory?.name}</Typography>
-      <Typography variant="h6" sx={{ mb: 2 }}>{currentSubCategory?.name}</Typography>
+      <Typography variant="h5" sx={{ mb: 3 }}>{currentCategory.name}</Typography>
+      <Typography variant="h6" sx={{ mb: 2 }}>{currentSubCategory.name}</Typography>
       {questionsLoading ? (
         <CircularProgress />
+      ) : questionsError ? (
+        <Typography color="error">{questionsError}</Typography>
+      ) : questions.length === 0 ? (
+        <Typography>이 서브카테고리에는 질문이 없습니다.</Typography>
       ) : (
         questions.map((question) => (
           <QuestionComponent
@@ -106,7 +114,7 @@ const SurveyPage = () => {
         disabled={categoriesLoading || questionsLoading}
       >
         {currentCategoryIndex === categories.length - 1 &&
-         currentSubCategoryIndex === currentCategory?.subCategories?.length - 1
+         currentSubCategoryIndex === currentCategory.subCategories.length - 1
          ? '제출' : '다음'}
       </Button>
     </Box>
