@@ -58,6 +58,10 @@ const SurveyPage = () => {
     }
   }, [categories, currentCategoryIndex, currentSubCategoryIndex, gender]);
 
+  useEffect(() => {
+    console.log('Current Responses:', responses);
+  }, [responses]);
+
   const handleResponseChange = (questionId, value) => {
     dispatch(updateResponse({ questionId, answer: value }));
     console.log(`Response updated - QuestionID: ${questionId}, Value:`, value);
@@ -77,16 +81,21 @@ const SurveyPage = () => {
 
     if (currentCategoryIndex === categories.length - 1 &&
         currentSubCategoryIndex === subCategoriesToUse.length - 1) {
-      const formattedResponses = Object.entries(responses).map(([questionId, answer]) => {
-        const question = questions.find(q => q.id.toString() === questionId);
-        return {
-          questionId: parseInt(questionId, 10),
-          responseType: question.questionType,
-          responseText: question.questionType === 'TEXT' ? answer : null,
-          selectedOptions: ['MULTIPLE_CHOICE', 'SINGLE_CHOICE'].includes(question.questionType) ?
-            (Array.isArray(answer) ? answer : [answer]) : null
-        };
-      });
+     const formattedResponses = Object.entries(responses).map(([questionId, answer]) => {
+       const question = questions.find(q => q.id.toString() === questionId);
+       if (!question) {
+         console.warn(`Question not found for id: ${questionId}`);
+         return null;
+       }
+       return {
+         questionId: parseInt(questionId, 10),
+         responseType: question.questionType,
+         responseText: question.questionType === 'TEXT' ? answer : null,
+         selectedOptions: ['MULTIPLE_CHOICE', 'SINGLE_CHOICE'].includes(question.questionType) ?
+           (Array.isArray(answer) ? answer : [answer]) : null
+       };
+     }).filter(Boolean); // 널값 제거
+
 
       console.log("Formatted Responses for Submission:", formattedResponses);
 

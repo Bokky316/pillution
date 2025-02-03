@@ -107,18 +107,21 @@ const surveySlice = createSlice({
             state.responses[questionId].slice(0, 3) : [state.responses[questionId]];
         }
       }
+      // 기존 응답과 병합
+      state.responses = {
+        ...state.responses,
+        [questionId]: state.responses[questionId],
+      };
     },
     setCurrentCategoryIndex: (state, action) => {
       state.currentCategoryIndex = action.payload;
       state.currentSubCategoryIndex = 0;
       state.questions = [];
-      state.responses = {};
       state.filteredSubCategories = null;
     },
     setCurrentSubCategoryIndex: (state, action) => {
       state.currentSubCategoryIndex = action.payload;
       state.questions = [];
-      state.responses = {};
     },
     clearResponses: (state) => {
       state.responses = {};
@@ -167,7 +170,6 @@ const surveySlice = createSlice({
         state.questionsLoading = false;
         state.questions = action.payload;
         state.questionsError = null;
-        state.responses = {};
       })
       .addCase(fetchQuestions.rejected, (state, action) => {
         state.questionsLoading = false;
