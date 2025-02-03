@@ -20,16 +20,16 @@ const SurveyPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const {
-    categories = [],
-    currentCategoryIndex = 0,
-    currentSubCategoryIndex = 0,
-    questions = [],
-    responses = {},
-    loading = false,
-    error = null,
-    gender = null,
-    selectedSymptoms = []
-  } = useSelector(state => state.survey || {});
+    categories,
+    currentCategoryIndex,
+    currentSubCategoryIndex,
+    questions,
+    responses,
+    loading,
+    error,
+    gender,
+    selectedSymptoms
+  } = useSelector(state => state.survey);
 
   useEffect(() => {
     dispatch(fetchCategories());
@@ -43,27 +43,17 @@ const SurveyPage = () => {
   }, [dispatch, categories, currentCategoryIndex, currentSubCategoryIndex]);
 
 const handleResponseChange = (questionId, value) => {
-  console.log(`Response changed for question ${questionId}:`, value, typeof value);
+  console.log(`Response changed for question ${questionId}:`, value);
+
+  dispatch(updateResponse({ questionId, answer: value }));
 
   const currentQuestion = questions.find(q => q.id === questionId);
 
-  let processedValue = value;
-
-  if (currentQuestion.questionType === 'SINGLE_CHOICE') {
-    processedValue = parseInt(value, 10);
-  } else if (currentQuestion.questionType === 'MULTIPLE_CHOICE') {
-    processedValue = Array.isArray(value) ? value.map(v => parseInt(v, 10)) : [];
-  }
-
-  dispatch(updateResponse({ questionId, answer: processedValue }));
-
   if (currentQuestion?.questionText.includes('성별')) {
-    const newGender = processedValue === 1 ? 'female' : 'male';
+    const newGender = value === 1 ? 'female' : 'male';
     dispatch(setGender(newGender));
-  }
-
-  if (currentQuestion?.questionText.includes('최대 3가지')) {
-    dispatch(setSelectedSymptoms(Array.isArray(processedValue) ? processedValue : []));
+  } else if (currentQuestion?.questionText.includes('최대 3가지')) {
+    dispatch(setSelectedSymptoms(Array.isArray(value) ? value : []));
   }
 };
 
