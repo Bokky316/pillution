@@ -9,7 +9,8 @@ import {
   setCurrentCategoryIndex,
   setCurrentSubCategoryIndex,
   submitSurvey,
-  filterSubCategories
+  filterSubCategories,
+  setFilteredSubCategories
 } from '@/redux/surveySlice';
 import QuestionComponent from '@features/survey/QuestionComponent';
 
@@ -37,26 +38,34 @@ const SurveyPage = () => {
 
   useEffect(() => {
     if (categories.length > 0 && currentCategoryIndex !== null && currentSubCategoryIndex !== null) {
-      const subCategoryId = categories[currentCategoryIndex]?.subCategories?.[currentSubCategoryIndex]?.id;
+      const subCategoriesToUse = filteredSubCategories || categories[currentCategoryIndex]?.subCategories;
+      const subCategoryId = subCategoriesToUse?.[currentSubCategoryIndex]?.id;
       if (subCategoryId) {
         dispatch(fetchQuestions(subCategoryId));
       }
     }
-  }, [dispatch, categories, currentCategoryIndex, currentSubCategoryIndex]);
+  }, [dispatch, categories, currentCategoryIndex, currentSubCategoryIndex, filteredSubCategories]);
 
-  useEffect(() => {
-    if (categories[currentCategoryIndex]?.name === "2. 증상·불편" && selectedSymptoms.length > 0) {
-      dispatch(filterSubCategories(selectedSymptoms));
-    }
-  }, [selectedSymptoms, categories, currentCategoryIndex, dispatch]);
+ useEffect(() => {
+   if (categories[currentCategoryIndex]?.name === "2. 증상·불편" && selectedSymptoms.length > 0) {
+     const subCategoriesToFilter = categories[currentCategoryIndex].subCategories;
+     const filteredSubs = subCategoriesToFilter.filter(sub =>
+       sub.name === "주요 증상" ||
+       sub.name === "추가 증상"
+     );
+
+     dispatch(setFilteredSubCategories(filteredSubs));
+   }
+ }, [selectedSymptoms, categories, currentCategoryIndex, dispatch]);
 
   useEffect(() => {
     const currentCategory = categories[currentCategoryIndex];
-    const currentSubCategory = currentCategory?.subCategories?.[currentSubCategoryIndex];
+    const subCategoriesToUse = filteredSubCategories || currentCategory?.subCategories;
+    const currentSubCategory = subCategoriesToUse?.[currentSubCategoryIndex];
     if (!currentCategory || !currentSubCategory || shouldSkipSubCategory(currentCategory, currentSubCategory)) {
       handleNext();
     }
-  }, [categories, currentCategoryIndex, currentSubCategoryIndex, gender]);
+  }, [categories, currentCategoryIndex, currentSubCategoryIndex, gender, filteredSubCategories]);
 
   useEffect(() => {
     console.log('Current Responses:', responses);
@@ -65,58 +74,69 @@ const SurveyPage = () => {
   const handleResponseChange = (questionId, value) => {
     dispatch(updateResponse({ questionId, answer: value }));
     console.log(`Response updated - QuestionID: ${questionId}, Value:`, value);
-
-    const question = questions.find(q => q.id === questionId);
-    if (question && (question.questionText.includes('주요 증상') || question.questionText.includes('불편하거나 걱정되는 것'))) {
-      const newSelectedSymptoms = Array.isArray(value) ? value.slice(0, 3) : [value];
-      dispatch(filterSubCategories(newSelectedSymptoms));
-    }
   };
 
-  const handleNext = () => {
-    const currentCategory = categories[currentCategoryIndex];
-    const subCategoriesToUse = filteredSubCategories || currentCategory?.subCategories;
+const handleNext = () => {
+  const currentCategory = categories[currentCategoryIndex];
+  const subCategoriesToUse = filteredSubCategories || currentCategory?.subCategories;
 
-    console.log('Current responses before submission:', responses);
+  console.log('현재 카테고리:', currentCategory);
+  console.log('모든 카테고리:', categories);
+  console.log('하위 카테고리:', subCategoriesToUse);
 
-    if (currentCategoryIndex === categories.length - 1 &&
-        currentSubCategoryIndex === subCategoriesToUse.length - 1) {
-     const formattedResponses = Object.entries(responses).map(([questionId, answer]) => {
-       const question = questions.find(q => q.id.toString() === questionId);
-       if (!question) {
-         console.warn(`Question not found for id: ${questionId}`);
-         return null;
-       }
-       return {
-         questionId: parseInt(questionId, 10),
-         responseType: question.questionType,
-         responseText: question.questionType === 'TEXT' ? answer : null,
-         selectedOptions: ['MULTIPLE_CHOICE', 'SINGLE_CHOICE'].includes(question.questionType) ?
-           (Array.isArray(answer) ? answer : [answer]) : null
-       };
-     }).filter(Boolean); // 널값 제거
+  // 모든 질문을 수집하는 로직 개선
+  const allQuestions = categories.flatMap(category =>
+    category.subCategories ?
+      category.subCategories.flatMap(subCategory =>
+        subCategory.questions || []
+      )
+      : []
+  );
+
+  console.log('수집된 모든 질문:', allQuestions);
+
+  if (currentCategoryIndex === categories.length - 1 &&
+      currentSubCategoryIndex === subCategoriesToUse.length - 1) {
+
+   const formattedResponses = allQuestions.map(question => {
+     const answer = responses[question.id];
+     return {
+       questionId: Number(question.id), // 문자열 대신 숫자로 변환
+       responseType: question.questionType,
+       responseText: question.questionType === 'TEXT' && answer ? String(answer) : null,
+       selectedOptions: question.questionType === 'MULTIPLE_CHOICE' && answer
+         ? Array.isArray(answer)
+           ? answer.map(Number) // 숫자로 변환
+           : [Number(answer)]
+         : []
+     };
+   }).filter(response =>
+     response.responseText !== null ||
+     (response.selectedOptions && response.selectedOptions.length > 0)
+   );
 
 
-      console.log("Formatted Responses for Submission:", formattedResponses);
+    console.log('제출할 최종 응답:', formattedResponses);
 
-      dispatch(submitSurvey({ responses: formattedResponses }))
-        .unwrap()
-        .then(() => {
-          console.log('Survey submitted successfully');
-          navigate('/survey-complete');
-        })
-        .catch(error => {
-          console.error('Survey submission failed:', error);
-          if (error.response) {
-            console.error('Error response:', error.response.data);
-            console.error('Error status:', error.response.status);
-          }
-          alert('설문 제출 중 오류가 발생했습니다. 다시 시도해주세요.');
-        });
-    } else {
-      handleNextCategoryOrSubCategory();
+    if (formattedResponses.length === 0) {
+      alert('제출할 응답이 없습니다.');
+      return;
     }
-  };
+
+    dispatch(submitSurvey({ responses: formattedResponses }))
+      .unwrap()
+      .then((response) => {
+        console.log('서버 응답:', response);
+        navigate('/survey-complete');
+      })
+      .catch(error => {
+        console.error('제출 에러 상세:', error);
+        alert(`제출 오류: ${error}`);
+      });
+  } else {
+    handleNextCategoryOrSubCategory();
+  }
+};
 
   const handleNextCategoryOrSubCategory = () => {
     const currentCategory = categories[currentCategoryIndex];
@@ -151,45 +171,45 @@ const SurveyPage = () => {
   }
 
   if (!categories || categories.length === 0) {
-    return <Typography>카테고리가 없습니다. 관리자에게 문의하세요.</Typography>;
-  }
+      return <Typography>카테고리가 없습니다. 관리자에게 문의하세요.</Typography>;
+    }
 
-  if (currentCategoryIndex === null || currentSubCategoryIndex === null) {
-    return <Typography>설문을 불러오는 중입니다...</Typography>;
-  }
+    if (currentCategoryIndex === null || currentSubCategoryIndex === null) {
+      return <Typography>설문을 불러오는 중입니다...</Typography>;
+    }
 
-  const currentCategory = categories[currentCategoryIndex];
-  const subCategoriesToDisplay = filteredSubCategories || currentCategory?.subCategories;
-  const currentSubCategory = subCategoriesToDisplay?.[currentSubCategoryIndex];
+    const currentCategory = categories[currentCategoryIndex];
+    const subCategoriesToDisplay = filteredSubCategories || currentCategory?.subCategories;
+    const currentSubCategory = subCategoriesToDisplay?.[currentSubCategoryIndex];
 
-  if (!currentCategory || !currentSubCategory || shouldSkipSubCategory(currentCategory, currentSubCategory)) {
-    return null;
-  }
+    if (!currentCategory || !currentSubCategory || shouldSkipSubCategory(currentCategory, currentSubCategory)) {
+      return null;
+    }
 
-  return (
-    <Box sx={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-      <Typography variant="h5" sx={{ mb: 3 }}>{currentCategory.name}</Typography>
-      <Typography variant="h6" sx={{ mb: 2 }}>{currentSubCategory.name}</Typography>
-      {questions.map((question) => (
-        <QuestionComponent
-          key={question.id}
-          question={question}
-          response={responses[question.id]}
-          onResponseChange={handleResponseChange}
-        />
-      ))}
-      <Button
-        variant="contained"
-        onClick={handleNext}
-        sx={{ mt: 2 }}
-        disabled={isNextButtonDisabled() || categoriesLoading || questionsLoading}
-      >
-        {currentCategoryIndex === categories.length - 1 &&
-         currentSubCategoryIndex === subCategoriesToDisplay.length - 1
-         ? '제출' : '다음'}
-      </Button>
-    </Box>
-  );
-};
+    return (
+      <Box sx={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+        <Typography variant="h5" sx={{ mb: 3 }}>{currentCategory.name}</Typography>
+        <Typography variant="h6" sx={{ mb: 2 }}>{currentSubCategory.name}</Typography>
+        {questions.map((question) => (
+          <QuestionComponent
+            key={question.id}
+            question={question}
+            response={responses[question.id]}
+            onResponseChange={handleResponseChange}
+          />
+        ))}
+        <Button
+          variant="contained"
+          onClick={handleNext}
+          sx={{ mt: 2 }}
+          disabled={isNextButtonDisabled() || categoriesLoading || questionsLoading}
+        >
+          {currentCategoryIndex === categories.length - 1 &&
+           currentSubCategoryIndex === subCategoriesToDisplay.length - 1
+           ? '제출' : '다음'}
+        </Button>
+      </Box>
+    );
+  };
 
-export default SurveyPage;
+  export default SurveyPage;

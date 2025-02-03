@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createAction } from '@reduxjs/toolkit';
 import { fetchWithAuth } from '@/features/auth/utils/fetchWithAuth';
 import { SERVER_URL } from "@/constant";
 
@@ -11,16 +11,37 @@ export const fetchCategories = createAsyncThunk(
         throw new Error('Failed to fetch categories');
       }
       const data = await response.json();
-      if (data.length > 0) {
+
+      console.log('페치된 카테고리:', data);
+
+      // 각 카테고리의 하위 카테고리에 질문 로드
+      const categoriesWithQuestions = await Promise.all(data.map(async (category) => {
+        const subCategoriesWithQuestions = await Promise.all(category.subCategories.map(async (subCategory) => {
+          try {
+            const questionsResponse = await fetchWithAuth(`${SERVER_URL}api/survey/subcategories/${subCategory.id}/questions`);
+            const questions = await questionsResponse.json();
+            return { ...subCategory, questions };
+          } catch (error) {
+            console.error(`질문 로드 실패 - 하위 카테고리 ID: ${subCategory.id}`, error);
+            return { ...subCategory, questions: [] };
+          }
+        }));
+
+        return { ...category, subCategories: subCategoriesWithQuestions };
+      }));
+
+      if (categoriesWithQuestions.length > 0) {
         dispatch(setCurrentCategoryIndex(0));
         dispatch(setCurrentSubCategoryIndex(0));
-        const firstSubCategoryId = data[0].subCategories[0]?.id;
+        const firstSubCategoryId = categoriesWithQuestions[0].subCategories[0]?.id;
         if (firstSubCategoryId) {
           dispatch(fetchQuestions(firstSubCategoryId));
         }
       }
-      return data;
+
+      return categoriesWithQuestions;
     } catch (error) {
+      console.error('카테고리 페치 에러:', error);
       return rejectWithValue(error.message);
     }
   }
@@ -45,6 +66,8 @@ export const submitSurvey = createAsyncThunk(
   'survey/submitSurvey',
   async (submissionData, { rejectWithValue }) => {
     try {
+      console.log('제출 데이터:', JSON.stringify(submissionData, null, 2));
+
       const response = await fetchWithAuth(`${SERVER_URL}api/survey/submit`, {
         method: 'POST',
         headers: {
@@ -52,15 +75,26 @@ export const submitSurvey = createAsyncThunk(
         },
         body: JSON.stringify(submissionData),
       });
+
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText);
+        console.error('제출 오류 상태:', response.status);
+        console.error('제출 오류 응답:', errorText);
+        throw new Error(errorText || '제출 중 알 수 없는 오류가 발생했습니다.');
       }
+
       return await response.json();
     } catch (error) {
-      return rejectWithValue(error.message);
+      console.error('제출 전체 에러:', error);
+      return rejectWithValue(error.message || '제출 중 오류 발생');
     }
   }
+);
+
+
+export const setFilteredSubCategories = createAction(
+  'survey/setFilteredSubCategories',
+  (subCategories) => ({ payload: subCategories })
 );
 
 const surveySlice = createSlice({
@@ -85,47 +119,70 @@ const surveySlice = createSlice({
     updateResponse: (state, action) => {
       const { questionId, answer } = action.payload;
       const question = state.questions.find(q => q.id === questionId);
+
+      console.log('업데이트 시도:', { questionId, answer, question });
+
       if (question) {
+        // 기존 로직 유지
         if (question.questionType === 'MULTIPLE_CHOICE') {
-          if (!Array.isArray(state.responses[questionId])) {
-            state.responses[questionId] = [];
-          }
-          const index = state.responses[questionId].indexOf(answer);
-          if (index > -1) {
-            state.responses[questionId].splice(index, 1);
+          let selectedOptions = state.responses[questionId] || [];
+          const lastOptionIndex = question.options.length - 1;
+          const lastOptionId = question.options[lastOptionIndex].id.toString();
+          const isLastOption = answer === lastOptionId;
+
+          if (isLastOption) {
+            state.responses[questionId] = selectedOptions.includes(lastOptionId)
+              ? []
+              : [lastOptionId];
           } else {
-            state.responses[questionId].push(answer);
+            if (selectedOptions.includes(lastOptionId)) {
+              selectedOptions = [];
+            }
+
+            const isMainSymptomQuestion = question.questionText.includes('주요 증상');
+
+            if (isMainSymptomQuestion && !selectedOptions.includes(answer)) {
+              if (selectedOptions.length < 3) {
+                selectedOptions.push(answer);
+              } else {
+                selectedOptions.shift();
+                selectedOptions.push(answer);
+              }
+            } else {
+              const index = selectedOptions.indexOf(answer);
+              if (index > -1) {
+                selectedOptions.splice(index, 1);
+              } else {
+                selectedOptions.push(answer);
+              }
+            }
+
+            state.responses[questionId] = selectedOptions;
           }
         } else {
           state.responses[questionId] = answer;
         }
-        if (questionId === 2) {
-          state.gender = answer === '1' ? 'female' : 'male';
-        }
-        if (question.questionText.includes('주요 증상') || question.questionText.includes('불편하거나 걱정되는 것')) {
-          state.selectedSymptoms = Array.isArray(state.responses[questionId]) ?
-            state.responses[questionId].slice(0, 3) : [state.responses[questionId]];
-        }
+
+        console.log('업데이트 후 응답:', state.responses);
       }
-      // 기존 응답과 병합
-      state.responses = {
-        ...state.responses,
-        [questionId]: state.responses[questionId],
-      };
     },
+
     setCurrentCategoryIndex: (state, action) => {
       state.currentCategoryIndex = action.payload;
       state.currentSubCategoryIndex = 0;
       state.questions = [];
       state.filteredSubCategories = null;
     },
+
     setCurrentSubCategoryIndex: (state, action) => {
       state.currentSubCategoryIndex = action.payload;
       state.questions = [];
     },
+
     clearResponses: (state) => {
       state.responses = {};
     },
+
     filterSubCategories: (state, action) => {
       const selectedSymptoms = action.payload;
       const currentCategory = state.categories[state.currentCategoryIndex];
@@ -133,12 +190,13 @@ const surveySlice = createSlice({
         state.filteredSubCategories = currentCategory.subCategories.filter(sub =>
           sub.name === "주요 증상" ||
           sub.name === "추가 증상" ||
-          selectedSymptoms.includes(sub.id)
+          selectedSymptoms.includes(sub.id.toString())
         );
       } else {
         state.filteredSubCategories = null;
       }
     },
+
     setSelectedSymptoms: (state, action) => {
       state.selectedSymptoms = action.payload;
     },
