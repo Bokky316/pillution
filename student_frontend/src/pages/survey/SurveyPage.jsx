@@ -101,19 +101,21 @@ const handleNext = () => {
    const formattedResponses = allQuestions.map(question => {
      const answer = responses[question.id];
      return {
-       questionId: Number(question.id), // 문자열 대신 숫자로 변환
+       questionId: Number(question.id),
        responseType: question.questionType,
-       responseText: question.questionType === 'TEXT' && answer ? String(answer) : null,
-       selectedOptions: question.questionType === 'MULTIPLE_CHOICE' && answer
-         ? Array.isArray(answer)
-           ? answer.map(Number) // 숫자로 변환
-           : [Number(answer)]
-         : []
+       responseText: question.questionType === 'TEXT' ? String(answer) || null : null,
+       selectedOptions:
+         (question.questionType === 'SINGLE_CHOICE' || question.questionType === 'MULTIPLE_CHOICE')
+           ? (Array.isArray(answer) ? answer.map(Number) : (answer ? [Number(answer)] : []))
+           : null
      };
    }).filter(response =>
      response.responseText !== null ||
      (response.selectedOptions && response.selectedOptions.length > 0)
    );
+
+
+
 
 
     console.log('제출할 최종 응답:', formattedResponses);

@@ -141,7 +141,7 @@ public class SurveyService {
 
             if ("TEXT".equals(responseDto.getResponseType())) {
                 saveMemberResponse(member, question.getId(), responseDto.getResponseText());
-            } else if ("MULTIPLE_CHOICE".equals(responseDto.getResponseType())) {
+            } else if ("MULTIPLE_CHOICE".equals(responseDto.getResponseType()) || "SINGLE_CHOICE".equals(responseDto.getResponseType())) {
                 for (Long optionId : responseDto.getSelectedOptions()) {
                     saveMemberResponseOption(member, question.getId(), optionId);
                 }
