@@ -1,76 +1,67 @@
-import React from 'react';
-import { TextField, RadioGroup, FormControlLabel, Radio, Checkbox, FormGroup } from "@mui/material";
+// SurveyPage.jsx
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { fetchCategories, fetchQuestions, updateResponse, submitSurvey } from '@/redux/surveySlice';
+import QuestionComponent from '@features/survey/QuestionComponent';
 
-const QuestionComponent = ({ question, response, onResponseChange }) => {
-  const handleChange = (event) => {
-    let value;
-    if (question.questionType === 'MULTIPLE_CHOICE') {
-      const selectedOptions = [...(response || [])];
-      const optionId = parseInt(event.target.value, 10);
-      if (event.target.checked) {
-        selectedOptions.push(optionId);
-      } else {
-        const index = selectedOptions.indexOf(optionId);
-        if (index > -1) {
-          selectedOptions.splice(index, 1);
-        }
-      }
-      value = selectedOptions;
-    } else if (question.questionType === 'SINGLE_CHOICE') {
-      value = parseInt(event.target.value, 10);
-    } else {
-      value = event.target.value;
-    }
-    onResponseChange(question.id, value);
+const SurveyPage = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { categories, questions, responses, loading, error } = useSelector(state => state.survey);
+
+  useEffect(() => {
+    dispatch(fetchCategories());
+  }, [dispatch]);
+
+  const handleCategorySelect = (subCategoryId) => {
+    dispatch(fetchQuestions(subCategoryId));
   };
 
-  switch (question.questionType) {
-    case 'TEXT':
-      return (
-        <TextField
-          value={response || ''}
-          onChange={handleChange}
-          fullWidth
-          margin="normal"
+  const handleResponseChange = (questionId, answer) => {
+    dispatch(updateResponse({ questionId, answer }));
+  };
+
+  const handleSubmit = () => {
+    dispatch(submitSurvey({ responses }))
+      .unwrap()
+      .then(() => {
+        // 제출 성공 시 처리
+        navigate('/survey-complete');
+      })
+      .catch((error) => {
+        // 에러 처리
+        console.error('Survey submission failed:', error);
+      });
+  };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  return (
+    <div>
+      <h1>Survey</h1>
+      {categories.map(category => (
+        <div key={category.id}>
+          <h2>{category.name}</h2>
+          {category.subCategories.map(subCategory => (
+            <button key={subCategory.id} onClick={() => handleCategorySelect(subCategory.id)}>
+              {subCategory.name}
+            </button>
+          ))}
+        </div>
+      ))}
+      {questions.map(question => (
+        <QuestionComponent
+          key={question.id}
+          question={question}
+          response={responses[question.id]}
+          onResponseChange={(answer) => handleResponseChange(question.id, answer)}
         />
-      );
-    case 'SINGLE_CHOICE':
-      return (
-        <RadioGroup
-          value={response ? response.toString() : ''}
-          onChange={handleChange}
-        >
-          {question.options.map((option) => (
-            <FormControlLabel
-              key={option.id}
-              value={option.id.toString()}
-              control={<Radio />}
-              label={option.optionText}
-            />
-          ))}
-        </RadioGroup>
-      );
-    case 'MULTIPLE_CHOICE':
-      return (
-        <FormGroup>
-          {question.options.map((option) => (
-            <FormControlLabel
-              key={option.id}
-              control={
-                <Checkbox
-                  checked={(response || []).includes(option.id)}
-                  onChange={handleChange}
-                  value={option.id.toString()}
-                />
-              }
-              label={option.optionText}
-            />
-          ))}
-        </FormGroup>
-      );
-    default:
-      return null;
-  }
+      ))}
+      <button onClick={handleSubmit}>Submit Survey</button>
+    </div>
+  );
 };
 
-export default QuestionComponent;
+export default SurveyPage;

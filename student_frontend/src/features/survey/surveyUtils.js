@@ -1,3 +1,4 @@
+/*
 export const validateResponses = (questions, responses) => {
   console.log("Validating responses:", responses);
   for (const question of questions) {
@@ -17,3 +18,4 @@ export const validateResponses = (questions, responses) => {
   console.log("All responses are valid");
   return true;
 };
+*/
