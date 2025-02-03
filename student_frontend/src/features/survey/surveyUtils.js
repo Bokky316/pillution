@@ -1,10 +1,19 @@
 export const validateResponses = (questions, responses) => {
-  if (!questions || !Array.isArray(questions) || questions.length === 0) {
-    return false;
-  }
-  return questions.every(question => {
+  console.log("Validating responses:", responses);
+  for (const question of questions) {
     const response = responses[question.id];
-    return response !== undefined && response !== null &&
-           (typeof response === 'string' ? response.trim() !== '' : response.length > 0);
-  });
+    console.log(`Question ${question.id}:`, question.questionText, "Response:", response);
+
+    if (response === undefined || response === null || response === '') {
+      console.log(`Missing response for question ${question.id}`);
+      return false;
+    }
+
+    if (Array.isArray(response) && response.length === 0) {
+      console.log(`Empty array response for question ${question.id}`);
+      return false;
+    }
+  }
+  console.log("All responses are valid");
+  return true;
 };
