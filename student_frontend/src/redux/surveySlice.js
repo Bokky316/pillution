@@ -14,10 +14,14 @@ export const fetchCategories = createAsyncThunk(
       const data = await response.json();
       console.log('Categories fetched successfully:', data);
 
-      // 첫 번째 카테고리와 서브카테고리 자동 선택
       if (data.length > 0) {
         dispatch(setCurrentCategoryIndex(0));
         dispatch(setCurrentSubCategoryIndex(0));
+        // 첫 번째 서브카테고리의 질문들을 가져옵니다.
+        const firstSubCategoryId = data[0].subCategories[0]?.id;
+        if (firstSubCategoryId) {
+          dispatch(fetchQuestions(firstSubCategoryId));
+        }
       }
 
       return data;
@@ -87,18 +91,29 @@ const surveySlice = createSlice({
   reducers: {
     updateResponse: (state, action) => {
       const { questionId, answer } = action.payload;
-      state.responses[questionId] = answer;
+      if (answer !== undefined && answer !== null && answer !== '') {
+        state.responses[questionId] = answer;
+      } else {
+        delete state.responses[questionId];
+      }
     },
     setCurrentCategoryIndex: (state, action) => {
       state.currentCategoryIndex = action.payload;
+      state.currentSubCategoryIndex = 0; // 카테고리가 변경되면 서브카테고리 인덱스를 리셋합니다.
+      state.questions = []; // 질문을 초기화합니다.
+      state.responses = {}; // 응답을 초기화합니다.
     },
     setCurrentSubCategoryIndex: (state, action) => {
       state.currentSubCategoryIndex = action.payload;
+      state.questions = []; // 질문을 초기화합니다.
+      state.responses = {}; // 응답을 초기화합니다.
+    },
+    clearResponses: (state) => {
+      state.responses = {};
     },
   },
   extraReducers: (builder) => {
     builder
-      // fetchCategories
       .addCase(fetchCategories.pending, (state) => {
         state.categoriesLoading = true;
         state.categoriesError = null;
@@ -116,7 +131,6 @@ const surveySlice = createSlice({
         state.categoriesLoading = false;
         state.categoriesError = action.payload;
       })
-      // fetchQuestions
       .addCase(fetchQuestions.pending, (state) => {
         state.questionsLoading = true;
         state.questionsError = null;
@@ -125,12 +139,12 @@ const surveySlice = createSlice({
         state.questionsLoading = false;
         state.questions = action.payload;
         state.questionsError = null;
+        state.responses = {}; // 새로운 질문을 가져올 때 이전 응답 초기화
       })
       .addCase(fetchQuestions.rejected, (state, action) => {
         state.questionsLoading = false;
         state.questionsError = action.payload;
       })
-      // submitSurvey
       .addCase(submitSurvey.pending, (state) => {
         state.submitLoading = true;
         state.submitError = null;
@@ -147,5 +161,5 @@ const surveySlice = createSlice({
   },
 });
 
-export const { updateResponse, setCurrentCategoryIndex, setCurrentSubCategoryIndex } = surveySlice.actions;
+export const { updateResponse, setCurrentCategoryIndex, setCurrentSubCategoryIndex, clearResponses } = surveySlice.actions;
 export default surveySlice.reducer;

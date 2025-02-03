@@ -6,7 +6,7 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
     let value;
 
     if (question.questionType === 'MULTIPLE_CHOICE') {
-      const selectedOptions = [...(response || [])];
+      const selectedOptions = Array.isArray(response) ? [...response] : [];
       const optionId = parseInt(event.target.value, 10);
 
       if (event.target.checked) {
@@ -66,7 +66,7 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
               key={option.id}
               control={
                 <Checkbox
-                  checked={(response || []).includes(option.id)}
+                  checked={Array.isArray(response) && response.includes(option.id)}
                   onChange={handleChange}
                   value={option.id.toString()}
                 />

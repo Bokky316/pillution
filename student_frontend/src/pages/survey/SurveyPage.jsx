@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Button, CircularProgress } from "@mui/material";
@@ -20,56 +20,56 @@ const SurveyPage = () => {
     questionsError
   } = useSelector(state => state.survey);
 
-  const fetchCategoriesIfNeeded = useCallback(() => {
-    if (categories.length === 0 && !categoriesLoading && !categoriesError) {
-      console.log('Fetching categories...');
-      dispatch(fetchCategories());
-    }
-  }, [categories.length, categoriesLoading, categoriesError, dispatch]);
+  useEffect(() => {
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
-  const fetchQuestionsIfNeeded = useCallback(() => {
+  useEffect(() => {
     if (categories.length > 0 && currentCategoryIndex !== null && currentSubCategoryIndex !== null) {
       const subCategoryId = categories[currentCategoryIndex]?.subCategories?.[currentSubCategoryIndex]?.id;
-      if (subCategoryId && !questionsLoading && !questionsError && questions.length === 0) {
-        console.log('Fetching questions for subCategoryId:', subCategoryId);
+      if (subCategoryId) {
         dispatch(fetchQuestions(subCategoryId));
       }
     }
-  }, [categories, currentCategoryIndex, currentSubCategoryIndex, questionsLoading, questionsError, questions.length, dispatch]);
-
-  useEffect(() => {
-    fetchCategoriesIfNeeded();
-  }, [fetchCategoriesIfNeeded]);
-
-  useEffect(() => {
-    fetchQuestionsIfNeeded();
-  }, [fetchQuestionsIfNeeded, currentCategoryIndex, currentSubCategoryIndex]);
+  }, [dispatch, categories, currentCategoryIndex, currentSubCategoryIndex]);
 
   const handleResponseChange = (questionId, value) => {
     dispatch(updateResponse({ questionId, answer: value }));
   };
 
-  const handleNext = () => {
-    const currentCategory = categories[currentCategoryIndex];
-    if (currentSubCategoryIndex < currentCategory.subCategories.length - 1) {
-      dispatch(setCurrentSubCategoryIndex(currentSubCategoryIndex + 1));
-    } else if (currentCategoryIndex < categories.length - 1) {
-      dispatch(setCurrentCategoryIndex(currentCategoryIndex + 1));
-      dispatch(setCurrentSubCategoryIndex(0));
-    } else {
-      dispatch(submitSurvey({ responses }))
-        .unwrap()
-        .then(() => navigate('/survey-complete'))
-        .catch(error => console.error('Survey submission failed:', error));
-    }
-  };
+   const handleNext = () => {
+     const currentCategory = categories[currentCategoryIndex];
+     if (currentSubCategoryIndex < currentCategory.subCategories.length - 1) {
+       dispatch(setCurrentSubCategoryIndex(currentSubCategoryIndex + 1));
+     } else if (currentCategoryIndex < categories.length - 1) {
+       dispatch(setCurrentCategoryIndex(currentCategoryIndex + 1));
+       dispatch(setCurrentSubCategoryIndex(0));
+     } else {
+       const formattedResponses = Object.entries(responses).map(([questionId, answer]) => {
+         const question = questions.find(q => q.id.toString() === questionId);
+         return {
+           questionId: parseInt(questionId),
+           responseType: question.questionType,
+           responseText: question.questionType === 'TEXT' ? answer : null,
+           selectedOptions: question.questionType === 'MULTIPLE_CHOICE' ?
+             (Array.isArray(answer) ? answer : [answer]) : null
+         };
+       });
 
-  if (categoriesLoading) {
+       dispatch(submitSurvey({ responses: formattedResponses }))
+         .unwrap()
+         .then(() => navigate('/survey-complete'))
+         .catch(error => console.error('Survey submission failed:', error));
+     }
+   };
+
+
+  if (categoriesLoading || questionsLoading) {
     return <CircularProgress />;
   }
 
-  if (categoriesError) {
-    return <Typography color="error">{categoriesError}</Typography>;
+  if (categoriesError || questionsError) {
+    return <Typography color="error">{categoriesError || questionsError}</Typography>;
   }
 
   if (!categories || categories.length === 0) {
@@ -91,22 +91,14 @@ const SurveyPage = () => {
     <Box sx={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
       <Typography variant="h5" sx={{ mb: 3 }}>{currentCategory.name}</Typography>
       <Typography variant="h6" sx={{ mb: 2 }}>{currentSubCategory.name}</Typography>
-      {questionsLoading ? (
-        <CircularProgress />
-      ) : questionsError ? (
-        <Typography color="error">{questionsError}</Typography>
-      ) : questions.length === 0 ? (
-        <Typography>이 서브카테고리에는 질문이 없습니다.</Typography>
-      ) : (
-        questions.map((question) => (
-          <QuestionComponent
-            key={question.id}
-            question={question}
-            response={responses[question.id]}
-            onResponseChange={(value) => handleResponseChange(question.id, value)}
-          />
-        ))
-      )}
+      {questions.map((question) => (
+        <QuestionComponent
+          key={question.id}
+          question={question}
+          response={responses[question.id]}
+          onResponseChange={handleResponseChange}
+        />
+      ))}
       <Button
         variant="contained"
         onClick={handleNext}
