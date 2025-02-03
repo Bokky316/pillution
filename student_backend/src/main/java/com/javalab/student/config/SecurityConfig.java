@@ -100,17 +100,14 @@ public class SecurityConfig {
         // URL 별 접근 권한 설정
         http.authorizeHttpRequests(request -> request
                 // OAuth2 관련 엔드포인트
-                .requestMatchers("/oauth2/**", "/login/oauth2/code/**").permitAll()
+                .requestMatchers("/api/oauth2/**", "/oauth2/**", "/login/oauth2/code/**").permitAll()
 
                 // 공개 접근 가능한 API 엔드포인트
                 .requestMatchers("/", "/api/auth/login", "/api/auth/logout", "/api/auth/userInfo", "/api/auth/login/error").permitAll()
                 .requestMatchers("/api/members/register", "/api/members/checkEmail").permitAll()
                 .requestMatchers("/api/email/send", "/api/email/verify").permitAll()
                 .requestMatchers("/api/survey/**").permitAll()
-
-                // 학생 관련 API
-                .requestMatchers(HttpMethod.GET, "/api/students/**").permitAll()
-                .requestMatchers("/api/students/**").hasRole("ADMIN")
+                .requestMatchers("/members/login").permitAll()
 
                 // 관리자 전용 엔드포인트
                 .requestMatchers("/admin/**").hasRole("ADMIN")
@@ -122,11 +119,7 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
 
                 // 정적 리소스
-                .requestMatchers(
-                        "/images/**", "/static-images/**", "/css/**", "/img/**", "/favicon.ico", "/error",
-                        "/**/*.css", "/**/*.js", "/**/*.png", "/**/*.jpg", "/**/*.jpeg", "/**/*.gif", "/**/*.svg", "/**/*.html",
-                        "/ping.js"
-                ).permitAll()
+                .requestMatchers("/images/**", "/static-images/**", "/css/**", "/favicon.ico", "/error", "/img/**").permitAll()
 
                 // 그 외 모든 요청은 인증 필요
                 .anyRequest().authenticated()
@@ -185,7 +178,9 @@ public class SecurityConfig {
         http.oauth2Login(oauth2 -> oauth2
                 .loginPage("/members/login")
                 .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                .successHandler(customAuthenticationSuccessHandler)
         );
+
 
         // 지금까지 설정한 내용을 빌드하여 반환, 반환 객체는 SecurityFilterChain 객체
         return http.build();

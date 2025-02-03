@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Button, TextField } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { API_URL } from "@/constant";
+import { SERVER_URL } from "@/constant";
 import { useDispatch } from "react-redux";
 import { setUser } from "@/redux/authSlice";
 
@@ -96,19 +97,21 @@ export default function Login({ onLogin }) {
                                 <div className="social-login" style={{ width: "100%", textAlign: "center" }}>
                                     <p>소셜 계정으로 로그인</p>
                                     <a
-                                        href={`${API_URL}oauth2/authorization/kakao`}
-                                        style={{
-                                            display: "inline-block",
-                                            backgroundColor: "#FEE500",
-                                            color: "#000",
-                                            padding: "10px 20px",
-                                            borderRadius: "5px",
-                                            textDecoration: "none",
-                                            fontWeight: "bold",
-                                        }}
+                                      href={`${SERVER_URL}oauth2/authorization/kakao`}
+                                      style={{
+                                        display: "inline-block",
+                                        backgroundColor: "#FEE500",
+                                        color: "#000",
+                                        padding: "10px 20px",
+                                        borderRadius: "5px",
+                                        textDecoration: "none",
+                                        fontWeight: "bold",
+                                      }}
                                     >
-                                        카카오로 로그인
+                                      카카오로 로그인
                                     </a>
+
+
                                 </div>
 
                 <Button variant="outlined" onClick={() => navigate("/registerMember")}>

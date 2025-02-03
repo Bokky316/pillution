@@ -58,39 +58,32 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
         log.info("TokenAuthenticationFilter.doFilterInternal 시작 - 요청 URI: {}", request.getRequestURI());
 
-        // Swagger, 로그인, 특정 경로 및 이메일 인증 관련 경로는 필터 건너뛰기
         if (shouldSkipFilter(request.getRequestURI())) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 1. 쿠키에서 액세스 토큰 추출
         String token = extractTokenFromCookies(request.getCookies());
         log.info("TokenAuthenticationFilter에서 추출한 쿠키 토큰: {}", token);
 
-        // 2. 토큰 검증
         if (token == null || !tokenProvider.validateToken(token)) {
-            handleUnauthorizedResponse(response, token == null ? "인증 토큰이 누락되었습니다." : "액세스 토큰이 만료되었습니다.");
+            filterChain.doFilter(request, response);
             return;
         }
 
-        // 3. 토큰에서 이메일 추출
         String email = tokenProvider.getEmailFromToken(token);
         log.info("토큰에서 추출한 이메일: {}", email);
 
-        // 4. 위에서 추출한 이메일로 Redis에서 권한 정보 조회
         List<String> roles = redisService.getUserAuthoritiesFromCache(email);
         if (roles == null || roles.isEmpty()) {
-            handleUnauthorizedResponse(response, "Redis에서 권한 정보를 찾을 수 없습니다.");
+            filterChain.doFilter(request, response);
             return;
         }
         log.info("Redis에서 조회한 권한 정보: {}", roles);
 
-        // 5. Redis 권한 정보로 인증 객체 생성, 인증 객체를 SecurityContext 세팅
         Authentication auth = createAuthentication(email, roles);
         SecurityContextHolder.getContext().setAuthentication(auth);
 
-        // 6. 다음 필터로 요청 전달, 더이상 필터가 없으면 사용자 원하는 요청을 처리
         filterChain.doFilter(request, response);
     }
 
@@ -100,8 +93,13 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                 path.equals("/api/auth/login") || path.equals("/api/auth/userInfo") ||
                 path.equals("/api/members/register") || path.equals("/api/members/checkEmail") ||
                 path.equals("/ping.js") ||
-                path.equals("/api/email/send") || path.equals("/api/email/verify");
+                path.equals("/api/email/send") || path.equals("/api/email/verify") ||
+                path.startsWith("/api/oauth2/") || // 이 부분을 추가
+                path.startsWith("/oauth2") || path.startsWith("/login/oauth2/code/");
     }
+
+
+
 
     /**
      * 쿠키에서 JWT 토큰 추출

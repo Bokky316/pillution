@@ -37,37 +37,22 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
      */
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) {
-        /**
-         * DefaultOAuth2UserService 클래스의 loadUser() 메소드 호출.
-         *
-         * 소셜 로그인 업체 식별번호, 소셜 로그인 Api에서 발급받은
-         * 1)client-id 2)client-secret 3)Redirect-Url 정보를 담고 있는
-         * userRequest 를 제공해주면  카카오 소셜 로그인을 진행해주고
-         * 그 결과를 OAuth2User 객체에 담아서 보내줌.
-         *
-         * OAuth2User 객체에는 카카오에서 제공하는 사용자의 이메일, 이름 등의 정보 포함
-         *
-         * 정리하면 super.loadUser(userRequest) 호출로 카카오 소셜 로그인이
-         * 진행되고 거기서 받아온 값이 OAuth2User 객체에 담겨온다. 우리는 그
-         * 정보를 사용하여 데이터베이스에 소셜 로그인 관련 정보를 저장하거나
-         * 업데이트하고, 시큐리티 객체를 생성하여 반환하면 된다.
-         */
+        log.info("OAuth2 Login Start: Provider = {}", userRequest.getClientRegistration().getRegistrationId());
+
         OAuth2User oAuth2User = super.loadUser(userRequest);
-        /**
-         * oAuth2User 에서 정보를 Key-value 형태로 추출하여 map 형태로 보관.
-         * 주로 이메일 또는 닉네임 정도. 소셜 업체에 따라서 다름.
-         */
+
+        log.info("OAuth2User loaded. Attributes: {}", oAuth2User.getAttributes());
+
         Map<String, Object> attributes = oAuth2User.getAttributes();
-        // 소셜 로그인 제공자 정보, 카카오, 구글, 네이버 등
         String provider = userRequest.getClientRegistration().getRegistrationId();
-        // 소셜 로그인 제공자로 부터 받은 사용자 정보에서 이메일 추출
         String email = extractEmail(attributes, provider);
-        // 소셜 로그인 제공자로 부터 받은 사용자 프로필 이름 추출
         String name = extractName(attributes, provider);
 
-        // 사용자 저장 또는 업데이트(최초소셜로그인->저장, 이미소셜로그인한적있음->업데이트)
+        log.info("Extracted info: email = {}, name = {}", email, name);
+
         Member member = saveOrUpdateMember(email, name, provider);
-        // 시큐리티 객체 생성
+        log.info("Member saved/updated: {}", member);
+
         return createSecurityDto(member, attributes);
     }
 
