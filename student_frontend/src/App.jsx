@@ -21,6 +21,7 @@ import Home from "@features/auth/components/Home";
 import { API_URL } from "@/constant";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistor } from "@/redux/store";
+import { fetchWithAuth } from "./features/auth/utils/fetchWithAuth";
 
 
 
