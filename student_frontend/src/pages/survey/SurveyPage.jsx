@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Button, CircularProgress } from "@mui/material";
@@ -14,20 +14,36 @@ const SurveyPage = () => {
     currentSubCategoryIndex,
     questions,
     responses,
-    loading,
-    error
+    categoriesLoading,
+    questionsLoading,
+    categoriesError,
+    questionsError
   } = useSelector(state => state.survey);
 
-  useEffect(() => {
-    dispatch(fetchCategories());
-  }, [dispatch]);
+  const fetchCategoriesIfNeeded = useCallback(() => {
+    if (categories.length === 0 && !categoriesLoading && !categoriesError) {
+      console.log('Fetching categories...');
+      dispatch(fetchCategories());
+    }
+  }, [categories.length, categoriesLoading, categoriesError, dispatch]);
+
+  const fetchQuestionsIfNeeded = useCallback(() => {
+    if (categories.length > 0 && currentCategoryIndex !== null && currentSubCategoryIndex !== null && !questionsLoading && !questionsError) {
+      const subCategoryId = categories[currentCategoryIndex]?.subCategories?.[currentSubCategoryIndex]?.id;
+      if (subCategoryId && questions.length === 0) {
+        console.log('Fetching questions for subCategoryId:', subCategoryId);
+        dispatch(fetchQuestions(subCategoryId));
+      }
+    }
+  }, [categories, currentCategoryIndex, currentSubCategoryIndex, questionsLoading, questionsError, questions.length, dispatch]);
 
   useEffect(() => {
-    if (categories.length > 0 && categories[currentCategoryIndex]?.subCategories?.length > 0) {
-      const subCategoryId = categories[currentCategoryIndex].subCategories[currentSubCategoryIndex].id;
-      dispatch(fetchQuestions(subCategoryId));
-    }
-  }, [dispatch, categories, currentCategoryIndex, currentSubCategoryIndex]);
+    fetchCategoriesIfNeeded();
+  }, [fetchCategoriesIfNeeded]);
+
+  useEffect(() => {
+    fetchQuestionsIfNeeded();
+  }, [fetchQuestionsIfNeeded]);
 
   const handleResponseChange = (questionId, value) => {
     dispatch(updateResponse({ questionId, answer: value }));
@@ -48,11 +64,20 @@ const SurveyPage = () => {
     }
   };
 
-  if (loading) return <CircularProgress />;
-  if (error) return <Typography color="error">{error}</Typography>;
+  if (categoriesLoading) {
+    return <CircularProgress />;
+  }
+
+  if (categoriesError) {
+    return <Typography color="error">{categoriesError}</Typography>;
+  }
 
   if (!categories || categories.length === 0) {
     return <Typography>카테고리가 없습니다. 관리자에게 문의하세요.</Typography>;
+  }
+
+  if (currentCategoryIndex === null || currentSubCategoryIndex === null) {
+    return <Typography>설문을 불러오는 중입니다...</Typography>;
   }
 
   const currentCategory = categories[currentCategoryIndex];
@@ -62,19 +87,23 @@ const SurveyPage = () => {
     <Box sx={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
       <Typography variant="h5" sx={{ mb: 3 }}>{currentCategory?.name}</Typography>
       <Typography variant="h6" sx={{ mb: 2 }}>{currentSubCategory?.name}</Typography>
-      {questions.map((question) => (
-        <QuestionComponent
-          key={question.id}
-          question={question}
-          response={responses[question.id]}
-          onResponseChange={(value) => handleResponseChange(question.id, value)}
-        />
-      ))}
+      {questionsLoading ? (
+        <CircularProgress />
+      ) : (
+        questions.map((question) => (
+          <QuestionComponent
+            key={question.id}
+            question={question}
+            response={responses[question.id]}
+            onResponseChange={(value) => handleResponseChange(question.id, value)}
+          />
+        ))
+      )}
       <Button
         variant="contained"
         onClick={handleNext}
         sx={{ mt: 2 }}
-        disabled={loading}
+        disabled={categoriesLoading || questionsLoading}
       >
         {currentCategoryIndex === categories.length - 1 &&
          currentSubCategoryIndex === currentCategory?.subCategories?.length - 1
