@@ -37,13 +37,13 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
     case 'SINGLE_CHOICE':
       return (
         <RadioGroup
-          value={response ? response.toString() : ''}
+          value={response !== undefined ? response : ''}
           onChange={handleChange}
         >
           {question.options.map((option) => (
             <FormControlLabel
               key={option.id}
-              value={option.id.toString()}
+              value={option.id}
               control={<Radio />}
               label={option.optionText}
             />
@@ -60,7 +60,7 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
                 <Checkbox
                   checked={(response || []).includes(option.id)}
                   onChange={handleChange}
-                  value={option.id.toString()}
+                  value={option.id}
                 />
               }
               label={option.optionText}

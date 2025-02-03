@@ -42,20 +42,32 @@ const SurveyPage = () => {
     }
   }, [dispatch, categories, currentCategoryIndex, currentSubCategoryIndex]);
 
-  const handleResponseChange = (questionId, value) => {
-    console.log(`Response changed for question ${questionId}:`, value);
-    dispatch(updateResponse({ questionId, answer: value.toString() }));
+const handleResponseChange = (questionId, value) => {
+  console.log(`Response changed for question ${questionId}:`, value, typeof value);
 
-    const currentQuestion = questions.find(q => q.id === questionId);
-    if (currentQuestion?.questionText.includes('성별')) {
-      const newGender = value === '1' ? 'female' : 'male';
-      dispatch(setGender(newGender));
-    }
+  const currentQuestion = questions.find(q => q.id === questionId);
 
-    if (currentQuestion?.questionText.includes('최대 3가지')) {
-      dispatch(setSelectedSymptoms(Array.isArray(value) ? value.map(String) : []));
-    }
-  };
+  let processedValue = value;
+
+  if (currentQuestion.questionType === 'SINGLE_CHOICE') {
+    processedValue = parseInt(value, 10);
+  } else if (currentQuestion.questionType === 'MULTIPLE_CHOICE') {
+    processedValue = Array.isArray(value) ? value.map(v => parseInt(v, 10)) : [];
+  }
+
+  dispatch(updateResponse({ questionId, answer: processedValue }));
+
+  if (currentQuestion?.questionText.includes('성별')) {
+    const newGender = processedValue === 1 ? 'female' : 'male';
+    dispatch(setGender(newGender));
+  }
+
+  if (currentQuestion?.questionText.includes('최대 3가지')) {
+    dispatch(setSelectedSymptoms(Array.isArray(processedValue) ? processedValue : []));
+  }
+};
+
+
 
   const handleNext = async () => {
     if (!validateResponses(questions, responses)) {
@@ -145,18 +157,14 @@ const SurveyPage = () => {
           )}
         </>
       )}
-      {questions && questions.length > 0 ? (
-        questions.map((question) => (
-          <QuestionComponent
-            key={question.id}
-            question={question}
-            response={responses[question.id]}
-            onResponseChange={(value) => handleResponseChange(question.id, value)}
-          />
-        ))
-      ) : (
-        <Typography>질문을 불러오는 중입니다...</Typography>
-      )}
+      {questions.map((question) => (
+        <QuestionComponent
+          key={question.id}
+          question={question}
+          response={responses[question.id]}
+          onResponseChange={(value) => handleResponseChange(question.id, value)}
+        />
+      ))}
       <Button
         variant="contained"
         onClick={handleNext}
