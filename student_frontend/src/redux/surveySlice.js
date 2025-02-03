@@ -17,7 +17,6 @@ export const fetchCategories = createAsyncThunk(
       if (data.length > 0) {
         dispatch(setCurrentCategoryIndex(0));
         dispatch(setCurrentSubCategoryIndex(0));
-        // 첫 번째 서브카테고리의 질문들을 가져옵니다.
         const firstSubCategoryId = data[0].subCategories[0]?.id;
         if (firstSubCategoryId) {
           dispatch(fetchQuestions(firstSubCategoryId));
@@ -87,6 +86,8 @@ const surveySlice = createSlice({
     questionsError: null,
     submitLoading: false,
     submitError: null,
+    gender: null,
+    selectedSymptoms: [],
   },
   reducers: {
     updateResponse: (state, action) => {
@@ -96,20 +97,44 @@ const surveySlice = createSlice({
       } else {
         delete state.responses[questionId];
       }
+
+      // 성별 설정
+      if (questionId === 2) { // 성별 질문의 ID가 2라고 가정
+        state.gender = answer === '1' ? 'female' : 'male';
+      }
+
+      // 주요 증상 설정 (최대 3개로 제한)
+      const question = state.questions.find(q => q.id === questionId);
+      if (question && (question.questionText.includes('주요 증상') || question.questionText.includes('불편하거나 걱정되는 것'))) {
+        state.selectedSymptoms = Array.isArray(answer) ? answer.slice(0, 3) : [answer];
+      }
     },
     setCurrentCategoryIndex: (state, action) => {
       state.currentCategoryIndex = action.payload;
-      state.currentSubCategoryIndex = 0; // 카테고리가 변경되면 서브카테고리 인덱스를 리셋합니다.
-      state.questions = []; // 질문을 초기화합니다.
-      state.responses = {}; // 응답을 초기화합니다.
+      state.currentSubCategoryIndex = 0;
+      state.questions = [];
+      state.responses = {};
     },
     setCurrentSubCategoryIndex: (state, action) => {
       state.currentSubCategoryIndex = action.payload;
-      state.questions = []; // 질문을 초기화합니다.
-      state.responses = {}; // 응답을 초기화합니다.
+      state.questions = [];
+      state.responses = {};
     },
     clearResponses: (state) => {
       state.responses = {};
+    },
+    filterSubCategories: (state, action) => {
+      const selectedSymptoms = action.payload;
+      if (state.currentCategoryIndex !== null) {
+        const currentCategory = state.categories[state.currentCategoryIndex];
+        if (currentCategory.name === "2. 증상·불편") {
+          currentCategory.subCategories = currentCategory.subCategories.filter(sub =>
+            sub.name === "주요 증상" ||
+            sub.name === "추가 증상" ||
+            selectedSymptoms.includes(sub.name)
+          );
+        }
+      }
     },
   },
   extraReducers: (builder) => {
@@ -161,5 +186,12 @@ const surveySlice = createSlice({
   },
 });
 
-export const { updateResponse, setCurrentCategoryIndex, setCurrentSubCategoryIndex, clearResponses } = surveySlice.actions;
+export const {
+  updateResponse,
+  setCurrentCategoryIndex,
+  setCurrentSubCategoryIndex,
+  clearResponses,
+  filterSubCategories
+} = surveySlice.actions;
+
 export default surveySlice.reducer;
