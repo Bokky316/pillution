@@ -1,6 +1,8 @@
 package com.javalab.student.security.handler;
 
 import com.javalab.student.config.jwt.TokenProvider;
+import com.javalab.student.entity.Member;
+import com.javalab.student.repository.MemberRepository;
 import com.javalab.student.security.dto.MemberSecurityDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.time.LocalDateTime;
 
 /**
  * 사용자 정의 : 로그인 성공 후처리 담당 클래스
@@ -27,6 +30,7 @@ import java.time.Duration;
 @Slf4j
 public class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
     private final TokenProvider tokenProvider;
+    private final MemberRepository memberRepository; // ✅ Repository 직접 사용하여 lastLoginAt 업데이트
 
     /**
      * 로그인 성공 후처리 메서드
@@ -43,7 +47,20 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
 
         // 1. 사용자 정보를 Authentication 객체에서 추출
         MemberSecurityDto userDetails = (MemberSecurityDto) authentication.getPrincipal();
+        String email = userDetails.getEmail();
+        log.info("🔹 로그인한 이메일: {}", email);
 
+
+
+        // 2. 로그인한 사용자 정보 업데이트 (`lastLoginAt`)
+        Member member = memberRepository.findByEmail(email);
+        if (member != null) {
+            member.setLastLoginAt(LocalDateTime.now()); // ✅ 현재 시간을 마지막 로그인 시간으로 저장
+            memberRepository.save(member);
+            log.info("🔹 [CustomAuthenticationSuccessHandler] 마지막 로그인 시간 저장 완료: {}", member.getLastLoginAt());
+        } else {
+            log.warn("⚠ [CustomAuthenticationSuccessHandler] 회원을 찾을 수 없음: {}", email);
+        }
         // 2. 사용자 권한 목록을 문자열로 변환
         String authorities = userDetails.getAuthorities().toString(); // 권한 목록을 문자열로 변환
 

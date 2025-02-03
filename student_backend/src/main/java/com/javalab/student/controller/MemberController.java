@@ -95,6 +95,9 @@ public class MemberController {
         boolean isLoginSuccessful = memberService.login(loginForm);
 
         if (isLoginSuccessful) {
+            // 로그인 성공 시 마지막 로그인 날짜 업데이트
+            memberService.updateLastLogin(loginForm.getEmail());
+
             response.put("message", "로그인 성공");
             response.put("status", "success");
             return ResponseEntity.ok(response); // HTTP 200 OK
@@ -104,6 +107,15 @@ public class MemberController {
         response.put("message", "로그인 실패");
         response.put("status", "failed");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response); // HTTP 401 Unauthorized
+    }
+
+    /**
+     * 회원 탈퇴 API 추가
+     */
+    @PostMapping("/deactivate")
+    public ResponseEntity<String> deactivateMember(@RequestParam String email) {
+        memberService.deactivateMember(email);
+        return ResponseEntity.ok("회원 탈퇴 완료");
     }
 
 

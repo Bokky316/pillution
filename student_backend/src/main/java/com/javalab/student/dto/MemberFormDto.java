@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
 import org.hibernate.validator.constraints.Length;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * 회원가입 폼 DTO
@@ -45,6 +47,18 @@ public class MemberFormDto {
             message = "Phone number should be in the format 010-XXXX-XXXX"
     )
     private String phone;
+
+    // 생년월일
+    private LocalDate birthDate;
+
+    // 성별
+    private String gender;
+
+    // 계정 활성화 여부 (기본값: true)
+    private boolean activate = true;
+
+    // 사용자 포인트 (기본값: 0)
+    private int points = 0;
 
     private Role role = Role.USER; // 기본값 USER로 설정  -> 이유 : 권한 없을경우 로그인 안됨
 
