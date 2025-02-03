@@ -85,7 +85,7 @@ const Header = ({ handleLogout }) => {
                     ) : (
                         <>
                             <Button color="inherit" component={Link} to="/login" sx={{ mr: 1 }}>로그인</Button>
-                            <Button color="inherit" component={Link} to="/register">회원가입</Button>
+                            <Button color="inherit" component={Link} to="/registerMember">회원가입</Button>
                         </>
                     )}
                 </Box>

@@ -51,5 +51,9 @@ public class WebConfig implements WebMvcConfigurer {
 
         registry.addResourceHandler("/static-images/**")
                 .addResourceLocations("classpath:/static/images/");  // 정적 리소스
+
+        registry.addResourceHandler("/favicon.ico")
+                .addResourceLocations("classpath:/static/")
+                .setCachePeriod(0);
     }
 }

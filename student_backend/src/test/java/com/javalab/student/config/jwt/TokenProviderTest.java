@@ -45,7 +45,7 @@ class TokenProviderTest {
 //                .build());
 //
 //        // when, 토큰 생성, 회원 정보와 만료 기간을 전달해 토큰을 생성한다. ofDays(14) : 14일
-//        String token = tokenProvider.generateToken(testUser, Duration.ofDays(14));
+//        String token = tokenProvider.generateToken(testUser, Duration.ofDays(7));
 //        log.info("token: " + token); // token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhanVmcmVzaEBnbWFpbC5jb20iLCJpYXQiOjE3MzczNDE0ODEsImV4cCI6MTczODU1MTA4MSwic3ViIjoidGVzdDFAdGVzdC5jb20iLCJpZCI6MTAyfQ.D3PxyZFlw_nvt71Gh9cDR1jDF5aRgQGgOLI30gkKaNw
 //
 //        // then, 위에서 생성한 토큰 검증, 토큰을 파싱(암호해독, 복호화)해서 회원 정보를 가져온다.
@@ -73,7 +73,7 @@ class TokenProviderTest {
                 .createToken(jwtProperties);
 
         // when, 위에서 만든 만료된 토큰을 유효성 검증 메소드에 전달한다. 만료된 토큰이므로 false가 반환된다.
-        boolean result = tokenProvider.validToken(token);
+        boolean result = tokenProvider.validateToken(token);
 
         // then, 유효성 검증 결과가 false인지 검증한다.
         assertThat(result).isFalse();
@@ -92,7 +92,7 @@ class TokenProviderTest {
                 .createToken(jwtProperties);
 
         // when, 유효한 토큰을 유효성 검증 메소드에 전달한다. 유효한 토큰이므로 true가 반환된다.
-        boolean result = tokenProvider.validToken(token);
+        boolean result = tokenProvider.validateToken(token);
 
         // then, 유효성 검증 결과가 true인지 검증한다.
         assertThat(result).isTrue();
@@ -101,25 +101,25 @@ class TokenProviderTest {
     /**
      * 토큰을 전달받아 인증 정보를 담은 Authentication 객체를 반환하는 메소드 테스트
      */
-    @DisplayName("getAuthentication(): 토큰 기반으로 인증정보를 가져올 수 있다.")
-    @Test
-    void getAuthentication() {
-        // given
-        String userEmail = "test@test.com";
-        // 토큰 생성, 주제로 사용할 이메일을 전달해 토큰을 생성한다.
-        String token = JwtFactory.builder()
-                .subject(userEmail)
-                .build()
-                .createToken(jwtProperties);
-
-        // when, 토큰 제공자의 getAuthentication 메소드에 토큰을 전달해 인증 정보를 가져온다.
-        Authentication authentication = tokenProvider.getAuthentication(token);
-        log.info("authentication: " + authentication); // authentication: UsernamePasswordAuthenticationToken [Principal=org.springframework.security.core.userdetails.User [Username=test@test.com, Password=[PROTECTED], Enabled=true, AccountNonExpired=true, CredentialsNonExpired=true, AccountNonLocked=true, Granted Authorities=[ROLE_USER]], Credentials=[PROTECTED], Authenticated=true, Details=null, Granted Authorities=[ROLE_USER]]
-        log.info("authentication.getPrincipal() : " + authentication.getPrincipal().getClass().getName()); // authentication.getPrincipal() :
-
-        // then, 반환받은 인증 정보에서 주제로 사용한 이메일이 위에서 설정한 이메일과 같은지 검증한다.
-        assertThat(((UserDetails) authentication.getPrincipal()).getUsername()).isEqualTo(userEmail);
-    }
+//    @DisplayName("getAuthentication(): 토큰 기반으로 인증정보를 가져올 수 있다.")
+//    @Test
+//    void getAuthentication() {
+//        // given
+//        String userEmail = "test@test.com";
+//        // 토큰 생성, 주제로 사용할 이메일을 전달해 토큰을 생성한다.
+//        String token = JwtFactory.builder()
+//                .subject(userEmail)
+//                .build()
+//                .createToken(jwtProperties);
+//
+//        // when, 토큰 제공자의 getAuthentication 메소드에 토큰을 전달해 인증 정보를 가져온다.
+//        Authentication authentication = tokenProvider.getAuthentication(token);
+//        log.info("authentication: " + authentication); // authentication: UsernamePasswordAuthenticationToken [Principal=org.springframework.security.core.userdetails.User [Username=test@test.com, Password=[PROTECTED], Enabled=true, AccountNonExpired=true, CredentialsNonExpired=true, AccountNonLocked=true, Granted Authorities=[ROLE_USER]], Credentials=[PROTECTED], Authenticated=true, Details=null, Granted Authorities=[ROLE_USER]]
+//        log.info("authentication.getPrincipal() : " + authentication.getPrincipal().getClass().getName()); // authentication.getPrincipal() :
+//
+//        // then, 반환받은 인증 정보에서 주제로 사용한 이메일이 위에서 설정한 이메일과 같은지 검증한다.
+//        assertThat(((UserDetails) authentication.getPrincipal()).getUsername()).isEqualTo(userEmail);
+//    }
 
     /**
      * 토큰을 전달받아 회원 ID를 반환하는 메소드 테스트

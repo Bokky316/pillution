@@ -24,19 +24,19 @@ public class JwtFactory {
     // 토큰 발급 시간은 현재 시간으로 설정
     private Date issuedAt = new Date();
 
-    // 토큰의 만료 시간은 14일로 설정
-    private Date expiration = new Date(new Date().getTime() + Duration.ofDays(14).toMillis());
+    // 토큰의 만료 시간은 7일로 설정
+    private Date expiration = new Date(new Date().getTime() + Duration.ofDays(7).toMillis());
 
     // 토큰에 담을 클레임 정보를 설정, 기본값은 빈 맵
     private Map<String, Object> claims = emptyMap();
 
     /*
-        * 토큰 생성 메서드를 호출합니다.
-        * @Builder : 빌더 패턴을 사용하여 객체를 생성합니다. 생성자에만 @Builder를 붙이면 생성자에만 전체 클래스가 아니고 생성자만 생성됩니다.
-        * - subject : 토큰의 주제를 설정합니다.
-        * - issuedAt : 토큰 발급 시간을 설정합니다.
-        * - expiration : 토큰의 만료 시간을 설정합니다.
-        * - claims : 토큰에 담을 클레임 정보를 설정합니다.
+     * 토큰 생성 메서드를 호출합니다.
+     * @Builder : 빌더 패턴을 사용하여 객체를 생성합니다. 생성자에만 @Builder를 붙이면 생성자에만 전체 클래스가 아니고 생성자만 생성됩니다.
+     * - subject : 토큰의 주제를 설정합니다.
+     * - issuedAt : 토큰 발급 시간을 설정합니다.
+     * - expiration : 토큰의 만료 시간을 설정합니다.
+     * - claims : 토큰에 담을 클레임 정보를 설정합니다.
      */
     @Builder
     public JwtFactory(String subject, Date issuedAt, Date expiration,
