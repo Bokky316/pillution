@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
   Button,
@@ -10,7 +10,7 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
- DialogTitle,
+  DialogTitle,
   Select,
   MenuItem,
   InputLabel,
@@ -18,15 +18,20 @@ import {
 } from "@mui/material";
 
 function PostCreatePage() {
+  const location = useLocation();
+  const defaultCategory = location.state?.defaultCategory || '공지사항';
+
   const [formData, setFormData] = useState({
     title: "",
     content: "",
-    category: "공지사항", // 게시판 선택
-    boardId: 1, // 기본값 설정
-    subCategory: "", // FAQ 하위 카테고리
+    category: defaultCategory,
+    boardId: defaultCategory === '공지사항' ? 1 : 2,
+    subCategory: "",
     authorId: null,
   });
-  const [openDialog, setOpenDialog] = useState(false);
+
+  const [openCancelDialog, setOpenCancelDialog] = useState(false);
+  const [openSubmitDialog, setOpenSubmitDialog] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
 
@@ -54,25 +59,26 @@ function PostCreatePage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 필수 필드 검증 ✅
     if (!formData.title.trim() || !formData.content.trim()) {
       alert("제목과 내용을 입력해주세요.");
       return;
     }
 
-    // 자주 묻는 질문 게시판일 경우 하위 카테고리 선택 필수 ✅
     if (formData.category === "자주 묻는 질문" && !formData.subCategory) {
       alert("FAQ 카테고리를 선택해주세요.");
       return;
     }
 
+    setOpenSubmitDialog(true);
+  };
+
+  const handleConfirmSubmit = async () => {
     try {
       const userData = JSON.parse(localStorage.getItem("loggedInUser"));
       const token = userData.token;
 
       const boardId = formData.category === "공지사항" ? 1 : 2;
 
-      // 카테고리 설정 로직 개선 ✅
       const finalCategory =
         formData.category === "자주 묻는 질문" ? formData.subCategory : formData.category;
 
@@ -82,7 +88,7 @@ function PostCreatePage() {
           title: formData.title,
           content: formData.content,
           boardId: boardId,
-          category: finalCategory, // 수정된 부분
+          category: finalCategory,
           authorId: formData.authorId,
         },
         {
@@ -94,15 +100,8 @@ function PostCreatePage() {
       );
 
       if (response.status === 200 || response.status === 201) {
-        alert("게시물이 등록되었습니다!");
+        alert("게시물이 등록되었습니다.");
         navigate("/board");
-        console.log({
-          title: formData.title,
-          content: formData.content,
-          boardId: boardId,
-          category: finalCategory, // ✅ 서버로 전송되는 카테고리 확인
-          authorId: formData.authorId,
-        });
       }
     } catch (error) {
       console.error("Error creating post:", error);
@@ -112,6 +111,8 @@ function PostCreatePage() {
       } else {
         alert("게시물 등록에 실패했습니다.");
       }
+    } finally {
+      setOpenSubmitDialog(false);
     }
   };
 
@@ -124,16 +125,20 @@ function PostCreatePage() {
   };
 
   const handleCancelClick = () => {
-    setOpenDialog(true);
+    setOpenCancelDialog(true);
   };
 
   const handleConfirmCancel = () => {
-    setOpenDialog(false);
+    setOpenCancelDialog(false);
     navigate("/board");
   };
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
+  const handleCloseDialog = (type) => {
+    if (type === 'cancel') {
+      setOpenCancelDialog(false);
+    } else {
+      setOpenSubmitDialog(false);
+    }
   };
 
   if (!isAdmin) {
@@ -224,7 +229,8 @@ function PostCreatePage() {
         </Box>
       </Box>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
+      {/* 취소 확인 다이얼로그 */}
+      <Dialog open={openCancelDialog} onClose={() => handleCloseDialog('cancel')}>
         <DialogTitle>취소 확인</DialogTitle>
         <DialogContent>
           <DialogContentText>작성 중인 내용이 저장되지 않습니다. 취소하시겠습니까?</DialogContentText>
@@ -233,7 +239,23 @@ function PostCreatePage() {
           <Button onClick={handleConfirmCancel} color="secondary">
             네
           </Button>
-          <Button onClick={handleCloseDialog} color="primary">
+          <Button onClick={() => handleCloseDialog('cancel')} color="primary">
+            아니요
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 등록 확인 다이얼로그 */}
+      <Dialog open={openSubmitDialog} onClose={() => handleCloseDialog('submit')}>
+        <DialogTitle>등록 확인</DialogTitle>
+        <DialogContent>
+          <DialogContentText>게시글을 등록하시겠습니까?</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleConfirmSubmit} color="primary">
+            네
+          </Button>
+          <Button onClick={() => handleCloseDialog('submit')} color="secondary">
             아니요
           </Button>
         </DialogActions>

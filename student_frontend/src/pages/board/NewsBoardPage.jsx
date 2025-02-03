@@ -36,6 +36,30 @@ function NewsBoardPage() {
         setCurrentPage(page);
     };
 
+    const handleEditPost = (postId) => {
+        navigate(`/post/${postId}/edit`);
+    };
+
+    const handleDeletePost = async (postId) => {
+        if (window.confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
+            try {
+                const response = await axios.delete(`http://localhost:8080/api/posts/${postId}`);
+
+                if (response.status === 204) {
+                    alert("게시글이 삭제되었습니다.");
+                    // 현재 페이지 데이터를 다시 불러옵니다
+                    const updatedResponse = await axios.get(`http://localhost:8080/api/posts/board/1?page=${currentPage}&size=10`);
+                    setPosts(updatedResponse.data.dtoList);
+                    setTotalPages(updatedResponse.data.totalPages);
+                }
+            } catch (err) {
+                console.error('Error deleting post:', err);
+                const errorMessage = err.response?.data?.message || "게시글 삭제에 실패했습니다.";
+                alert(errorMessage);
+            }
+        }
+    };
+
     if (loading) return <Typography align="center" variant="h6">로딩 중...</Typography>;
     if (error) return <Typography align="center" color="error" variant="h6">{error}</Typography>;
 
@@ -48,7 +72,9 @@ function NewsBoardPage() {
                     <Button
                         variant="contained"
                         color="secondary"
-                        onClick={() => navigate('/post/create')}
+                        onClick={() => navigate('/post/create', {
+                            state: { defaultCategory: '공지사항' }
+                        })}
                     >
                         게시글 등록
                     </Button>
@@ -62,6 +88,9 @@ function NewsBoardPage() {
                             <TableCell align="left" style={{ fontWeight: 'bold' }}>분류</TableCell>
                             <TableCell align="left" style={{ fontWeight: 'bold' }}>제목</TableCell>
                             <TableCell align="left" style={{ fontWeight: 'bold' }}>작성일</TableCell>
+                            {userRole === 'ADMIN' && (
+                                <TableCell align="center" style={{ fontWeight: 'bold' }}>관리</TableCell>
+                            )}
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -75,11 +104,30 @@ function NewsBoardPage() {
                                         </Link>
                                     </TableCell>
                                     <TableCell>{new Date(post.createdAt).toLocaleDateString()}</TableCell>
+                                    {userRole === 'ADMIN' && (
+                                        <TableCell align="center">
+                                            <Button
+                                                variant="outlined"
+                                                color="primary"
+                                                onClick={() => handleEditPost(post.id)}
+                                                sx={{ marginRight: 1 }}
+                                            >
+                                                수정
+                                            </Button>
+                                            <Button
+                                                variant="outlined"
+                                                color="error"
+                                                onClick={() => handleDeletePost(post.id)}
+                                            >
+                                                삭제
+                                            </Button>
+                                        </TableCell>
+                                    )}
                                 </TableRow>
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={3} align="center">게시글이 없습니다.</TableCell>
+                                <TableCell colSpan={userRole === 'ADMIN' ? 4 : 3} align="center">게시글이 없습니다.</TableCell>
                             </TableRow>
                         )}
                     </TableBody>
@@ -93,14 +141,13 @@ function NewsBoardPage() {
                         variant={currentPage === index ? "contained" : "outlined"}
                         color="primary"
                         size="small"
-                        sx={{ minWidth: '30px', padding: '4px 8px' }} // 최소 너비와 패딩 조정
+                        sx={{ minWidth: '30px', padding: '4px 8px' }}
                         onClick={() => handlePageClick(index)}
                     >
                         {index + 1}
                     </Button>
                 ))}
             </Box>
-
         </Box>
     );
 }
