@@ -1,16 +1,15 @@
-package com.javalab.student.config.jwt;
+package com.javalab.student.jwt;
 
-import com.javalab.student.entity.Member;
+import com.javalab.student.config.jwt.JwtFactory;
+import com.javalab.student.config.jwt.JwtProperties;
+import com.javalab.student.config.jwt.TokenProvider;
 import com.javalab.student.repository.MemberRepository;
-import io.jsonwebtoken.Jwts;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.Duration;
 import java.util.Date;
@@ -67,7 +66,7 @@ class TokenProviderTest {
     @Test
     void validToken_invalidToken() {
         // given, 만료시간설정, 기준일인 1970년 1월 1일부터 현재 날짜를 기준으로 7일 전으로 설정한다. 즉, 만료된 토큰으로 설정한다.
-        String token = JwtFactory.builder()
+        String token = com.javalab.student.config.jwt.JwtFactory.builder()
                 .expiration(new Date(new Date().getTime() - Duration.ofDays(7).toMillis()))
                 .build()
                 .createToken(jwtProperties);
@@ -88,7 +87,7 @@ class TokenProviderTest {
     void validToken_validToken() {
         // given, 유효한 토큰 생성, 기본값으로 토큰을 생성한다.
         // 기본값은 현재 시간을 기준으로 14일 후로 만료시간을 설정한다.
-        String token = JwtFactory.withDefaultValues()
+        String token = com.javalab.student.config.jwt.JwtFactory.withDefaultValues()
                 .createToken(jwtProperties);
 
         // when, 유효한 토큰을 유효성 검증 메소드에 전달한다. 유효한 토큰이므로 true가 반환된다.

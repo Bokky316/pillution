@@ -77,6 +77,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
      */
     private MemberSecurityDto createSecurityDto(Member member, Map<String, Object> attributes) {
         return new MemberSecurityDto(
+                member.getId(),
                 member.getEmail(),
                 member.getPassword() == null ? "N/A" : member.getPassword(),
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + member.getRole().toString())),

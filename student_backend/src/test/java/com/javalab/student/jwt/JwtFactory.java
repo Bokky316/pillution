@@ -1,5 +1,6 @@
-package com.javalab.student.config.jwt;
+package com.javalab.student.jwt;
 
+import com.javalab.student.config.jwt.JwtProperties;
 import io.jsonwebtoken.Header;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -31,12 +32,12 @@ public class JwtFactory {
     private Map<String, Object> claims = emptyMap();
 
     /*
-     * 토큰 생성 메서드를 호출합니다.
-     * @Builder : 빌더 패턴을 사용하여 객체를 생성합니다. 생성자에만 @Builder를 붙이면 생성자에만 전체 클래스가 아니고 생성자만 생성됩니다.
-     * - subject : 토큰의 주제를 설정합니다.
-     * - issuedAt : 토큰 발급 시간을 설정합니다.
-     * - expiration : 토큰의 만료 시간을 설정합니다.
-     * - claims : 토큰에 담을 클레임 정보를 설정합니다.
+        * 토큰 생성 메서드를 호출합니다.
+        * @Builder : 빌더 패턴을 사용하여 객체를 생성합니다. 생성자에만 @Builder를 붙이면 생성자에만 전체 클래스가 아니고 생성자만 생성됩니다.
+        * - subject : 토큰의 주제를 설정합니다.
+        * - issuedAt : 토큰 발급 시간을 설정합니다.
+        * - expiration : 토큰의 만료 시간을 설정합니다.
+        * - claims : 토큰에 담을 클레임 정보를 설정합니다.
      */
     @Builder
     public JwtFactory(String subject, Date issuedAt, Date expiration,

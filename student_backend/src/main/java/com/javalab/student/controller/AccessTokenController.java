@@ -1,3 +1,4 @@
+/*
 package com.javalab.student.controller;
 
 import com.javalab.student.dto.LoginFormDto;
@@ -19,12 +20,14 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+*/
 /**
  * AccessTokenController
  * - 로그인, 로그아웃, 사용자 정보 조회 API를 제공하는 컨트롤러
  * - 로그인 시 AccessToken 생성, 로그아웃 시 필요한 추가 작업 수행
  * - 사용자 정보 조회 API를 제공
- */
+ *//*
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -51,11 +54,13 @@ public class AccessTokenController {
         }
     }
 
-    /**
+    */
+/**
      * 사용자 정보 조회
      * @param authentication
      * @return
-     */
+     *//*
+
     @GetMapping("/userInfo")
     public ResponseEntity<Member> getUserInfo(Authentication authentication) {
         // 인증 객체에서 사용자 이메일 추출
@@ -71,10 +76,12 @@ public class AccessTokenController {
         return ResponseEntity.ok(member);
     }
 
-    /**
+    */
+/**
      * 로그인 실패 시 응답
      * @return
-     */
+     *//*
+
     @GetMapping("/login/error")
     public ResponseEntity<Map<String, String>> loginError() {
         Map<String, String> response = new HashMap<>();
@@ -84,12 +91,14 @@ public class AccessTokenController {
 
 
     // [수정]
-    /**
+    */
+/**
      * 로그아웃 처리
      * - 토큰을 무효화하거나 로그아웃 시 필요한 추가 작업을 수행
      * @param authentication 현재 인증 객체
      * @return 로그아웃 메시지
-     */
+     *//*
+
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(Authentication authentication) {
         if (authentication != null) {
@@ -103,3 +112,4 @@ public class AccessTokenController {
 
 }
 
+*/
