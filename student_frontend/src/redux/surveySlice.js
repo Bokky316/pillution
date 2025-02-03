@@ -136,6 +136,9 @@ const surveySlice = createSlice({
         state.filteredSubCategories = null;
       }
     },
+    setSelectedSymptoms: (state, action) => {
+      state.selectedSymptoms = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -191,7 +194,8 @@ export const {
   setCurrentCategoryIndex,
   setCurrentSubCategoryIndex,
   clearResponses,
-  filterSubCategories
+  filterSubCategories,
+  setSelectedSymptoms
 } = surveySlice.actions;
 
 export default surveySlice.reducer;
