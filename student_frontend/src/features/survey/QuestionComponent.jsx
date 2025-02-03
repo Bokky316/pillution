@@ -1,71 +1,70 @@
 import React from 'react';
-import { Box, Typography, RadioGroup, FormControlLabel, Radio, Checkbox, TextField } from "@mui/material";
+import { TextField, RadioGroup, FormControlLabel, Radio, Checkbox, FormGroup } from "@mui/material";
 
 const QuestionComponent = ({ question, response, onResponseChange }) => {
+  const handleChange = (event) => {
+    let value;
+    if (question.questionType === 'MULTIPLE_CHOICE') {
+      // 다중 선택의 경우 선택된 모든 값을 배열로 관리
+      const selectedOptions = [...(response || [])];
+      if (event.target.checked) {
+        selectedOptions.push(event.target.value); // 문자열로 저장
+      } else {
+        const index = selectedOptions.indexOf(event.target.value);
+        if (index > -1) {
+          selectedOptions.splice(index, 1);
+        }
+      }
+      value = selectedOptions;
+    } else {
+      value = event.target.value; // 문자열로 저장
+    }
+    onResponseChange(question.id, value);
+  };
+
   switch (question.questionType) {
     case 'TEXT':
       return (
         <TextField
-          fullWidth
-          label={question.questionText}
           value={response || ''}
-          onChange={(e) => onResponseChange(question.id, e.target.value)}
+          onChange={handleChange}
+          fullWidth
           margin="normal"
         />
       );
     case 'SINGLE_CHOICE':
       return (
-        <Box sx={{ mb: 2 }}>
-          <Typography>{question.questionText}</Typography>
-          <RadioGroup
-            value={response || ''}
-            onChange={(e) => onResponseChange(question.id, e.target.value)}
-          >
-            {question.options.map((option) => (
-              <FormControlLabel
-                key={option.id}
-                value={option.id.toString()}
-                control={<Radio />}
-                label={option.optionText}
-              />
-            ))}
-          </RadioGroup>
-        </Box>
+        <RadioGroup
+          value={response || ''}
+          onChange={handleChange}
+        >
+          {question.options.map((option) => (
+            <FormControlLabel
+              key={option.id}
+              value={option.id.toString()} // 문자열로 변환하여 저장
+              control={<Radio />}
+              label={option.optionText}
+            />
+          ))}
+        </RadioGroup>
       );
     case 'MULTIPLE_CHOICE':
-      const isMainSymptomQuestion = question.questionText.includes('불편하거나 걱정되는 것을 최대 3가지 선택하세요');
       return (
-        <Box sx={{ mb: 2 }}>
-          <Typography>{question.questionText}</Typography>
-          {question.options.map((option, index) => (
+        <FormGroup>
+          {question.options.map((option) => (
             <FormControlLabel
               key={option.id}
               control={
                 <Checkbox
-                  checked={(response || []).includes(option.id.toString())}
-                  onChange={(e) => {
-                    let newResponse;
-                    if (index === question.options.length - 1) {
-                      newResponse = e.target.checked ? [option.id.toString()] : [];
-                    } else {
-                      if (e.target.checked) {
-                        if (isMainSymptomQuestion && (response || []).length >= 3) {
-                          return;
-                        }
-                        newResponse = [...(response || []).filter(id => id !== question.options[question.options.length - 1].id.toString()), option.id.toString()];
-                      } else {
-                        newResponse = (response || []).filter((id) => id !== option.id.toString());
-                      }
-                    }
-                    onResponseChange(question.id, newResponse);
-                  }}
-                  disabled={isMainSymptomQuestion && (response || []).length >= 3 && !response.includes(option.id.toString()) && index !== question.options.length - 1}
+                  checked={(response || []).includes(option.id.toString())} // 문자열로 비교
+                  onChange={handleChange}
+                  value={option.id.toString()} // 문자열로 저장
                 />
               }
               label={option.optionText}
             />
           ))}
-        </Box>
+        </FormGroup>
       );
     default:
       return null;

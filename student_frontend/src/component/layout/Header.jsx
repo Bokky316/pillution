@@ -1,23 +1,41 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { AppBar, Toolbar, Button, IconButton, Menu, MenuItem, Box, Typography } from "@mui/material";
 import MenuIcon from '@mui/icons-material/Menu';
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "../../assets/styles/header.css";
 
 const Header = ({ handleLogout }) => {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const { user, isLoggedIn } = useSelector(state => state.auth);
+    const menuOpen = useSelector(state => state.ui.menuAnchorEl);
+    const [anchorEl, setAnchorEl] = useState(null);
 
     const handleMenuOpen = (event) => {
-        dispatch({ type: 'SET_MENU_ANCHOR', payload: event.currentTarget });
+        setAnchorEl(event.currentTarget);
+        dispatch({ type: 'SET_MENU_ANCHOR', payload: true });
     };
 
     const handleMenuClose = () => {
-        dispatch({ type: 'SET_MENU_ANCHOR', payload: null });
+        setAnchorEl(null);
+        dispatch({ type: 'SET_MENU_ANCHOR', payload: false });
     };
 
-    const menuAnchorEl = useSelector(state => state.ui.menuAnchorEl);
+    const handleMenuItemClick = (path) => {
+        handleMenuClose();
+        if (path === "/cart" && !isLoggedIn) {
+            navigate("/login");
+        } else {
+            navigate(path);
+        }
+    };
+
+    useEffect(() => {
+        if (!menuOpen) {
+            setAnchorEl(null);
+        }
+    }, [menuOpen]);
 
     return (
         <AppBar position="static" className="nav-bar" sx={{
@@ -45,18 +63,19 @@ const Header = ({ handleLogout }) => {
                         aria-label="menu"
                         onClick={handleMenuOpen}
                         sx={{ mr: 2 }}
+                        id="menu-button"
                     >
                         <MenuIcon />
                     </IconButton>
                     <Menu
-                        anchorEl={menuAnchorEl}
-                        open={Boolean(menuAnchorEl)}
+                        anchorEl={anchorEl}
+                        open={Boolean(anchorEl)}
                         onClose={handleMenuClose}
                     >
-                        <MenuItem onClick={handleMenuClose} component={Link} to="/productList">상품</MenuItem>
-                        <MenuItem onClick={handleMenuClose} component={Link} to="/recommendations">추천</MenuItem>
-                        <MenuItem onClick={handleMenuClose} component={Link} to="/cart">장바구니</MenuItem>
-                        <MenuItem onClick={handleMenuClose} component={Link} to="/survey">설문조사</MenuItem>
+                        <MenuItem onClick={() => handleMenuItemClick("/products")}>상품</MenuItem>
+                        <MenuItem onClick={() => handleMenuItemClick("/recommendation")}>추천</MenuItem>
+                        <MenuItem onClick={() => handleMenuItemClick("/cart")}>장바구니</MenuItem>
+                        <MenuItem onClick={() => handleMenuItemClick("/survey")}>설문조사</MenuItem>
                     </Menu>
                 </Box>
 
@@ -78,14 +97,14 @@ const Header = ({ handleLogout }) => {
                             <Typography variant="body1" sx={{ mr: 2 }}>
                                 {user?.name}
                                 {user?.roles?.includes("ROLE_ADMIN") ? " (관리자)" : " (사용자)"}
-                                  </Typography>
-                                  <Button color="inherit" component={Link} to="/mypage">마이페이지</Button>
-                                  <Button color="inherit" onClick={handleLogout}>로그아웃</Button>
+                            </Typography>
+                            <Button color="inherit" onClick={() => navigate("/mypage")}>마이페이지</Button>
+                            <Button color="inherit" onClick={handleLogout}>로그아웃</Button>
                         </>
                     ) : (
                         <>
-                            <Button color="inherit" component={Link} to="/login" sx={{ mr: 1 }}>로그인</Button>
-                            <Button color="inherit" component={Link} to="/registerMember">회원가입</Button>
+                            <Button color="inherit" onClick={() => navigate("/login")} sx={{ mr: 1 }}>로그인</Button>
+                            <Button color="inherit" onClick={() => navigate("/registerMember")}>회원가입</Button>
                         </>
                     )}
                 </Box>

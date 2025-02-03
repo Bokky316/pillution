@@ -16,7 +16,7 @@ import Login from "@features/auth/components/Login";
 import MyPage from "@features/auth/components/MyPage";
 import RegisterMember from "@features/auth/components/RegisterMember";
 import UnauthorizedPage from "@features/auth/components/UnAuthorizedPage";
-import Home from "@features/auth/components/Home";
+/* import Home from "@features/auth/components/Home"; */
 import { API_URL } from "@/constant";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistor } from "@/redux/store";
@@ -95,7 +95,7 @@ function App() {
                         handleLogout={handleLogout}
                     />
                     <Routes>
-                        <Route path="/" element={<Home />} />
+                       {/*  <Route path="/" element={<Home />} /> */}
                         <Route path="/login" element={<Login />} />
                         <Route path="/registerMember" element={<RegisterMember />} />
                         <Route path="/mypage" element={isLoggedIn ? <MyPage /> : <Navigate to="/login" />} />
