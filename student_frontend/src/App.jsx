@@ -7,7 +7,6 @@ import theme from '@/theme';
 import Header from "@components/layout/Header";
 import Footer from "@components/layout/Footer";
 import { setUser, clearUser, fetchUserInfo } from "@/redux/authSlice";
-import { fetchWithoutAuth } from "@features/auth/utils/fetchWithAuth";
 import RecommendationPage from "@/pages/survey/RecommendationPage";
 import SurveyPage from "@/pages/survey/SurveyPage";
 import ProductDetailPage from "@/pages/product/ProductDetailPage";
@@ -21,10 +20,8 @@ import Home from "@features/auth/components/Home";
 import { API_URL } from "@/constant";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistor } from "@/redux/store";
-import { fetchWithAuth } from "./features/auth/utils/fetchWithAuth";
-
-
-
+import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
+import { fetchWithoutAuth } from "@features/auth/utils/fetchWithAuth";
 
 /**
  * App 컴포넌트
@@ -72,17 +69,22 @@ function App() {
 
     const handleLogout = async () => {
         try {
-            await fetchWithAuth(`${API_URL}auth/logout`, {
+            const response = await fetchWithoutAuth(`${API_URL}auth/logout`, {
                 method: "POST",
             });
-            dispatch(clearUser());
-            await persistor.purge(); // Redux Persist 데이터 초기화
-            window.location.href = "/";
+            if (response.ok) {
+                dispatch(clearUser());
+                await persistor.purge();
+                window.location.href = "/";
+            } else {
+                throw new Error('Logout failed');
+            }
         } catch (error) {
             console.error("로그아웃 실패:", error.message);
             alert("로그아웃 중 오류가 발생했습니다.");
         }
     };
+
 
     return (
         <ThemeProvider theme={theme}>

@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Button, TextField } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { API_URL } from "@/constant";
-import { SERVER_URL } from "@/constant";
+import { API_URL, SERVER_URL } from "@/constant";
+import { fetchWithoutAuth } from "@features/auth/utils/fetchWithAuth";
 import { useDispatch } from "react-redux";
 import { setUser } from "@/redux/authSlice";
 
