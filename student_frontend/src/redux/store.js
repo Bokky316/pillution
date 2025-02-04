@@ -6,6 +6,8 @@ import { combineReducers } from 'redux';
 import authReducer from "./authSlice";
 import surveyReducer from "./surveySlice";
 import uiReducer from './uiSlice';
+import productReducer from "./productSlice";
+
 /**
  * Redux Persist 설정
  * - redux-persist를 사용하여 redux store를 생성하고 설정하는 역할
@@ -25,7 +27,7 @@ import uiReducer from './uiSlice';
 const persistConfig = {
     key: "root",
     storage,
-    whitelist: ["auth", "survey", "ui"],
+    whitelist: ["auth", "survey", "ui","products"],
 };
 
 /**
@@ -36,7 +38,8 @@ const persistConfig = {
 const rootReducer = combineReducers({
     auth: authReducer,
     survey: surveyReducer,
-    ui: uiReducer
+    ui: uiReducer,
+    products: productReducer
 });
 
 /**

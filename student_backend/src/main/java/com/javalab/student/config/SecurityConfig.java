@@ -104,6 +104,7 @@ public class SecurityConfig {
                 .requestMatchers("/images/**", "/static-images/**", "/css/**", "/favicon.ico", "/error", "/img/**").permitAll()  // 정적 리소스 접근 허용
                 .requestMatchers("/admin/**").hasRole("ADMIN")  // 관리자 페이지는 관리자만 접근 가능
                 .requestMatchers("/api/survey/**").permitAll()  // 설문 관련 API 접근 허용
+                .requestMatchers("/api/products/**").permitAll()  //  상품목록 접근 허용
                 .anyRequest().authenticated()  // 그 외 모든 요청은 인증 필요
         );
 

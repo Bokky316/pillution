@@ -1,77 +1,67 @@
-import { useState, useEffect } from "react";
-import "./ProductListPage.css"; // CSS 파일 추가
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { DataGrid } from "@mui/x-data-grid";
+import { Button, Snackbar } from "@mui/material";
+import { useNavigate, Link } from "react-router-dom";
+import { fetchProducts } from "../../features/product/productApi";
 
-const ProductListPage = () => {
-  const [products, setProducts] = useState([]);
+export default function ProductListPage() {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        // 🔹 실제 API 대신 임의의 `mockData` 사용
-        const mockData = [
-          {
-            id: 1,
-            name: "GENMIX 젠믹스 산양유 단백질",
-            price: 44900,
-            image: "/images/vitamin-c.jpg",
-            category: { id: 1, name: "단백질" },
-          },
-          {
-            id: 2,
-            name: "필리 메가 프로폴리스 면역젤리",
-            price: 13500,
-            image: "/images/omega3.jpg",
-            category: { id: 3, name: "면역강화" },
-          },
-          {
-            id: 3,
-            name: "PHEW P 관절이약: 거침없이 이별 통보",
-            price: 29500,
-            image: "/images/probiotics.jpg",
-            category: { id: 4, name: "관절영양제" },
-          },
-          {
-            id: 4,
-            name: "PHEW P 속&프리: 그날의 극적 화해",
-            price: 32500,
-            image: "/images/probiotics.jpg",
-            category: { id: 5, name: "소화영양제" },
-          }
-        ];
+    const { products, totalRows, loading, error } = useSelector(state => state.products);
+    const [paginationModel, setPaginationModel] = React.useState({ page: 0, pageSize: 10 });
+    const [snackbarOpen, setSnackbarOpen] = React.useState(false);
+    const [snackbarMessage, setSnackbarMessage] = React.useState("");
 
-        setProducts(mockData);
-      } catch (error) {
-        console.error("상품 데이터를 불러오는 중 오류 발생:", error);
-      }
-    };
+    useEffect(() => {
+        console.log("📌 fetchProducts 호출!", paginationModel);
+        dispatch(fetchProducts({page: paginationModel.page || 0, size: paginationModel.pageSize || 10 }));
+    }, [dispatch, paginationModel]);
 
-    fetchProducts();
-  }, []);
+    const columns = [
+        { field: "id", headerName: "ID", flex: 1 },
+        {
+            field: "name",
+            headerName: "상품명",
+            flex: 2,
+            renderCell: (params) => (
+                <Link to={`/viewProduct/${params.row.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+                    {params.value}
+                </Link>
+            ),
+        },
+        { field: "price", headerName: "가격", flex: 1 },
+        { field: "stock", headerName: "재고", flex: 1 },
+        { field: "active", headerName: "활성화 여부", flex: 1, type: "boolean" },
+    ];
+console.log("📢 Redux에서 가져온 products:", products); // Redux 상태 확인
+    return (
+        <div style={{ height: 700, width: "100%" }}>
+            <DataGrid
+                rows={products}m
+                columns={columns}
+                rowCount={totalRows}
+                loading={loading}
+                paginationMode="server"
+                pageSizeOptions={[5, 10, 20]}
+                paginationModel={paginationModel}
+                onPaginationModelChange={(newModel) => setPaginationModel(newModel)}
+                disableRowSelectionOnClick
+            />
 
-  return (
-    <div className="product-list-page">
-      <h1 className="page-title">전체 상품</h1>
-      <div className="product-grid">
-        {products.map((product) => (
-          <div className="product-card" key={product.id}>
-            <img src={product.image} alt={product.name} className="product-image" />
-            <div className="product-details">
-              <p className="product-name">{product.name}</p>
-              <span className="product-price">{product.price.toLocaleString()}원</span>
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={3000}
+                onClose={() => setSnackbarOpen(false)}
+                message={snackbarMessage}
+            />
 
-              {/* 🔹 단일 카테고리만 표시 */}
-              <div className="product-category">
-                <span className="category-tag">
-                  {product.category ? product.category.name : "카테고리 없음"}
-                </span>
-              </div>
+            <Button variant="contained" onClick={() => navigate("/addProduct")}>
+                상품 등록
+            </Button>
 
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-export default ProductListPage;
+            {error && <p style={{ color: "red" }}>{error}</p>}
+        </div>
+    );
+}
