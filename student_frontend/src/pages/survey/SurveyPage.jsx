@@ -50,43 +50,37 @@ const SurveyPage = () => {
     }
   }, [dispatch, categories, currentCategoryIndex, currentSubCategoryIndex, filteredSubCategories]);
 
-  // 주요 증상 관련 질문 처리
   useEffect(() => {
-    console.log('Symptoms effect triggered:', {
-      currentCategory: categories[currentCategoryIndex]?.name,
-      selectedSymptoms
-    });
-
     if (categories[currentCategoryIndex]?.name === "2. 증상·불편" && selectedSymptoms.length > 0) {
       const currentCategory = categories[currentCategoryIndex];
+      console.log("현재 카테고리:", currentCategory);
+      console.log("선택된 증상들:", selectedSymptoms);
 
-      const mainSymptomQuestion = questions.find(q =>
-        q.questionText.includes('주요 증상') ||
-        q.questionText.includes('불편하거나 걱정되는 것')
-      );
+      const filteredSubs = currentCategory.subCategories.filter(sub => {
+        if (sub.name === "주요 증상" || sub.name === "추가 증상") {
+          return true;
+        }
+        return selectedSymptoms.some(symptomId => {
+          const symptomOption = currentCategory.subCategories
+            .find(s => s.name === "주요 증상")
+            ?.questions[0]?.options
+            .find(opt => opt.id.toString() === symptomId);
+          return symptomOption && sub.name.toLowerCase().includes(symptomOption.optionText.toLowerCase());
+        });
+      });
 
-      console.log('Found main symptom question:', mainSymptomQuestion);
-
-      if (mainSymptomQuestion) {
-        // 선택된 증상들의 관련 질문 ID 수집
-        const relatedQuestionIds = mainSymptomQuestion.options
-          .filter(opt => selectedSymptoms.includes(opt.id.toString()))
-          .flatMap(opt => opt.relatedQuestionIds || []);
-
-        console.log('Related question IDs:', relatedQuestionIds);
-
-        // 관련 하위 카테고리 필터링
-        const filteredSubs = currentCategory.subCategories.filter(sub =>
-          sub.name === "주요 증상" ||
-          sub.name === "추가 증상" ||
-          sub.questions?.some(q => relatedQuestionIds.includes(q.id))
-        );
-
-        console.log('Filtered subcategories:', filteredSubs);
+      console.log("필터링된 하위 카테고리:", filteredSubs);
+      if (filteredSubs.length > 0) {
         dispatch(setFilteredSubCategories(filteredSubs));
+      } else {
+        dispatch(setFilteredSubCategories(null));
       }
+    } else {
+      dispatch(setFilteredSubCategories(null));
     }
-  }, [selectedSymptoms, categories, currentCategoryIndex, questions, dispatch]);
+  }, [categories, currentCategoryIndex, selectedSymptoms, dispatch]);
+
+
 
   // 성별에 따른 카테고리 스킵 처리
   useEffect(() => {
