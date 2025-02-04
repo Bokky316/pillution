@@ -49,21 +49,44 @@ const SurveyPage = () => {
     }
   }, [dispatch, categories, currentCategoryIndex, currentSubCategoryIndex, filteredSubCategories]);
 
+  // SurveyPage.js의 useEffect 부분 수정
   useEffect(() => {
     if (categories[currentCategoryIndex]?.name === "2. 증상·불편" && selectedSymptoms.length > 0) {
       const currentCategory = categories[currentCategoryIndex];
 
-      const filteredSubs = currentCategory.subCategories.filter(sub =>
-        sub.name === "주요 증상" ||
-        sub.name === "추가 증상" ||
-        selectedSymptoms.some(symptomId =>
-          sub.relatedSymptomIds && sub.relatedSymptomIds.includes(symptomId)
-        )
+      // 주요 증상 질문 찾기
+      const mainSymptomQuestion = questions.find(q =>
+        q.questionText.includes('주요 증상') ||
+        q.questionText.includes('불편하거나 걱정되는 것')
       );
 
-      dispatch(setFilteredSubCategories(filteredSubs));
+      if (mainSymptomQuestion) {
+        // 선택된 증상의 옵션 텍스트 가져오기
+        const selectedSymptomTexts = mainSymptomQuestion.options
+          .filter(opt => selectedSymptoms.includes(opt.id.toString()))
+          .map(opt => opt.optionText);
+
+        // 관련된 하위 카테고리 필터링
+        const filteredSubs = currentCategory.subCategories.filter(sub =>
+          sub.name === "주요 증상" ||
+          sub.name === "추가 증상" ||
+          selectedSymptomTexts.includes(sub.name)
+        );
+
+        dispatch(setFilteredSubCategories(filteredSubs));
+      }
     }
-  }, [selectedSymptoms, categories, currentCategoryIndex, dispatch]);
+  }, [selectedSymptoms, categories, currentCategoryIndex, questions, dispatch]);
+
+  useEffect(() => {
+    const currentCategory = categories[currentCategoryIndex];
+    const subCategoriesToUse = filteredSubCategories || currentCategory?.subCategories;
+    const currentSubCategory = subCategoriesToUse?.[currentSubCategoryIndex];
+
+    if (!currentCategory || !currentSubCategory || shouldSkipSubCategory(currentCategory, currentSubCategory)) {
+      handleNextCategoryOrSubCategory();
+    }
+  }, [categories, currentCategoryIndex, currentSubCategoryIndex, gender, filteredSubCategories]);
 
   const handleResponseChange = (questionId, value) => {
     dispatch(updateResponse({ questionId, answer: value }));

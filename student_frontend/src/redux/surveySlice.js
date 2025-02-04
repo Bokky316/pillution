@@ -123,6 +123,13 @@ const surveySlice = createSlice({
 
       if (!question) return;
 
+      // 성별 설정 처리 (questionId: 2)
+      if (questionId === 2) {
+        state.gender = answer === '1' ? 'female' : 'male';
+        state.responses[questionId] = answer;
+        return;
+      }
+
       // SINGLE_CHOICE 처리
       if (question.questionType === 'SINGLE_CHOICE') {
         state.responses[questionId] = answer;
@@ -143,38 +150,33 @@ const surveySlice = createSlice({
 
         if (isLastOption) {
           // '선택할 것 없음' 옵션 처리
-          if (selectedOptions.includes(lastOptionId)) {
-            selectedOptions = [];
-          } else {
-            selectedOptions = [lastOptionId];
+          state.responses[questionId] = selectedOptions.includes(lastOptionId) ? [] : [lastOptionId];
+          if (isMainSymptomQuestion) {
+            state.selectedSymptoms = [];
           }
         } else {
-          // 다른 옵션 선택 시 '선택할 것 없음' 제거
-          selectedOptions = selectedOptions.filter(opt => opt !== lastOptionId);
-          const index = selectedOptions.indexOf(answer);
-
-          if (index > -1) {
-            // 이미 선택된 옵션 제거
-            selectedOptions.splice(index, 1);
+          if (selectedOptions.includes(lastOptionId)) {
+            // 다른 옵션 선택 시 '선택할 것 없음' 제거
+            selectedOptions = [answer];
           } else {
-            // 주요 증상 질문이면 최대 3개까지만 선택 가능
-            if (isMainSymptomQuestion) {
-              if (selectedOptions.length < 3) {
-                selectedOptions.push(answer);
-              }
+            const index = selectedOptions.indexOf(answer);
+            if (index > -1) {
+              // 이미 선택된 옵션 제거
+              selectedOptions.splice(index, 1);
             } else {
-              // 일반 다중 선택 질문은 제한 없음
+              // 주요 증상 질문이면 최대 3개까지만 선택 가능
+              if (isMainSymptomQuestion && selectedOptions.length >= 3) {
+                return;
+              }
               selectedOptions.push(answer);
             }
           }
-        }
+          state.responses[questionId] = selectedOptions;
 
-        // 응답 업데이트
-        state.responses[questionId] = selectedOptions;
-
-        // 주요 증상 질문인 경우 selectedSymptoms 업데이트
-        if (isMainSymptomQuestion) {
-          state.selectedSymptoms = selectedOptions;
+          // 주요 증상 질문인 경우 selectedSymptoms 업데이트
+          if (isMainSymptomQuestion) {
+            state.selectedSymptoms = selectedOptions;
+          }
         }
       }
 
