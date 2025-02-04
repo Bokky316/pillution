@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Box, Typography, Button, CircularProgress, CardMedia, Grid } from '@mui/material';
+import { Box, Typography, Button, CircularProgress, CardMedia, Grid, Divider } from '@mui/material';
 import { fetchWithAuth } from '../../features/auth/utils/fetchWithAuth';
 import { API_URL } from '../../constant';
 
 const ProductDetailPage = () => {
-    const { productId } = useParams(); // URL에서 productId를 가져옵니다.
+    const { productId } = useParams();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -56,42 +56,52 @@ const ProductDetailPage = () => {
     return (
         <Box sx={{ padding: '20px', maxWidth: '1280px', margin: '0 auto' }}>
             <Grid container spacing={4}>
-                {/* 제품 이미지 */}
+                {/* Left: Product Image */}
                 <Grid item xs={12} md={6}>
                     <CardMedia
                         component="img"
-                        image={product.imageUrl}
+                        image={product.imageUrl || 'placeholder.jpg'}
                         alt={product.name}
                         sx={{ borderRadius: '8px', boxShadow: 3 }}
                     />
                 </Grid>
 
-                {/* 제품 정보 */}
+                {/* Right: Product Info */}
                 <Grid item xs={12} md={6}>
-                    <Typography variant="h4" sx={{ marginBottom: '20px' }}>
+                    <Typography variant="h4" sx={{ fontWeight: 'bold', marginBottom: '20px' }}>
                         {product.name}
                     </Typography>
-                    <Typography variant="body1" sx={{ marginBottom: '10px' }}>
+                    <Typography variant="body1" sx={{ marginBottom: '10px', color: 'gray' }}>
                         {product.description}
                     </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 'bold', marginBottom: '20px' }}>
-                        가격: {product.price}원
+                    <Divider sx={{ marginY: '20px' }} />
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', marginBottom: '10px' }}>
+                        {product.price.toLocaleString()}원
+                    </Typography>
+                    <Typography variant="body2" sx={{ marginBottom: '20px', color: 'gray' }}>
+                        배송비: {product.shippingFee.toLocaleString()}원 (정기구독: 무료)
                     </Typography>
                     <Button
                         variant="contained"
                         color="primary"
-                        sx={{
-                            textTransform: 'none',
-                            borderRadius: '25px',
-                            paddingX: '20px',
-                            paddingY: '10px',
-                        }}
+                        fullWidth
+                        sx={{ textTransform: 'none', paddingY: '12px' }}
                         onClick={() => addToCart(product.id)}
                     >
-                        장바구니에 추가
+                        구매하기
                     </Button>
                 </Grid>
             </Grid>
+
+            {/* Additional Details */}
+            <Box sx={{ marginTop: '40px' }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', marginBottom: '20px' }}>
+                    제품설명
+                </Typography>
+                <Typography variant="body1" sx={{ marginBottom: '10px' }}>
+                    {product.longDescription || '추가 제품 설명이 제공되지 않았습니다.'}
+                </Typography>
+            </Box>
         </Box>
     );
 };

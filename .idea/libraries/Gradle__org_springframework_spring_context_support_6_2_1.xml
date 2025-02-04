@@ -5,6 +5,8 @@
       <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.springframework/spring-context-support/6.2.1/455eb5dc0c675dc49044c1518763f4c0323a5860/spring-context-support-6.2.1.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.springframework/spring-context-support/6.2.1/e045761a48d5b35ce57fefa8fa254bc2fb27319/spring-context-support-6.2.1-sources.jar!/" />
+    </SOURCES>
   </library>
 </component>
