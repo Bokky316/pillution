@@ -1,29 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { AppBar, Toolbar, Button, IconButton, Menu, MenuItem, Box, Typography } from "@mui/material";
 import MenuIcon from '@mui/icons-material/Menu';
 import { Link, useNavigate } from "react-router-dom";
-import { fetchUserInfo } from "@/redux/authSlice";
+import { clearUser } from "@/redux/authSlice";
+import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
+import { API_URL } from "@/constant";
+import { persistor } from "@/redux/store";
 import "../../assets/styles/header.css";
 
-const Header = ({ handleLogout }) => {
+const Header = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const { user, isLoggedIn, isSocialLogin } = useSelector(state => state.auth);
-    const menuOpen = useSelector(state => state.ui.menuAnchorEl);
-    const [anchorEl, setAnchorEl] = useState(null);
-
-    console.log("Header component rendered");
-    console.log("Login status:", isLoggedIn, "User:", user, "Social Login:", isSocialLogin);
+    const { user, isLoggedIn } = useSelector(state => state.auth);
+    const [anchorEl, setAnchorEl] = React.useState(null);
 
     const handleMenuOpen = (event) => {
         setAnchorEl(event.currentTarget);
-        dispatch({ type: 'SET_MENU_ANCHOR', payload: true });
     };
 
     const handleMenuClose = () => {
         setAnchorEl(null);
-        dispatch({ type: 'SET_MENU_ANCHOR', payload: false });
     };
 
     const handleMenuItemClick = (path) => {
@@ -35,17 +32,19 @@ const Header = ({ handleLogout }) => {
         }
     };
 
-    useEffect(() => {
-        if (!menuOpen) {
-            setAnchorEl(null);
+    const handleLogout = async () => {
+        try {
+            await fetchWithAuth(`${API_URL}auth/logout`, {
+                method: "POST",
+            });
+            dispatch(clearUser());
+            await persistor.purge();
+            window.location.href = "/";
+        } catch (error) {
+            console.error("로그아웃 실패:", error.message);
+            alert("로그아웃 중 오류가 발생했습니다.");
         }
-    }, [menuOpen]);
-
-    useEffect(() => {
-        if (isLoggedIn && !user) {
-            dispatch(fetchUserInfo());
-        }
-    }, [isLoggedIn, user, dispatch]);
+    };
 
     return (
         <AppBar position="static" className="nav-bar" sx={{
@@ -56,6 +55,7 @@ const Header = ({ handleLogout }) => {
             right: '50%',
             marginLeft: '-50vw',
             marginRight: '-50vw',
+            backgroundColor: 'transparent',  // 배경색을 투명하게 설정
         }}>
             <Toolbar sx={{
                 minHeight: '80px',
@@ -64,8 +64,9 @@ const Header = ({ handleLogout }) => {
                 maxWidth: '1280px',
                 margin: '0 auto',
                 width: '100%',
+                backgroundColor: '#f4f4f4',  // 툴바의 배경색을 흰색으로 설정
+                color: '#000000',  // 텍스트 색상을 검정색으로 설정
             }}>
-                {/* 메뉴 버튼 */}
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <IconButton
                         edge="start"
@@ -89,7 +90,6 @@ const Header = ({ handleLogout }) => {
                     </Menu>
                 </Box>
 
-                {/* 로고 (중앙 정렬) */}
                 <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
                     <Link to="/" style={{ textDecoration: 'none' }}>
                         <img
@@ -100,18 +100,16 @@ const Header = ({ handleLogout }) => {
                     </Link>
                 </Box>
 
-                {/* 로그인 상태에 따른 버튼 */}
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                    {isLoggedIn && user ? (
                       <>
                         <Typography variant="body1" sx={{ mr: 2 }}>
                           {user.name}
-                          {user.role === "ADMIN" ? " (관리자)" :
-                           user.provider ? ` (${user.provider} 사용자)` : " (일반 사용자)"}
+                          {user.role === "ADMIN" ? " (관리자)" : " (사용자)"}
                         </Typography>
                         <Button color="inherit" onClick={() => navigate("/mypage")}>마이페이지</Button>
                         <Button color="inherit" onClick={handleLogout}>
-                          {user.provider ? '소셜 로그아웃' : '로그아웃'}
+                          {user.social ? '소셜 로그아웃' : '로그아웃'}
                         </Button>
                       </>
                     ) : (
