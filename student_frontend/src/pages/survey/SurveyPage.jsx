@@ -50,20 +50,15 @@ const SurveyPage = () => {
    if (categories[currentCategoryIndex]?.name === "2. 증상·불편" && selectedSymptoms.length > 0) {
      const currentCategory = categories[currentCategoryIndex];
      const subCategoriesToFilter = currentCategory.subCategories;
-     const filteredSubs = [];
 
-     subCategoriesToFilter.forEach(sub => {
-       if (sub.name === "주요 증상" || sub.name === "추가 증상") {
-         filteredSubs.push(sub);
-       }
-
-       // 선택된 증상에 관련된 하위 카테고리 추가
-       if (selectedSymptoms.some(symptomId =>
+     // 주요 증상과 추가 증상 하위 카테고리 포함
+     const filteredSubs = subCategoriesToFilter.filter(sub =>
+       sub.name === "주요 증상" ||
+       sub.name === "추가 증상" ||
+       selectedSymptoms.some(symptomId =>
          sub.relatedSymptomIds && sub.relatedSymptomIds.includes(symptomId)
-       )) {
-         filteredSubs.push(sub);
-       }
-     });
+       )
+     );
 
      dispatch(setFilteredSubCategories(filteredSubs));
    }
