@@ -22,6 +22,7 @@ import { PersistGate } from "redux-persist/integration/react";
 import { persistor } from "@/redux/store";
 import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
 import { fetchWithoutAuth } from "@features/auth/utils/fetchWithAuth";
+import OAuth2RedirectHandler from '@features/auth/components/OAuth2RedirectHandler';
 
 /**
  * App 컴포넌트

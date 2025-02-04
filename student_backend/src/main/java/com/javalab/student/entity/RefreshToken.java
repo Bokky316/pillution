@@ -21,15 +21,19 @@ public class RefreshToken {
     @Column(name = "id", updatable = false)
     private Long id;
 
-    @Column(name = "email", nullable = false, unique = true) // 이메일로 고유 사용자 식별
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
     @Column(name = "refresh_token", nullable = false)
     private String refreshToken;
 
-    public RefreshToken(String email, String refreshToken) {
+    @Column(name = "member_id")
+    private Long memberId;
+
+    public RefreshToken(String email, String refreshToken, Long memberId) {
         this.email = email;
         this.refreshToken = refreshToken;
+        this.memberId = memberId;
     }
 
     public void update(String newRefreshToken) {

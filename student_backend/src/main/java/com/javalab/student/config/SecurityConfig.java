@@ -180,7 +180,9 @@ public class SecurityConfig {
                 .loginPage("/members/login")
                 .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                 .successHandler(customAuthenticationSuccessHandler)
+                .defaultSuccessUrl("http://localhost:3000/oauth2/redirect", true)
         );
+
 
 
         // 지금까지 설정한 내용을 빌드하여 반환, 반환 객체는 SecurityFilterChain 객체

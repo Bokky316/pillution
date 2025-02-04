@@ -84,7 +84,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         );
 
         // 6️⃣ 리프레시 토큰을 DB에 저장
-        refreshTokenService.saveOrUpdateRefreshToken(userDetails.getEmail(), refreshToken);
+        refreshTokenService.saveOrUpdateRefreshToken(userDetails.getEmail(), refreshToken, userDetails.getId());
 
         // 7️⃣ 액세스 토큰을 HttpOnly Cookie로 저장
         Cookie accessTokenCookie = new Cookie("accToken", accessToken);
