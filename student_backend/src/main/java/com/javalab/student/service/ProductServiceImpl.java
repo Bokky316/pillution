@@ -1,9 +1,6 @@
 package com.javalab.student.service;
 
-import com.javalab.student.dto.PageRequestDTO;
-import com.javalab.student.dto.PageResponseDTO;
-import com.javalab.student.dto.ProductDto;
-import com.javalab.student.dto.ProductFormDto;
+import com.javalab.student.dto.*;
 import com.javalab.student.entity.Product;
 import com.javalab.student.repository.ProductRepository;
 import org.modelmapper.ModelMapper;
@@ -85,5 +82,10 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void deleteProduct(Long id) {
         productRepository.deleteById(id);
+    }
+
+    public List<ProductResponseDTO> getProductList() {
+        List<Product> products = productRepository.findAllWithCategories();
+        return products.stream().map(ProductResponseDTO::fromEntity).collect(Collectors.toList());
     }
 }

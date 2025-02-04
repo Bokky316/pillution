@@ -3,7 +3,9 @@ package com.javalab.student.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "product")
@@ -49,6 +51,10 @@ public class Product {
     )
     private List<ProductCategory> categories;
 
+    // 상품과 카테고리 매핑 정보와 연관 관계 설정
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProductCategoryMapping> categoryMappings;
+
 //    // 상품 이미지 리스트 (1:N)
 //    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
 //    private List<ProductImg> images;
@@ -58,5 +64,9 @@ public class Product {
 // 추천 시스템을 위한 점수 필드
 @Transient// 이 필드는 데이터베이스에 저장되지 않습니다.
 private int score;
+
+    public boolean getActive() {
+        return active;
+    }
 
 }

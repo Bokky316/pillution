@@ -19,9 +19,19 @@ public class ProductCategoryMapping {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "product_id", nullable = false)
+    /*@Column(name = "product_id", nullable = false)
     private Long productId;
 
     @Column(name = "category_id", nullable = false)
-    private Long categoryId;
+    private Long categoryId;*/
+
+    // 상품(Product)와 연관 관계 설정
+    @ManyToOne
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
+
+    // 카테고리(ProductCategory)와 연관 관계 설정
+    @ManyToOne
+    @JoinColumn(name = "category_id", nullable = false)
+    private ProductCategory category;
 }

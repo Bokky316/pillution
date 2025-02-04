@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -23,4 +24,8 @@ public class ProductCategory {
 
     @Column(nullable = false, unique = true)
     private String name;
+
+    // 카테고리 매핑 정보와 연관 관계 설정
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProductCategoryMapping> categoryMappings;
 }

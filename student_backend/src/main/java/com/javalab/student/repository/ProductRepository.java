@@ -16,4 +16,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("SELECT p.mainIngredient.name FROM Product p WHERE p.id = :productId")
     String findMainIngredientByProductId(@Param("productId") Long productId);
+
+    @Query("SELECT DISTINCT p FROM Product p " +
+            "LEFT JOIN FETCH p.categoryMappings pcm " +
+            "LEFT JOIN FETCH pcm.category")
+    List<Product> findAllWithCategories();
 }

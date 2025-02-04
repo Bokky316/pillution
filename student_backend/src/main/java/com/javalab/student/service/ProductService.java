@@ -1,9 +1,9 @@
 package com.javalab.student.service;
 
-import com.javalab.student.dto.PageRequestDTO;
-import com.javalab.student.dto.PageResponseDTO;
-import com.javalab.student.dto.ProductDto;
-import com.javalab.student.dto.ProductFormDto;
+import com.javalab.student.dto.*;
+import com.javalab.student.entity.Product;
+
+import java.util.List;
 
 public interface ProductService {
 
@@ -16,4 +16,7 @@ public interface ProductService {
     PageResponseDTO<ProductDto> getAllProducts(PageRequestDTO pageRequestDTO);
 
     void deleteProduct(Long id);
+
+    // 카테고리 포함된 상품 리스트 조회
+    List<ProductResponseDTO> getProductList();
 }
