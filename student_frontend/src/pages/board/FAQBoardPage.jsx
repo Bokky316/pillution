@@ -163,7 +163,10 @@ function FAQBoardPage() {
                                             <Button
                                                 variant="text"
                                                 onClick={() => handlePostClick(post.id)}
-                                                sx={{ textAlign: 'left', display: 'block', width: '100%' }}
+                                                sx={{ textAlign: 'left', display: 'block', color: 'black', width: '100%',
+                                                    '&:hover': {
+                                                        backgroundColor: 'transparent',  // 호버 시 배경색 변경 제거
+                                                },}}
                                             >
                                                 {post.title}
                                             </Button>

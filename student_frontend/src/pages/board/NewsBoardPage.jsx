@@ -47,7 +47,6 @@ function NewsBoardPage() {
 
                 if (response.status === 204) {
                     alert("게시글이 삭제되었습니다.");
-                    // 현재 페이지 데이터를 다시 불러옵니다
                     const updatedResponse = await axios.get(`http://localhost:8080/api/posts/board/1?page=${currentPage}&size=10`);
                     setPosts(updatedResponse.data.dtoList);
                     setTotalPages(updatedResponse.data.totalPages);
@@ -99,7 +98,7 @@ function NewsBoardPage() {
                                 <TableRow key={post.id} hover>
                                     <TableCell>{post.category}</TableCell>
                                     <TableCell>
-                                        <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: '#1976d2' }}>
+                                        <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'black' }}>
                                             {post.title}
                                         </Link>
                                     </TableCell>
