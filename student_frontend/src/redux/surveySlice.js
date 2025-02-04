@@ -115,76 +115,65 @@ const surveySlice = createSlice({
     filteredSubCategories: null,
     relatedQuestions: [],
   },
+  // surveySlice.js의 reducers 부분
   reducers: {
-    // surveySlice.js의 updateResponse reducer 수정
     updateResponse: (state, action) => {
       const { questionId, answer } = action.payload;
       const question = state.questions.find(q => q.id === questionId);
 
       if (!question) return;
 
-      // 성별 설정 처리 (questionId: 2)
+      // 성별 질문 처리 (질문 ID가 2인 경우)
       if (questionId === 2) {
         state.gender = answer === '1' ? 'female' : 'male';
         state.responses[questionId] = answer;
         return;
       }
 
-      // SINGLE_CHOICE 처리
-      if (question.questionType === 'SINGLE_CHOICE') {
-        state.responses[questionId] = answer;
-        return;
-      }
-
-      // MULTIPLE_CHOICE 처리
       if (question.questionType === 'MULTIPLE_CHOICE') {
-        let selectedOptions = state.responses[questionId] || [];
+        let selectedOptions = [...(state.responses[questionId] || [])];
         const lastOptionIndex = question.options.length - 1;
         const lastOptionId = question.options[lastOptionIndex].id.toString();
-        const isLastOption = answer === lastOptionId;
 
-        // 주요 증상 질문인지 확인
-        const isMainSymptomQuestion =
+        // 주요 증상 질문 체크
+        const isSymptomQuestion =
           question.questionText.includes('주요 증상') ||
           question.questionText.includes('불편하거나 걱정되는 것');
 
-        if (isLastOption) {
-          // '선택할 것 없음' 옵션 처리
-          state.responses[questionId] = selectedOptions.includes(lastOptionId) ? [] : [lastOptionId];
-          if (isMainSymptomQuestion) {
-            state.selectedSymptoms = [];
-          }
+        // 마지막 옵션("선택할 것 없음") 처리
+        if (answer === lastOptionId) {
+          selectedOptions = selectedOptions.includes(lastOptionId) ? [] : [lastOptionId];
         } else {
+          // 다른 옵션 선택 시 마지막 옵션 제거
           if (selectedOptions.includes(lastOptionId)) {
-            // 다른 옵션 선택 시 '선택할 것 없음' 제거
-            selectedOptions = [answer];
-          } else {
-            const index = selectedOptions.indexOf(answer);
-            if (index > -1) {
-              // 이미 선택된 옵션 제거
-              selectedOptions.splice(index, 1);
-            } else {
-              // 주요 증상 질문이면 최대 3개까지만 선택 가능
-              if (isMainSymptomQuestion && selectedOptions.length >= 3) {
-                return;
-              }
-              selectedOptions.push(answer);
-            }
+            selectedOptions = [];
           }
-          state.responses[questionId] = selectedOptions;
 
-          // 주요 증상 질문인 경우 selectedSymptoms 업데이트
-          if (isMainSymptomQuestion) {
-            state.selectedSymptoms = selectedOptions;
+          const index = selectedOptions.indexOf(answer);
+          if (index > -1) {
+            selectedOptions.splice(index, 1);
+          } else {
+            // 주요 증상 질문일 경우 최대 3개까지만 선택 가능
+            if (isSymptomQuestion && selectedOptions.length >= 3) {
+              return;
+            }
+            selectedOptions.push(answer);
           }
         }
-      }
 
-      // TEXT 타입 처리
-      if (question.questionType === 'TEXT') {
+        state.responses[questionId] = selectedOptions;
+
+        // 주요 증상 질문인 경우 선택된 증상 업데이트
+        if (isSymptomQuestion) {
+          state.selectedSymptoms = selectedOptions;
+        }
+      } else if (question.questionType === 'SINGLE_CHOICE') {
+        state.responses[questionId] = answer;
+      } else if (question.questionType === 'TEXT') {
         state.responses[questionId] = answer;
       }
     },
+
     setCurrentCategoryIndex: (state, action) => {
       state.currentCategoryIndex = action.payload;
       state.currentSubCategoryIndex = 0;

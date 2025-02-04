@@ -9,7 +9,6 @@ import {
   setCurrentCategoryIndex,
   setCurrentSubCategoryIndex,
   submitSurvey,
-  filterSubCategories,
   setFilteredSubCategories,
   setSelectedSymptoms
 } from '@/redux/surveySlice';
@@ -35,10 +34,12 @@ const SurveyPage = () => {
     relatedQuestions
   } = useSelector(state => state.survey);
 
+  // 초기 카테고리 로드
   useEffect(() => {
     dispatch(fetchCategories());
   }, [dispatch]);
 
+  // 질문 로드
   useEffect(() => {
     if (categories.length > 0 && currentCategoryIndex !== null && currentSubCategoryIndex !== null) {
       const subCategoriesToUse = filteredSubCategories || categories[currentCategoryIndex]?.subCategories;
@@ -49,35 +50,45 @@ const SurveyPage = () => {
     }
   }, [dispatch, categories, currentCategoryIndex, currentSubCategoryIndex, filteredSubCategories]);
 
-  // SurveyPage.js의 useEffect 부분 수정
+  // 주요 증상 관련 질문 처리
   useEffect(() => {
+    console.log('Symptoms effect triggered:', {
+      currentCategory: categories[currentCategoryIndex]?.name,
+      selectedSymptoms
+    });
+
     if (categories[currentCategoryIndex]?.name === "2. 증상·불편" && selectedSymptoms.length > 0) {
       const currentCategory = categories[currentCategoryIndex];
 
-      // 주요 증상 질문 찾기
       const mainSymptomQuestion = questions.find(q =>
         q.questionText.includes('주요 증상') ||
         q.questionText.includes('불편하거나 걱정되는 것')
       );
 
-      if (mainSymptomQuestion) {
-        // 선택된 증상의 옵션 텍스트 가져오기
-        const selectedSymptomTexts = mainSymptomQuestion.options
-          .filter(opt => selectedSymptoms.includes(opt.id.toString()))
-          .map(opt => opt.optionText);
+      console.log('Found main symptom question:', mainSymptomQuestion);
 
-        // 관련된 하위 카테고리 필터링
+      if (mainSymptomQuestion) {
+        // 선택된 증상들의 관련 질문 ID 수집
+        const relatedQuestionIds = mainSymptomQuestion.options
+          .filter(opt => selectedSymptoms.includes(opt.id.toString()))
+          .flatMap(opt => opt.relatedQuestionIds || []);
+
+        console.log('Related question IDs:', relatedQuestionIds);
+
+        // 관련 하위 카테고리 필터링
         const filteredSubs = currentCategory.subCategories.filter(sub =>
           sub.name === "주요 증상" ||
           sub.name === "추가 증상" ||
-          selectedSymptomTexts.includes(sub.name)
+          sub.questions?.some(q => relatedQuestionIds.includes(q.id))
         );
 
+        console.log('Filtered subcategories:', filteredSubs);
         dispatch(setFilteredSubCategories(filteredSubs));
       }
     }
   }, [selectedSymptoms, categories, currentCategoryIndex, questions, dispatch]);
 
+  // 성별에 따른 카테고리 스킵 처리
   useEffect(() => {
     const currentCategory = categories[currentCategoryIndex];
     const subCategoriesToUse = filteredSubCategories || currentCategory?.subCategories;
@@ -88,17 +99,22 @@ const SurveyPage = () => {
     }
   }, [categories, currentCategoryIndex, currentSubCategoryIndex, gender, filteredSubCategories]);
 
+  // 응답 변경 핸들러
   const handleResponseChange = (questionId, value) => {
+    console.log('Response change:', { questionId, value });
     dispatch(updateResponse({ questionId, answer: value }));
   };
 
+  // 다음/제출 버튼 핸들러
   const handleNext = () => {
     const currentCategory = categories[currentCategoryIndex];
     const subCategoriesToUse = filteredSubCategories || currentCategory?.subCategories;
 
+    // 마지막 페이지인 경우 제출
     if (currentCategoryIndex === categories.length - 1 &&
         currentSubCategoryIndex === subCategoriesToUse.length - 1) {
 
+      // 응답 포맷팅
       const allQuestions = categories.flatMap(category =>
         category.subCategories ?
           category.subCategories.flatMap(subCategory =>
@@ -128,6 +144,7 @@ const SurveyPage = () => {
         return;
       }
 
+      // 제출 요청
       dispatch(submitSurvey({ responses: formattedResponses }))
         .unwrap()
         .then(() => {
@@ -141,6 +158,7 @@ const SurveyPage = () => {
     }
   };
 
+  // 다음 카테고리/하위카테고리로 이동
   const handleNextCategoryOrSubCategory = () => {
     const currentCategory = categories[currentCategoryIndex];
     const subCategoriesToUse = filteredSubCategories || currentCategory?.subCategories;
@@ -153,6 +171,7 @@ const SurveyPage = () => {
     }
   };
 
+  // 성별에 따른 카테고리 스킵 여부 확인
   const shouldSkipSubCategory = (category, subCategory) => {
     if (category.name === "3. 생활 습관") {
       if (gender === 'female' && subCategory.name === "남성건강") return true;
@@ -161,18 +180,22 @@ const SurveyPage = () => {
     return false;
   };
 
+  // 로딩 상태 처리
   if (categoriesLoading || questionsLoading) {
     return <CircularProgress />;
   }
 
+  // 에러 상태 처리
   if (categoriesError || questionsError) {
     return <Typography color="error">{categoriesError || questionsError}</Typography>;
   }
 
+  // 카테고리 없음 처리
   if (!categories || categories.length === 0) {
     return <Typography>카테고리가 없습니다. 관리자에게 문의하세요.</Typography>;
   }
 
+  // 초기 로딩 중 처리
   if (currentCategoryIndex === null || currentSubCategoryIndex === null) {
     return <Typography>설문을 불러오는 중입니다...</Typography>;
   }
@@ -181,10 +204,12 @@ const SurveyPage = () => {
   const subCategoriesToDisplay = filteredSubCategories || currentCategory?.subCategories;
   const currentSubCategory = subCategoriesToDisplay?.[currentSubCategoryIndex];
 
+  // 건너뛰어야 할 카테고리 처리
   if (!currentCategory || !currentSubCategory || shouldSkipSubCategory(currentCategory, currentSubCategory)) {
     return null;
   }
 
+  // 다음 버튼 비활성화 여부 확인
   const isNextButtonDisabled = () => {
     return questions.some(question => !responses[question.id]);
   };
