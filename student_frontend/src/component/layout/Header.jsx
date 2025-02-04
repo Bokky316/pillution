@@ -13,6 +13,9 @@ const Header = ({ handleLogout }) => {
     const menuOpen = useSelector(state => state.ui.menuAnchorEl);
     const [anchorEl, setAnchorEl] = useState(null);
 
+    console.log("Header component rendered");
+    console.log("Login status:", isLoggedIn, "User:", user);
+
     const handleMenuOpen = (event) => {
         setAnchorEl(event.currentTarget);
         dispatch({ type: 'SET_MENU_ANCHOR', payload: true });
@@ -37,11 +40,12 @@ const Header = ({ handleLogout }) => {
             setAnchorEl(null);
         }
     }, [menuOpen]);
+
     useEffect(() => {
-            if (isLoggedIn && !user) {
-                dispatch(fetchUserInfo());
-            }
-        }, [isLoggedIn, user, dispatch]);
+        if (isLoggedIn && !user) {
+            dispatch(fetchUserInfo());
+        }
+    }, [isLoggedIn, user, dispatch]);
 
     return (
         <AppBar position="static" className="nav-bar" sx={{
@@ -98,11 +102,10 @@ const Header = ({ handleLogout }) => {
 
                 {/* 로그인 상태에 따른 버튼 */}
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    {isLoggedIn ? (
+                    {isLoggedIn && user ? (
                         <>
                             <Typography variant="body1" sx={{ mr: 2 }}>
-                                {user?.name}
-                                {user?.roles?.includes("ROLE_ADMIN") ? " (관리자)" : " (사용자)"}
+                                {user.name} {user.roles?.includes("ROLE_ADMIN") ? "(관리자)" : "(사용자)"}
                             </Typography>
                             <Button color="inherit" onClick={() => navigate("/mypage")}>마이페이지</Button>
                             <Button color="inherit" onClick={handleLogout}>로그아웃</Button>

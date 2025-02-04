@@ -1,3 +1,10 @@
+import React, { useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { setUser } from '@/redux/authSlice';
+import { fetchWithoutAuth } from '@features/auth/utils/fetchWithAuth';
+import { API_URL } from '@/constant';
+
 function OAuth2RedirectHandler() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -10,15 +17,13 @@ function OAuth2RedirectHandler() {
           credentials: 'include',
         });
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch user info');
-        }
-
         const data = await response.json();
+        console.log("Full response data:", data);
 
         if (data.status === 'success') {
+          console.log("User data before dispatch:", data.data);
           dispatch(setUser({
-            ...data.user,
+            ...data.data,
             isSocialLogin: true,
             provider: 'kakao'
           }));
@@ -38,4 +43,5 @@ function OAuth2RedirectHandler() {
 
   return <div>Loading...</div>;
 }
+
 export default OAuth2RedirectHandler;
