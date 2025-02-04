@@ -3,28 +3,29 @@ import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
 import { API_URL } from "@/constant";
 
 const authSlice = createSlice({
-    name: "auth",
-    initialState: {
-        user: null,
-        isLoggedIn: false,
-        isSocialLogin: false,
-        provider: null,
+  name: "auth",
+  initialState: {
+    user: null,
+    isLoggedIn: false,
+    isSocialLogin: false,
+    provider: null,
+  },
+  reducers: {
+    setUser(state, action) {
+      state.user = action.payload;
+      state.isLoggedIn = true;
+      state.isSocialLogin = action.payload?.isSocialLogin || false;
+      state.provider = action.payload?.provider || null;
     },
-    reducers: {
-        setUser(state, action) {
-            state.user = action.payload;
-            state.isLoggedIn = true;
-            state.isSocialLogin = action.payload.isSocialLogin || false;
-            state.provider = action.payload.provider || null;
-        },
-        clearUser(state) {
-            state.user = null;
-            state.isLoggedIn = false;
-            state.isSocialLogin = false;
-            state.provider = null;
-        },
+    clearUser(state) {
+      state.user = null;
+      state.isLoggedIn = false;
+      state.isSocialLogin = false;
+      state.provider = null;
     },
+  },
 });
+
 
 export const fetchUserInfo = () => async (dispatch) => {
     try {

@@ -1,10 +1,3 @@
-import React, { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { setUser } from '@/redux/authSlice';
-import { fetchWithoutAuth } from '@features/auth/utils/fetchWithAuth';
-import { API_URL } from '@/constant';
-
 function OAuth2RedirectHandler() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -17,13 +10,13 @@ function OAuth2RedirectHandler() {
           credentials: 'include',
         });
 
+        if (!response.ok) {
+          throw new Error('Failed to fetch user info');
+        }
+
         const data = await response.json();
 
         if (data.status === 'success') {
-          // 토큰을 localStorage에 저장
-          localStorage.setItem('accessToken', data.accessToken);
-          localStorage.setItem('refreshToken', data.refreshToken);
-
           dispatch(setUser({
             ...data.user,
             isSocialLogin: true,
@@ -45,5 +38,4 @@ function OAuth2RedirectHandler() {
 
   return <div>Loading...</div>;
 }
-
 export default OAuth2RedirectHandler;

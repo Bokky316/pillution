@@ -53,13 +53,31 @@ import OAuth2RedirectHandler from '@features/auth/components/OAuth2RedirectHandl
  * @returns App 컴포넌트 JSX
  */
 function App() {
-    console.log("App 컴포넌트 렌더링");
-    // 리덕스 스토어의 상태를 가져오기 위해 useSelector 훅 사용, auth 슬라이스에서 user, isLoggedIn 상태를 가져옴
-    // user: 사용자 정보 객체, isLoggedIn: 로그인 여부
-    const { user, isLoggedIn } = useSelector((state) => state.auth);
-    console.log("Redux 상태:", { user, isLoggedIn });
+  const { user, isLoggedIn } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
 
-    const dispatch = useDispatch();
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const response = await fetchWithoutAuth(`${API_URL}auth/userInfo`, {
+          method: 'GET',
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          dispatch(setUser(data.user));
+        } else {
+          dispatch(clearUser());
+        }
+      } catch (error) {
+        console.error('Error checking login status:', error);
+        dispatch(clearUser());
+      }
+    };
+
+    checkLoginStatus();
+  }, [dispatch]);
 
     useEffect(() => {
         if (!user && isLoggedIn) {
@@ -72,11 +90,25 @@ function App() {
         try {
             const response = await fetchWithoutAuth(`${API_URL}auth/logout`, {
                 method: "POST",
+                credentials: "include",
             });
             if (response.ok) {
                 dispatch(clearUser());
+
+                // 모든 쿠키 삭제 (더 명확하게)
+                const cookies = document.cookie.split(";");
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i];
+                    const eqPos = cookie.indexOf("=");
+                    const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                }
+
+                localStorage.clear();
+                sessionStorage.clear();
                 await persistor.purge();
-                window.location.href = "/";
+
+                window.location.href = "/login";
             } else {
                 throw new Error('Logout failed');
             }
