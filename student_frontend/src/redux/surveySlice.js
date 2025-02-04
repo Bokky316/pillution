@@ -91,7 +91,6 @@ export const submitSurvey = createAsyncThunk(
   }
 );
 
-
 export const setFilteredSubCategories = createAction(
   'survey/setFilteredSubCategories',
   (subCategories) => ({ payload: subCategories })
@@ -114,6 +113,7 @@ const surveySlice = createSlice({
     gender: null,
     selectedSymptoms: [],
     filteredSubCategories: null,
+    relatedQuestions: [],
   },
   reducers: {
     updateResponse: (state, action) => {
@@ -123,32 +123,48 @@ const surveySlice = createSlice({
       console.log('업데이트 시도:', { questionId, answer, question });
 
       if (question) {
-        // 기존 로직 유지
         if (question.questionType === 'MULTIPLE_CHOICE') {
           let selectedOptions = state.responses[questionId] || [];
           const lastOptionIndex = question.options.length - 1;
           const lastOptionId = question.options[lastOptionIndex].id.toString();
           const isLastOption = answer === lastOptionId;
 
+          // 주요 증상 질문인지 확인하는 로직 수정
+          const isMainSymptomQuestion = question.questionText &&
+            (question.questionText.includes('주요 증상') ||
+             question.questionText.includes('주요증상'));
+
           if (isLastOption) {
+            // 마지막 옵션 선택 시 다른 옵션들 모두 해제
             state.responses[questionId] = selectedOptions.includes(lastOptionId)
               ? []
               : [lastOptionId];
           } else {
+            // 마지막 옵션이 이미 선택되어 있다면 해제
             if (selectedOptions.includes(lastOptionId)) {
               selectedOptions = [];
             }
 
-            const isMainSymptomQuestion = question.questionText.includes('주요 증상');
-
-            if (isMainSymptomQuestion && !selectedOptions.includes(answer)) {
-              if (selectedOptions.length < 3) {
-                selectedOptions.push(answer);
+            if (isMainSymptomQuestion) {
+              // 주요 증상 처리
+              if (!selectedOptions.includes(answer)) {
+                // 3개까지만 선택 가능
+                if (selectedOptions.length < 3) {
+                  selectedOptions.push(answer);
+                } else {
+                  // 3개 초과 시 가장 오래된 선택 제거
+                  selectedOptions.shift();
+                  selectedOptions.push(answer);
+                }
               } else {
-                selectedOptions.shift();
-                selectedOptions.push(answer);
+                // 이미 선택된 경우 선택 해제
+                const index = selectedOptions.indexOf(answer);
+                if (index > -1) {
+                  selectedOptions.splice(index, 1);
+                }
               }
             } else {
+              // 일반 다중 선택 처리
               const index = selectedOptions.indexOf(answer);
               if (index > -1) {
                 selectedOptions.splice(index, 1);
@@ -159,7 +175,19 @@ const surveySlice = createSlice({
 
             state.responses[questionId] = selectedOptions;
           }
+
+          // 주요 증상에 따른 관련 질문 로드 로직
+          if (isMainSymptomQuestion) {
+            const selectedSymptomIds = state.responses[questionId] || [];
+            state.selectedSymptoms = selectedSymptomIds;
+            state.relatedQuestions = state.questions.filter(q =>
+              q.relatedSymptomIds && selectedSymptomIds.some(symptomId =>
+                q.relatedSymptomIds.includes(symptomId)
+              )
+            );
+          }
         } else {
+          // 다른 타입의 질문 처리
           state.responses[questionId] = answer;
         }
 
