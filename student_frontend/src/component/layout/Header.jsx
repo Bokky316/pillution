@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { AppBar, Toolbar, Button, IconButton, Menu, MenuItem, Box, Typography } from "@mui/material";
 import MenuIcon from '@mui/icons-material/Menu';
 import { Link, useNavigate } from "react-router-dom";
+import { fetchUserInfo } from "@/redux/authSlice";
 import "../../assets/styles/header.css";
 
 const Header = ({ handleLogout }) => {
@@ -36,6 +37,11 @@ const Header = ({ handleLogout }) => {
             setAnchorEl(null);
         }
     }, [menuOpen]);
+    useEffect(() => {
+            if (isLoggedIn && !user) {
+                dispatch(fetchUserInfo());
+            }
+        }, [isLoggedIn, user, dispatch]);
 
     return (
         <AppBar position="static" className="nav-bar" sx={{

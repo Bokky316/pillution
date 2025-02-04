@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { setUser } from '@/redux/authSlice';
-import { fetchWithAuth } from '@features/auth/utils/fetchWithAuth';
+import { fetchWithoutAuth } from '@features/auth/utils/fetchWithAuth';
 import { API_URL } from '@/constant';
 
 function OAuth2RedirectHandler() {
@@ -12,7 +12,7 @@ function OAuth2RedirectHandler() {
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
-        const response = await fetchWithAuth(`${API_URL}auth/userInfo`, {
+        const response = await fetchWithoutAuth(`${API_URL}auth/userInfo`, {
           method: 'GET',
           credentials: 'include',
         });
@@ -20,13 +20,14 @@ function OAuth2RedirectHandler() {
         const data = await response.json();
 
         if (data.status === 'success') {
+          // 토큰을 localStorage에 저장
+          localStorage.setItem('accessToken', data.accessToken);
+          localStorage.setItem('refreshToken', data.refreshToken);
+
           dispatch(setUser({
-            id: data.id,
-            name: data.name,
-            email: data.email,
-            roles: data.roles,
+            ...data.user,
             isSocialLogin: true,
-            provider: data.provider || 'kakao' // 백엔드에서 provider 정보를 제공하지 않을 경우 'kakao'로 설정
+            provider: 'kakao'
           }));
           navigate('/');
         } else {
