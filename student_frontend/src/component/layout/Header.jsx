@@ -9,12 +9,12 @@ import "../../assets/styles/header.css";
 const Header = ({ handleLogout }) => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const { user, isLoggedIn } = useSelector(state => state.auth);
+    const { user, isLoggedIn, isSocialLogin } = useSelector(state => state.auth);
     const menuOpen = useSelector(state => state.ui.menuAnchorEl);
     const [anchorEl, setAnchorEl] = useState(null);
 
     console.log("Header component rendered");
-    console.log("Login status:", isLoggedIn, "User:", user);
+    console.log("Login status:", isLoggedIn, "User:", user, "Social Login:", isSocialLogin);
 
     const handleMenuOpen = (event) => {
         setAnchorEl(event.currentTarget);
@@ -102,14 +102,18 @@ const Header = ({ handleLogout }) => {
 
                 {/* 로그인 상태에 따른 버튼 */}
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    {isLoggedIn && user ? (
-                        <>
-                            <Typography variant="body1" sx={{ mr: 2 }}>
-                                {user.name} {user.roles?.includes("ROLE_ADMIN") ? "(관리자)" : "(사용자)"}
-                            </Typography>
-                            <Button color="inherit" onClick={() => navigate("/mypage")}>마이페이지</Button>
-                            <Button color="inherit" onClick={handleLogout}>로그아웃</Button>
-                        </>
+                   {isLoggedIn && user ? (
+                      <>
+                        <Typography variant="body1" sx={{ mr: 2 }}>
+                          {user.name}
+                          {user.role === "ADMIN" ? " (관리자)" :
+                           user.provider ? ` (${user.provider} 사용자)` : " (일반 사용자)"}
+                        </Typography>
+                        <Button color="inherit" onClick={() => navigate("/mypage")}>마이페이지</Button>
+                        <Button color="inherit" onClick={handleLogout}>
+                          {user.provider ? '소셜 로그아웃' : '로그아웃'}
+                        </Button>
+                      </>
                     ) : (
                         <>
                             <Button color="inherit" onClick={() => navigate("/login")} sx={{ mr: 1 }}>로그인</Button>

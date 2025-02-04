@@ -17,20 +17,21 @@ function OAuth2RedirectHandler() {
           credentials: 'include',
         });
 
+        if (!response.ok) throw new Error('Failed to fetch user info');
+
         const data = await response.json();
-        console.log("Full response data:", data);
+        console.log("OAuth2RedirectHandler - Full response data:", data);
 
         if (data.status === 'success') {
-          console.log("User data before dispatch:", data.data);
           dispatch(setUser({
             ...data.data,
             isSocialLogin: true,
-            provider: 'kakao'
+            isLoggedIn: true,
+            provider: data.data.provider || 'kakao'
           }));
           navigate('/');
         } else {
-          console.error('Failed to fetch user info');
-          navigate('/login');
+          throw new Error('Failed to fetch user info');
         }
       } catch (error) {
         console.error('Error fetching user info:', error);

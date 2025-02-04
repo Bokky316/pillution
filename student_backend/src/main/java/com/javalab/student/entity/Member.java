@@ -144,33 +144,3 @@ public class Member extends BaseEntity{
 
 }
 
-
-//// 추가: BaseEntity 클래스
-//@MappedSuperclass
-//@EntityListeners(AuditingEntityListener.class)
-//@Getter
-//public abstract class BaseEntity {
-//
-//    @CreatedDate
-//    @Column(updatable = false)
-//    private LocalDateTime createdDate;
-//
-//    @LastModifiedDate
-//    private LocalDateTime lastModifiedDate;
-//}
-//
-//// 추가: Role 열거형
-//public enum Role {
-//    USER, ADMIN
-//}
-//
-//// 추가: MemberFormDto 클래스
-//@Getter @Setter
-//public class MemberFormDto {
-//    private String name;
-//    private String email;
-//    private String password;
-//    private String address;
-//    private String phone;
-//    private Role role;
-//}
