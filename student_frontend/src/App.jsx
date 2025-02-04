@@ -22,6 +22,7 @@ import { API_URL } from "@/constant";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistor } from "@/redux/store";
 import { fetchWithAuth } from "./features/auth/utils/fetchWithAuth";
+import OAuthRedirectHandler from "@/features/auth/components/OAuthRedirectHandler";
 
 
 
@@ -103,6 +104,7 @@ function App() {
                         <Route path="/products/:productId" element={<ProductDetailPage />} />
                         <Route path="/cart" element={isLoggedIn ? <CartPage /> : <Navigate to="/login" />} />
                         <Route path="/unauthorized" element={<UnauthorizedPage />} />
+                        <Route path="/oauth2/redirect" element={<OAuthRedirectHandler />} />
                     </Routes>
                     <Footer />
                 </div>
