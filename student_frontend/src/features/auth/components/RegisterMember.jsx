@@ -200,6 +200,7 @@ export default function RegisterMember() {
                 value={member.address}
                 onChange={onMemberChange}
                 style={{ width: "400px", marginBottom: "10px" }}
+
             />
             <TextField
                 label="Phone"
@@ -214,12 +215,13 @@ export default function RegisterMember() {
                 type="date"
                 value={member.birthDate}
                 onChange={onMemberChange}
+                style={{ width: "400px", marginBottom: "10px" }}
             />
 
-            <select name="gender" value={member.gender} onChange={onMemberChange}>
+            <select name="gender" value={member.gender} onChange={onMemberChange} style={{ width: "400px", marginBottom: "40px" }}>
                 <option value="">성별 선택</option>
-                <option value="M">남성</option>
-                <option value="F">여성</option>
+                <option value="남성">남성</option>
+                <option value="여성">여성</option>
             </select>
 
             <Button variant="contained" onClick={handleOnSubmit} disabled={!isVerified}>
