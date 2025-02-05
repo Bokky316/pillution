@@ -87,6 +87,7 @@ const Header = () => {
                         <MenuItem onClick={() => handleMenuItemClick("/recommendation")}>추천</MenuItem>
                         <MenuItem onClick={() => handleMenuItemClick("/cart")}>장바구니</MenuItem>
                         <MenuItem onClick={() => handleMenuItemClick("/survey")}>설문조사</MenuItem>
+                        <MenuItem onClick={() => handleMenuItemClick("/subscription")}>구독</MenuItem>
                     </Menu>
                 </Box>
 
