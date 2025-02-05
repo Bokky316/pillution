@@ -11,9 +11,17 @@ function BoardPage() {
     const currentBoard = useSelector(state => state.board.currentBoard);
     const location = useLocation();
 
+    // 새로고침 시 localStorage에서 현재 게시판 상태를 불러오기
     useEffect(() => {
-        dispatch(setCurrentBoard("news"));
+        const savedBoard = localStorage.getItem("currentBoard") || "news";
+        dispatch(setCurrentBoard(savedBoard));
     }, [location, dispatch]);
+
+    // 게시판 변경 시 localStorage에 저장
+    const handleBoardChange = (board) => {
+        dispatch(setCurrentBoard(board));
+        localStorage.setItem("currentBoard", board);
+    };
 
     return (
         <Container sx={{ mt: 4, mb: 6 }}>
@@ -26,7 +34,7 @@ function BoardPage() {
             <Box display="flex" justifyContent="center">
                 <Button
                     disableRipple
-                    onClick={() => dispatch(setCurrentBoard("news"))}
+                    onClick={() => handleBoardChange("news")}
                     sx={{
                         borderRadius: 0,
                         backgroundColor: currentBoard === "news" ? "#999999" : "#f5f5f5",
@@ -41,7 +49,7 @@ function BoardPage() {
                 </Button>
                 <Button
                     disableRipple
-                    onClick={() => dispatch(setCurrentBoard("faq"))}
+                    onClick={() => handleBoardChange("faq")}
                     sx={{
                         borderRadius: 0,
                         backgroundColor: currentBoard === "faq" ? "#999999" : "#f5f5f5",

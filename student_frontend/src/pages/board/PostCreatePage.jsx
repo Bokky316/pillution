@@ -125,7 +125,7 @@ function PostCreatePage() {
             setTimeout(() => {
                 setSnackbarOpen(false); // Snackbar 닫기
                 navigate("/board");
-            }, 3000);
+            }, 1000);
 
             dispatch(resetForm()); // 성공 후 폼 초기화
         } catch (error) {
@@ -329,7 +329,7 @@ function PostCreatePage() {
             {/* Snackbar */}
             <Snackbar
                 open={snackbarOpen}
-                autoHideDuration={3000} // 3초 후 자동으로 닫히도록 설정
+                autoHideDuration={1000} // 3초 후 자동으로 닫히도록 설정
                 message={snackbarMessage}
                 action={
                     <IconButton

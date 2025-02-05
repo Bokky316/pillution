@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -14,8 +14,11 @@ import {
     DialogContentText,
     DialogActions,
     Button,
-    Typography
+    Typography,
+    Snackbar,
+    IconButton
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import {
     fetchPost,
     updatePost,
@@ -38,24 +41,23 @@ function PostEditPage() {
         openCancelDialog,
         openEditDialog
     } = useSelector((state) => state.postEdit);
-    const auth = useSelector((state) => state.auth); // Redux에서 auth 가져오기
+    const auth = useSelector((state) => state.auth);
 
-    // Redux 상태에서 userRole 가져오기
     const userRole = auth?.user?.authorities?.some(auth => auth.authority === "ROLE_ADMIN") ? "ADMIN" : "USER";
 
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState("");
+
     useEffect(() => {
-        console.log("📌 fetchPost 호출!");
         dispatch(fetchPost(postId));
     }, [dispatch, postId]);
 
-    // 로그인 시 Redux 상태를 `localStorage`와 동기화
     useEffect(() => {
         if (auth?.user) {
             localStorage.setItem("auth", JSON.stringify(auth));
         }
     }, [auth]);
 
-    // 관리자 권한 체크
     useEffect(() => {
         if (userRole !== "ADMIN") {
             alert('관리자만 접근할 수 있습니다.');
@@ -85,7 +87,11 @@ function PostEditPage() {
         dispatch(setOpenEditDialog(false));
     };
 
-    const handleSubmit = async (e) => {
+    const handleCloseSnackbar = () => {
+        setSnackbarOpen(false);
+    };
+
+    const handleSubmit = (e) => {
         e.preventDefault();
 
         if (!formData.title.trim() || !formData.content.trim()) {
@@ -114,17 +120,21 @@ function PostEditPage() {
                 content: formData.content,
                 boardId: boardId,
                 category: finalCategory,
-                authorId: auth.user.id // 작성자 ID 추가
+                authorId: auth.user.id
             };
 
-            const token = auth.user.token; // 토큰 가져오기
+            const token = auth.user.token;
 
-            console.log("Updating post with data:", updateData); // 디버깅용 로그
             await dispatch(updatePost({ postId, updateData, token })).unwrap();
-            alert('게시물이 수정되었습니다.');
-            navigate('/board');
+
+            setSnackbarMessage("게시물이 성공적으로 수정되었습니다.");
+            setSnackbarOpen(true);
+
+            setTimeout(() => {
+                setSnackbarOpen(false);
+                navigate('/board');
+            }, 1000);
         } catch (err) {
-            console.error("Error updating post:", err); // 상세한 오류 로깅
             if (err.status === 401 || err.status === 403) {
                 alert('관리자 권한이 필요하거나 로그인이 필요합니다.');
                 navigate('/login');
@@ -244,11 +254,24 @@ function PostEditPage() {
                     <Button onClick={handleConfirmEdit} color="primary">
                         네
                     </Button>
-                    <Button onClick={handleCloseEditDialog} color="secondary">
+                    <Button onClick={handleCloseEditDialog} color="error">
                         아니요
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <Snackbar
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                open={snackbarOpen}
+                message={snackbarMessage}
+                autoHideDuration={1000}
+                onClose={handleCloseSnackbar}
+                action={
+                    <IconButton size="small" color="inherit" onClick={handleCloseSnackbar}>
+                        <CloseIcon fontSize="small" />
+                    </IconButton>
+                }
+            />
         </Box>
     );
 }
