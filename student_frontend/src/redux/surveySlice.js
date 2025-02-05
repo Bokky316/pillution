@@ -124,12 +124,6 @@ const surveySlice = createSlice({
       const question = state.questions.find(q => q.id === questionId);
 
       if (!question) return;
-
-      if (question.questionText === "성별을 알려주세요") {
-        state.gender = answer === '1' ? 'female' : (answer === '2' ? 'male' : null);
-        console.log('선택된 성별:', state.gender); // 디버깅을 위한 로그 추가
-      }
-
       if (question.questionType === 'MULTIPLE_CHOICE') {
         let selectedOptions = [...(state.responses[questionId] || [])];
         const lastOptionIndex = question.options.length - 1;
