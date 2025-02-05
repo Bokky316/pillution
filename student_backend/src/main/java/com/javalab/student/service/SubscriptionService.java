@@ -1,10 +1,11 @@
 package com.javalab.student.service;
 
+import com.javalab.student.dto.SubscriptionResponseDto;
 import com.javalab.student.entity.*;
 import com.javalab.student.repository.*;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -23,15 +24,33 @@ public class SubscriptionService {
     private final MemberRepository memberRepository;
 
     //  사용자의 정기구독 정보 조회
-    public Subscription getSubscription(Long memberId) {
+//    @Transactional(readOnly = true) // 🔥 트랜잭션 범위 내에서 Lazy Loading 허용
+//    public Subscription getSubscription(Long memberId) {
+//        List<Subscription> subscriptions = subscriptionRepository.findByMemberId(memberId);
+//        System.out.println("🔍 [DEBUG] Found Subscriptions: " + subscriptions);
+//
+//        if (subscriptions.isEmpty()) {
+//            throw new RuntimeException("구독 정보가 없습니다."); // 예외 처리 추가
+//        }
+//
+//        Subscription subscription = subscriptions.get(0);
+//
+//        // 🔥 Lazy Loading 문제 방지: 연관 엔티티 강제 초기화
+//        subscription.getMember().getEmail();
+//        subscription.getItems().size();
+//
+//        return subscription;
+//    }
+
+    @Transactional(readOnly = true)
+    public SubscriptionResponseDto getSubscription(Long memberId) {
         List<Subscription> subscriptions = subscriptionRepository.findByMemberId(memberId);
-        System.out.println("🔍 [DEBUG] Found Subscriptions: " + subscriptions);
 
         if (subscriptions.isEmpty()) {
-            throw new RuntimeException("구독 정보가 없습니다."); // 예외 처리 추가
+            throw new RuntimeException("구독 정보가 없습니다.");
         }
 
-        return subscriptions.get(0);
+        return new SubscriptionResponseDto(subscriptions.get(0));
     }
 
     //  정기구독 제품 추가/수정

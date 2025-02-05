@@ -21,7 +21,11 @@ public class SubscriptionController {
     private final SubscriptionService subscriptionService;
 
     @GetMapping
-    public ResponseEntity<?> getSubscription(@RequestParam("memberId") Long memberId) {
+    public ResponseEntity<?> getSubscription(@RequestParam(value = "memberId", required = false) Long memberId) {
+        if (memberId == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "memberId가 필요합니다."));
+        }
+
         try {
             return ResponseEntity.ok(subscriptionService.getSubscription(memberId));
         } catch (RuntimeException e) {

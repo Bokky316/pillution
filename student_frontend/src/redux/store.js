@@ -30,7 +30,7 @@ const rootReducer = combineReducers({
     survey: surveyReducer,
     ui: uiReducer,
     recommendations: recommendationReducer,  // 추가된 부분
-    subscription: subscriptionReducer
+    subscription: subscriptionReducer,
 });
 
 /**

@@ -7,8 +7,15 @@ export default function SubscriptionManagement() {
     const { data: subscription, loading, error } = useSelector((state) => state.subscription);
 
     useEffect(() => {
+        console.log("🔍 useEffect 실행됨");
         dispatch(fetchSubscription());
     }, [dispatch]);
+
+    console.log("📌 Redux 상태 확인:", { subscription, loading, error });
+
+    useEffect(() => {
+        console.log("📌 Redux 상태 확인:", { subscription, loading, error });
+    }, [subscription, loading, error]);
 
     const handleUpdateSubscription = () => {
         const updatedData = {
