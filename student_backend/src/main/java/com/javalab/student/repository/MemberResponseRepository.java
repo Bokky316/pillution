@@ -15,6 +15,9 @@ public interface MemberResponseRepository extends JpaRepository<MemberResponse, 
     List<MemberResponse> findByMember_Id(Long memberId);
     Optional<MemberResponse> findByMember_IdAndQuestion_Id(Long memberId, Long questionId);
 
-    @Query("SELECT mr FROM MemberResponse mr WHERE mr.member.id = :memberId AND mr.createdAt = (SELECT MAX(m.createdAt) FROM MemberResponse m WHERE m.member.id = :memberId)")
+    @Query("SELECT mr FROM MemberResponse mr WHERE mr.member.id = :memberId AND mr.regTime = (SELECT MAX(m.regTime) FROM MemberResponse m WHERE m.member.id = :memberId)")
     List<MemberResponse> findLatestResponsesByMemberId(@Param("memberId") Long memberId);
+
+    @Query("SELECT mr FROM MemberResponse mr WHERE mr.member.id = :memberId AND mr.question.id IN (3, 4, 5)")
+    List<MemberResponse> findAgeHeightAndWeightResponses(@Param("memberId") Long memberId);
 }

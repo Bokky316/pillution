@@ -1,21 +1,12 @@
 package com.javalab.student.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.Id;
-import jakarta.persistence.Column;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.ManyToMany;
-
-
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.List;
 
-
 @Entity
-@Table(name = "product_ingredient_mapping")
+@Table(name = "product_ingredient")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,7 +17,7 @@ public class ProductIngredient {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "ingredient_name", nullable = false)
+    @Column(name = "ingredient_name", nullable = false, unique = true)
     private String ingredientName;
 
     @ManyToMany(mappedBy = "ingredients")

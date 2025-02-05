@@ -13,6 +13,6 @@ import java.util.List;
 public interface MemberResponseOptionRepository extends JpaRepository<MemberResponseOption, Long> {
     List<MemberResponseOption> findByMember_Id(Long memberId);
 
-    @Query("SELECT mro FROM MemberResponseOption mro WHERE mro.member.id = :memberId AND mro.createdAt = (SELECT MAX(m.createdAt) FROM MemberResponseOption m WHERE m.member.id = :memberId)")
+    @Query("SELECT mro FROM MemberResponseOption mro WHERE mro.member.id = :memberId AND mro.regTime = (SELECT MAX(m.regTime) FROM MemberResponseOption m WHERE m.member.id = :memberId)")
     List<MemberResponseOption> findLatestResponsesByMemberId(@Param("memberId") Long memberId);
 }
