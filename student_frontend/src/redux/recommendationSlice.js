@@ -1,20 +1,22 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { fetchWithAuth } from '@features/auth/utils/fetchWithAuth';
-import { SERVER_URL } from "@/constant";
+import { fetchWithAuth } from '@/features/auth/utils/fetchWithAuth';
+import { API_URL } from '@/constant';
 
 export const fetchRecommendations = createAsyncThunk(
   'recommendations/fetchRecommendations',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetchWithAuth(`${SERVER_URL}api/recommendations`);
-      if (!response.ok) {
-        throw new Error('서버 응답 오류');
-      }
+      const response = await fetchWithAuth(`${API_URL}api/recommendations`, {
+        method: 'GET',
+        credentials: 'include',
+      });
       const data = await response.json();
-      console.log('Server response:', data);
-      return data;
+      if (response.ok) {
+        return data.data;
+      } else {
+        return rejectWithValue(data.message || '추천을 가져오는데 실패했습니다.');
+      }
     } catch (error) {
-      console.error('Fetch error:', error);
       return rejectWithValue(error.message);
     }
   }
@@ -23,10 +25,7 @@ export const fetchRecommendations = createAsyncThunk(
 const recommendationSlice = createSlice({
   name: 'recommendations',
   initialState: {
-    items: {
-      essential: [],
-      additional: []
-    },
+    items: { essential: [], additional: [] },
     loading: false,
     error: null,
   },
@@ -39,7 +38,7 @@ const recommendationSlice = createSlice({
       })
       .addCase(fetchRecommendations.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload.data;
+        state.items = action.payload;
       })
       .addCase(fetchRecommendations.rejected, (state, action) => {
         state.loading = false;

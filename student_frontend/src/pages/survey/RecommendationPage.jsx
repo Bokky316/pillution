@@ -12,8 +12,6 @@ const RecommendationPage = () => {
     dispatch(fetchRecommendations());
   }, [dispatch]);
 
-  console.log('Recommendations:', items);
-
   if (loading) {
     return <CircularProgress />;
   }
@@ -30,7 +28,7 @@ const RecommendationPage = () => {
   return (
     <Container>
       <Typography variant="h4" gutterBottom>
-        추천 제품
+        맞춤 영양제 추천
       </Typography>
       <RecommendationSection title="필수 추천 제품" products={items.essential || []} />
       <RecommendationSection title="추가 추천 제품" products={items.additional || []} />
