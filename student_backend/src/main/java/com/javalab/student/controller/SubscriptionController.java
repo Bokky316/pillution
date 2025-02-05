@@ -3,10 +3,12 @@ package com.javalab.student.controller;
 import com.javalab.student.entity.Subscription;
 import com.javalab.student.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.Map;
 
 /**
  * 사용자의 요청을 처리하는 API 엔드포인트
@@ -18,11 +20,15 @@ public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
 
-    // 구독 정보 조회
     @GetMapping
-    public ResponseEntity<Subscription> getSubscription(@RequestParam Long memberId) {
-        return ResponseEntity.ok(subscriptionService.getSubscription(memberId));
+    public ResponseEntity<?> getSubscription(@RequestParam("memberId") Long memberId) {
+        try {
+            return ResponseEntity.ok(subscriptionService.getSubscription(memberId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
+        }
     }
+
 
     // 결제일 변경
     @PutMapping("/update-billing-date")

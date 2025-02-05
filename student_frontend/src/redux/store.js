@@ -6,6 +6,7 @@ import authReducer from "./authSlice";
 import surveyReducer from "./surveySlice";
 import uiReducer from './uiSlice';
 import recommendationReducer from "./recommendationSlice";  // 추가된 부분
+import subscriptionReducer from "./subscriptionSlice";
 
 /**
  * Redux Persist 설정을 정의합니다.
@@ -16,7 +17,7 @@ import recommendationReducer from "./recommendationSlice";  // 추가된 부분
 const persistConfig = {
     key: "root",
     storage,
-    whitelist: ["auth", "survey", "ui", "recommendations"],  // recommendations 추가
+    whitelist: ["auth", "survey", "ui", "recommendations", "subscription"],  // recommendations 추가
 };
 
 /**
@@ -28,7 +29,8 @@ const rootReducer = combineReducers({
     auth: authReducer,
     survey: surveyReducer,
     ui: uiReducer,
-    recommendations: recommendationReducer  // 추가된 부분
+    recommendations: recommendationReducer,  // 추가된 부분
+    subscription: subscriptionReducer
 });
 
 /**

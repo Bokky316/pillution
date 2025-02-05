@@ -17,6 +17,7 @@ import MyPage from "@features/auth/components/MyPage";
 import RegisterMember from "@features/auth/components/RegisterMember";
 import UnauthorizedPage from "@features/auth/components/UnAuthorizedPage";
 import OAuth2RedirectHandler from '@features/auth/components/OAuth2RedirectHandler';
+import SubscriptionPage from "@/pages/subscription/SubscriptionManagement";
 
 
 function App() {
@@ -63,6 +64,7 @@ function App() {
                 <Route path="/mypage" element={isLoggedIn ? <MyPage /> : <Navigate to="/login" />} />
                 <Route path="/recommendation" element={<RecommendationPage />} />
                 <Route path="/survey" element={<SurveyPage />} />
+                <Route path="/subscription" element={<SubscriptionPage />} />
                 <Route path="/products" element={<ProductListPage />} />
                 <Route path="/products/:productId" element={<ProductDetailPage />} />
                 <Route path="/cart" element={isLoggedIn ? <CartPage /> : <Navigate to="/login" />} />

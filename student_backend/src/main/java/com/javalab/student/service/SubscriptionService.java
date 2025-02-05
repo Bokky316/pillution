@@ -24,9 +24,14 @@ public class SubscriptionService {
 
     //  사용자의 정기구독 정보 조회
     public Subscription getSubscription(Long memberId) {
-        return subscriptionRepository.findByMemberId(memberId).stream()
-                .findFirst()
-                .orElse(null);
+        List<Subscription> subscriptions = subscriptionRepository.findByMemberId(memberId);
+        System.out.println("🔍 [DEBUG] Found Subscriptions: " + subscriptions);
+
+        if (subscriptions.isEmpty()) {
+            throw new RuntimeException("구독 정보가 없습니다."); // 예외 처리 추가
+        }
+
+        return subscriptions.get(0);
     }
 
     //  정기구독 제품 추가/수정
