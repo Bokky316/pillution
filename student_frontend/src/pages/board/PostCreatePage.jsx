@@ -23,6 +23,7 @@ import {
     setAuthorId,
     setOpenCancelDialog,
     setOpenSubmitDialog,
+    resetForm,
 } from '../../redux/postCreateSlice';
 
 // FAQ 카테고리 목록
@@ -43,13 +44,21 @@ function PostCreatePage() {
         error
     } = useSelector((state) => state.postCreate);
 
-    // 초기 카테고리 설정
+    // 컴포넌트 마운트 시 폼 초기화
     useEffect(() => {
+        dispatch(resetForm());
+
+        // 초기 카테고리 설정
         const defaultCategory = location.state?.defaultCategory || '공지사항';
         dispatch(setFormData({
             category: defaultCategory,
             boardId: defaultCategory === '공지사항' ? 1 : 2,
         }));
+
+        // 컴포넌트 언마운트 시 폼 초기화
+        return () => {
+            dispatch(resetForm());
+        };
     }, [location.state, dispatch]);
 
     // 사용자 권한 확인
@@ -89,7 +98,6 @@ function PostCreatePage() {
     // 게시글 등록 확인
     const handleConfirmSubmit = async () => {
         try {
-            // API 요청을 위한 데이터 준비
             const finalCategory = formData.category === "자주 묻는 질문"
                 ? formData.subCategory
                 : formData.category;
@@ -102,9 +110,9 @@ function PostCreatePage() {
                 authorId: formData.authorId,
             };
 
-            // 게시글 생성 요청
             await dispatch(createPost(postData)).unwrap();
             alert("게시물이 등록되었습니다.");
+            dispatch(resetForm()); // 성공 후 폼 초기화
             navigate("/board");
         } catch (error) {
             if (error.status === 401 || error.status === 403) {
@@ -122,16 +130,31 @@ function PostCreatePage() {
     const handleChange = (e) => {
         const { name, value } = e.target;
         dispatch(setFormData({ [name]: value }));
+
+        // 게시판 변경 시 boardId 업데이트
+        if (name === 'category') {
+            dispatch(setFormData({
+                [name]: value,
+                boardId: value === '공지사항' ? 1 : 2,
+                // FAQ가 아닌 경우 subCategory 초기화
+                subCategory: value !== '자주 묻는 질문' ? '' : formData.subCategory
+            }));
+        }
     };
 
     // 취소 버튼 처리
     const handleCancelClick = () => {
-        dispatch(setOpenCancelDialog(true));
+        if (formData.title.trim() || formData.content.trim()) {
+            dispatch(setOpenCancelDialog(true));
+        } else {
+            navigate("/board");
+        }
     };
 
     // 취소 확인
     const handleConfirmCancel = () => {
         dispatch(setOpenCancelDialog(false));
+        dispatch(resetForm());
         navigate("/board");
     };
 
@@ -234,10 +257,20 @@ function PostCreatePage() {
 
                 {/* 버튼 그룹 */}
                 <Box display="flex" justifyContent="flex-end" gap={1}>
-                    <Button variant="contained" color="primary" type="submit">
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        type="submit"
+                        disabled={loading}
+                    >
                         등록
                     </Button>
-                    <Button variant="outlined" color="secondary" onClick={handleCancelClick}>
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={handleCancelClick}
+                        disabled={loading}
+                    >
                         취소
                     </Button>
                 </Box>
@@ -252,10 +285,10 @@ function PostCreatePage() {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleConfirmCancel} color="secondary">
+                    <Button onClick={handleConfirmCancel} color="primary">
                         네
                     </Button>
-                    <Button onClick={() => handleCloseDialog('cancel')} color="primary">
+                    <Button onClick={() => handleCloseDialog('cancel')} color="error">
                         아니요
                     </Button>
                 </DialogActions>
@@ -273,7 +306,7 @@ function PostCreatePage() {
                     <Button onClick={handleConfirmSubmit} color="primary">
                         네
                     </Button>
-                    <Button onClick={() => handleCloseDialog('submit')} color="secondary">
+                    <Button onClick={() => handleCloseDialog('submit')} color="error">
                         아니요
                     </Button>
                 </DialogActions>

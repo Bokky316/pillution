@@ -25,36 +25,37 @@ function PostDetailPage() {
         isAdmin
     } = useSelector(state => state.postDetail);
 
-    useEffect(() => {
-        // 관리자 권한 체크
-        const loggedInUser = localStorage.getItem('loggedInUser');
-        if (loggedInUser) {
-            try {
-                const userData = JSON.parse(loggedInUser);
-                dispatch(setIsAdmin(
-                    userData.authorities?.includes('ROLE_ADMIN') || false
-                ));
-            } catch (e) {
-                console.error('Error parsing user data:', e);
-                dispatch(setIsAdmin(false));
-            }
-        } // ✅ 이 부분이 빠져있었어요!
+    const auth = useSelector((state) => state.auth); // Redux에서 auth 가져오기
 
-        // 게시물 상세 정보 가져오기
+    // Redux 상태에서 userRole 가져오기
+    const userRole = auth?.user?.authorities?.some(auth => auth.authority === "ROLE_ADMIN") ? "ADMIN" : "USER";
+
+    useEffect(() => {
+        console.log("📌 fetchPostDetail 호출!");
         dispatch(fetchPostDetail(postId));
     }, [dispatch, postId]);
 
+    // 로그인 시 Redux 상태를 `localStorage`와 동기화
+    useEffect(() => {
+        if (auth?.user) {
+            localStorage.setItem("auth", JSON.stringify(auth));
+        }
+    }, [auth]);
+
+    useEffect(() => {
+        dispatch(setIsAdmin(userRole === "ADMIN"));
+    }, [dispatch, userRole]);
+
     const handleDeletePost = async () => {
-        if (!isAdmin) {
+        if (userRole !== "ADMIN") {
             alert('관리자만 삭제할 수 있습니다.');
             return;
         }
 
         try {
-            const userData = JSON.parse(localStorage.getItem('loggedInUser'));
             await dispatch(deletePost({
                 postId,
-                token: userData.token
+                token: auth.user.token
             })).unwrap();
 
             alert('게시물이 삭제되었습니다.');
@@ -71,7 +72,7 @@ function PostDetailPage() {
     };
 
     const handleEditPost = () => {
-        if (!isAdmin) {
+        if (userRole !== "ADMIN") {
             alert('관리자만 수정할 수 있습니다.');
             return;
         }
@@ -133,7 +134,7 @@ function PostDetailPage() {
                     </Button>
                 </Box>
 
-                {isAdmin && (
+                {userRole === "ADMIN" && (
                     <Box mt={2} display="flex" justifyContent="flex-end" gap={2}>
                         <Button variant="contained" color="info" onClick={handleEditPost}>수정</Button>
                         <Button variant="contained" color="error" onClick={handleDeletePost}>삭제</Button>

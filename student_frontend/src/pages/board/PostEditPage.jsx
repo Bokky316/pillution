@@ -20,12 +20,10 @@ import {
     fetchPost,
     updatePost,
     setFormData,
-    setIsAdmin,
     setOpenCancelDialog,
     setOpenEditDialog
 } from '../../redux/postEditSlice';
 
-// FAQ 카테고리 목록 상수
 const faqCategories = ["전체", "제품", "회원정보", "주문/결제", "교환/반품", "배송", "기타"];
 
 function PostEditPage() {
@@ -33,73 +31,60 @@ function PostEditPage() {
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
-    // Redux 상태 가져오기
     const {
         formData,
-        isAdmin,
         loading,
         error,
         openCancelDialog,
         openEditDialog
     } = useSelector((state) => state.postEdit);
+    const auth = useSelector((state) => state.auth); // Redux에서 auth 가져오기
 
-    // 초기 데이터 로드
+    // Redux 상태에서 userRole 가져오기
+    const userRole = auth?.user?.authorities?.some(auth => auth.authority === "ROLE_ADMIN") ? "ADMIN" : "USER";
+
     useEffect(() => {
-        // 관리자 권한 체크
-        const loggedInUser = localStorage.getItem('loggedInUser');
-        if (loggedInUser) {
-            try {
-                const userData = JSON.parse(loggedInUser);
-                const isAdminUser = userData.authorities?.includes('ROLE_ADMIN') || false;
-                dispatch(setIsAdmin(isAdminUser));
-
-                if (!isAdminUser) {
-                    alert('관리자만 접근할 수 있습니다.');
-                    navigate('/board');
-                    return;
-                }
-            } catch (e) {
-                console.error('사용자 데이터 파싱 오류:', e);
-                navigate('/board');
-                return;
-            }
-        } else {
-            navigate('/login');
-            return;
-        }
-
-        // 게시글 데이터 가져오기
+        console.log("📌 fetchPost 호출!");
         dispatch(fetchPost(postId));
-    }, [postId, navigate, dispatch]);
+    }, [dispatch, postId]);
 
-    // 입력 필드 변경 처리
+    // 로그인 시 Redux 상태를 `localStorage`와 동기화
+    useEffect(() => {
+        if (auth?.user) {
+            localStorage.setItem("auth", JSON.stringify(auth));
+        }
+    }, [auth]);
+
+    // 관리자 권한 체크
+    useEffect(() => {
+        if (userRole !== "ADMIN") {
+            alert('관리자만 접근할 수 있습니다.');
+            navigate('/board');
+        }
+    }, [userRole, navigate]);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         dispatch(setFormData({ [name]: value }));
     };
 
-    // 취소 버튼 처리
     const handleCancelClick = () => {
         dispatch(setOpenCancelDialog(true));
     };
 
-    // 취소 다이얼로그 닫기
     const handleCloseCancelDialog = () => {
         dispatch(setOpenCancelDialog(false));
     };
 
-    // 취소 확인
     const handleConfirmCancel = () => {
         dispatch(setOpenCancelDialog(false));
         navigate(-1);
     };
 
-    // 수정 다이얼로그 닫기
     const handleCloseEditDialog = () => {
         dispatch(setOpenEditDialog(false));
     };
 
-    // 폼 제출 처리
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -116,7 +101,6 @@ function PostEditPage() {
         dispatch(setOpenEditDialog(true));
     };
 
-    // 수정 확인
     const handleConfirmEdit = async () => {
         try {
             const boardId = formData.category === '공지사항' ? 1 : 2;
@@ -125,22 +109,27 @@ function PostEditPage() {
                 : formData.category;
 
             const updateData = {
+                id: postId,
                 title: formData.title,
                 content: formData.content,
                 boardId: boardId,
-                category: finalCategory
+                category: finalCategory,
+                authorId: auth.user.id // 작성자 ID 추가
             };
 
-            // 게시글 수정 요청
-            await dispatch(updatePost({ postId, updateData })).unwrap();
+            const token = auth.user.token; // 토큰 가져오기
+
+            console.log("Updating post with data:", updateData); // 디버깅용 로그
+            await dispatch(updatePost({ postId, updateData, token })).unwrap();
             alert('게시물이 수정되었습니다.');
             navigate('/board');
         } catch (err) {
+            console.error("Error updating post:", err); // 상세한 오류 로깅
             if (err.status === 401 || err.status === 403) {
                 alert('관리자 권한이 필요하거나 로그인이 필요합니다.');
                 navigate('/login');
             } else {
-                alert('수정에 실패했습니다.');
+                alert(`수정에 실패했습니다. 오류: ${err.message || '알 수 없는 오류'}`);
             }
         }
         dispatch(setOpenEditDialog(false));
@@ -156,7 +145,6 @@ function PostEditPage() {
             </Typography>
 
             <Box component="form" onSubmit={handleSubmit}>
-                {/* 게시판 선택 (비활성화) */}
                 <Box mb={3}>
                     <FormControl fullWidth variant="outlined">
                         <InputLabel>게시판</InputLabel>
@@ -172,7 +160,6 @@ function PostEditPage() {
                     </FormControl>
                 </Box>
 
-                {/* FAQ 카테고리 선택 */}
                 {formData.category === "자주 묻는 질문" && (
                     <Box mb={3}>
                         <FormControl fullWidth variant="outlined">
@@ -193,7 +180,6 @@ function PostEditPage() {
                     </Box>
                 )}
 
-                {/* 제목 입력 */}
                 <Box mb={3}>
                     <TextField
                         fullWidth
@@ -206,7 +192,6 @@ function PostEditPage() {
                     />
                 </Box>
 
-                {/* 내용 입력 */}
                 <Box mb={3}>
                     <TextField
                         fullWidth
@@ -221,18 +206,16 @@ function PostEditPage() {
                     />
                 </Box>
 
-                {/* 버튼 그룹 */}
                 <Box display="flex" justifyContent="flex-end" gap={1}>
                     <Button variant="contained" color="primary" type="submit">
                         수정하기
                     </Button>
-                    <Button variant="outlined" color="secondary" onClick={handleCancelClick}>
+                    <Button variant="contained" color="error" onClick={handleCancelClick}>
                         취소
                     </Button>
                 </Box>
             </Box>
 
-            {/* 취소 확인 다이얼로그 */}
             <Dialog open={openCancelDialog} onClose={handleCloseCancelDialog}>
                 <DialogTitle>취소 확인</DialogTitle>
                 <DialogContent>
@@ -241,16 +224,15 @@ function PostEditPage() {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleConfirmCancel} color="secondary">
+                    <Button onClick={handleConfirmCancel} color="primary">
                         네
                     </Button>
-                    <Button onClick={handleCloseCancelDialog} color="primary">
+                    <Button onClick={handleCloseCancelDialog} color="error">
                         아니요
                     </Button>
                 </DialogActions>
             </Dialog>
 
-            {/* 수정 확인 다이얼로그 */}
             <Dialog open={openEditDialog} onClose={handleCloseEditDialog}>
                 <DialogTitle>수정 확인</DialogTitle>
                 <DialogContent>

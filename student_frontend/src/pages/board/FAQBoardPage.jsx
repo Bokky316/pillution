@@ -37,15 +37,24 @@ function FAQBoardPage() {
         loading,
         error
     } = useSelector((state) => state.faq);
+    const auth = useSelector((state) => state.auth); // Redux에서 auth 가져오기
     const [openDeleteDialog, setOpenDeleteDialog] = React.useState(false);
     const [postToDelete, setPostToDelete] = React.useState(null);
-    const [userRole, setUserRole] = React.useState(null);
+
+    // Redux 상태에서 userRole 가져오기
+    const userRole = auth?.user?.authorities?.some(auth => auth.authority === "ROLE_ADMIN") ? "ADMIN" : "USER";
 
     useEffect(() => {
-        const userData = JSON.parse(localStorage.getItem('loggedInUser') || '{}');
-        setUserRole(userData.authorities?.includes('ROLE_ADMIN') ? 'ADMIN' : 'USER');
+        console.log("📌 fetchFAQPosts 호출!");
         dispatch(fetchFAQPosts());
     }, [dispatch]);
+
+    // 로그인 시 Redux 상태를 `localStorage`와 동기화
+    useEffect(() => {
+        if (auth?.user) {
+            localStorage.setItem("auth", JSON.stringify(auth));
+        }
+    }, [auth]);
 
     if (loading) return <Typography align="center" variant="h6">로딩 중...</Typography>;
     if (error) return <Typography align="center" color="error" variant="h6">{error}</Typography>;
@@ -105,7 +114,7 @@ function FAQBoardPage() {
                 <Box display="flex" justifyContent="flex-end" mb={2}>
                     <Button
                         variant="contained"
-                        color="secondary"
+                        color="primary"
                         onClick={() => navigate('/post/create', {
                             state: { defaultCategory: '자주 묻는 질문' }
                         })}
@@ -221,7 +230,7 @@ function FAQBoardPage() {
                     <Button onClick={handleCloseDeleteDialog} color="primary">
                         취소
                     </Button>
-                    <Button onClick={handleConfirmDelete} color="primary" autoFocus>
+                    <Button onClick={handleConfirmDelete} color="error" autoFocus>
                         삭제
                     </Button>
                 </DialogActions>

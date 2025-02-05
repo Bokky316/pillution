@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -23,14 +23,21 @@ function NewsBoardPage() {
         totalPages
     } = useSelector(state => state.news);
 
-    const userRole = useSelector(state => {
-        const userData = JSON.parse(localStorage.getItem('loggedInUser') || '{}');
-        return userData.authorities?.includes('ROLE_ADMIN') ? 'ADMIN' : 'USER';
-    });
+    const auth = useSelector((state) => state.auth); // Redux에서 auth 가져오기
+
+    // Redux 상태에서 userRole 가져오기
+    const userRole = auth?.user?.authorities?.some(auth => auth.authority === "ROLE_ADMIN") ? "ADMIN" : "USER";
 
     useEffect(() => {
         dispatch(fetchNewsPosts({ page: currentPage }));
     }, [dispatch, currentPage]);
+
+    // 로그인 시 Redux 상태를 `localStorage`와 동기화
+    useEffect(() => {
+        if (auth?.user) {
+            localStorage.setItem("auth", JSON.stringify(auth));
+        }
+    }, [auth]);
 
     const handlePageClick = (page) => {
         dispatch(setCurrentPage(page));
@@ -47,17 +54,17 @@ function NewsBoardPage() {
     };
 
     if (loading) return <Typography align="center" variant="h6">로딩 중...</Typography>;
-    if (error) return <Typography variant="h6">{error ? error.message : "에러가 발생하지 않았습니다."}</Typography>;
+    if (error) return <Typography variant="h6">{error}</Typography>;
 
     return (
-        <Box maxWidth="lg" mx="auto" p={3}>
+        <Box maxWidth="lg" mx="auto" p={3} mb={18}>
             <Typography variant="h4" align="center" gutterBottom>공지사항</Typography>
 
             {userRole === 'ADMIN' && (
                 <Box display="flex" justifyContent="flex-end" mb={2}>
                     <Button
                         variant="contained"
-                        color="secondary"
+                        color="primary"
                         onClick={() => navigate('/post/create', {
                             state: { defaultCategory: '공지사항' }
                         })}
