@@ -3,12 +3,9 @@ package com.javalab.student.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 /**
- * 상품 카테고리 정보를 나타내는 엔티티
+ * 상품 카테고리 정보를 나타내는 엔티티 클래스입니다.
+ * 이 클래스는 카테고리의 기본 정보를 포함합니다.
  */
 @Entity
 @Table(name = "product_category")
@@ -18,14 +15,12 @@ import java.util.Set;
 @AllArgsConstructor
 public class ProductCategory {
 
+    /** 카테고리의 고유 식별자 */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** 카테고리 이름 (중복 불가) */
     @Column(nullable = false, unique = true)
     private String name;
-
-    // 카테고리 매핑 정보와 연관 관계 설정
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductCategoryMapping> categoryMappings;
 }

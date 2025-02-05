@@ -14,11 +14,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("SELECT p FROM Product p JOIN p.categories c WHERE c.id = :categoryId")
     List<Product> findByCategoryId(@Param("categoryId") Long categoryId);
 
-    @Query("SELECT p.mainIngredientName FROM Product p WHERE p.id = :productId")
+    @Query("SELECT pi.ingredientName FROM Product p JOIN p.ingredients pi WHERE p.id = :productId")
     String findMainIngredientByProductId(@Param("productId") Long productId);
 
+    /**
+     * 카테고리 및 영양 성분을 함께 로드하는 쿼리
+     */
     @Query("SELECT DISTINCT p FROM Product p " +
-            "LEFT JOIN FETCH p.categoryMappings pcm " +
-            "LEFT JOIN FETCH pcm.category")
-    List<Product> findAllWithCategories();
+            "LEFT JOIN FETCH p.categories c " +
+            "LEFT JOIN FETCH p.ingredients i")
+    List<Product> findAllWithCategoriesAndIngredients();
 }

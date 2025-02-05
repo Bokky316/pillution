@@ -88,7 +88,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     public List<ProductResponseDTO> getProductList() {
-        List<Product> products = productRepository.findAllWithCategories();
+        List<Product> products = productRepository.findAllWithCategoriesAndIngredients();
         return products.stream().map(ProductResponseDTO::fromEntity).collect(Collectors.toList());
     }
 }

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, Snackbar, Grid, Card, CardContent, Typography, CardMedia } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { fetchProducts } from "../../features/product/productApi";
+import { fetchProducts } from "@features/product/productApi";
 
 export default function ProductListPage() {
     const dispatch = useDispatch();
