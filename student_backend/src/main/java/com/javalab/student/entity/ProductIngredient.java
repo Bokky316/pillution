@@ -34,3 +34,4 @@ public class ProductIngredient {
     @ManyToMany(mappedBy = "ingredients")
     private List<Product> products;
 }
+

@@ -24,4 +24,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             "LEFT JOIN FETCH p.categories c " +
             "LEFT JOIN FETCH p.ingredients i")
     List<Product> findAllWithCategoriesAndIngredients();
+
+    @Query("SELECT p.id, p.name FROM Product p JOIN p.ingredients i WHERE i.ingredientName = :ingredientName")
+    List<Object[]> findByMainIngredientName(@Param("ingredientName") String ingredientName);
+
+    @Query("SELECT DISTINCT p FROM Product p JOIN p.ingredients i WHERE i.ingredientName IN :ingredientNames")
+    List<Product> findByIngredientsIngredientNameIn(@Param("ingredientNames") List<String> ingredientNames);
+
+    @Query("SELECT p FROM Product p JOIN p.ingredients i WHERE i.ingredientName = :ingredientName")
+    List<Product> findByIngredientName(@Param("ingredientName") String ingredientName);
 }

@@ -44,13 +44,13 @@ public class Product {
     @Column(nullable = false)
     private boolean active;
 
-//    /** 대표 이미지 경로 */
+    /** 대표 이미지 경로 */
 //    private String imgPath;
 //
 //    /** 대표 이미지명 */
 //    private String fileName;
-
-    /** 상품에 포함된 여러 이미지 */
+//
+//    /** 상품에 포함된 여러 이미지 */
 //    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
 //    private List<ProductImage> imgList;
 
