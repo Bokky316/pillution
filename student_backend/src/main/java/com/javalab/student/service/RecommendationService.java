@@ -1,17 +1,19 @@
 package com.javalab.student.service;
 
-import com.javalab.student.entity.Member;
-import com.javalab.student.entity.Product;
-import com.javalab.student.entity.MemberResponse;
-import com.javalab.student.repository.MemberRepository;
-import com.javalab.student.repository.ProductRepository;
-import com.javalab.student.repository.MemberResponseRepository;
-import com.javalab.student.repository.QuestionOptionIngredientRepository;
 import com.javalab.student.dto.ProductRecommendationDTO;
-import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.javalab.student.entity.Member;
+import com.javalab.student.entity.MemberResponse;
+import com.javalab.student.entity.Product;
+import com.javalab.student.entity.ProductIngredient;
+import com.javalab.student.repository.*;
 import jakarta.persistence.EntityNotFoundException;
-import java.util.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -28,6 +30,8 @@ public class RecommendationService {
     private MemberResponseRepository memberResponseRepository;
     @Autowired
     private QuestionOptionIngredientRepository questionOptionIngredientRepository;
+    @Autowired
+    private ProductIngredientRepository productIngredientRepository;
 
     /**
      * 사용자 이메일을 기반으로 제품을 추천합니다.
@@ -44,61 +48,111 @@ public class RecommendationService {
 
         Long memberId = member.getId();
 
+        // 모든 사용자 응답을 가져옵니다.
+        List<MemberResponse> responses = memberResponseRepository.findByMember_Id(memberId);
+
+        // BMI를 계산합니다.
+        double bmi = calculateBMI(responses);
+
         // 사용자 응답을 기반으로 성분 점수를 계산합니다.
-        Map<String, Integer> ingredientScores = calculateIngredientScores(memberId);
+        Map<String, Integer> ingredientScores = calculateIngredientScores(responses);
+
+        // 연령대와 BMI를 고려하여 성분 점수를 조정합니다.
+        adjustIngredientScores(ingredientScores, getAge(responses), bmi);
+
         // 모든 제품에 대해 점수를 계산합니다.
         List<Product> scoredProducts = calculateProductScores(productRepository.findAll(), ingredientScores);
+
         // 점수를 기준으로 제품을 분류합니다.
         return classifyRecommendations(scoredProducts);
     }
 
     /**
-     * 특정 카테고리 내에서 사용자에 대한 제품을 추천합니다.
-     * @param categoryId 카테고리 ID
-     * @param userEmail 사용자 이메일
-     * @return 추천 제품 목록 (필수 추천 및 추가 추천으로 분류)
-     * @throws EntityNotFoundException 사용자를 찾을 수 없는 경우
+     * 사용자 응답을 기반으로 BMI를 계산합니다.
+     * @param responses 사용자 응답 목록
+     * @return 계산된 BMI 값
      */
-    public Map<String, List<ProductRecommendationDTO>> recommendProductsByCategory(Long categoryId, String userEmail) {
-        // 이메일을 사용하여 사용자 정보를 조회합니다.
-        Member member = memberRepository.findByEmail(userEmail);
-        if (member == null) {
-            throw new EntityNotFoundException("사용자를 찾을 수 없습니다: " + userEmail);
+    private double calculateBMI(List<MemberResponse> responses) {
+        double height = 0;
+        double weight = 0;
+
+        for (MemberResponse response : responses) {
+            if (response.getQuestion().getQuestionText().equals("키를 알려주세요")) {
+                height = Double.parseDouble(response.getResponseText());
+            } else if (response.getQuestion().getQuestionText().equals("몸무게를 알려주세요")) {
+                weight = Double.parseDouble(response.getResponseText());
+            }
         }
 
-        Long memberId = member.getId();
+        if (height == 0 || weight == 0) {
+            throw new IllegalStateException("키 또는 몸무게 정보가 없습니다.");
+        }
 
-        // 사용자 응답을 기반으로 성분 점수를 계산합니다.
-        Map<String, Integer> ingredientScores = calculateIngredientScores(memberId);
-        // 특정 카테고리의 제품만 조회합니다.
-        List<Product> categoryProducts = productRepository.findByCategoryId(categoryId);
-        // 카테고리 제품에 대해 점수를 계산합니다.
-        List<Product> scoredProducts = calculateProductScores(categoryProducts, ingredientScores);
-        // 점수를 기준으로 제품을 분류합니다.
-        return classifyRecommendations(scoredProducts);
+        double heightInMeter = height / 100;
+        return weight / (heightInMeter * heightInMeter);
+    }
+
+    /**
+     * 사용자 응답을 기반으로 나이를 가져옵니다.
+     * @param responses 사용자 응답 목록
+     * @return 사용자 나이
+     */
+    private int getAge(List<MemberResponse> responses) {
+        for (MemberResponse response : responses) {
+            if (response.getQuestion().getQuestionText().equals("나이를 알려주세요")) {
+                return Integer.parseInt(response.getResponseText());
+            }
+        }
+        throw new IllegalStateException("나이 정보가 없습니다.");
     }
 
     /**
      * 사용자 응답을 기반으로 각 성분의 점수를 계산합니다.
-     * @param memberId 회원 ID
+     * @param responses 사용자 응답 목록
      * @return 성분별 점수 맵
      */
-    private Map<String, Integer> calculateIngredientScores(Long memberId) {
-        // "PERSONAL" 타입이 아닌 질문에 대한 응답만 가져옵니다.
-        List<MemberResponse> responses = memberResponseRepository.findByMember_IdAndQuestionQuestionTypeNot(memberId, "PERSONAL");
+    private Map<String, Integer> calculateIngredientScores(List<MemberResponse> responses) {
         Map<String, Integer> ingredientScores = new HashMap<>();
 
         for (MemberResponse response : responses) {
-            // 각 응답에 대한 성분 목록을 조회합니다.
-            List<String> ingredients = questionOptionIngredientRepository.findIngredientsByQuestionIdAndResponseText(
-                    response.getQuestion().getId(), response.getResponseText());
-            // 각 성분의 점수를 증가시킵니다.
-            for (String ingredient : ingredients) {
-                ingredientScores.put(ingredient, ingredientScores.getOrDefault(ingredient, 0) + 1);
+            if (!response.getQuestion().getQuestionType().equals("PERSONAL")) {
+                // 각 응답에 대한 성분 목록을 조회합니다.
+                List<String> ingredients = questionOptionIngredientRepository.findIngredientsByQuestionIdAndResponseText(
+                        response.getQuestion().getId(), response.getResponseText());
+                // 각 성분의 점수를 증가시킵니다.
+                for (String ingredient : ingredients) {
+                    ingredientScores.put(ingredient, ingredientScores.getOrDefault(ingredient, 0) + 1);
+                }
             }
         }
 
         return ingredientScores;
+    }
+
+    /**
+     * 연령대와 BMI를 고려하여 성분 점수를 조정합니다.
+     * @param ingredientScores 성분별 점수 맵
+     * @param age 사용자 나이
+     * @param bmi 사용자 BMI
+     */
+    private void adjustIngredientScores(Map<String, Integer> ingredientScores, int age, double bmi) {
+        String ageGroup = determineAgeGroup(age);
+        String bmiCategory = determineBMICategory(bmi);
+
+        for (Map.Entry<String, Integer> entry : ingredientScores.entrySet()) {
+            String ingredient = entry.getKey();
+            int score = entry.getValue();
+
+            // 연령대별 중요도 적용
+            int ageImportance = getAgeImportance(ingredient, ageGroup);
+            score *= ageImportance;
+
+            // BMI에 따른 조정
+            int bmiAdjustment = getBMIAdjustment(ingredient, bmiCategory);
+            score += bmiAdjustment;
+
+            ingredientScores.put(ingredient, score);
+        }
     }
 
     /**
@@ -110,11 +164,11 @@ public class RecommendationService {
     private List<Product> calculateProductScores(List<Product> products, Map<String, Integer> ingredientScores) {
         for (Product product : products) {
             int score = 0;
-            // 제품의 주 성분을 조회합니다.
-            String mainIngredient = productRepository.findMainIngredientByProductId(product.getId());
-            if (mainIngredient != null) {
-                // 주 성분의 점수를 제품 점수에 추가합니다.
-                score += ingredientScores.getOrDefault(mainIngredient, 0);
+            // 제품의 성분 목록을 조회합니다.
+            List<ProductIngredient> productIngredients = productIngredientRepository.findByProductsContaining(product);
+            for (ProductIngredient productIngredient : productIngredients) {
+                // 각 성분의 점수를 합산합니다.
+                score += ingredientScores.getOrDefault(productIngredient.getIngredientName(), 0);
             }
             product.setScore(score);
         }
@@ -155,7 +209,6 @@ public class RecommendationService {
         return recommendations;
     }
 
-
     /**
      * Product 엔티티를 ProductRecommendationDTO로 변환합니다.
      * @param product 변환할 Product 엔티티
@@ -168,6 +221,56 @@ public class RecommendationService {
         dto.setDescription(product.getDescription());
         dto.setPrice(product.getPrice());
         dto.setScore(product.getScore());
+        dto.setMainIngredient(product.getMainIngredientName());
         return dto;
+    }
+
+    /**
+     * 나이를 기반으로 연령대를 결정합니다.
+     * @param age 나이
+     * @return 연령대 문자열
+     */
+    private String determineAgeGroup(int age) {
+        if (age < 19) return "청소년";
+        else if (age < 30) return "청년";
+        else if (age < 50) return "중년";
+        else if (age < 65) return "장년";
+        else return "노년";
+    }
+
+    /**
+     * BMI를 기반으로 비만도 카테고리를 결정합니다.
+     * @param bmi BMI 값
+     * @return 비만도 카테고리 문자열
+     */
+    private String determineBMICategory(double bmi) {
+        if (bmi < 18.5) return "저체중";
+        else if (bmi < 23) return "정상";
+        else if (bmi < 25) return "과체중";
+        else return "비만";
+    }
+
+    /**
+     * 연령대별 영양소 중요도를 반환합니다.
+     * @param ingredient 영양소 이름
+     * @param ageGroup 연령대
+     * @return 중요도 점수 (1-5)
+     */
+    private int getAgeImportance(String ingredient, String ageGroup) {
+        // 여기에 연령대별 영양소 중요도를 정의하는 로직을 구현합니다.
+        // 예: 칼슘은 청소년과 노년층에서 더 중요할 수 있습니다.
+        return 3; // 기본값으로 3을 반환
+    }
+
+    /**
+     * BMI 카테고리에 따른 영양소 점수 조정값을 반환합니다.
+     * @param ingredient 영양소 이름
+     * @param bmiCategory BMI 카테고리
+     * @return 점수 조정값
+     */
+    private int getBMIAdjustment(String ingredient, String bmiCategory) {
+        // 여기에 BMI 카테고리에 따른 영양소 점수 조정 로직을 구현합니다.
+        // 예: 비만인 경우 식이섬유의 중요도를 높일 수 있습니다.
+        return 0; // 기본값으로 0을 반환
     }
 }

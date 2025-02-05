@@ -36,9 +36,16 @@ public class Product {
     private String mainImageUrl;
 
     // 주성분과의 관계 (ManyToOne)
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "main_ingredient_id")
-    private Product mainIngredient;
+    @Column(name = "ingredient_name")
+    private String mainIngredientName;
+
+    @ManyToMany
+    @JoinTable(
+            name = "product_ingredient_mapping",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "id")
+    )
+    private List<ProductIngredient> ingredients;;
 
     // 카테고리와의 관계 (N:M)
     @ManyToMany
@@ -49,14 +56,7 @@ public class Product {
     )
     private List<ProductCategory> categories;
 
-//    // 상품 이미지 리스트 (1:N)
-//    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-//    private List<ProductImg> images;
-//}
-
-
-// 추천 시스템을 위한 점수 필드
-@Transient// 이 필드는 데이터베이스에 저장되지 않습니다.
-private int score;
-
+    // 추천 시스템을 위한 점수 필드
+    @Transient // 이 필드는 데이터베이스에 저장되지 않습니다.
+    private int score;
 }

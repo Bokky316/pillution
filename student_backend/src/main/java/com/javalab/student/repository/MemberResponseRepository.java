@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface MemberResponseRepository extends JpaRepository<MemberResponse, Long> {
     List<MemberResponse> findByMember_IdAndQuestionQuestionTypeNot(Long memberId, String questionType);
+    List<MemberResponse> findByMember_Id(Long memberId);
 }
