@@ -4,58 +4,12 @@ import { Box, Typography, RadioGroup, FormControlLabel, Radio, Checkbox, TextFie
 const QuestionComponent = ({ question, response, onResponseChange }) => {
   const handleChange = (event) => {
     let value;
-    if (question.questionType === 'MULTIPLE_CHOICE') {
-      const optionId = event.target.value;
-      let selectedOptions = [...(response || [])];
-
-      const lastOptionIndex = question.options.length - 1;
-      const lastOptionId = question.options[lastOptionIndex].id.toString();
-
-      if (optionId === lastOptionId) {
-        // '해당 없음' 옵션 선택시
-        selectedOptions = selectedOptions.includes(lastOptionId) ? [] : [lastOptionId];
-      } else {
-        if (selectedOptions.includes(lastOptionId)) {
-          selectedOptions = [];
-        }
-
-        const index = selectedOptions.indexOf(optionId);
-        if (index > -1) {
-          selectedOptions.splice(index, 1);
-        } else {
-          if (question.questionText.includes('불편하거나 걱정되는 것') && selectedOptions.length >= 3) {
-            return;
-          }
-          selectedOptions.push(optionId);
-        }
-      }
-      onResponseChange(question.id, selectedOptions);
-    } else if (question.questionType === 'SINGLE_CHOICE') {
+    if (question.questionType === 'MULTIPLE_CHOICE' || question.questionType === 'SINGLE_CHOICE') {
       value = parseInt(event.target.value, 10);
-      onResponseChange(question.id, value);
     } else {
-      // TEXT 타입 처리
-      if (question.questionText.includes('키') ||
-          question.questionText.includes('몸무게') ||
-          question.questionText.includes('나이')) {
-        const numberValue = event.target.value.replace(/[^\d]/g, '');
-
-        if (numberValue === '') {
-          onResponseChange(question.id, '');
-          return;
-        }
-
-        const num = parseInt(numberValue, 10);
-        if (question.questionText.includes('키') && (num <= 0 || num > 300)) return;
-        if (question.questionText.includes('몸무게') && (num <= 0 || num > 500)) return;
-        if (question.questionText.includes('나이') && (num < 0 || num > 150)) return;
-
-        value = num;
-      } else {
-        value = event.target.value;
-      }
-      onResponseChange(question.id, value);
+      value = event.target.value;
     }
+    onResponseChange(value);
   };
 
   switch (question.questionType) {
@@ -110,8 +64,8 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
               key={option.id}
               control={
                 <Checkbox
-                  checked={Array.isArray(response) && response.includes(option.id.toString())}
-                  onChange={handleChange}
+                  checked={Array.isArray(response) && response.includes(option.id)}
+                  onChange={() => onResponseChange(option.id)}
                   value={option.id.toString()}
                 />
               }
@@ -120,6 +74,7 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
           ))}
         </Box>
       );
+
     default:
       return null;
   }
