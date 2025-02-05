@@ -1,20 +1,14 @@
 package com.javalab.student.service;
 
 import com.javalab.student.dto.ProductRecommendationDTO;
-import com.javalab.student.entity.Member;
-import com.javalab.student.entity.MemberResponse;
-import com.javalab.student.entity.Product;
-import com.javalab.student.entity.ProductIngredient;
+import com.javalab.student.entity.*;
 import com.javalab.student.repository.ProductIngredientRepository;
 import com.javalab.student.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -26,14 +20,15 @@ public class RecommendationService {
     @Autowired
     private MemberRepository memberRepository;
     @Autowired
-    private ProductRepository productRepository;
-    @Autowired
     private MemberResponseRepository memberResponseRepository;
+    @Autowired
+    private MemberResponseOptionRepository memberResponseOptionRepository;
     @Autowired
     private QuestionOptionIngredientRepository questionOptionIngredientRepository;
     @Autowired
+    private ProductRepository productRepository;
+    @Autowired
     private ProductIngredientRepository productIngredientRepository;
-
     /**
      * 사용자 이메일을 기반으로 제품을 추천합니다.
      *
@@ -43,24 +38,22 @@ public class RecommendationService {
      */
     public Map<String, List<ProductRecommendationDTO>> recommendProducts(String userEmail) {
         // 이메일을 사용하여 사용자 정보를 조회합니다.
-        Member member = memberRepository.findByEmail(userEmail);
-        if (member == null) {
-            throw new EntityNotFoundException("사용자를 찾을 수 없습니다: " + userEmail);
-        }
+        Member member = Optional.ofNullable(memberRepository.findByEmail(userEmail))
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다: " + userEmail));
 
         Long memberId = member.getId();
 
-        // 모든 사용자 응답을 가져옵니다.
-        List<MemberResponse> responses = memberResponseRepository.findByMember_Id(memberId);
-
         // BMI를 계산합니다.
-        double bmi = calculateBMI(responses);
+        double bmi = calculateBMI(memberId);
 
-        // 사용자 응답을 기반으로 성분 점수를 계산합니다.
-        Map<String, Integer> ingredientScores = calculateIngredientScores(responses);
+        // 나이를 가져옵니다.
+        int age = getAge(memberId);
+
+        // 성분 점수를 계산합니다.
+        Map<String, Integer> ingredientScores = calculateIngredientScores(memberId);
 
         // 연령대와 BMI를 고려하여 성분 점수를 조정합니다.
-        adjustIngredientScores(ingredientScores, getAge(responses), bmi);
+        adjustIngredientScores(ingredientScores, age, bmi);
 
         // 모든 제품에 대해 점수를 계산합니다.
         List<Product> scoredProducts = calculateProductScores(productRepository.findAll(), ingredientScores);
@@ -69,21 +62,32 @@ public class RecommendationService {
         return classifyRecommendations(scoredProducts);
     }
 
+
     /**
      * 사용자 응답을 기반으로 BMI를 계산합니다.
      *
-     * @param responses 사용자 응답 목록
+     * @param memberId 회원 ID
      * @return 계산된 BMI 값
+     * @throws IllegalStateException 키 또는 몸무게 정보가 없거나 유효하지 않은 경우
      */
-    private double calculateBMI(List<MemberResponse> responses) {
+    private double calculateBMI(Long memberId) {
+        List<MemberResponse> responses = memberResponseRepository.findLatestResponsesByMemberId(memberId);
         double height = 0;
         double weight = 0;
 
         for (MemberResponse response : responses) {
             if (response.getQuestion().getQuestionText().equals("키를 알려주세요")) {
-                height = Double.parseDouble(response.getResponseText());
+                try {
+                    height = Double.parseDouble(response.getResponseText());
+                } catch (NumberFormatException e) {
+                    throw new IllegalStateException("키 정보가 유효하지 않습니다.");
+                }
             } else if (response.getQuestion().getQuestionText().equals("몸무게를 알려주세요")) {
-                weight = Double.parseDouble(response.getResponseText());
+                try {
+                    weight = Double.parseDouble(response.getResponseText());
+                } catch (NumberFormatException e) {
+                    throw new IllegalStateException("몸무게 정보가 유효하지 않습니다.");
+                }
             }
         }
 
@@ -98,13 +102,19 @@ public class RecommendationService {
     /**
      * 사용자 응답을 기반으로 나이를 가져옵니다.
      *
-     * @param responses 사용자 응답 목록
+     * @param memberId 회원 ID
      * @return 사용자 나이
+     * @throws IllegalStateException 나이 정보가 없거나 유효하지 않은 경우
      */
-    private int getAge(List<MemberResponse> responses) {
+    private int getAge(Long memberId) {
+        List<MemberResponse> responses = memberResponseRepository.findLatestResponsesByMemberId(memberId);
         for (MemberResponse response : responses) {
             if (response.getQuestion().getQuestionText().equals("나이를 알려주세요")) {
-                return Integer.parseInt(response.getResponseText());
+                try {
+                    return Integer.parseInt(response.getResponseText());
+                } catch (NumberFormatException e) {
+                    throw new IllegalStateException("나이 정보가 유효하지 않습니다.");
+                }
             }
         }
         throw new IllegalStateException("나이 정보가 없습니다.");
@@ -113,26 +123,37 @@ public class RecommendationService {
     /**
      * 사용자 응답을 기반으로 각 성분의 점수를 계산합니다.
      *
-     * @param responses 사용자 응답 목록
+     * @param memberId 회원 ID
      * @return 성분별 점수 맵
      */
-    private Map<String, Integer> calculateIngredientScores(List<MemberResponse> responses) {
+    private Map<String, Integer> calculateIngredientScores(Long memberId) {
+        List<MemberResponse> latestTextResponses = memberResponseRepository.findLatestResponsesByMemberId(memberId);
+        List<MemberResponseOption> latestOptionResponses = memberResponseOptionRepository.findLatestResponsesByMemberId(memberId);
         Map<String, Integer> ingredientScores = new HashMap<>();
 
-        for (MemberResponse response : responses) {
+        // 텍스트 응답 처리
+        for (MemberResponse response : latestTextResponses) {
             if (!response.getQuestion().getQuestionType().equals("PERSONAL")) {
-                // 각 응답에 대한 성분 목록을 조회합니다.
                 List<String> ingredients = questionOptionIngredientRepository.findIngredientsByQuestionIdAndResponseText(
                         response.getQuestion().getId(), response.getResponseText());
-                // 각 성분의 점수를 증가시킵니다.
                 for (String ingredient : ingredients) {
                     ingredientScores.put(ingredient, ingredientScores.getOrDefault(ingredient, 0) + 1);
                 }
             }
         }
 
+        // 선택형 응답 처리
+        for (MemberResponseOption response : latestOptionResponses) {
+            List<String> ingredients = questionOptionIngredientRepository.findIngredientsByQuestionIdAndResponseText(
+                    response.getQuestion().getId(), response.getOption().getOptionText());
+            for (String ingredient : ingredients) {
+                ingredientScores.put(ingredient, ingredientScores.getOrDefault(ingredient, 0) + 1);
+            }
+        }
+
         return ingredientScores;
     }
+
 
     /**
      * 연령대와 BMI를 고려하여 성분 점수를 조정합니다.
@@ -316,6 +337,8 @@ public class RecommendationService {
 
         return recommendations;
     }
+
+
 
     private int calculateProductScore(Product product, int ingredientScore) {
         // 제품 점수 계산 로직 (예: 기본 점수 + 성분 점수)

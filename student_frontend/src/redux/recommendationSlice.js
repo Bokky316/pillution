@@ -6,7 +6,7 @@ export const fetchRecommendations = createAsyncThunk(
   'recommendations/fetchRecommendations',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetchWithAuth(`${API_URL}api/recommendations`, {
+      const response = await fetchWithAuth(`${API_URL}recommendations`, {
         method: 'GET',
         credentials: 'include',
       });
