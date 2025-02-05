@@ -1,120 +1,76 @@
-import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { ThemeProvider } from '@mui/material/styles';
-import theme from './theme';
-import Header from "./component/layout/Header";
-import Footer from "./component/layout/Footer";
-import './App.css';
-import RecommendationPage from "./pages/survey/RecommendationPage";
-import SurveyPage from "./pages/survey/SurveyPage";
-import ProductDetailPage from "./pages/product/ProductDetailPage";
-import ProductListPage from "./pages/product/ProductListPage";
-import CartPage from "./pages/cart/CartPage";
-import BoardPage from "./pages/board/BoardPage";
-import NewsBoardPage from "./pages/board/NewsBoardPage";
-import FAQBoardPage from "./pages/board/FAQBoardPage";
-import PostDetailPage from "./pages/board/PostDetailPage";
-import PostCreatePage from "./pages/board/PostCreatePage";
-import PostEditPage from "./pages/board/PostEditPage";
-import Login from "./features/auth/components/Login";
-import MyPage from "./features/auth/components/MyPage";
-import RegisterMember from "./features/auth/components/RegisterMember";
+import React, { useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { CircularProgress } from "@mui/material";
+import { fetchUserInfo, clearUser } from "./redux/authSlice";
+import { fetchWithoutAuth } from "./features/auth/utils/fetchWithAuth";
 import { API_URL } from "./constant";
-import { fetchWithAuth } from "./features/auth/utils/fetchWithAuth";
-import { setTokenAndUser, getUserFromLocalStorage, removeAuthData } from "./features/auth/utils/authUtil";
+import Header from "@components/layout/Header";
+import Footer from "@components/layout/Footer";
+import RecommendationPage from "@/pages/survey/RecommendationPage";
+import SurveyPage from "@/pages/survey/SurveyPage";
+import ProductDetailPage from "@/pages/product/ProductDetailPage";
+import ProductListPage from "@/pages/product/ProductListPage";
+import CartPage from "@/pages/cart/CartPage";
+import Login from "@features/auth/components/Login";
+import MyPage from "@features/auth/components/MyPage";
+import RegisterMember from "@features/auth/components/RegisterMember";
+import UnauthorizedPage from "@features/auth/components/UnAuthorizedPage";
+import OAuth2RedirectHandler from '@features/auth/components/OAuth2RedirectHandler';
+
 
 function App() {
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [loggedInUser, setLoggedInUser] = useState({ email: "", name: "", roles: [] });
+    const dispatch = useDispatch();
+    const [isLoading, setIsLoading] = useState(true);
+    const { isLoggedIn } = useSelector(state => state.auth);
 
     useEffect(() => {
-        const storedUser = getUserFromLocalStorage();
-        const token = localStorage.getItem("token");
+        const checkLoginStatus = async () => {
+            setIsLoading(true);
+            try {
+                const response = await fetchWithoutAuth(`${API_URL}auth/userInfo`, {
+                    method: 'GET',
+                    credentials: 'include',
+                });
+                const data = await response.json();
 
-        if (storedUser && token) {
-            setLoggedInUser(storedUser);
-            setIsLoggedIn(true);
-        } else if (token) {
-            fetchUserInfo();
-        } else {
-            removeAuthData();
-            setIsLoggedIn(false);
-            console.warn("로그인되지 않은 상태입니다.");
-        }
-    }, []);
-
-    const fetchUserInfo = async () => {
-        try {
-            const response = await fetchWithAuth(API_URL + "auth/userInfo");
-            if (!response || !response.ok) {
-                throw new Error("사용자 정보 가져오기 실패");
+                if (response.ok && data.status === "success") {
+                    dispatch(fetchUserInfo(data.data));
+                } else {
+                    dispatch(clearUser());
+                }
+            } catch (error) {
+                console.error('Error checking login status:', error);
+                dispatch(clearUser());
+            } finally {
+                setIsLoading(false);
             }
-            const userData = await response.json();
-            setTokenAndUser(localStorage.getItem("token"), userData);
-            setLoggedInUser(userData);
-            setIsLoggedIn(true);
-        } catch (error) {
-            console.error("사용자 정보 가져오기 오류:", error.message);
-            removeAuthData();
-            setIsLoggedIn(false);
-        }
-    };
+        };
 
-    const handleLogin = (user, token) => {
-        setTokenAndUser(token, user);
-        setLoggedInUser(user);
-        setIsLoggedIn(true);
-    };
+        checkLoginStatus();
+    }, [dispatch]);
 
-    const handleLogout = async () => {
-        try {
-            const response = await fetchWithAuth(API_URL + "auth/logout", {
-                method: "POST",
-            });
-
-            if (!response.ok) {
-                throw new Error("로그아웃 실패");
-            }
-        } catch (error) {
-            console.error("로그아웃 오류:", error.message);
-        } finally {
-            removeAuthData();
-            setLoggedInUser({ email: "", name: "", roles: [] });
-            setIsLoggedIn(false);
-            window.location.href = '/login';
-        }
-    };
+    if (isLoading) {
+        return <CircularProgress />;
+    }
 
     return (
-        <ThemeProvider theme={theme}>
-            <Router>
-                <div className="App">
-                    <Header
-                        isLoggedIn={isLoggedIn}
-                        loggedInUser={loggedInUser}
-                        handleLogout={handleLogout}
-                    />
-                    <Routes>
-                        <Route path="/login" element={<Login onLogin={handleLogin} />} />
-                        <Route path="/registerMember" element={<RegisterMember />} />
-                        <Route path="/mypage" element={<MyPage />} />
-                        <Route path="/recommendation" element={<RecommendationPage />} />
-                        <Route path="/survey" element={<SurveyPage />} />
-                        <Route path="/products" element={<ProductListPage />} />
-                        <Route path="/products/:productId" element={<ProductDetailPage />} />
-                        <Route path="/cart" element={<CartPage />} />
-                        <Route path="/board/*" element={<BoardPage />} />
-                        <Route path="/news" element={<NewsBoardPage />} />
-                        <Route path="/faq" element={<FAQBoardPage />} />
-                        <Route path="/post/:postId" element={<PostDetailPage />} />
-                        <Route path="/post/create" element={<PostCreatePage />} />
-                        <Route path="/post/:postId/edit" element={<PostEditPage />} />
-                        <Route path="/faq/post/:postId/edit" element={<PostEditPage />} />
-                    </Routes>
-                    <Footer />
-                </div>
-            </Router>
-        </ThemeProvider>
+        <div className="App">
+            <Header />
+            <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/registerMember" element={<RegisterMember />} />
+                <Route path="/mypage" element={isLoggedIn ? <MyPage /> : <Navigate to="/login" />} />
+                <Route path="/recommendation" element={<RecommendationPage />} />
+                <Route path="/survey" element={<SurveyPage />} />
+                <Route path="/products" element={<ProductListPage />} />
+                <Route path="/products/:productId" element={<ProductDetailPage />} />
+                <Route path="/cart" element={isLoggedIn ? <CartPage /> : <Navigate to="/login" />} />
+                <Route path="/unauthorized" element={<UnauthorizedPage />} />
+                <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
+            </Routes>
+            <Footer />
+        </div>
     );
 }
 

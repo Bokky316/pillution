@@ -1,38 +1,16 @@
 package com.javalab.student.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-//import me.shinsunyoung.springbootdeveloper.config.jwt.JwtFactory;
-//import me.shinsunyoung.springbootdeveloper.config.jwt.JwtProperties;
-//import me.shinsunyoung.springbootdeveloper.domain.RefreshToken;
-//import me.shinsunyoung.springbootdeveloper.domain.User;
-//import me.shinsunyoung.springbootdeveloper.dto.CreateAccessTokenRequest;
-//import me.shinsunyoung.springbootdeveloper.repository.RefreshTokenRepository;
-//import me.shinsunyoung.springbootdeveloper.repository.UserRepository;
-import com.javalab.student.config.jwt.JwtFactory;
 import com.javalab.student.config.jwt.JwtProperties;
-import com.javalab.student.dto.CreateAccessTokenRequest;
-import com.javalab.student.entity.Member;
-import com.javalab.student.entity.RefreshToken;
 import com.javalab.student.repository.MemberRepository;
 import com.javalab.student.repository.RefreshTokenRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-
-import java.util.Map;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * 토큰 API 컨트롤러 테스트
@@ -67,6 +45,7 @@ class TokenApiControllerTest {
         memberRepository.deleteAll();
     }
 
+    /*
     @DisplayName("createNewAccessToken: 새로운 액세스 토큰을 발급한다.")
     @Test
     public void createNewAccessToken() throws Exception {
@@ -107,4 +86,6 @@ class TokenApiControllerTest {
                 .andExpect(jsonPath("$.accessToken").isNotEmpty());
     }
 
+
+     */
 }

@@ -21,21 +21,23 @@ public class RefreshToken {
     @Column(name = "id", updatable = false)
     private Long id;
 
-    @Column(name = "member_id", nullable = false, unique = true)
-    private Long memberId;
+    @Column(name = "email", nullable = false, unique = true)
+    private String email;
 
     @Column(name = "refresh_token", nullable = false)
     private String refreshToken;
 
-    public RefreshToken(Long memberId, String refreshToken) {
-        this.memberId = memberId;
+    @Column(name = "member_id")
+    private Long memberId;
+
+    public RefreshToken(String email, String refreshToken, Long memberId) {
+        this.email = email;
         this.refreshToken = refreshToken;
+        this.memberId = memberId;
     }
 
-    public RefreshToken update(String newRefreshToken) {
+    public void update(String newRefreshToken) {
         this.refreshToken = newRefreshToken;
-
-        return this;
     }
 }
 

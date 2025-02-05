@@ -82,6 +82,11 @@ public class EmailController {
             return ResponseEntity.badRequest().body(Map.of("error", "이메일이 제공되지 않았습니다."));
         }
 
+        // 이미 인증된 이메일이면 인증 코드 발송 차단
+        if (emailVerificationService.isVerified(email)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "이미 인증이 완료된 이메일입니다."));
+        }
+
         try {
             String code = emailService.generateVerificationCode();
 
@@ -109,33 +114,70 @@ public class EmailController {
      * @param requestBody 클라이언트에서 전송한 이메일과 인증 코드
      * @return 인증 결과 메시지
      */
+//    @PostMapping("/verify")
+//    public ResponseEntity<Map<String, String>> verifyCode(@RequestBody Map<String, String> requestBody) {
+//        String email = requestBody.get("email");
+//        String code = requestBody.get("code");
+//
+//        Optional<VerificationCode> verificationCode = verificationCodeRepository.findByEmail(email);
+//
+//        if (verificationCode.isPresent()
+//                // 인증코드가 일치하는지 여부
+//                && verificationCode.get().getCode().equals(code)
+//                // 인증만료시간 체크 (생성 후 5분이내)
+//                && verificationCode.get().getExpirationTime().isAfter(LocalDateTime.now())
+//                // 인증코드 중복인증을 방지 하기위해 아직 인증되지 않은 경우에만 인증성공처리조건 추가 ... 어차피 인증 후 코드 삭제되어 의미없음 구현하려면 다른방법으로 구현
+//            /*&&!emailVerificationService.isVerified(email)*/) {
+//            // 이메일 인증 성공 시, 인증 여부를 캐시에 저장
+//            emailVerificationService.setVerified(email);
+//
+//            // 인증 완료 후 기존 인증 코드 삭제 (유지할 경우, 만료 시간 확인 후 삭제)
+//            verificationCodeRepository.delete(verificationCode.get());
+//
+//            Map<String, String> response = new HashMap<>();
+//            response.put("message", "이메일 인증 성공");
+//            return ResponseEntity.ok(response);
+//        } else {
+//            // 인증코드가 틀렸을 경우 삭제됨 다시 받아야 함
+//            //verificationCodeRepository.delete(verificationCode.get());
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "인증 코드가 올바르지 않거나 만료되었습니다."));
+//        }
+//    }
+
     @PostMapping("/verify")
     public ResponseEntity<Map<String, String>> verifyCode(@RequestBody Map<String, String> requestBody) {
         String email = requestBody.get("email");
         String code = requestBody.get("code");
 
-        Optional<VerificationCode> verificationCode = verificationCodeRepository.findByEmail(email);
+        Optional<VerificationCode> verificationCodeOpt = verificationCodeRepository.findByEmail(email);
 
-        if (verificationCode.isPresent()
-                // 인증코드가 일치하는지 여부
-                && verificationCode.get().getCode().equals(code)
-                // 인증만료시간 체크 (생성 후 5분이내)
-                && verificationCode.get().getExpirationTime().isAfter(LocalDateTime.now())
-                // 인증코드 중복인증을 방지 하기위해 아직 인증되지 않은 경우에만 인증성공처리조건 추가 ... 어차피 인증 후 코드 삭제되어 의미없음 구현하려면 다른방법으로 구현
-            /*&&!emailVerificationService.isVerified(email)*/) {
-            // 이메일 인증 성공 시, 인증 여부를 캐시에 저장
-            emailVerificationService.setVerified(email);
-
-            // 인증 완료 후 기존 인증 코드 삭제 (유지할 경우, 만료 시간 확인 후 삭제)
-            verificationCodeRepository.delete(verificationCode.get());
-
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "이메일 인증 성공");
-            return ResponseEntity.ok(response);
-        } else {
-            // 인증코드가 틀렸을 경우 삭제됨 다시 받아야 함
-            //verificationCodeRepository.delete(verificationCode.get());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "인증 코드가 올바르지 않거나 만료되었습니다."));
+        // 인증이 완료된 이메일이면 인증 코드 확인 요청을 거부
+        if (emailVerificationService.isVerified(email)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "이미 인증이 완료된 이메일입니다."));
         }
+
+        if (verificationCodeOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "인증 코드가 존재하지 않습니다."));
+        }
+
+        VerificationCode verificationCode = verificationCodeOpt.get();
+
+
+        // 인증 코드 일치 여부 확인
+        if (!verificationCode.getCode().equals(code)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "인증 코드가 올바르지 않습니다."));
+        }
+
+        // 인증 코드 만료 시간 체크
+        if (verificationCode.getExpirationTime().isBefore(LocalDateTime.now())) {
+            verificationCodeRepository.delete(verificationCode); // 만료된 코드 삭제
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "인증 코드가 만료되었습니다. 다시 요청해주세요."));
+        }
+
+        // 인증 성공 처리
+        emailVerificationService.setVerified(email);
+        verificationCodeRepository.delete(verificationCode); // 인증 완료된 코드 삭제
+
+        return ResponseEntity.ok(Map.of("message", "이메일 인증 성공"));
     }
 }

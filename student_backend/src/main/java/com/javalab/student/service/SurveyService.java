@@ -13,6 +13,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * 설문 관련 비즈니스 로직을 처리하는 서비스
+ */
 @Service
 @RequiredArgsConstructor
 public class SurveyService {
@@ -24,7 +27,8 @@ public class SurveyService {
     private final MemberResponseOptionRepository memberResponseOptionRepository;
 
     /**
-     * 설문 카테고리 목록 조회 (서브카테고리 포함)
+     * 모든 설문 카테고리와 서브카테고리를 조회합니다.
+     * @return 카테고리 및 서브카테고리 목록
      */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getAllCategoriesWithSubCategories() {
@@ -34,7 +38,7 @@ public class SurveyService {
                     categoryMap.put("id", category.getId());
                     categoryMap.put("name", category.getName());
 
-                    // 서브카테고리 포함
+                    // 서브카테고리 매핑
                     List<Map<String, Object>> subCategories = category.getSubCategories().stream()
                             .map(subCategory -> {
                                 Map<String, Object> subCategoryMap = new HashMap<>();
@@ -51,7 +55,9 @@ public class SurveyService {
     }
 
     /**
-     * 특정 서브카테고리에 해당하는 질문 목록 조회
+     * 특정 서브카테고리에 해당하는 질문 목록을 조회합니다.
+     * @param subCategoryId 서브카테고리 ID
+     * @return 질문 목록
      */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getQuestionsBySubCategory(Long subCategoryId) {
@@ -63,7 +69,7 @@ public class SurveyService {
                     questionMap.put("questionType", question.getQuestionType());
                     questionMap.put("questionOrder", question.getQuestionOrder());
 
-                    // 옵션 포함
+                    // 옵션 매핑
                     List<Map<String, Object>> options = question.getOptions().stream()
                             .map(option -> {
                                 Map<String, Object> optionMap = new HashMap<>();
@@ -81,7 +87,10 @@ public class SurveyService {
     }
 
     /**
-     * 텍스트 응답 저장
+     * 텍스트 형식의 설문 응답을 저장합니다.
+     * @param member 응답한 회원
+     * @param questionId 질문 ID
+     * @param responseText 응답 텍스트
      */
     @Transactional
     public void saveMemberResponse(Member member, Long questionId, String responseText) {
@@ -98,7 +107,10 @@ public class SurveyService {
     }
 
     /**
-     * 선택형 응답 저장
+     * 선택형 설문 응답을 저장합니다.
+     * @param member 응답한 회원
+     * @param questionId 질문 ID
+     * @param optionId 선택한 옵션 ID
      */
     @Transactional
     public void saveMemberResponseOption(Member member, Long questionId, Long optionId) {
@@ -117,7 +129,9 @@ public class SurveyService {
     }
 
     /**
-     * 설문 제출 처리
+     * 설문 제출을 처리합니다.
+     * @param member 응답한 회원
+     * @param submissionDto 설문 제출 데이터
      */
     @Transactional
     public void processSurveySubmission(Member member, SurveySubmissionDto submissionDto) {
@@ -127,7 +141,7 @@ public class SurveyService {
 
             if ("TEXT".equals(responseDto.getResponseType())) {
                 saveMemberResponse(member, question.getId(), responseDto.getResponseText());
-            } else if ("MULTIPLE_CHOICE".equals(responseDto.getResponseType())) {
+            } else if ("MULTIPLE_CHOICE".equals(responseDto.getResponseType()) || "SINGLE_CHOICE".equals(responseDto.getResponseType())) {
                 for (Long optionId : responseDto.getSelectedOptions()) {
                     saveMemberResponseOption(member, question.getId(), optionId);
                 }

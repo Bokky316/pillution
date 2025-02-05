@@ -135,15 +135,17 @@ public class RecommendationService {
         List<ProductRecommendationDTO> essentialRecommendations = new ArrayList<>();
         List<ProductRecommendationDTO> additionalRecommendations = new ArrayList<>();
 
-        for (int i = 0; i < scoredProducts.size() && i < 8; i++) {
+        int totalRecommendations = Math.min(scoredProducts.size(), 8);
+
+        for (int i = 0; i < totalRecommendations; i++) {
             Product product = scoredProducts.get(i);
             ProductRecommendationDTO dto = convertToDTO(product);
 
             if (i < 3) {
-                // 상위 3개 제품을 필수 추천으로 분류
+                // 상위 3개 제품을 필수 추천으로 분류 (3개 미만일 수 있음)
                 essentialRecommendations.add(dto);
             } else {
-                // 그 다음 5개 제품을 추가 추천으로 분류
+                // 나머지 제품을 추가 추천으로 분류
                 additionalRecommendations.add(dto);
             }
         }
@@ -152,6 +154,7 @@ public class RecommendationService {
         recommendations.put("additional", additionalRecommendations);
         return recommendations;
     }
+
 
     /**
      * Product 엔티티를 ProductRecommendationDTO로 변환합니다.

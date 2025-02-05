@@ -30,6 +30,7 @@ public class AccessTokenService {
      * @param loginForm
      * @return
      */
+    /*
     public String generateAccessToken(LoginFormDto loginForm) {
         // 로그인 시도시 사용할 UsernamePasswordAuthenticationToken 생성(여기에는 이메일과 비밀번호가 들어감)
         UsernamePasswordAuthenticationToken authenticationToken =
@@ -50,5 +51,7 @@ public class AccessTokenService {
                 Duration.ofHours(1) // 만료 시간 설정
         );
     }
+
+     */
 
 }
