@@ -55,8 +55,16 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
               key={option.id}
               control={
                 <Checkbox
-                  checked={Array.isArray(response) && response.includes(option.id)}
-                  onChange={handleChange}
+                  checked={Array.isArray(response) && response.includes(option.id.toString())}
+                  onChange={(event) => {
+                    const selectedOptionId = option.id.toString();
+                    if (question.questionText === "불편하거나 걱정되는 것을 최대 3가지 선택하세요") {
+                      // 주요 증상 질문인 경우 특별 처리
+                      onResponseChange(question.id, selectedOptionId, option.relatedQuestionIds);
+                    } else {
+                      onResponseChange(question.id, selectedOptionId);
+                    }
+                  }}
                   value={option.id.toString()}
                 />
               }
@@ -65,6 +73,7 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
           ))}
         </Box>
       );
+
     default:
       return null;
   }
