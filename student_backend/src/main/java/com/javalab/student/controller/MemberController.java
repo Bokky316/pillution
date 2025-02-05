@@ -134,7 +134,7 @@ public class MemberController {
             );
 
             // 5. 리프레시 토큰 DB 저장 또는 업데이트
-            refreshTokenService.saveOrUpdateRefreshToken(updatedMember.getEmail(), newRefreshToken);
+            refreshTokenService.saveOrUpdateRefreshToken(updatedMember.getEmail(), newRefreshToken, updatedMember.getId());
 
             // 6. 액세스 토큰을 HttpOnly 쿠키로 설정
             Cookie accessTokenCookie = new Cookie("accToken", newAccessToken);

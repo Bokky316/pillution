@@ -4,8 +4,11 @@ import com.javalab.student.dto.SurveySubmissionDto;
 import com.javalab.student.entity.Member;
 import com.javalab.student.service.SurveyService;
 import com.javalab.student.service.MemberService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
+@Slf4j
 @RequestMapping("/api/survey")
 public class SurveyController {
 
@@ -47,22 +51,28 @@ public class SurveyController {
      */
     @PostMapping("/submit")
     public ResponseEntity<?> submitSurvey(@RequestBody SurveySubmissionDto submissionDto,
-                                          @AuthenticationPrincipal UserDetails userDetails) {
+                                          Authentication authentication) {
         try {
-            // 현재 로그인한 사용자 조회
-            Member member = memberService.findByEmail(userDetails.getUsername());
+            if (authentication == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증되지 않은 사용자입니다.");
+            }
+
+            String email = authentication.getName();
+            Member member = memberService.findByEmail(email);
             if (member == null) {
                 return ResponseEntity.badRequest().body("사용자를 찾을 수 없습니다.");
             }
 
-            // 설문 응답 처리
+            log.info("Processing survey submission for user: {}", email);
             surveyService.processSurveySubmission(member, submissionDto);
 
-            return ResponseEntity.ok().body("설문 응답이 성공적으로 제출되었습니다.");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.ok().body("{\"message\": \"설문 응답이 성공적으로 제출되었습니다.\"}");
+
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("설문 제출 중 오류가 발생했습니다.");
+            log.error("Error processing survey submission", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("설문 제출 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
 }
+

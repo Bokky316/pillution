@@ -7,6 +7,7 @@ import useDebounce from '../../../hook/useDebounce';
 
 export default function RegisterMember() {
     //  회원가입 정보 상태
+    const [credentials, setCredentials] = useState({ birthDate: "2025-02-05"});
     const [member, setMember] = useState({
         name: "",
         email: "",
@@ -200,6 +201,7 @@ export default function RegisterMember() {
                 value={member.address}
                 onChange={onMemberChange}
                 style={{ width: "400px", marginBottom: "10px" }}
+
             />
             <TextField
                 label="Phone"
@@ -212,14 +214,15 @@ export default function RegisterMember() {
                 label="Birth Date"
                 name="birthDate"
                 type="date"
-                value={member.birthDate}
+                value={credentials.birthDate}
                 onChange={onMemberChange}
+                style={{ width: "400px", marginBottom: "10px" }}
             />
 
-            <select name="gender" value={member.gender} onChange={onMemberChange}>
+            <select name="gender" value={member.gender} onChange={onMemberChange} style={{ width: "400px", height: "40px" }}>
                 <option value="">성별 선택</option>
-                <option value="M">남성</option>
-                <option value="F">여성</option>
+                <option value="남성">남성</option>
+                <option value="여성">여성</option>
             </select>
 
             <Button variant="contained" onClick={handleOnSubmit} disabled={!isVerified}>

@@ -2,6 +2,20 @@ import React from 'react';
 import { Box, Typography, RadioGroup, FormControlLabel, Radio, Checkbox, TextField } from "@mui/material";
 
 const QuestionComponent = ({ question, response, onResponseChange }) => {
+  const handleChange = (event) => {
+    let value;
+    if (question.questionType === 'MULTIPLE_CHOICE') {
+      const optionId = parseInt(event.target.value, 10);
+      onResponseChange(question.id, optionId);
+    } else if (question.questionType === 'SINGLE_CHOICE') {
+      value = parseInt(event.target.value, 10);
+      onResponseChange(question.id, value);
+    } else {
+      value = event.target.value;
+      onResponseChange(question.id, value);
+    }
+  };
+
   switch (question.questionType) {
     case 'TEXT':
       return (
@@ -9,7 +23,7 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
           fullWidth
           label={question.questionText}
           value={response || ''}
-          onChange={(e) => onResponseChange(question.id, e.target.value)}
+          onChange={handleChange}
           margin="normal"
         />
       );
@@ -18,8 +32,8 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
         <Box sx={{ mb: 2 }}>
           <Typography>{question.questionText}</Typography>
           <RadioGroup
-            value={response || ''}
-            onChange={(e) => onResponseChange(question.id, e.target.value)}
+            value={response !== undefined ? response.toString() : ''}
+            onChange={handleChange}
           >
             {question.options.map((option) => (
               <FormControlLabel
@@ -33,33 +47,25 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
         </Box>
       );
     case 'MULTIPLE_CHOICE':
-      const isMainSymptomQuestion = question.questionText.includes('불편하거나 걱정되는 것을 최대 3가지 선택하세요');
       return (
         <Box sx={{ mb: 2 }}>
           <Typography>{question.questionText}</Typography>
-          {question.options.map((option, index) => (
+          {question.options.map((option) => (
             <FormControlLabel
               key={option.id}
               control={
                 <Checkbox
-                  checked={(response || []).includes(option.id.toString())}
-                  onChange={(e) => {
-                    let newResponse;
-                    if (index === question.options.length - 1) {
-                      newResponse = e.target.checked ? [option.id.toString()] : [];
+                  checked={Array.isArray(response) && response.includes(option.id.toString())}
+                  onChange={(event) => {
+                    const selectedOptionId = option.id.toString();
+                    if (question.questionText === "불편하거나 걱정되는 것을 최대 3가지 선택하세요") {
+                      // 주요 증상 질문인 경우 특별 처리
+                      onResponseChange(question.id, selectedOptionId, option.relatedQuestionIds);
                     } else {
-                      if (e.target.checked) {
-                        if (isMainSymptomQuestion && (response || []).length >= 3) {
-                          return;
-                        }
-                        newResponse = [...(response || []).filter(id => id !== question.options[question.options.length - 1].id.toString()), option.id.toString()];
-                      } else {
-                        newResponse = (response || []).filter((id) => id !== option.id.toString());
-                      }
+                      onResponseChange(question.id, selectedOptionId);
                     }
-                    onResponseChange(question.id, newResponse);
                   }}
-                  disabled={isMainSymptomQuestion && (response || []).length >= 3 && !response.includes(option.id.toString()) && index !== question.options.length - 1}
+                  value={option.id.toString()}
                 />
               }
               label={option.optionText}
@@ -67,6 +73,7 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
           ))}
         </Box>
       );
+
     default:
       return null;
   }

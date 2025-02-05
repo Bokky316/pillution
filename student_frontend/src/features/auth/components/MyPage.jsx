@@ -23,6 +23,9 @@ export default function MyPage() {
         email: "",
         phone: "",
         address: "",
+        birthDate: "",
+        gender: "",
+        points: "",
     });
 
     /**
@@ -39,31 +42,38 @@ export default function MyPage() {
      * 사용자 정보 불러오기
      */
     const fetchMemberData = async (memberId) => {
-            try {
-                const response = await fetchWithAuth(`${API_URL}members/${memberId}`, { method: "GET" });
-                console.log('fetchMemberData response : ', response);
+        try {
+            const response = await fetchWithAuth(`${API_URL}members/${memberId}`, { method: "GET" });
+            console.log('fetchMemberData response : ', response);
 
-                if (response.ok) {
-                    const result = await response.json();
-                    console.log('fetchMemberData result : ', result);
+            if (response.ok) {
+                const result = await response.json();
+                console.log('fetchMemberData result : ', result);
 
-                    const userData = result.data;
-                    setMember({
-                        id: userData.id,
-                        name: userData.name,
-                        email: userData.email,
-                        phone: userData.phone,
-                        address: userData.address,
-                    });
-                } else {
-                    console.error("사용자 정보 로드 실패:", response.status);
-                    alert("사용자 정보를 불러올 수 없습니다.");
-                }
-            } catch (error) {
-                console.error("사용자 정보 로드 중 오류 발생:", error.message);
-                alert("사용자 정보 로드 실패: 네트워크 또는 서버 오류");
+                const userData = result.data; // 여기를 수정
+                setMember({
+                    id: userData.id,
+                    name: userData.name,
+                    email: userData.email,
+                    phone: userData.phone,
+                    address: userData.address,
+                    birthDate: userData.birthDate,
+                    gender: userData.gender,
+                    points: userData.points,
+                });
+            } else {
+                console.error("사용자 정보 로드 실패:", response.status);
+                alert("사용자 정보를 불러올 수 없습니다.");
             }
-        };
+        } catch (error) {
+            console.error("사용자 정보 로드 중 오류 발생:", error.message);
+            alert("사용자 정보 로드 실패: 네트워크 또는 서버 오류");
+        }
+    };
+
+    useEffect(() => {
+        console.log('Current member state:', member);
+    }, [member]);
 
 
     /**
@@ -118,6 +128,23 @@ export default function MyPage() {
             <TextField label="Email" name="email" value={member.email} disabled style={{ width: "400px", marginBottom: "10px" }} />
             <TextField label="Phone" name="phone" value={member.phone} onChange={handleInputChange} style={{ width: "400px", marginBottom: "10px" }} />
             <TextField label="Address" name="address" value={member.address} onChange={handleInputChange} style={{ width: "400px", marginBottom: "10px" }} />
+            <TextField
+                label="Birth Date"
+                name="birthDate"
+                type="date"
+                value={member.birthDate || 'Not set'}
+                onChange={handleInputChange}
+                style={{ width: "400px", marginBottom: "10px" }}
+            />
+
+            <TextField
+                label="Gender"
+                name="gender"
+                value={member.gender || 'Not specified'}
+                disabled
+                style={{ width: "400px", marginBottom: "10px" }}
+            />
+            <TextField label="Points" name="points" value={member.points} disabled style={{ width: "400px", marginBottom: "10px" }} />
             <Button variant="contained" onClick={handleUpdate} style={{ marginTop: "20px" }}>
                 저장
             </Button>

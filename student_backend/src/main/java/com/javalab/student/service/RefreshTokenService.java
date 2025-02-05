@@ -24,20 +24,12 @@ public class RefreshTokenService {
      * 리프레시 토큰 저장 또는 갱신
      */
     @Transactional
-    public void saveOrUpdateRefreshToken(String email, String refreshToken) {
-        Optional<RefreshToken> existingToken = refreshTokenRepository.findByEmail(email);
-
-        existingToken.ifPresentOrElse(
-                // 기존 토큰이 존재하는 경우 갱신
-                token -> {
-                    token.update(refreshToken);
-                },
-                // 기존 토큰이 없는 경우 새로 저장
-                () -> {
-                    RefreshToken newToken = new RefreshToken(email, refreshToken);
-                    refreshTokenRepository.save(newToken);
-                }
-        );
+    public void saveOrUpdateRefreshToken(String email, String refreshToken, Long memberId) {
+        refreshTokenRepository.findByEmail(email)
+                .ifPresentOrElse(
+                        token -> token.update(refreshToken),
+                        () -> refreshTokenRepository.save(new RefreshToken(email, refreshToken, memberId))
+                );
     }
 
 

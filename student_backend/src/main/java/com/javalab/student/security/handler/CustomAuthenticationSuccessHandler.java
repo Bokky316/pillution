@@ -53,6 +53,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
 
         // 1. 사용자 정보를 Authentication 객체에서 추출
         MemberSecurityDto userDetails = (MemberSecurityDto) authentication.getPrincipal();
+        log.info("CustomAuthenticationSuccessHandler - 로그인 성공. 사용자: {}", userDetails.getEmail());
 
         // 2️⃣ Redis에 사용자 권한 정보 캐싱(이메일을 전달하면 권한 정보를 데이터베이스에서 조회한 뒤 Redis에 저장)
         redisService.cacheUserAuthorities(userDetails.getEmail());
@@ -84,7 +85,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         );
 
         // 6️⃣ 리프레시 토큰을 DB에 저장
-        refreshTokenService.saveOrUpdateRefreshToken(userDetails.getEmail(), refreshToken);
+        refreshTokenService.saveOrUpdateRefreshToken(userDetails.getEmail(), refreshToken, userDetails.getId());
 
         // 7️⃣ 액세스 토큰을 HttpOnly Cookie로 저장
         Cookie accessTokenCookie = new Cookie("accToken", accessToken);
@@ -103,17 +104,21 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         response.addCookie(refreshTokenCookie);
         log.info("리프레시 토큰이 HttpOnly 쿠키로 저장되었습니다.");
 
-        // 9️⃣ JSON 응답 생성 및 반환
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(String.format(
-                "{\"message\":\"로그인 성공\",\"status\":\"success\",\"id\":%d,\"email\":\"%s\",\"name\":\"%s\",\"roles\":\"%s\"}",
-                userDetails.getId(),
-                userDetails.getEmail(),
-                userDetails.getRealName(),
-                roles
-        ));
+        // ✅ **OAuth2 로그인인 경우 React로 리디렉트**
+        if (request.getParameter("username") == null) {
+            log.info("OAuth2 로그인 - 프론트엔드로 리디렉트");
+            response.sendRedirect("http://localhost:3000/oauth2/redirect?token=" + accessToken);
+        } else {
+            // ✅ 폼 로그인인 경우 JSON 응답 반환
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write(String.format(
+                    "{\"message\":\"로그인 성공\",\"status\":\"success\",\"id\":%d,\"email\":\"%s\",\"name\":\"%s\",\"roles\":\"%s\"}",
+                    userDetails.getId(),
+                    userDetails.getEmail(),
+                    userDetails.getRealName(),
+                    roles
+            ));
+        }
     }
-
-
 }

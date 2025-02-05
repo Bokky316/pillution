@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
-import { API_URL } from "../constant";
+import { API_URL } from "@/constant";
 
 /**
  * Redux Toolkit의 createSlice 함수를 사용하여 auth 슬라이스를 정의
@@ -22,22 +22,30 @@ import { API_URL } from "../constant";
  *  - setUser, clearUser는 액션 생성자 함수로, 사용자 정보를 저장하거나 초기화하는 역할을 수행합니다.
  */
 const authSlice = createSlice({
-    name: "auth",   // name: 슬라이스 이름, 이 슬라이스는 Redux 상태에서 "auth"라는 이름의 상태 부분을 관리함
-    initialState: { // initialState: 슬라이스의 초기 상태, 사용자 정보와 로그인 여부를 저장
-        user: null, // user: 사용자 정보 상태 값, 초기값은 null
-        isLoggedIn: false,  // isLoggedIn: 로그인 여부 상태 값, 초기값은 false
+    name: "auth",
+    initialState: {
+        user: null,
+        isLoggedIn: false,
+        isSocialLogin: false,
+        isLoading: false,
     },
-    reducers: { // reducers: 상태를 변경하는 함수를 정의
-        setUser(state, action) {    // 1. 첫번째 리듀서 함수, 사용자 정보를 저장, state: 현재 상태, action: 액션 객체로 type과 payload를 포함. 이렇게 전달된 payload에서 값을 추출하여 사용자 정보를 변경
-            state.user = action.payload; // name, email. roles 정보가 user 상태에 저장(객체)
+    reducers: {
+        setUser(state, action) {
+            state.user = action.payload;
             state.isLoggedIn = true;
+            state.isSocialLogin = !!action.payload.provider;
         },
-        clearUser(state) {  // 2. 두번째 리듀서 함수, 사용자 정보를 초기화, state: 현재 상태, action: 없음. 사용자 정보를 초기화하고 로그인 상태를 false로 변경
+        clearUser(state) {
             state.user = null;
             state.isLoggedIn = false;
+            state.isSocialLogin = false;
+        },
+        setLoading(state, action) {
+            state.isLoading = action.payload;
         },
     },
 });
+
 
 /**
  * 사용자 정보를 가져오는 비동기 함수로 "청크" Thunk라고 부른다.
@@ -57,33 +65,55 @@ const authSlice = createSlice({
  *   액션 생성자 함수에 전달하여 사용자 정보를 저장합니다.
  */
 export const fetchUserInfo = () => async (dispatch) => {
+  try {
+    const response = await fetchWithAuth(`${API_URL}auth/userInfo`);
+    const userData = await response.json();
+
+    if (userData && userData.status === "success") {
+      dispatch(setUser({
+        ...userData.data,
+        isLoggedIn: true,
+        isSocialLogin: !!userData.data.provider
+      }));
+    }
+  } catch (error) {
+    console.error("사용자 정보 가져오기 오류:", error);
+  }
+};
+
+
+
+
+/**
+ * 리프레시 토큰을 사용하여 액세스 토큰 갱신 및 사용자 정보 업데이트 (Thunk)
+ */
+export const refreshAccessToken = async () => {
     try {
-        const response = await fetchWithAuth(`${API_URL}auth/userInfo`);
+        const response = await fetch(`${SERVER_URL}refresh`, {
+            method: "POST",
+            credentials: "include", // HttpOnly 쿠키를 포함해서 요청
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+
+        console.log("refreshAccessToken /refresh 요청후 받은 응답 response: ", response);
+
         if (!response.ok) {
-            if (response.status === 401) {
-                console.warn("인증되지 않은 사용자 요청입니다.");
-                return; // 401 상태일 때 상태 초기화 없이 종료
-            }
-            throw new Error("사용자 정보 가져오기 실패");
-        }
-        const userData = await response.json();
-        console.log("fetchUserInfo 사용자 정보 userData : ", userData);
-
-        // 사용자 정보가 없는 경우 경고를 출력하고 초기화는 수행하지 않음
-        if (!userData || Object.keys(userData).length === 0) {
-            console.warn("존재하지 않는 사용자 정보입니다.");
-            //dispatch(clearUser()); // 액션 생성자 함수 clearUser를 디스패치하여 사용자 정보 초기화[수정]
-            return;
+            console.error("리프레시 토큰 갱신 실패", response.status);
+            return null; // 실패 시 null 반환
         }
 
-        console.log("사용자 정보:", userData);
+        const data = await response.json();
+        console.log("새로운 액세스 토큰 발급 성공:", data.accessToken);
 
-        dispatch(setUser(userData)); // 응답 결과로 Redux 상태를 변경 하기 위해 setUser 액션을 디스패치
+        return data.accessToken; // 성공 시 새로운 액세스 토큰 반환
     } catch (error) {
-        //console.error("사용자 정보 가져오기 오류:", error.message);
-        dispatch(clearUser()); // 오류 시 사용자 정보 초기화
+        console.error("리프레시 토큰 처리 오류:", error.message);
+        return null; // 실패 시 null 반환
     }
 };
+
 
 /**
  * 자동 생성된 액션 생성자 함수 내보내기
@@ -93,12 +123,12 @@ export const fetchUserInfo = () => async (dispatch) => {
  * - 액션 생성자 함수는 액션 객체를 생성하여 디스패치할 수 있도록 도와줍니다.
  * 다른 컴포넌트에서 사용 방법
  * - 외부에서 setUser와 clearUser를 import하면, 이를 통해 Redux 상태를 업데이트하는 액션을 쉽게 디스패치할 수 있습니다.
- * - dispatch(setUser({ name: "John", email: "john@example.com" }));
+ * - dispatch(setUser({ name: "John", email: "john@example.com", provider: "kakao" }));
  *   이 코드는 다음과 같은 액션 객체를 생성하여 디스패치합니다:
- *   { type: "auth/setUser", payload: { name: "John", email: "john@example.com" } }
+ *   { type: "auth/setUser", payload: { name: "John", email: "john@example.com", provider: "kakao" } }
  * - 이 액션 객체는 Redux의 dispatch를 통해 리듀서가 실행되도록 전달됩니다.
  */
-export const { setUser, clearUser } = authSlice.actions;    // 액션 생성자 함수 내보내기
+export const { setUser, clearUser, setLoading } = authSlice.actions;    // 액션 생성자 함수 내보내기
 
 /**
  * authSlice 객체의 reducer 속성 내보내기
