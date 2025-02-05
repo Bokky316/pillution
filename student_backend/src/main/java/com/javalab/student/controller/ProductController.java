@@ -97,10 +97,10 @@ public class ProductController {
     /**
      * 상품 삭제
      */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable("id") Long id) {
-        productService.deleteProduct(id);
-        return ResponseEntity.noContent().build();
+    @PatchMapping("/{id}/toggle-active")
+    public ResponseEntity<Void> toggleProductActive(@PathVariable("id") Long id) {
+        productService.toggleProductActive(id);
+        return ResponseEntity.ok().build();
     }
 }
 

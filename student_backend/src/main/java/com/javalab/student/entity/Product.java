@@ -30,7 +30,7 @@ public class Product {
     private int stock;
 
     @Column(nullable = false)
-    private int active;
+    private boolean active;
 
     // 메인 이미지 경로 (대표 이미지)
     private String mainImageUrl;
@@ -55,6 +55,9 @@ public class Product {
             inverseJoinColumns = @JoinColumn(name = "category_id")
     )
     private List<ProductCategory> categories;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProductCategoryMapping> categoryMappings;
 
     // 추천 시스템을 위한 점수 필드
     @Transient // 이 필드는 데이터베이스에 저장되지 않습니다.

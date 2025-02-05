@@ -15,7 +15,7 @@ public interface ProductService {
 
     PageResponseDTO<ProductDto> getAllProducts(PageRequestDTO pageRequestDTO);
 
-    void deleteProduct(Long id);
+    void toggleProductActive(Long id);
 
     // 카테고리 포함된 상품 리스트 조회
     List<ProductResponseDTO> getProductList();

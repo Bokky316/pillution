@@ -27,7 +27,7 @@ public class ProductResponseDTO {
         dto.setName(product.getName());
         dto.setPrice(product.getPrice());
         dto.setStock(product.getStock());
-        dto.setActive(product.getActive());
+        dto.setActive(product.isActive());
         dto.setCategories(product.getCategoryMappings().stream()
                 .map(mapping -> mapping.getCategory().getName()) // 카테고리 이름 추출
                 .collect(Collectors.toList()));

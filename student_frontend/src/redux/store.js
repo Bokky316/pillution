@@ -30,11 +30,8 @@ const rootReducer = combineReducers({
     auth: authReducer,
     survey: surveyReducer,
     ui: uiReducer,
-<<<<<<< HEAD
-    products: productReducer
-=======
-    recommendations: recommendationReducer  // 추가된 부분
->>>>>>> 44746b7e65f1b5dbfad9df18a5c2a89a28d09b96
+    products: productReducer,
+    recommendations: recommendationReducer
 });
 
 /**

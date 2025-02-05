@@ -77,11 +77,14 @@ public class ProductServiceImpl implements ProductService {
     }
 
     /**
-     * 특정 상품을 삭제합니다.
+     * 특정 상품을 활성/비활성화 합니다.
      */
     @Override
-    public void deleteProduct(Long id) {
-        productRepository.deleteById(id);
+    public void toggleProductActive(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        product.setActive(!product.isActive()); // 활성화/비활성화 토글
+        productRepository.save(product);
     }
 
     public List<ProductResponseDTO> getProductList() {

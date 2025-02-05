@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, Snackbar, Grid, Card, CardContent, Typography, CardMedia } from "@mui/material";
 import { useNavigate } from "react-router-dom";
@@ -9,20 +9,24 @@ export default function ProductListPage() {
     const navigate = useNavigate();
 
     const { products, loading, error } = useSelector((state) => state.products);
-    const { isAdmin } = useSelector((state) => state.auth); // Assuming isAdmin is stored in the auth state
-    const [paginationModel, setPaginationModel] = React.useState({ page: 0, pageSize: 10 });
-    const [snackbarOpen, setSnackbarOpen] = React.useState(false);
-    const [snackbarMessage, setSnackbarMessage] = React.useState("");
+    const auth = useSelector((state) => state.auth); // Redux에서 auth 가져오기
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState("");
 
-    const userRole = useSelector(state => {
-        const userData = JSON.parse(localStorage.getItem('loggedInUser') || '{}');
-        return userData.authorities?.includes('ROLE_ADMIN') ? 'ADMIN' : 'USER';
-    });
+    // Redux 상태에서 userRole 가져오기
+    const userRole = auth?.user?.authorities?.some(auth => auth.authority === "ROLE_ADMIN") ? "ADMIN" : "USER";
 
     useEffect(() => {
-        console.log("📌 fetchProducts 호출!", paginationModel);
-        dispatch(fetchProducts({ page: paginationModel.page || 0, size: paginationModel.pageSize || 10 }));
-    }, [dispatch, paginationModel]);
+        console.log("📌 fetchProducts 호출!");
+        dispatch(fetchProducts({ page: 0, size: 10 }));
+    }, [dispatch]);
+
+    // 로그인 시 Redux 상태를 `localStorage`와 동기화
+    useEffect(() => {
+        if (auth?.user) {
+            localStorage.setItem("auth", JSON.stringify(auth));
+        }
+    }, [auth]);
 
     const handleCardClick = (id) => {
         navigate(`/viewProduct/${id}`);
@@ -37,7 +41,7 @@ export default function ProductListPage() {
                             <CardMedia
                                 component="img"
                                 height="200"
-                                image={product.image || "placeholder.jpg"} // Replace with a placeholder if no image exists
+                                image={product.image || "placeholder.jpg"} // 기본 이미지 설정
                                 alt={product.name}
                             />
                             <CardContent>
@@ -47,7 +51,7 @@ export default function ProductListPage() {
                                 <Typography variant="body1" color="textSecondary">
                                     {product.price.toLocaleString()}원
                                 </Typography>
-                                {userRole === 'ADMIN' && (
+                                {userRole === "ADMIN" && (
                                     <>
                                         <Typography variant="body2" color="textSecondary">
                                             재고: {product.stock}
@@ -71,7 +75,7 @@ export default function ProductListPage() {
             />
 
             {/* 관리자만 상품 등록 버튼 보이게 */}
-            {userRole === 'ADMIN' && (
+            {userRole === "ADMIN" && (
                 <Button
                     variant="contained"
                     color="primary"
