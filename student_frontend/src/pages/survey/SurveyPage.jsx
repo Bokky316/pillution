@@ -168,8 +168,8 @@ const SurveyPage = () => {
   // 성별에 따른 카테고리 스킵 여부 확인
   const shouldSkipSubCategory = (category, subCategory) => {
     if (category.name === "3. 생활 습관") {
-      if (gender === 'female' && subCategory.name === "남성건강") return true;
-      if (gender === 'male' && subCategory.name === "여성건강") return true;
+      if (gender === 'female' && subCategory.name === "여성건강") return true;
+      if (gender === 'male' && subCategory.name === "남성건강") return true;
     }
     return false;
   };
