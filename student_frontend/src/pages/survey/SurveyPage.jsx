@@ -10,7 +10,8 @@ import {
   setCurrentSubCategoryIndex,
   submitSurvey,
   setFilteredSubCategories,
-  setSelectedSymptoms
+  setSelectedSymptoms,
+  setFilteredCategories
 } from '@/redux/surveySlice';
 import QuestionComponent from '@features/survey/QuestionComponent';
 
@@ -18,6 +19,7 @@ const SurveyPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  // Redux 상태에서 필요한 데이터 추출
   const {
     categories,
     currentCategoryIndex,
@@ -31,7 +33,7 @@ const SurveyPage = () => {
     gender,
     filteredSubCategories,
     selectedSymptoms,
-    relatedQuestions
+    filteredCategories // 성별에 따라 필터링된 카테고리
   } = useSelector(state => state.survey);
 
   // 초기 카테고리 로드
@@ -41,18 +43,21 @@ const SurveyPage = () => {
 
   // 질문 로드
   useEffect(() => {
-    if (categories.length > 0 && currentCategoryIndex !== null && currentSubCategoryIndex !== null) {
-      const subCategoriesToUse = filteredSubCategories || categories[currentCategoryIndex]?.subCategories;
+    const categoriesToUse = filteredCategories || categories; // 필터링된 카테고리 사용
+    if (categoriesToUse.length > 0 && currentCategoryIndex !== null && currentSubCategoryIndex !== null) {
+      const subCategoriesToUse = filteredSubCategories || categoriesToUse[currentCategoryIndex]?.subCategories;
       const subCategoryId = subCategoriesToUse?.[currentSubCategoryIndex]?.id;
       if (subCategoryId) {
         dispatch(fetchQuestions(subCategoryId));
       }
     }
-  }, [dispatch, categories, currentCategoryIndex, currentSubCategoryIndex, filteredSubCategories]);
+  }, [dispatch, categories, filteredCategories, currentCategoryIndex, currentSubCategoryIndex, filteredSubCategories]);
 
+  // 증상 선택에 따른 하위 카테고리 필터링
   useEffect(() => {
-    if (categories[currentCategoryIndex]?.name === "2. 증상·불편" && selectedSymptoms.length > 0) {
-      const currentCategory = categories[currentCategoryIndex];
+    const categoriesToUse = filteredCategories || categories;
+    if (categoriesToUse[currentCategoryIndex]?.name === "2. 증상·불편" && selectedSymptoms.length > 0) {
+      const currentCategory = categoriesToUse[currentCategoryIndex];
       console.log("현재 카테고리:", currentCategory);
       console.log("선택된 증상들:", selectedSymptoms);
 
@@ -78,20 +83,29 @@ const SurveyPage = () => {
     } else {
       dispatch(setFilteredSubCategories(null));
     }
-  }, [categories, currentCategoryIndex, selectedSymptoms, dispatch]);
-
-
+  }, [categories, filteredCategories, currentCategoryIndex, selectedSymptoms, dispatch]);
 
   // 성별에 따른 카테고리 스킵 처리
   useEffect(() => {
-    const currentCategory = categories[currentCategoryIndex];
+    const categoriesToUse = filteredCategories || categories;
+    const currentCategory = categoriesToUse[currentCategoryIndex];
     const subCategoriesToUse = filteredSubCategories || currentCategory?.subCategories;
     const currentSubCategory = subCategoriesToUse?.[currentSubCategoryIndex];
 
-    if (!currentCategory || !currentSubCategory || shouldSkipSubCategory(currentCategory, currentSubCategory)) {
+    console.log('현재 카테고리:', currentCategory?.name);
+    console.log('현재 서브카테고리:', currentSubCategory?.name);
+    console.log('현재 성별:', gender);
+
+    if (!currentCategory || !currentSubCategory) {
+      console.log('카테고리 또는 서브카테고리가 없음');
+      return;
+    }
+
+    if (shouldSkipSubCategory(currentCategory, currentSubCategory)) {
+      console.log('서브카테고리 스킵:', currentSubCategory.name);
       handleNextCategoryOrSubCategory();
     }
-  }, [categories, currentCategoryIndex, currentSubCategoryIndex, gender, filteredSubCategories]);
+  }, [categories, filteredCategories, currentCategoryIndex, currentSubCategoryIndex, gender, filteredSubCategories]);
 
   // 응답 변경 핸들러
   const handleResponseChange = (questionId, value) => {
@@ -101,22 +115,22 @@ const SurveyPage = () => {
 
   // 다음/제출 버튼 핸들러
   const handleNext = () => {
-    const currentCategory = categories[currentCategoryIndex];
+    const categoriesToUse = filteredCategories || categories;
+    const currentCategory = categoriesToUse[currentCategoryIndex];
     const subCategoriesToUse = filteredSubCategories || currentCategory?.subCategories;
 
     // 마지막 페이지인 경우 제출
-    if (currentCategoryIndex === categories.length - 1 &&
+    if (currentCategoryIndex === categoriesToUse.length - 1 &&
         currentSubCategoryIndex === subCategoriesToUse.length - 1) {
 
       // 응답 포맷팅
-      const allQuestions = categories.flatMap(category =>
+      const allQuestions = categoriesToUse.flatMap(category =>
         category.subCategories ?
           category.subCategories.flatMap(subCategory =>
             subCategory.questions || []
           )
           : []
       );
-
       const formattedResponses = allQuestions.map(question => {
         const answer = responses[question.id];
         return {
@@ -154,12 +168,13 @@ const SurveyPage = () => {
 
   // 다음 카테고리/하위카테고리로 이동
   const handleNextCategoryOrSubCategory = () => {
-    const currentCategory = categories[currentCategoryIndex];
+    const categoriesToUse = filteredCategories || categories;
+    const currentCategory = categoriesToUse[currentCategoryIndex];
     const subCategoriesToUse = filteredSubCategories || currentCategory?.subCategories;
 
     if (currentSubCategoryIndex < subCategoriesToUse.length - 1) {
       dispatch(setCurrentSubCategoryIndex(currentSubCategoryIndex + 1));
-    } else if (currentCategoryIndex < categories.length - 1) {
+    } else if (currentCategoryIndex < categoriesToUse.length - 1) {
       dispatch(setCurrentCategoryIndex(currentCategoryIndex + 1));
       dispatch(setCurrentSubCategoryIndex(0));
     }
@@ -194,7 +209,8 @@ const SurveyPage = () => {
     return <Typography>설문을 불러오는 중입니다...</Typography>;
   }
 
-  const currentCategory = categories[currentCategoryIndex];
+  const categoriesToUse = filteredCategories || categories;
+  const currentCategory = categoriesToUse[currentCategoryIndex];
   const subCategoriesToDisplay = filteredSubCategories || currentCategory?.subCategories;
   const currentSubCategory = subCategoriesToDisplay?.[currentSubCategoryIndex];
 
@@ -226,7 +242,7 @@ const SurveyPage = () => {
         sx={{ mt: 2 }}
         disabled={isNextButtonDisabled()}
       >
-        {currentCategoryIndex === categories.length - 1 &&
+        {currentCategoryIndex === categoriesToUse.length - 1 &&
          currentSubCategoryIndex === subCategoriesToDisplay.length - 1
          ? '제출' : '다음'}
       </Button>
@@ -235,3 +251,4 @@ const SurveyPage = () => {
 };
 
 export default SurveyPage;
+
