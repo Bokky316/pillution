@@ -60,6 +60,7 @@ public class MemberFormDto {
     // 사용자 포인트 (기본값: 0)
     private int points = 0;
 
+    @Builder.Default
     private Role role = Role.USER; // 기본값 USER로 설정  -> 이유 : 권한 없을경우 로그인 안됨
 
     /**
