@@ -172,24 +172,12 @@ function FAQBoardPage() {
                         {Array.isArray(filteredPosts) && filteredPosts.length > 0 ? (
                             [...filteredPosts].reverse().map(post => (
                                 <React.Fragment key={post.id}>
-                                    <TableRow hover>
-                                        <TableCell align="center">{post.category}</TableCell>
-                                        <TableCell>
-                                            <Button
-                                                variant="text"
-                                                onClick={() => handlePostClick(post.id)}
-                                                sx={{
-                                                    textAlign: 'left',
-                                                    display: 'block',
-                                                    color: 'black',
-                                                    width: '100%',
-                                                    '&:hover': {
-                                                        backgroundColor: 'transparent',
-                                                    },
-                                                }}
-                                            >
-                                                {post.title}
-                                            </Button>
+                                    <TableRow>
+                                        <TableCell align="center" onClick={() => handlePostClick(post.id)}>
+                                            {post.category}
+                                        </TableCell>
+                                        <TableCell onClick={() => handlePostClick(post.id)}>
+                                            {post.title}
                                         </TableCell>
                                         {userRole === 'ADMIN' && (
                                             <TableCell align="center">
@@ -214,7 +202,10 @@ function FAQBoardPage() {
                                     </TableRow>
                                     {expandedPosts[post.id] && (
                                         <TableRow>
-                                            <TableCell colSpan={userRole === 'ADMIN' ? 3 : 2} sx={{ backgroundColor: '#f5f5f5', padding: '20px 40px' }}>
+                                            <TableCell
+                                                colSpan={userRole === 'ADMIN' ? 3 : 2}
+                                                sx={{ backgroundColor: '#f5f5f5', padding: '20px 60px' }}
+                                            >
                                                 <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
                                                     {post.content}
                                                 </Typography>
