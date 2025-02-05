@@ -33,7 +33,11 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
           <Typography>{question.questionText}</Typography>
           <RadioGroup
             value={response !== undefined ? response.toString() : ''}
-            onChange={handleChange}
+            onChange={(event) => {
+              const value = event.target.value;
+              console.log('SINGLE_CHOICE 선택:', { questionId: question.id, value });
+              onResponseChange(question.id, value);
+            }}
           >
             {question.options.map((option) => (
               <FormControlLabel

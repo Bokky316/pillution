@@ -9,6 +9,7 @@ import {
   setCurrentCategoryIndex,
   setCurrentSubCategoryIndex,
   submitSurvey,
+  clearResponses,
   setFilteredSubCategories,
   setSelectedSymptoms,
   setFilteredCategories
@@ -33,7 +34,7 @@ const SurveyPage = () => {
     gender,
     filteredSubCategories,
     selectedSymptoms,
-    filteredCategories // 성별에 따라 필터링된 카테고리
+    filteredCategories
   } = useSelector(state => state.survey);
 
   // 초기 카테고리 로드
@@ -43,7 +44,7 @@ const SurveyPage = () => {
 
   // 질문 로드
   useEffect(() => {
-    const categoriesToUse = filteredCategories || categories; // 필터링된 카테고리 사용
+    const categoriesToUse = filteredCategories || categories;
     if (categoriesToUse.length > 0 && currentCategoryIndex !== null && currentSubCategoryIndex !== null) {
       const subCategoriesToUse = filteredSubCategories || categoriesToUse[currentCategoryIndex]?.subCategories;
       const subCategoryId = subCategoriesToUse?.[currentSubCategoryIndex]?.id;
@@ -52,6 +53,13 @@ const SurveyPage = () => {
       }
     }
   }, [dispatch, categories, filteredCategories, currentCategoryIndex, currentSubCategoryIndex, filteredSubCategories]);
+
+  // 컴포넌트 언마운트 시 응답 초기화
+  useEffect(() => {
+    return () => {
+      dispatch(clearResponses());
+    };
+  }, [dispatch]);
 
   // 증상 선택에 따른 하위 카테고리 필터링
   useEffect(() => {
@@ -85,32 +93,26 @@ const SurveyPage = () => {
     }
   }, [categories, filteredCategories, currentCategoryIndex, selectedSymptoms, dispatch]);
 
-  // 성별에 따른 카테고리 스킵 처리
-  useEffect(() => {
-    const categoriesToUse = filteredCategories || categories;
-    const currentCategory = categoriesToUse[currentCategoryIndex];
-    const subCategoriesToUse = filteredSubCategories || currentCategory?.subCategories;
-    const currentSubCategory = subCategoriesToUse?.[currentSubCategoryIndex];
-
-    console.log('현재 카테고리:', currentCategory?.name);
-    console.log('현재 서브카테고리:', currentSubCategory?.name);
-    console.log('현재 성별:', gender);
-
-    if (!currentCategory || !currentSubCategory) {
-      console.log('카테고리 또는 서브카테고리가 없음');
-      return;
-    }
-
-    if (shouldSkipSubCategory(currentCategory, currentSubCategory)) {
-      console.log('서브카테고리 스킵:', currentSubCategory.name);
-      handleNextCategoryOrSubCategory();
-    }
-  }, [categories, filteredCategories, currentCategoryIndex, currentSubCategoryIndex, gender, filteredSubCategories]);
-
   // 응답 변경 핸들러
   const handleResponseChange = (questionId, value) => {
-    console.log('Response change:', { questionId, value });
+    console.log('응답 변경:', { questionId, value });
+    const question = questions.find(q => q.id === questionId);
+    if (question && question.questionText === "성별을 알려주세요") {
+      console.log('성별 질문 응답:', value);
+    }
     dispatch(updateResponse({ questionId, answer: value }));
+  };
+
+  // 이전 버튼 핸들러
+  const handlePrevious = () => {
+    const categoriesToUse = filteredCategories || categories;
+    if (currentSubCategoryIndex > 0) {
+      dispatch(setCurrentSubCategoryIndex(currentSubCategoryIndex - 1));
+    } else if (currentCategoryIndex > 0) {
+      dispatch(setCurrentCategoryIndex(currentCategoryIndex - 1));
+      const prevCategory = categoriesToUse[currentCategoryIndex - 1];
+      dispatch(setCurrentSubCategoryIndex(prevCategory.subCategories.length - 1));
+    }
   };
 
   // 다음/제출 버튼 핸들러
@@ -156,6 +158,7 @@ const SurveyPage = () => {
       dispatch(submitSurvey({ responses: formattedResponses }))
         .unwrap()
         .then(() => {
+          dispatch(clearResponses()); // 제출 후 응답 초기화
           navigate('/survey-complete');
         })
         .catch(error => {
@@ -180,13 +183,9 @@ const SurveyPage = () => {
     }
   };
 
-  // 성별에 따른 카테고리 스킵 여부 확인
-  const shouldSkipSubCategory = (category, subCategory) => {
-    if (category.name === "3. 생활 습관") {
-      if (gender === 'female' && subCategory.name === "남성건강") return true;
-      if (gender === 'male' && subCategory.name === "여성건강") return true;
-    }
-    return false;
+  // 다음 버튼 비활성화 여부 확인
+  const isNextButtonDisabled = () => {
+    return questions.some(question => !responses[question.id]);
   };
 
   // 로딩 상태 처리
@@ -214,16 +213,7 @@ const SurveyPage = () => {
   const subCategoriesToDisplay = filteredSubCategories || currentCategory?.subCategories;
   const currentSubCategory = subCategoriesToDisplay?.[currentSubCategoryIndex];
 
-  // 건너뛰어야 할 카테고리 처리
-  if (!currentCategory || !currentSubCategory || shouldSkipSubCategory(currentCategory, currentSubCategory)) {
-    return null;
-  }
-
-  // 다음 버튼 비활성화 여부 확인
-  const isNextButtonDisabled = () => {
-    return questions.some(question => !responses[question.id]);
-  };
-
+  // 렌더링
   return (
     <Box sx={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
       <Typography variant="h5" sx={{ mb: 3 }}>{currentCategory.name}</Typography>
@@ -236,16 +226,24 @@ const SurveyPage = () => {
           onResponseChange={handleResponseChange}
         />
       ))}
-      <Button
-        variant="contained"
-        onClick={handleNext}
-        sx={{ mt: 2 }}
-        disabled={isNextButtonDisabled()}
-      >
-        {currentCategoryIndex === categoriesToUse.length - 1 &&
-         currentSubCategoryIndex === subCategoriesToDisplay.length - 1
-         ? '제출' : '다음'}
-      </Button>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+        <Button
+          variant="contained"
+          onClick={handlePrevious}
+          disabled={currentCategoryIndex === 0 && currentSubCategoryIndex === 0}
+        >
+          이전
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleNext}
+          disabled={isNextButtonDisabled()}
+        >
+          {currentCategoryIndex === categoriesToUse.length - 1 &&
+           currentSubCategoryIndex === subCategoriesToDisplay.length - 1
+           ? '제출' : '다음'}
+        </Button>
+      </Box>
     </Box>
   );
 };

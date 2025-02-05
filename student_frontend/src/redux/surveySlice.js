@@ -119,30 +119,16 @@ const surveySlice = createSlice({
     filteredCategories: null,
   },
   reducers: {
-      updateResponse: (state, action) => {
-        const { questionId, answer } = action.payload;
-        const question = state.questions.find(q => q.id === questionId);
+    updateResponse: (state, action) => {
+      const { questionId, answer } = action.payload;
+      const question = state.questions.find(q => q.id === questionId);
 
-        if (question && question.questionText === "성별을 알려주세요") {
-          state.gender = answer === '1' ? 'female' : 'male';
-          console.log('선택된 성별:', state.gender);
+      if (!question) return;
 
-          // 성별 선택 시 즉시 카테고리 필터링
-          if (state.categories.length > 0) {
-            const filteredCategories = state.categories.map(category => {
-              if (category.name === "3. 생활 습관") {
-                const filteredSubCategories = category.subCategories.filter(sub => {
-                  if (state.gender === 'female' && sub.name === "남성건강") return false;
-                  if (state.gender === 'male' && sub.name === "여성건강") return false;
-                  return true;
-                });
-                return { ...category, subCategories: filteredSubCategories };
-              }
-              return category;
-            });
-            state.filteredCategories = filteredCategories;
-          }
-        }
+      if (question.questionText === "성별을 알려주세요") {
+        state.gender = answer === '1' ? 'female' : (answer === '2' ? 'male' : null);
+        console.log('선택된 성별:', state.gender); // 디버깅을 위한 로그 추가
+      }
 
       if (question.questionType === 'MULTIPLE_CHOICE') {
         let selectedOptions = [...(state.responses[questionId] || [])];
@@ -172,7 +158,6 @@ const surveySlice = createSlice({
         }
 
         state.responses[questionId] = selectedOptions;
-
         if (isSymptomQuestion) {
           state.selectedSymptoms = selectedOptions;
         }
@@ -195,12 +180,10 @@ const surveySlice = createSlice({
       state.questions = [];
     },
 
-    [setFilteredCategories]: (state, action) => {
-        state.filteredCategories = action.payload;
-      },
-
     clearResponses: (state) => {
       state.responses = {};
+      state.gender = null;
+      state.selectedSymptoms = [];
     },
 
     filterSubCategories: (state, action) => {
@@ -223,6 +206,10 @@ const surveySlice = createSlice({
 
     setFilteredSubCategories: (state, action) => {
       state.filteredSubCategories = action.payload;
+    },
+
+    [setFilteredCategories]: (state, action) => {
+      state.filteredCategories = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -283,3 +270,4 @@ export const {
 } = surveySlice.actions;
 
 export default surveySlice.reducer;
+
