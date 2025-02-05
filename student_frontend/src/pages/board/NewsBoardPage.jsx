@@ -3,8 +3,11 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import {
     Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, Paper, Button, Typography, Box
+    TableHead, TableRow, Paper, Button, Typography, Box,
+    Snackbar, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
+    IconButton
 } from '@mui/material';
+import { Close as CloseIcon } from '@mui/icons-material';
 import {
     fetchNewsPosts,
     setCurrentPage,
@@ -15,6 +18,11 @@ function NewsBoardPage() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [postToDelete, setPostToDelete] = useState(null);
+
     const {
         posts,
         loading,
@@ -23,16 +31,14 @@ function NewsBoardPage() {
         totalPages
     } = useSelector(state => state.news);
 
-    const auth = useSelector((state) => state.auth); // Redux에서 auth 가져오기
+    const auth = useSelector((state) => state.auth);
 
-    // Redux 상태에서 userRole 가져오기
     const userRole = auth?.user?.authorities?.some(auth => auth.authority === "ROLE_ADMIN") ? "ADMIN" : "USER";
 
     useEffect(() => {
         dispatch(fetchNewsPosts({ page: currentPage }));
     }, [dispatch, currentPage]);
 
-    // 로그인 시 Redux 상태를 `localStorage`와 동기화
     useEffect(() => {
         if (auth?.user) {
             localStorage.setItem("auth", JSON.stringify(auth));
@@ -47,10 +53,32 @@ function NewsBoardPage() {
         navigate(`/post/${postId}/edit`);
     };
 
-    const handleDeletePost = (postId) => {
-        if (window.confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
-            dispatch(deleteNewsPost(postId));
+    const handleDeleteClick = (postId) => {
+        setPostToDelete(postId);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeleteConfirm = () => {
+        if (postToDelete) {
+            dispatch(deleteNewsPost(postToDelete))
+                .then(() => {
+                    setSnackbarMessage("게시글이 성공적으로 삭제되었습니다.");
+                    setSnackbarOpen(true);
+                })
+                .catch((error) => {
+                    setSnackbarMessage("게시글 삭제 중 오류가 발생했습니다.");
+                    setSnackbarOpen(true);
+                });
         }
+        setDeleteDialogOpen(false);
+    };
+
+    const handleDeleteCancel = () => {
+        setDeleteDialogOpen(false);
+    };
+
+    const handleCloseSnackbar = () => {
+        setSnackbarOpen(false);
     };
 
     if (loading) return <Typography align="center" variant="h6">로딩 중...</Typography>;
@@ -65,9 +93,13 @@ function NewsBoardPage() {
                     <Button
                         variant="contained"
                         color="primary"
-                        onClick={() => navigate('/post/create', {
-                            state: { defaultCategory: '공지사항' }
-                        })}
+                        onClick={() => {
+                            navigate('/post/create', {
+                                state: { defaultCategory: '공지사항' }
+                            });
+                            setSnackbarMessage("새 게시글 작성 페이지로 이동합니다.");
+                            setSnackbarOpen(true);
+                        }}
                     >
                         게시글 등록
                     </Button>
@@ -115,7 +147,7 @@ function NewsBoardPage() {
                                             <Button
                                                 variant="outlined"
                                                 color="error"
-                                                onClick={() => handleDeletePost(post.id)}
+                                                onClick={() => handleDeleteClick(post.id)}
                                             >
                                                 삭제
                                             </Button>
@@ -151,6 +183,49 @@ function NewsBoardPage() {
                     </Button>
                 ))}
             </Box>
+
+            <Snackbar
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'left',  // 왼쪽으로 변경
+                }}
+                open={snackbarOpen}
+                autoHideDuration={3000}  // 3초로 변경
+                onClose={handleCloseSnackbar}
+                message={snackbarMessage}
+                action={
+                    <IconButton
+                        size="small"
+                        aria-label="close"
+                        color="inherit"
+                        onClick={handleCloseSnackbar}
+                    >
+                        <CloseIcon fontSize="small" />
+                    </IconButton>
+                }
+            />
+
+            <Dialog
+                open={deleteDialogOpen}
+                onClose={handleDeleteCancel}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+            >
+                <DialogTitle id="alert-dialog-title">{"게시글 삭제 확인"}</DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        정말로 이 게시글을 삭제하시겠습니까?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleDeleteConfirm} color="primary" autoFocus>
+                        확인
+                    </Button>
+                    <Button onClick={handleDeleteCancel} color="error">
+                        취소
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }

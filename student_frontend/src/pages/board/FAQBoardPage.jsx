@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Button,
     Typography,
@@ -17,7 +17,10 @@ import {
     DialogContent,
     DialogContentText,
     DialogTitle,
+    Snackbar,
+    IconButton
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import {
     fetchFAQPosts,
     deleteFAQPost,
@@ -30,6 +33,7 @@ const categories = ["전체", "제품", "회원정보", "주문/결제", "교환
 function FAQBoardPage() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const location = useLocation();
     const {
         filteredPosts,
         selectedCategory,
@@ -37,24 +41,28 @@ function FAQBoardPage() {
         loading,
         error
     } = useSelector((state) => state.faq);
-    const auth = useSelector((state) => state.auth); // Redux에서 auth 가져오기
+    const auth = useSelector((state) => state.auth);
     const [openDeleteDialog, setOpenDeleteDialog] = React.useState(false);
     const [postToDelete, setPostToDelete] = React.useState(null);
+    const [snackbar, setSnackbar] = React.useState({ open: false, message: '' });
 
-    // Redux 상태에서 userRole 가져오기
     const userRole = auth?.user?.authorities?.some(auth => auth.authority === "ROLE_ADMIN") ? "ADMIN" : "USER";
 
     useEffect(() => {
-        console.log("📌 fetchFAQPosts 호출!");
         dispatch(fetchFAQPosts());
     }, [dispatch]);
 
-    // 로그인 시 Redux 상태를 `localStorage`와 동기화
     useEffect(() => {
         if (auth?.user) {
             localStorage.setItem("auth", JSON.stringify(auth));
         }
     }, [auth]);
+
+    useEffect(() => {
+        if (location.state?.newPost) {
+            setSnackbar({ open: true, message: "새 게시글이 등록되었습니다." });
+        }
+    }, [location.state]);
 
     if (loading) return <Typography align="center" variant="h6">로딩 중...</Typography>;
     if (error) return <Typography align="center" color="error" variant="h6">{error}</Typography>;
@@ -76,9 +84,9 @@ function FAQBoardPage() {
         if (postToDelete) {
             try {
                 await dispatch(deleteFAQPost(postToDelete)).unwrap();
-                alert("게시글이 삭제되었습니다.");
+                setSnackbar({ open: true, message: "게시글이 삭제되었습니다." });
             } catch (err) {
-                alert("게시글 삭제에 실패했습니다.");
+                setSnackbar({ open: true, message: "게시글 삭제에 실패했습니다." });
             }
         }
         setOpenDeleteDialog(false);
@@ -90,11 +98,25 @@ function FAQBoardPage() {
         setPostToDelete(null);
     };
 
+    const handleCloseSnackbar = () => {
+        setSnackbar({ ...snackbar, open: false });
+    };
+
     return (
-        <Box maxWidth="lg" mx="auto" p={3}>
+        <Box
+            sx={{
+                width: '100%',
+                overflowX: 'hidden',
+                padding: {
+                    xs: '0 8px',
+                    sm: '0 16px',
+                    md: '0 24px'
+                }
+            }}
+        >
             <Typography variant="h4" align="center" gutterBottom>자주 묻는 질문</Typography>
 
-            <Box display="flex" justifyContent="center" mb={3}>
+            <Box display="flex" justifyContent="center" mb={3} flexWrap="wrap">
                 {categories.map(category => (
                     <Button
                         key={category}
@@ -124,7 +146,18 @@ function FAQBoardPage() {
                 </Box>
             )}
 
-            <TableContainer component={Paper} elevation={3} sx={{ marginBottom: '120px' }}>
+            <TableContainer
+                component={Paper}
+                sx={{
+                    width: '100%',
+                    overflowX: 'auto',
+                    marginBottom: '120px',
+                    '& table': {
+                        width: '100%',
+                        minWidth: '600px'
+                    }
+                }}
+            >
                 <Table>
                     <TableHead>
                         <TableRow>
@@ -137,11 +170,11 @@ function FAQBoardPage() {
                     </TableHead>
                     <TableBody>
                         {Array.isArray(filteredPosts) && filteredPosts.length > 0 ? (
-                            filteredPosts.map(post => (
+                            [...filteredPosts].reverse().map(post => (
                                 <React.Fragment key={post.id}>
                                     <TableRow hover>
-                                        <TableCell align="center" style={{ width: '15%' }}>{post.category}</TableCell>
-                                        <TableCell style={{ width: '65%' }}>
+                                        <TableCell align="center">{post.category}</TableCell>
+                                        <TableCell>
                                             <Button
                                                 variant="text"
                                                 onClick={() => handlePostClick(post.id)}
@@ -159,13 +192,8 @@ function FAQBoardPage() {
                                             </Button>
                                         </TableCell>
                                         {userRole === 'ADMIN' && (
-                                            <TableCell align="center" style={{ width: '20%' }}>
-                                                <Box sx={{
-                                                    display: 'flex',
-                                                    justifyContent: 'center',
-                                                    gap: 1,
-                                                    minWidth: '160px'
-                                                }}>
+                                            <TableCell align="center">
+                                                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
                                                     <Button
                                                         variant="outlined"
                                                         color="primary"
@@ -186,16 +214,8 @@ function FAQBoardPage() {
                                     </TableRow>
                                     {expandedPosts[post.id] && (
                                         <TableRow>
-                                            <TableCell colSpan={userRole === 'ADMIN' ? 3 : 2} sx={{
-                                                backgroundColor: '#f5f5f5',
-                                                padding: '20px 40px'
-                                            }}>
-                                                <Typography
-                                                    variant="body1"
-                                                    sx={{
-                                                        whiteSpace: "pre-wrap"
-                                                    }}
-                                                >
+                                            <TableCell colSpan={userRole === 'ADMIN' ? 3 : 2} sx={{ backgroundColor: '#f5f5f5', padding: '20px 40px' }}>
+                                                <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
                                                     {post.content}
                                                 </Typography>
                                             </TableCell>
@@ -220,7 +240,7 @@ function FAQBoardPage() {
                 aria-labelledby="alert-dialog-title"
                 aria-describedby="alert-dialog-description"
             >
-                <DialogTitle id="alert-dialog-title">{"삭제 확인"}</DialogTitle>
+                <DialogTitle id="alert-dialog-title">삭제 확인</DialogTitle>
                 <DialogContent>
                     <DialogContentText id="alert-dialog-description">
                         정말로 이 게시글을 삭제하시겠습니까?
@@ -235,6 +255,19 @@ function FAQBoardPage() {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={3000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                message={snackbar.message}
+                action={
+                    <IconButton size="small" aria-label="close" color="inherit" onClick={handleCloseSnackbar}>
+                        <CloseIcon fontSize="small" />
+                    </IconButton>
+                }
+            />
         </Box>
     );
 }

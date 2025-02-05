@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { useLocation } from "react-router-dom";
 import { Container, Typography, Box, Button } from "@mui/material";
 import NewsBoardPage from "./NewsBoardPage";
 import FAQBoardPage from "./FAQBoardPage";
@@ -8,6 +9,11 @@ import { setCurrentBoard } from '../../redux/boardSlice';
 function BoardPage() {
     const dispatch = useDispatch();
     const currentBoard = useSelector(state => state.board.currentBoard);
+    const location = useLocation();
+
+    useEffect(() => {
+        dispatch(setCurrentBoard("news"));
+    }, [location, dispatch]);
 
     return (
         <Container sx={{ mt: 4, mb: 6 }}>

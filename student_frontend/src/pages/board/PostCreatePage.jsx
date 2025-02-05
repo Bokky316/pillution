@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -15,7 +15,10 @@ import {
     MenuItem,
     InputLabel,
     FormControl,
+    Snackbar,
+    IconButton,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import {
     createPost,
     setFormData,
@@ -26,8 +29,8 @@ import {
     resetForm,
 } from '../../redux/postCreateSlice';
 
-// FAQ 카테고리 목록
-const faqCategories = ["전체", "제품", "회원정보", "주문/결제", "교환/반품", "배송", "기타"];
+// FAQ 카테고리 목록 - 전체는 선택하는 카테고리가 아니라 여기에서는 뺌.
+const faqCategories = ["제품", "회원정보", "주문/결제", "교환/반품", "배송", "기타"];
 
 function PostCreatePage() {
     const dispatch = useDispatch();
@@ -43,6 +46,10 @@ function PostCreatePage() {
         loading,
         error
     } = useSelector((state) => state.postCreate);
+
+    // Snackbar 상태 추가
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
 
     // 컴포넌트 마운트 시 폼 초기화
     useEffect(() => {
@@ -111,9 +118,16 @@ function PostCreatePage() {
             };
 
             await dispatch(createPost(postData)).unwrap();
-            alert("게시물이 등록되었습니다.");
+            setSnackbarMessage("게시물이 등록되었습니다.");
+            setSnackbarOpen(true); // Snackbar 열기
+
+            // 3초 후 /board로 이동
+            setTimeout(() => {
+                setSnackbarOpen(false); // Snackbar 닫기
+                navigate("/board");
+            }, 3000);
+
             dispatch(resetForm()); // 성공 후 폼 초기화
-            navigate("/board");
         } catch (error) {
             if (error.status === 401 || error.status === 403) {
                 alert("관리자 권한이 필요하거나 로그인이 필요합니다.");
@@ -311,6 +325,22 @@ function PostCreatePage() {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Snackbar */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={3000} // 3초 후 자동으로 닫히도록 설정
+                message={snackbarMessage}
+                action={
+                    <IconButton
+                        size="small"
+                        color="inherit"
+                        onClick={() => setSnackbarOpen(false)}
+                    >
+                        <CloseIcon fontSize="small" />
+                    </IconButton>
+                }
+            />
         </Box>
     );
 }
