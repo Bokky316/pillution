@@ -100,7 +100,7 @@ function App() {
                         <Route path="/recommendation" element={<RecommendationPage />} />
                         <Route path="/survey" element={<SurveyPage />} />
                         <Route path="/products" element={<ProductListPage />} />
-                        <Route path="/products/:productId" element={<ProductDetailPage />} />
+                        <Route path="/viewProduct/:productId" element={<ProductDetailPage />} />
                         <Route path="/cart" element={isLoggedIn ? <CartPage /> : <Navigate to="/login" />} />
                         <Route path="/unauthorized" element={<UnauthorizedPage />} />
                     </Routes>

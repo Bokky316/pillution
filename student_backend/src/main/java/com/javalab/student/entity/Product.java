@@ -3,9 +3,7 @@ package com.javalab.student.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Entity
 @Table(name = "product")
@@ -32,15 +30,22 @@ public class Product {
     private int stock;
 
     @Column(nullable = false)
-    private boolean active;
+    private int active;
 
     // 메인 이미지 경로 (대표 이미지)
     private String mainImageUrl;
 
     // 주성분과의 관계 (ManyToOne)
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "main_ingredient_id")
-    private Product mainIngredient;
+    @Column(name = "ingredient_name")
+    private String mainIngredientName;
+
+    @ManyToMany
+    @JoinTable(
+            name = "product_ingredient_mapping",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "id")
+    )
+    private List<ProductIngredient> ingredients;;
 
     // 카테고리와의 관계 (N:M)
     @ManyToMany
@@ -51,22 +56,7 @@ public class Product {
     )
     private List<ProductCategory> categories;
 
-    // 상품과 카테고리 매핑 정보와 연관 관계 설정
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductCategoryMapping> categoryMappings;
-
-//    // 상품 이미지 리스트 (1:N)
-//    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-//    private List<ProductImg> images;
-//}
-
-
-// 추천 시스템을 위한 점수 필드
-@Transient// 이 필드는 데이터베이스에 저장되지 않습니다.
-private int score;
-
-    public boolean getActive() {
-        return active;
-    }
-
+    // 추천 시스템을 위한 점수 필드
+    @Transient // 이 필드는 데이터베이스에 저장되지 않습니다.
+    private int score;
 }

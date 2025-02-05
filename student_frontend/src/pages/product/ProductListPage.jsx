@@ -14,6 +14,11 @@ export default function ProductListPage() {
     const [snackbarOpen, setSnackbarOpen] = React.useState(false);
     const [snackbarMessage, setSnackbarMessage] = React.useState("");
 
+    const userRole = useSelector(state => {
+        const userData = JSON.parse(localStorage.getItem('loggedInUser') || '{}');
+        return userData.authorities?.includes('ROLE_ADMIN') ? 'ADMIN' : 'USER';
+    });
+
     useEffect(() => {
         console.log("📌 fetchProducts 호출!", paginationModel);
         dispatch(fetchProducts({ page: paginationModel.page || 0, size: paginationModel.pageSize || 10 }));
@@ -42,7 +47,7 @@ export default function ProductListPage() {
                                 <Typography variant="body1" color="textSecondary">
                                     {product.price.toLocaleString()}원
                                 </Typography>
-                                {isAdmin && (
+                                {userRole === 'ADMIN' && (
                                     <>
                                         <Typography variant="body2" color="textSecondary">
                                             재고: {product.stock}
@@ -65,9 +70,17 @@ export default function ProductListPage() {
                 message={snackbarMessage}
             />
 
-            <div style={{ marginTop: "20px", textAlign: "center" }}>
-                <Button variant="contained" onClick={() => navigate("/addProduct")}>상품 등록</Button>
-            </div>
+            {/* 관리자만 상품 등록 버튼 보이게 */}
+            {userRole === 'ADMIN' && (
+                <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => navigate("/addProduct")}
+                    style={{ marginTop: "20px" }}
+                >
+                    상품 등록
+                </Button>
+            )}
 
             {loading && <p>로딩 중...</p>}
             {error && <p style={{ color: "red" }}>{error}</p>}
