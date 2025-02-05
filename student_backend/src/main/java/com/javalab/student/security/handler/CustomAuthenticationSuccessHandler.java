@@ -1,6 +1,8 @@
 package com.javalab.student.security.handler;
 
 import com.javalab.student.config.jwt.TokenProvider;
+import com.javalab.student.entity.Member;
+import com.javalab.student.repository.MemberRepository;
 import com.javalab.student.security.dto.MemberSecurityDto;
 import com.javalab.student.service.RedisService;
 import com.javalab.student.service.RefreshTokenService;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,6 +37,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
     private final RefreshTokenService refreshTokenService;
     private final TokenProvider tokenProvider;
     private final RedisService redisService;
+    private final MemberRepository memberRepository;
 
     /**
      * 로그인 성공 후처리 메서드
@@ -53,9 +57,19 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
 
         // 1. 사용자 정보를 Authentication 객체에서 추출
         MemberSecurityDto userDetails = (MemberSecurityDto) authentication.getPrincipal();
+        String email = userDetails.getEmail();
+        log.info("🔹 로그인한 이메일: {}", email);
         log.info("CustomAuthenticationSuccessHandler - 로그인 성공. 사용자: {}", userDetails.getEmail());
 
         // 2️⃣ Redis에 사용자 권한 정보 캐싱(이메일을 전달하면 권한 정보를 데이터베이스에서 조회한 뒤 Redis에 저장)
+        Member member = memberRepository.findByEmail(email);
+        if (member != null) {
+            member.setLastLoginAt(LocalDateTime.now()); // ✅ 현재 시간을 마지막 로그인 시간으로 저장
+            memberRepository.save(member);
+            log.info("🔹 [CustomAuthenticationSuccessHandler] 마지막 로그인 시간 저장 완료: {}", member.getLastLoginAt());
+        } else {
+            log.warn("⚠ [CustomAuthenticationSuccessHandler] 회원을 찾을 수 없음: {}", email);
+        }
         redisService.cacheUserAuthorities(userDetails.getEmail());
         log.info("사용자의 권한 정보가 Redis에 성공적으로 저장되었습니다.");
 
@@ -64,6 +78,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
 
         // 3️⃣ 사용자 권한 목록을 문자열로 변환
         //String roles = userDetails.getAuthorities().toString(); // 권한 목록을 문자열로 변환
+
         // 3️⃣ 사용자 권한 목록을 문자열로 변환
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(authority -> authority.getAuthority()) // 권한 문자열 추출

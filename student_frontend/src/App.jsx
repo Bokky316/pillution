@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { CircularProgress } from "@mui/material";
 import { fetchUserInfo, clearUser } from "./redux/authSlice";
-import { fetchWithoutAuth } from "./features/auth/utils/fetchWithAuth";
+import { fetchWithoutAuth } from "@features/auth/utils/fetchWithAuth";
 import { API_URL } from "./constant";
 import Header from "@components/layout/Header";
 import Footer from "@components/layout/Footer";
