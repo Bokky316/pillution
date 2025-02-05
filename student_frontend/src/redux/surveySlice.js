@@ -115,7 +115,6 @@ const surveySlice = createSlice({
     gender: null,
     selectedSymptoms: [],
     filteredSubCategories: null,
-    relatedQuestions: [],
     filteredCategories: null,
   },
   reducers: {
@@ -178,20 +177,6 @@ const surveySlice = createSlice({
       state.responses = {};
       state.gender = null;
       state.selectedSymptoms = [];
-    },
-
-    filterSubCategories: (state, action) => {
-      const selectedSymptoms = action.payload;
-      const currentCategory = state.categories[state.currentCategoryIndex];
-      if (currentCategory && currentCategory.name === "2. 증상·불편") {
-        state.filteredSubCategories = currentCategory.subCategories.filter(sub =>
-          sub.name === "주요 증상" ||
-          sub.name === "추가 증상" ||
-          selectedSymptoms.includes(sub.id.toString())
-        );
-      } else {
-        state.filteredSubCategories = null;
-      }
     },
 
     setSelectedSymptoms: (state, action) => {
@@ -259,7 +244,6 @@ export const {
   setCurrentCategoryIndex,
   setCurrentSubCategoryIndex,
   clearResponses,
-  filterSubCategories,
   setSelectedSymptoms
 } = surveySlice.actions;
 

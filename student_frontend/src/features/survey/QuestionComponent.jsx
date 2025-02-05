@@ -5,41 +5,52 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
   const handleChange = (event) => {
     let value;
     if (question.questionType === 'MULTIPLE_CHOICE') {
-      const optionId = parseInt(event.target.value, 10);
-      onResponseChange(question.id, optionId);
+      const optionId = event.target.value;
+      let selectedOptions = [...(response || [])];
+
+      const lastOptionIndex = question.options.length - 1;
+      const lastOptionId = question.options[lastOptionIndex].id.toString();
+
+      if (optionId === lastOptionId) {
+        // '해당 없음' 옵션 선택시
+        selectedOptions = selectedOptions.includes(lastOptionId) ? [] : [lastOptionId];
+      } else {
+        if (selectedOptions.includes(lastOptionId)) {
+          selectedOptions = [];
+        }
+
+        const index = selectedOptions.indexOf(optionId);
+        if (index > -1) {
+          selectedOptions.splice(index, 1);
+        } else {
+          if (question.questionText.includes('불편하거나 걱정되는 것') && selectedOptions.length >= 3) {
+            return;
+          }
+          selectedOptions.push(optionId);
+        }
+      }
+      onResponseChange(question.id, selectedOptions);
     } else if (question.questionType === 'SINGLE_CHOICE') {
       value = parseInt(event.target.value, 10);
-
-      // 성별 질문 처리
-      if (question.questionText === "성별을 알려주세요") {
-        // relatedQuestionIds는 백엔드에서 성별에 따른 관련 질문 ID들을 전달받았다고 가정
-        const option = question.options.find(opt => opt.id === value);
-        onResponseChange(question.id, value, option.relatedQuestionIds);
-      } else {
-        onResponseChange(question.id, value);
-      }
+      onResponseChange(question.id, value);
     } else {
       // TEXT 타입 처리
       if (question.questionText.includes('키') ||
           question.questionText.includes('몸무게') ||
           question.questionText.includes('나이')) {
-
-        // 숫자만 입력 가능하도록
         const numberValue = event.target.value.replace(/[^\d]/g, '');
 
-        // 빈 값 처리
         if (numberValue === '') {
           onResponseChange(question.id, '');
           return;
         }
 
-        // 유효성 검사
         const num = parseInt(numberValue, 10);
         if (question.questionText.includes('키') && (num <= 0 || num > 300)) return;
         if (question.questionText.includes('몸무게') && (num <= 0 || num > 500)) return;
         if (question.questionText.includes('나이') && (num < 0 || num > 150)) return;
 
-        value = parseInt(numberValue, 10);
+        value = num;
       } else {
         value = event.target.value;
       }
@@ -77,18 +88,7 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
           <Typography>{question.questionText}</Typography>
           <RadioGroup
             value={response !== undefined ? response.toString() : ''}
-            onChange={(event) => {
-              const value = parseInt(event.target.value, 10);
-              console.log('SINGLE_CHOICE 선택:', { questionId: question.id, value });
-
-              // 성별 질문인 경우 특별 처리
-              if (question.questionText === "성별을 알려주세요") {
-                const selectedOption = question.options.find(opt => opt.id === value);
-                onResponseChange(question.id, value, selectedOption.relatedQuestionIds);
-              } else {
-                onResponseChange(question.id, value);
-              }
-            }}
+            onChange={handleChange}
           >
             {question.options.map((option) => (
               <FormControlLabel
@@ -111,15 +111,7 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
               control={
                 <Checkbox
                   checked={Array.isArray(response) && response.includes(option.id.toString())}
-                  onChange={(event) => {
-                    const selectedOptionId = option.id.toString();
-                    if (question.questionText === "불편하거나 걱정되는 것을 최대 3가지 선택하세요") {
-                      // 주요 증상 질문인 경우 특별 처리
-                      onResponseChange(question.id, selectedOptionId, option.relatedQuestionIds);
-                    } else {
-                      onResponseChange(question.id, selectedOptionId);
-                    }
-                  }}
+                  onChange={handleChange}
                   value={option.id.toString()}
                 />
               }
@@ -128,7 +120,6 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
           ))}
         </Box>
       );
-
     default:
       return null;
   }

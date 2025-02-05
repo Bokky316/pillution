@@ -94,12 +94,33 @@ const SurveyPage = () => {
   }, [categories, filteredCategories, currentCategoryIndex, selectedSymptoms, dispatch]);
 
   // 응답 변경 핸들러
+  // SurveyPage.js의 handleResponseChange 수정
   const handleResponseChange = (questionId, value) => {
     console.log('응답 변경:', { questionId, value });
     const question = questions.find(q => q.id === questionId);
+
+    // 성별 질문 처리
     if (question && question.questionText === "성별을 알려주세요") {
-      console.log('성별 질문 응답:', value);
+      const selectedOption = question.options.find(opt => opt.id === parseInt(value, 10));
+      const filteredCats = categories.filter(category => {
+        if (!category.name.includes('건강')) return true;
+
+        if (selectedOption.optionText === '여성') {
+          return category.name.includes('여성');
+        } else if (selectedOption.optionText === '남성') {
+          return category.name.includes('남성');
+        }
+        return true;
+      });
+      dispatch(setFilteredCategories(filteredCats));
     }
+
+    // 주요 증상 질문 처리 (기존 로직 유지)
+    if (question && question.questionText.includes("불편하거나 걱정되는 것")) {
+      const selectedSymptoms = Array.isArray(value) ? value : [value];
+      dispatch(setSelectedSymptoms(selectedSymptoms));
+    }
+
     dispatch(updateResponse({ questionId, answer: value }));
   };
 
