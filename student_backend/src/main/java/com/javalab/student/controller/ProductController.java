@@ -1,9 +1,6 @@
 package com.javalab.student.controller;
 
-import com.javalab.student.dto.PageRequestDTO;
-import com.javalab.student.dto.PageResponseDTO;
-import com.javalab.student.dto.ProductDto;
-import com.javalab.student.dto.ProductFormDto;
+import com.javalab.student.dto.*;
 import com.javalab.student.entity.Product;
 import com.javalab.student.repository.ProductRepository;
 import com.javalab.student.service.ProductService;
@@ -17,6 +14,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 
+import java.util.List;
+
 /**
  * 상품 관리 관련 API를 처리하는 컨트롤러
  */
@@ -24,7 +23,6 @@ import org.springframework.dao.DataAccessException;
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
-    private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
     private final ProductRepository productRepository;
     private final ProductService productService;
 
@@ -43,10 +41,10 @@ public class ProductController {
                     .map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
         } catch (DataAccessException e) {
-            logger.error("Database error occurred while fetching product with id: " + productId, e);
+            log.error("Database error occurred while fetching product with id: " + productId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         } catch (Exception e) {
-            logger.error("Unexpected error occurred while fetching product with id: " + productId, e);
+            log.error("Unexpected error occurred while fetching product with id: " + productId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -95,12 +93,22 @@ public class ProductController {
     }
 
     /**
-     * 상품 삭제
+     * 상품 활성/비활성
      */
     @PatchMapping("/{id}/toggle-active")
     public ResponseEntity<Void> toggleProductActive(@PathVariable("id") Long id) {
         productService.toggleProductActive(id);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/filter")
+    public ResponseEntity<List<ProductResponseDTO>> filterProducts(
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long ingredientId) {
+
+        List<ProductResponseDTO> filteredProducts = productService.getProductsByCategoryAndIngredient(categoryId, ingredientId);
+        return ResponseEntity.ok(filteredProducts);
+    }
+
 }
 

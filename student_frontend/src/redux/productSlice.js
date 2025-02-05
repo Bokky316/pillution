@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { fetchProducts, fetchCategories } from "@features/product/productApi";
+import { fetchProducts, fetchCategories, fetchProductsByCategory } from "@features/product/productApi";
 
 const productSlice = createSlice({
     name: "products",
@@ -28,6 +28,9 @@ const productSlice = createSlice({
             })
             .addCase(fetchCategories.fulfilled, (state, action) => {
                 state.categories = action.payload; // 카테고리 추가
+            })
+            .addCase(fetchProductsByCategory.fulfilled, (state, action) => {
+                state.products = action.payload;  // 필터링된 상품 업데이트
             });
     },
 });

@@ -35,3 +35,47 @@ export const fetchCategories = createAsyncThunk("products/fetchCategories", asyn
         return rejectWithValue("카테고리 목록 가져오기 실패: 네트워크 또는 서버 오류");
     }
 });
+
+export const fetchFilteredProducts = createAsyncThunk(
+    "products/fetchFilteredProducts",
+    async ({ categoryId, ingredientId }, { rejectWithValue }) => {
+        try {
+            let url = `${API_URL}products/filter?`;
+            if (categoryId) url += `categoryId=${categoryId}&`;
+            if (ingredientId) url += `ingredientId=${ingredientId}`;
+
+            const response = await fetchWithAuth(url, { method: "GET" });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                return rejectWithValue(errorData.message || "알 수 없는 에러");
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            return rejectWithValue("상품 필터링 실패: 네트워크 또는 서버 오류");
+        }
+    }
+);
+
+// 특정 카테고리에 해당하는 상품 목록 가져오기
+export const fetchProductsByCategory = createAsyncThunk(
+    "products/fetchProductsByCategory",
+    async (categoryId, { rejectWithValue }) => {
+        try {
+            const response = await fetchWithAuth(`${API_URL}products/by-category/${categoryId}`, { method: "GET" });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                return rejectWithValue(errorData.message || "알 수 없는 에러");
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            return rejectWithValue("카테고리별 상품 가져오기 실패: 네트워크 또는 서버 오류");
+        }
+    }
+);
+

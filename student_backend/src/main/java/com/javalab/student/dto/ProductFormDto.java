@@ -4,6 +4,7 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * 상품 등록/수정 DTO
@@ -30,4 +31,10 @@ public class ProductFormDto {
     private boolean active;
 
     private String mainImageUrl;
+
+    /** 추가된 필드: 영양 성분 ID 리스트 */
+    private List<Long> ingredientIds;
+
+    /** 추가된 필드: 카테고리 ID 리스트 */
+    private List<Long> categoryIds;
 }

@@ -11,8 +11,8 @@ import java.util.List;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    @Query("SELECT p FROM Product p JOIN p.categories c WHERE c.id = :categoryId")
-    List<Product> findByCategoryId(@Param("categoryId") Long categoryId);
+ /*   @Query("SELECT p FROM Product p JOIN p.categories c WHERE c.id = :categoryId")
+    List<Product> findByCategoryId(@Param("categoryId") Long categoryId);*/
 
     @Query("SELECT pi.ingredientName FROM Product p JOIN p.ingredients pi WHERE p.id = :productId")
     String findMainIngredientByProductId(@Param("productId") Long productId);
@@ -33,4 +33,19 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("SELECT p FROM Product p JOIN p.ingredients i WHERE i.ingredientName = :ingredientName")
     List<Product> findByIngredientName(@Param("ingredientName") String ingredientName);
+
+    @Query("SELECT DISTINCT p FROM Product p " +
+            "JOIN p.categories c " +
+            "JOIN p.ingredients i " +
+            "WHERE (:categoryId IS NULL OR c.id = :categoryId) " +
+            "AND (:ingredientId IS NULL OR i.id = :ingredientId)")
+    List<Product> findByCategoryAndIngredient(@Param("categoryId") Long categoryId, @Param("ingredientId") Long ingredientId);
+
+    @Query("SELECT DISTINCT p FROM Product p JOIN p.categories c WHERE c.id = :categoryId")
+    List<Product> findByCategory(@Param("categoryId") Long categoryId);
+
+    @Query("SELECT DISTINCT p FROM Product p JOIN p.ingredients i WHERE i.id = :ingredientId")
+    List<Product> findByIngredient(@Param("ingredientId") Long ingredientId);
+
+    List<Product> findByCategories_Id(Long categoryId);
 }

@@ -19,4 +19,8 @@ public interface ProductService {
 
     // 카테고리 포함된 상품 리스트 조회
     List<ProductResponseDTO> getProductList();
+
+    List<ProductResponseDTO> getProductsByCategoryAndIngredient(Long categoryId, Long ingredientId);
+
+    List<ProductResponseDTO> getProductsByCategory(Long categoryId);
 }
