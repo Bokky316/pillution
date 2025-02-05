@@ -35,6 +35,7 @@ public class RecommendationService {
 
     /**
      * 사용자 이메일을 기반으로 제품을 추천합니다.
+     *
      * @param userEmail 사용자 이메일
      * @return 추천 제품 목록 (필수 추천 및 추가 추천으로 분류)
      * @throws EntityNotFoundException 사용자를 찾을 수 없는 경우
@@ -69,6 +70,7 @@ public class RecommendationService {
 
     /**
      * 사용자 응답을 기반으로 BMI를 계산합니다.
+     *
      * @param responses 사용자 응답 목록
      * @return 계산된 BMI 값
      */
@@ -94,6 +96,7 @@ public class RecommendationService {
 
     /**
      * 사용자 응답을 기반으로 나이를 가져옵니다.
+     *
      * @param responses 사용자 응답 목록
      * @return 사용자 나이
      */
@@ -108,6 +111,7 @@ public class RecommendationService {
 
     /**
      * 사용자 응답을 기반으로 각 성분의 점수를 계산합니다.
+     *
      * @param responses 사용자 응답 목록
      * @return 성분별 점수 맵
      */
@@ -131,9 +135,10 @@ public class RecommendationService {
 
     /**
      * 연령대와 BMI를 고려하여 성분 점수를 조정합니다.
+     *
      * @param ingredientScores 성분별 점수 맵
-     * @param age 사용자 나이
-     * @param bmi 사용자 BMI
+     * @param age              사용자 나이
+     * @param bmi              사용자 BMI
      */
     private void adjustIngredientScores(Map<String, Integer> ingredientScores, int age, double bmi) {
         String ageGroup = determineAgeGroup(age);
@@ -157,7 +162,8 @@ public class RecommendationService {
 
     /**
      * 주어진 제품 목록에 대해 성분 점수를 기반으로 제품 점수를 계산합니다.
-     * @param products 제품 목록
+     *
+     * @param products         제품 목록
      * @param ingredientScores 성분별 점수 맵
      * @return 점수가 계산된 제품 목록 (점수 내림차순 정렬)
      */
@@ -181,6 +187,7 @@ public class RecommendationService {
 
     /**
      * 점수가 계산된 제품 목록을 필수 추천과 추가 추천으로 분류합니다.
+     *
      * @param scoredProducts 점수가 계산된 제품 목록
      * @return 분류된 추천 제품 목록
      */
@@ -211,22 +218,25 @@ public class RecommendationService {
 
     /**
      * Product 엔티티를 ProductRecommendationDTO로 변환합니다.
+     *
      * @param product 변환할 Product 엔티티
      * @return 변환된 ProductRecommendationDTO 객체
      */
     private ProductRecommendationDTO convertToDTO(Product product) {
-        ProductRecommendationDTO dto = new ProductRecommendationDTO();
-        dto.setId(product.getId());
-        dto.setName(product.getName());
-        dto.setDescription(product.getDescription());
-        dto.setPrice(product.getPrice());
-        dto.setScore(product.getScore());
-        dto.setMainIngredient(product.getMainIngredientName());
-        return dto;
+        return new ProductRecommendationDTO(
+                product.getId(),
+                product.getName(),
+                product.getDescription(),
+                product.getPrice(),
+                0, // 초기 점수는 0으로 설정
+                product.getMainIngredientName()
+        );
     }
+
 
     /**
      * 나이를 기반으로 연령대를 결정합니다.
+     *
      * @param age 나이
      * @return 연령대 문자열
      */
@@ -240,6 +250,7 @@ public class RecommendationService {
 
     /**
      * BMI를 기반으로 비만도 카테고리를 결정합니다.
+     *
      * @param bmi BMI 값
      * @return 비만도 카테고리 문자열
      */
@@ -252,8 +263,9 @@ public class RecommendationService {
 
     /**
      * 연령대별 영양소 중요도를 반환합니다.
+     *
      * @param ingredient 영양소 이름
-     * @param ageGroup 연령대
+     * @param ageGroup   연령대
      * @return 중요도 점수 (1-5)
      */
     private int getAgeImportance(String ingredient, String ageGroup) {
@@ -264,7 +276,8 @@ public class RecommendationService {
 
     /**
      * BMI 카테고리에 따른 영양소 점수 조정값을 반환합니다.
-     * @param ingredient 영양소 이름
+     *
+     * @param ingredient  영양소 이름
      * @param bmiCategory BMI 카테고리
      * @return 점수 조정값
      */
@@ -273,4 +286,39 @@ public class RecommendationService {
         // 예: 비만인 경우 식이섬유의 중요도를 높일 수 있습니다.
         return 0; // 기본값으로 0을 반환
     }
+
+    public List<ProductRecommendationDTO> recommendProductsByIngredients(Map<String, Integer> ingredientScores) {
+        List<ProductRecommendationDTO> recommendations = new ArrayList<>();
+
+        for (Map.Entry<String, Integer> entry : ingredientScores.entrySet()) {
+            String ingredient = entry.getKey();
+            int score = entry.getValue();
+
+            // 해당 성분을 주성분으로 가진 제품들을 조회
+            List<Product> products = productRepository.findByMainIngredientName(ingredient);
+
+            // 제품 점수 계산 및 정렬
+            products.sort((p1, p2) -> Integer.compare(calculateProductScore(p2, score), calculateProductScore(p1, score)));
+
+            // 상위 2개 제품 추천 목록에 추가
+            for (int i = 0; i < Math.min(2, products.size()); i++) {
+                Product product = products.get(i);
+                ProductRecommendationDTO dto = convertToDTO(product);
+                dto.setScore(calculateProductScore(product, score));
+                recommendations.add(dto);
+            }
+        }
+
+        // 전체 점수 기준으로 정렬
+        recommendations.sort((r1, r2) -> Integer.compare(r2.getScore(), r1.getScore()));
+
+        return recommendations;
+    }
+
+    private int calculateProductScore(Product product, int ingredientScore) {
+        // 제품 점수 계산 로직 (예: 기본 점수 + 성분 점수)
+        return 3 + ingredientScore; // 기본 점수를 3으로 설정
+    }
 }
+
+
