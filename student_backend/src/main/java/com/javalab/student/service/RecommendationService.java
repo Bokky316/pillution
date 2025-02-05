@@ -5,6 +5,7 @@ import com.javalab.student.entity.Member;
 import com.javalab.student.entity.MemberResponse;
 import com.javalab.student.entity.Product;
 import com.javalab.student.entity.ProductIngredient;
+import com.javalab.student.repository.ProductIngredientRepository;
 import com.javalab.student.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -171,7 +172,7 @@ public class RecommendationService {
         for (Product product : products) {
             int score = 0;
             // 제품의 성분 목록을 조회합니다.
-            List<ProductIngredient> productIngredients = productIngredientRepository.findByProductsContaining(product);
+            List<ProductIngredient> productIngredients = product.getIngredients(); // 변경된 부분
             for (ProductIngredient productIngredient : productIngredients) {
                 // 각 성분의 점수를 합산합니다.
                 score += ingredientScores.getOrDefault(productIngredient.getIngredientName(), 0);
@@ -184,6 +185,7 @@ public class RecommendationService {
                 .sorted((p1, p2) -> Integer.compare(p2.getScore(), p1.getScore()))
                 .collect(Collectors.toList());
     }
+
 
     /**
      * 점수가 계산된 제품 목록을 필수 추천과 추가 추천으로 분류합니다.
