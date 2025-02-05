@@ -1,66 +1,53 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Typography, Box } from '@mui/material';
+import {
+    Table, TableBody, TableCell, TableContainer,
+    TableHead, TableRow, Paper, Button, Typography, Box
+} from '@mui/material';
+import {
+    fetchNewsPosts,
+    setCurrentPage,
+    deleteNewsPost
+} from '../../redux/newsSlice';
 
 function NewsBoardPage() {
-    const [posts, setPosts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [currentPage, setCurrentPage] = useState(0);
-    const [totalPages, setTotalPages] = useState(0);
-    const [userRole, setUserRole] = useState(null);
+    const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    useEffect(() => {
+    const {
+        posts,
+        loading,
+        error,
+        currentPage,
+        totalPages
+    } = useSelector(state => state.news);
+
+    const userRole = useSelector(state => {
         const userData = JSON.parse(localStorage.getItem('loggedInUser') || '{}');
-        setUserRole(userData.authorities?.includes('ROLE_ADMIN') ? 'ADMIN' : 'USER');
+        return userData.authorities?.includes('ROLE_ADMIN') ? 'ADMIN' : 'USER';
+    });
 
-        const fetchPosts = async () => {
-            try {
-                const response = await axios.get(`http://localhost:8080/api/posts/board/1?page=${currentPage}&size=10`);
-                console.log('API Response:', response.data);
-                setPosts(response.data.dtoList);
-                setTotalPages(response.data.totalPages);
-                setLoading(false);
-            } catch (err) {
-                setError('게시글을 불러오는데 실패했습니다: ' + err.message);
-                setLoading(false);
-            }
-        };
-
-        fetchPosts();
-    }, [currentPage]);
+    useEffect(() => {
+        dispatch(fetchNewsPosts({ page: currentPage }));
+    }, [dispatch, currentPage]);
 
     const handlePageClick = (page) => {
-        setCurrentPage(page);
+        dispatch(setCurrentPage(page));
     };
 
     const handleEditPost = (postId) => {
         navigate(`/post/${postId}/edit`);
     };
 
-    const handleDeletePost = async (postId) => {
+    const handleDeletePost = (postId) => {
         if (window.confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
-            try {
-                const response = await axios.delete(`http://localhost:8080/api/posts/${postId}`);
-
-                if (response.status === 204) {
-                    alert("게시글이 삭제되었습니다.");
-                    const updatedResponse = await axios.get(`http://localhost:8080/api/posts/board/1?page=${currentPage}&size=10`);
-                    setPosts(updatedResponse.data.dtoList);
-                    setTotalPages(updatedResponse.data.totalPages);
-                }
-            } catch (err) {
-                console.error('Error deleting post:', err);
-                const errorMessage = err.response?.data?.message || "게시글 삭제에 실패했습니다.";
-                alert(errorMessage);
-            }
+            dispatch(deleteNewsPost(postId));
         }
     };
 
     if (loading) return <Typography align="center" variant="h6">로딩 중...</Typography>;
-    if (error) return <Typography align="center" color="error" variant="h6">{error}</Typography>;
+    if (error) return <Typography variant="h6">{error ? error.message : "에러가 발생하지 않았습니다."}</Typography>;
 
     return (
         <Box maxWidth="lg" mx="auto" p={3}>
@@ -98,11 +85,16 @@ function NewsBoardPage() {
                                 <TableRow key={post.id} hover>
                                     <TableCell>{post.category}</TableCell>
                                     <TableCell>
-                                        <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'black' }}>
+                                        <Link
+                                            to={`/post/${post.id}`}
+                                            style={{ textDecoration: 'none', color: 'black' }}
+                                        >
                                             {post.title}
                                         </Link>
                                     </TableCell>
-                                    <TableCell>{new Date(post.createdAt).toLocaleDateString()}</TableCell>
+                                    <TableCell>
+                                        {new Date(post.createdAt).toLocaleDateString()}
+                                    </TableCell>
                                     {userRole === 'ADMIN' && (
                                         <TableCell align="center">
                                             <Button
@@ -126,7 +118,12 @@ function NewsBoardPage() {
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={userRole === 'ADMIN' ? 4 : 3} align="center">게시글이 없습니다.</TableCell>
+                                <TableCell
+                                    colSpan={userRole === 'ADMIN' ? 4 : 3}
+                                    align="center"
+                                >
+                                    게시글이 없습니다.
+                                </TableCell>
                             </TableRow>
                         )}
                     </TableBody>

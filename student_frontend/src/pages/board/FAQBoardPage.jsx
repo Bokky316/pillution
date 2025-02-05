@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import {
     Button,
     Typography,
@@ -18,60 +18,40 @@ import {
     DialogContentText,
     DialogTitle,
 } from '@mui/material';
+import {
+    fetchFAQPosts,
+    deleteFAQPost,
+    setSelectedCategory,
+    togglePost
+} from "../../redux/faqSlice";
 
 const categories = ["전체", "제품", "회원정보", "주문/결제", "교환/반품", "배송", "기타"];
 
 function FAQBoardPage() {
-    const [posts, setPosts] = useState([]);
-    const [filteredPosts, setFilteredPosts] = useState([]);
-    const [selectedCategory, setSelectedCategory] = useState("전체");
-    const [expandedPosts, setExpandedPosts] = useState({});
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [userRole, setUserRole] = useState(null);
-    const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-    const [postToDelete, setPostToDelete] = useState(null);
+    const dispatch = useDispatch();
     const navigate = useNavigate();
+    const {
+        filteredPosts,
+        selectedCategory,
+        expandedPosts,
+        loading,
+        error
+    } = useSelector((state) => state.faq);
+    const [openDeleteDialog, setOpenDeleteDialog] = React.useState(false);
+    const [postToDelete, setPostToDelete] = React.useState(null);
+    const [userRole, setUserRole] = React.useState(null);
 
     useEffect(() => {
         const userData = JSON.parse(localStorage.getItem('loggedInUser') || '{}');
         setUserRole(userData.authorities?.includes('ROLE_ADMIN') ? 'ADMIN' : 'USER');
-
-        const fetchPosts = async () => {
-            try {
-                const response = await axios.get("http://localhost:8080/api/posts/faq");
-                console.log("API 응답 데이터:", response.data);
-                setPosts(response.data);
-                setFilteredPosts(response.data);
-                setLoading(false);
-            } catch (err) {
-                console.error('Error fetching FAQ posts:', err);
-                setError('게시글을 불러오는데 실패했습니다: ' + err.message);
-                setLoading(false);
-            }
-        };
-
-        fetchPosts();
-    }, []);
+        dispatch(fetchFAQPosts());
+    }, [dispatch]);
 
     if (loading) return <Typography align="center" variant="h6">로딩 중...</Typography>;
     if (error) return <Typography align="center" color="error" variant="h6">{error}</Typography>;
 
-    const filterPostsByCategory = (category) => {
-        setSelectedCategory(category);
-        if (category === "전체") {
-            setFilteredPosts(posts);
-        } else {
-            const filtered = posts.filter(post => post.category === category);
-            setFilteredPosts(filtered);
-        }
-    };
-
     const handlePostClick = (postId) => {
-        setExpandedPosts(prevState => ({
-            ...prevState,
-            [postId]: !prevState[postId]
-        }));
+        dispatch(togglePost(postId));
     };
 
     const handleEditPost = (postId) => {
@@ -86,21 +66,14 @@ function FAQBoardPage() {
     const handleConfirmDelete = async () => {
         if (postToDelete) {
             try {
-                const response = await axios.delete(`http://localhost:8080/api/posts/${postToDelete}`);
-                if (response.status === 204) {
-                    alert("게시글이 삭제되었습니다.");
-                    setPosts(prevPosts => prevPosts.filter(post => post.id !== postToDelete));
-                    setFilteredPosts(prevFilteredPosts =>
-                        prevFilteredPosts.filter(post => post.id !== postToDelete)
-                    );
-                }
+                await dispatch(deleteFAQPost(postToDelete)).unwrap();
+                alert("게시글이 삭제되었습니다.");
             } catch (err) {
-                console.error('Error deleting post:', err);
-                const errorMessage = err.response?.data?.message || "게시글 삭제에 실패했습니다.";
-                alert(errorMessage);
+                alert("게시글 삭제에 실패했습니다.");
             }
         }
         setOpenDeleteDialog(false);
+        setPostToDelete(null);
     };
 
     const handleCloseDeleteDialog = () => {
@@ -116,7 +89,7 @@ function FAQBoardPage() {
                 {categories.map(category => (
                     <Button
                         key={category}
-                        onClick={() => filterPostsByCategory(category)}
+                        onClick={() => dispatch(setSelectedCategory(category))}
                         variant="contained"
                         sx={{
                             margin: "5px",
@@ -163,10 +136,15 @@ function FAQBoardPage() {
                                             <Button
                                                 variant="text"
                                                 onClick={() => handlePostClick(post.id)}
-                                                sx={{ textAlign: 'left', display: 'block', color: 'black', width: '100%',
+                                                sx={{
+                                                    textAlign: 'left',
+                                                    display: 'block',
+                                                    color: 'black',
+                                                    width: '100%',
                                                     '&:hover': {
-                                                        backgroundColor: 'transparent',  // 호버 시 배경색 변경 제거
-                                                },}}
+                                                        backgroundColor: 'transparent',
+                                                    },
+                                                }}
                                             >
                                                 {post.title}
                                             </Button>

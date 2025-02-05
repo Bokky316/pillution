@@ -1,105 +1,105 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-  Typography
+    Box,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    TextField,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions,
+    Button,
+    Typography
 } from '@mui/material';
+import {
+    fetchPost,
+    updatePost,
+    setFormData,
+    setIsAdmin,
+    setOpenCancelDialog,
+    setOpenEditDialog
+} from '../../redux/postEditSlice';
+
+// FAQ 카테고리 목록 상수
+const faqCategories = ["전체", "제품", "회원정보", "주문/결제", "교환/반품", "배송", "기타"];
 
 function PostEditPage() {
     const { postId } = useParams();
     const navigate = useNavigate();
-    const [openCancelDialog, setOpenCancelDialog] = useState(false);
-    const [openEditDialog, setOpenEditDialog] = useState(false);
-    const [formData, setFormData] = useState({
-        title: '',
-        content: '',
-        category: '',
-        subCategory: '전체'
-    });
-    const [isAdmin, setIsAdmin] = useState(false);
+    const dispatch = useDispatch();
 
-    const faqCategories = ["전체", "제품", "회원정보", "주문/결제", "교환/반품", "배송", "기타"];
+    // Redux 상태 가져오기
+    const {
+        formData,
+        isAdmin,
+        loading,
+        error,
+        openCancelDialog,
+        openEditDialog
+    } = useSelector((state) => state.postEdit);
 
+    // 초기 데이터 로드
     useEffect(() => {
         // 관리자 권한 체크
         const loggedInUser = localStorage.getItem('loggedInUser');
         if (loggedInUser) {
             try {
                 const userData = JSON.parse(loggedInUser);
-                setIsAdmin(userData.authorities?.includes('ROLE_ADMIN') || false);
-                if (!userData.authorities?.includes('ROLE_ADMIN')) {
+                const isAdminUser = userData.authorities?.includes('ROLE_ADMIN') || false;
+                dispatch(setIsAdmin(isAdminUser));
+
+                if (!isAdminUser) {
                     alert('관리자만 접근할 수 있습니다.');
                     navigate('/board');
                     return;
                 }
             } catch (e) {
-                console.error('Error parsing user data:', e);
+                console.error('사용자 데이터 파싱 오류:', e);
                 navigate('/board');
+                return;
             }
         } else {
             navigate('/login');
+            return;
         }
 
-        // 게시물 데이터 가져오기
-        const fetchPost = async () => {
-            try {
-                const response = await axios.get(`http://localhost:8080/api/posts/${postId}`);
-                const post = response.data;
-                const category = post.boardId === 1 ? '공지사항' : '자주 묻는 질문';
-                setFormData({
-                    title: post.title,
-                    content: post.content,
-                    category: category,
-                    subCategory: post.category || '전체',
-                    boardId: post.boardId
-                });
-            } catch (err) {
-                console.error('Error fetching post:', err);
-                alert('게시물을 불러오는데 실패했습니다.');
-                navigate('/board');
-            }
-        };
+        // 게시글 데이터 가져오기
+        dispatch(fetchPost(postId));
+    }, [postId, navigate, dispatch]);
 
-        fetchPost();
-    }, [postId, navigate]);
-
+    // 입력 필드 변경 처리
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        dispatch(setFormData({ [name]: value }));
     };
 
+    // 취소 버튼 처리
     const handleCancelClick = () => {
-        setOpenCancelDialog(true);
+        dispatch(setOpenCancelDialog(true));
     };
 
+    // 취소 다이얼로그 닫기
     const handleCloseCancelDialog = () => {
-        setOpenCancelDialog(false);
+        dispatch(setOpenCancelDialog(false));
     };
 
+    // 취소 확인
     const handleConfirmCancel = () => {
-        setOpenCancelDialog(false);
+        dispatch(setOpenCancelDialog(false));
         navigate(-1);
     };
 
+    // 수정 다이얼로그 닫기
     const handleCloseEditDialog = () => {
-        setOpenEditDialog(false);
+        dispatch(setOpenEditDialog(false));
     };
 
+    // 폼 제출 처리
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -113,53 +113,41 @@ function PostEditPage() {
             return;
         }
 
-        setOpenEditDialog(true);
+        dispatch(setOpenEditDialog(true));
     };
 
+    // 수정 확인
     const handleConfirmEdit = async () => {
         try {
-            const userData = JSON.parse(localStorage.getItem('loggedInUser'));
-            const token = userData.token;
-
-            const currentPost = await axios.get(`http://localhost:8080/api/posts/${postId}`);
-            const originalAuthorId = currentPost.data.authorId;
-
             const boardId = formData.category === '공지사항' ? 1 : 2;
-            const finalCategory = formData.category === '자주 묻는 질문' ? formData.subCategory : formData.category;
+            const finalCategory = formData.category === '자주 묻는 질문'
+                ? formData.subCategory
+                : formData.category;
 
             const updateData = {
                 title: formData.title,
                 content: formData.content,
                 boardId: boardId,
-                category: finalCategory,
-                authorId: originalAuthorId
+                category: finalCategory
             };
 
-            await axios.put(
-                `http://localhost:8080/api/posts/${postId}`,
-                updateData,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-
+            // 게시글 수정 요청
+            await dispatch(updatePost({ postId, updateData })).unwrap();
             alert('게시물이 수정되었습니다.');
             navigate('/board');
         } catch (err) {
-            console.error('Error updating post:', err);
-            if (err.response?.status === 401 || err.response?.status === 403) {
+            if (err.status === 401 || err.status === 403) {
                 alert('관리자 권한이 필요하거나 로그인이 필요합니다.');
                 navigate('/login');
             } else {
-                alert('수정에 실패했습니다. 에러: ' + (err.response?.data?.message || err.message));
+                alert('수정에 실패했습니다.');
             }
-        } finally {
-            setOpenEditDialog(false);
         }
+        dispatch(setOpenEditDialog(false));
     };
+
+    if (loading) return <Typography align="center" variant="h6">로딩 중...</Typography>;
+    if (error) return <Typography align="center" color="error" variant="h6">{error}</Typography>;
 
     return (
         <Box maxWidth="md" mx="auto" p={3}>
@@ -168,6 +156,7 @@ function PostEditPage() {
             </Typography>
 
             <Box component="form" onSubmit={handleSubmit}>
+                {/* 게시판 선택 (비활성화) */}
                 <Box mb={3}>
                     <FormControl fullWidth variant="outlined">
                         <InputLabel>게시판</InputLabel>
@@ -183,6 +172,7 @@ function PostEditPage() {
                     </FormControl>
                 </Box>
 
+                {/* FAQ 카테고리 선택 */}
                 {formData.category === "자주 묻는 질문" && (
                     <Box mb={3}>
                         <FormControl fullWidth variant="outlined">
@@ -203,6 +193,7 @@ function PostEditPage() {
                     </Box>
                 )}
 
+                {/* 제목 입력 */}
                 <Box mb={3}>
                     <TextField
                         fullWidth
@@ -215,6 +206,7 @@ function PostEditPage() {
                     />
                 </Box>
 
+                {/* 내용 입력 */}
                 <Box mb={3}>
                     <TextField
                         fullWidth
@@ -229,6 +221,7 @@ function PostEditPage() {
                     />
                 </Box>
 
+                {/* 버튼 그룹 */}
                 <Box display="flex" justifyContent="flex-end" gap={1}>
                     <Button variant="contained" color="primary" type="submit">
                         수정하기

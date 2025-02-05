@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { Container, Typography, Box, Button } from "@mui/material";
 import NewsBoardPage from "./NewsBoardPage";
 import FAQBoardPage from "./FAQBoardPage";
+import { setCurrentBoard } from '../../redux/boardSlice';
 
 function BoardPage() {
-    const [currentBoard, setCurrentBoard] = useState("news"); // 기본: 소식 게시판
+    const dispatch = useDispatch();
+    const currentBoard = useSelector(state => state.board.currentBoard);
 
     return (
         <Container sx={{ mt: 4, mb: 6 }}>
@@ -16,12 +19,12 @@ function BoardPage() {
             {/* 탭 메뉴 */}
             <Box display="flex" justifyContent="center">
                 <Button
-                    disableRipple // 클릭 효과 제거
-                    onClick={() => setCurrentBoard("news")}
+                    disableRipple
+                    onClick={() => dispatch(setCurrentBoard("news"))}
                     sx={{
                         borderRadius: 0,
                         backgroundColor: currentBoard === "news" ? "#999999" : "#f5f5f5",
-                        color: currentBoard === "news" ? "#fff" : "#000", // 글씨 색: 흰색
+                        color: currentBoard === "news" ? "#fff" : "#000",
                         px: 6,
                         py: 1,
                         fontSize: "1.1rem",
@@ -31,12 +34,12 @@ function BoardPage() {
                     공지사항
                 </Button>
                 <Button
-                    disableRipple // 클릭 효과 제거
-                    onClick={() => setCurrentBoard("faq")}
+                    disableRipple
+                    onClick={() => dispatch(setCurrentBoard("faq"))}
                     sx={{
                         borderRadius: 0,
                         backgroundColor: currentBoard === "faq" ? "#999999" : "#f5f5f5",
-                        color: currentBoard === "faq" ? "#fff" : "#000", // 글씨 색: 흰색
+                        color: currentBoard === "faq" ? "#fff" : "#000",
                         px: 6,
                         py: 1,
                         fontSize: "1.1rem",
