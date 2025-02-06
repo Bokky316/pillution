@@ -4,14 +4,18 @@ import com.javalab.student.dto.HealthAnalysisDTO;
 import com.javalab.student.dto.ProductRecommendationDTO;
 import com.javalab.student.entity.HealthRecord;
 import com.javalab.student.entity.MemberResponse;
+import com.javalab.student.security.dto.MemberSecurityDto;
 import com.javalab.student.service.recommendation.RecommendationService;
 import com.javalab.student.service.recommendation.ProductRecommendationService;
 import com.javalab.student.service.recommendation.RiskCalculationService;
 import com.javalab.student.service.recommendation.NutrientScoreService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 
@@ -20,7 +24,7 @@ import java.util.Map;
  * 이 클래스는 건강 분석, 제품 추천, 위험도 계산, 영양 점수 계산 등의 기능을 제공합니다.
  */
 @RestController
-@RequestMapping("/api/health")
+@RequestMapping("/api/recommendation")
 public class RecommendationController {
 
     @Autowired
@@ -36,34 +40,21 @@ public class RecommendationController {
     private NutrientScoreService nutrientScoreService;
 
     /**
-     * 사용자의 이메일을 기반으로 건강 분석 및 추천 정보를 제공합니다.
-     * @param email 사용자 이메일
+     * 현재 로그인한 사용자의 건강 분석 및 추천 정보를 제공합니다.
      * @return 건강 분석 및 추천 정보를 포함한 ResponseEntity
      */
     @GetMapping("/analysis")
-    public ResponseEntity<Map<String, Object>> getHealthAnalysisAndRecommendations(@RequestParam String email) {
+    public ResponseEntity<Map<String, Object>> getHealthAnalysisAndRecommendations() {
         try {
-            Map<String, Object> result = recommendationService.getHealthAnalysisAndRecommendations(email);
+            Map<String, Object> result = recommendationService.getHealthAnalysisAndRecommendations();
             return ResponseEntity.ok(result);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "An unexpected error occurred"));
         }
     }
 
-    /**
-     * 사용자의 건강 기록 히스토리를 조회합니다.
-     * @param email 사용자 이메일
-     * @return 건강 기록 리스트를 포함한 ResponseEntity
-     */
-    @GetMapping("/history")
-    public ResponseEntity<List<HealthRecord>> getHealthHistory(@RequestParam String email) {
-        try {
-            List<HealthRecord> history = recommendationService.getHealthHistory(email);
-            return ResponseEntity.ok(history);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(null);
-        }
-    }
 
     /**
      * 사용자의 나이, BMI, 응답을 기반으로 건강 위험도를 계산합니다.
@@ -111,4 +102,22 @@ public class RecommendationController {
         Map<String, Integer> scores = nutrientScoreService.calculateIngredientScores(responses, age, bmi);
         return ResponseEntity.ok(scores);
     }
+
+    /**
+     * 현재 로그인한 사용자의 건강 기록 히스토리를 조회합니다.
+     * @return 건강 기록 리스트를 포함한 ResponseEntity
+     */
+    @GetMapping("/history")
+    public ResponseEntity<List<HealthRecord>> getHealthHistory() {
+        try {
+            List<HealthRecord> history = recommendationService.getHealthHistory();
+            return ResponseEntity.ok(history);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+
 }

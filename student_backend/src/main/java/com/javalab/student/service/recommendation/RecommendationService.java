@@ -13,6 +13,8 @@ import com.javalab.student.repository.MemberRepository;
 import com.javalab.student.repository.MemberResponseRepository;
 import com.javalab.student.repository.HealthRecordRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -42,41 +44,65 @@ public class RecommendationService {
     private ObjectMapper objectMapper;
 
     /**
-     * 사용자의 건강 상태를 분석하고 제품을 추천합니다.
+     * 현재 로그인한 사용자의 건강 상태를 분석하고 제품을 추천합니다.
      *
-     * @param email 사용자의 이메일
      * @return 건강 분석 결과, 추천 제품, 추천 영양 성분을 포함하는 Map
-     * @throws IllegalArgumentException 사용자를 찾을 수 없는 경우
+     * @throws IllegalStateException 인증된 사용자 정보를 찾을 수 없는 경우
      */
-    public Map<String, Object> getHealthAnalysisAndRecommendations(String email) {
+    public Map<String, Object> getHealthAnalysisAndRecommendations() {
         Map<String, Object> result = new HashMap<>();
 
-        // 사용자 조회
-        Member member = memberRepository.findByEmail(email);
-        if (member == null) {
-            throw new IllegalArgumentException("사용자를 찾을 수 없습니다: " + email);
+        // 현재 인증된 사용자 정보 가져오기
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new IllegalStateException("인증된 사용자 정보를 찾을 수 없습니다.");
         }
 
-        // 사용자의 최신 응답 조회
-        List<MemberResponse> responses = memberResponseRepository.findLatestResponsesByMemberId(member.getId());
+        String email = authentication.getName();
+        Member member = memberRepository.findByEmail(email);
+        if (member == null) {
+            throw new IllegalStateException("회원 정보를 찾을 수 없습니다: " + email);
+        }
+
+        // 사용자의 나이, 키, 몸무게 응답 조회
+        List<MemberResponse> ageHeightWeightResponses = memberResponseRepository.findAgeHeightAndWeightResponses(member.getId());
 
         // 사용자 정보 추출
-        int age = getAge(responses);
-        double height = getHeight(responses);
-        double weight = getWeight(responses);
+        int age = 0;
+        double height = 0;
+        double weight = 0;
+
+        for (MemberResponse response : ageHeightWeightResponses) {
+            switch (response.getQuestion().getId().intValue()) {
+                case 3:
+                    age = Integer.parseInt(response.getResponseText());
+                    break;
+                case 4:
+                    height = Double.parseDouble(response.getResponseText());
+                    break;
+                case 5:
+                    weight = Double.parseDouble(response.getResponseText());
+                    break;
+            }
+        }
+
+        if (age == 0 || height == 0 || weight == 0) {
+            throw new IllegalStateException("나이, 키, 몸무게 정보 중 누락된 정보가 있습니다.");
+        }
+
         double bmi = calculateBMI(height, weight);
 
         // 건강 분석 수행
-        HealthAnalysisDTO healthAnalysis = analyzeHealth(member.getId(), age, bmi, responses);
+        HealthAnalysisDTO healthAnalysis = analyzeHealth(member.getId(), age, bmi, ageHeightWeightResponses);
         result.put("healthAnalysis", healthAnalysis);
 
         // 제품 추천
         Map<String, List<ProductRecommendationDTO>> recommendations =
-                productRecommendationService.recommendProducts(member.getId(), age, bmi, responses);
+                productRecommendationService.recommendProducts(member.getId(), age, bmi, ageHeightWeightResponses);
         result.put("recommendations", recommendations);
 
         // 영양 성분 추천
-        Map<String, Integer> ingredientScores = nutrientScoreService.calculateIngredientScores(responses, age, bmi);
+        Map<String, Integer> ingredientScores = nutrientScoreService.calculateIngredientScores(ageHeightWeightResponses, age, bmi);
         List<String> recommendedIngredients = nutrientScoreService.getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
 
         // 건강 기록 저장
@@ -84,6 +110,7 @@ public class RecommendationService {
 
         return result;
     }
+
 
     /**
      * 사용자의 건강 상태를 분석합니다.
@@ -237,16 +264,21 @@ public class RecommendationService {
 
 
     /**
-     * 사용자의 건강 기록 히스토리를 조회합니다.
+     * 현재 로그인한 사용자의 건강 기록 히스토리를 조회합니다.
      *
-     * @param email 사용자의 이메일
-     * @return 사용자의 건강 기록 리스트
-     * @throws IllegalArgumentException 사용자를 찾을 수 없는 경우
+     * @return 현재 로그인한 사용자의 건강 기록 리스트
+     * @throws IllegalStateException 인증된 사용자 정보를 찾을 수 없는 경우
      */
-    public List<HealthRecord> getHealthHistory(String email) {
+    public List<HealthRecord> getHealthHistory() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new IllegalStateException("인증된 사용자 정보를 찾을 수 없습니다.");
+        }
+
+        String email = authentication.getName();
         Member member = memberRepository.findByEmail(email);
         if (member == null) {
-            throw new IllegalArgumentException("회원을 찾을 수 없습니다: " + email);
+            throw new IllegalStateException("회원 정보를 찾을 수 없습니다: " + email);
         }
 
         return healthRecordRepository.findByMemberIdOrderByRecordDateDesc(member.getId());

@@ -10,7 +10,7 @@ export const fetchHealthAnalysisAndRecommendations = createAsyncThunk(
   'recommendations/fetchHealthAnalysisAndRecommendations',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetchWithAuth(`${API_URL}health/analysis`, {
+      const response = await fetchWithAuth(`${API_URL}recommendation/analysis`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -34,7 +34,7 @@ export const fetchHealthHistory = createAsyncThunk(
   'recommendations/fetchHealthHistory',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetchWithAuth(`${API_URL}health/history`, {
+      const response = await fetchWithAuth(`${API_URL}recommendation/analysis`, {
         method: 'GET',
         credentials: 'include',
       });
