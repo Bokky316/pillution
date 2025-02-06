@@ -531,23 +531,23 @@ public class DataInitializer implements CommandLineRunner {
         ProductCategory 모발두피 = productCategoryRepository.findByName("모발/두피").orElseThrow();
         ProductCategory 만성질환 = productCategoryRepository.findByName("만성질환").orElseThrow();
 
-        // 📌 영양 성분 가져오기
-        ProductIngredient 감마리놀렌산 = productIngredientRepository.findByIngredientName("감마리놀렌산(GLA)").orElseThrow();
-        ProductIngredient 엽산 = productIngredientRepository.findByIngredientName("엽산").orElseThrow();
-        ProductIngredient 철분 = productIngredientRepository.findByIngredientName("철분").orElseThrow();
-        ProductIngredient 크랜베리 = productIngredientRepository.findByIngredientName("크랜베리 추출물").orElseThrow();
-        ProductIngredient GABA = productIngredientRepository.findByIngredientName("GABA").orElseThrow();
-        ProductIngredient 비타민B6 = productIngredientRepository.findByIngredientName("비타민B군").orElseThrow();
-        ProductIngredient 칼슘 = productIngredientRepository.findByIngredientName("칼슘").orElseThrow();
-        ProductIngredient 비타민D = productIngredientRepository.findByIngredientName("비타민D").orElseThrow();
-        ProductIngredient 마그네슘 = productIngredientRepository.findByIngredientName("마그네슘").orElseThrow();
-        ProductIngredient 비타민C = productIngredientRepository.findByIngredientName("비타민C").orElseThrow();
-        ProductIngredient 코엔자임Q10 = productIngredientRepository.findByIngredientName("코엔자임Q10").orElseThrow();
-        ProductIngredient 오메가3 = productIngredientRepository.findByIngredientName("오메가-3").orElseThrow();
-        ProductIngredient 루테인 = productIngredientRepository.findByIngredientName("루테인").orElseThrow();
-        ProductIngredient 콜라겐 = productIngredientRepository.findByIngredientName("콜라겐").orElseThrow();
-        ProductIngredient 인지질 = productIngredientRepository.findByIngredientName("인지질(PS)").orElseThrow();
-        ProductIngredient 비오틴 = productIngredientRepository.findByIngredientName("비오틴").orElseThrow();
+          // 📌 영양 성분 가져오기
+        ProductIngredient 감마리놀렌산 = productIngredientRepository.findByIngredientName("감마리놀렌산(GLA)").stream().findFirst().orElseThrow(() -> new RuntimeException("감마리놀렌산(GLA) 성분을 찾을 수 없습니다."));
+        ProductIngredient 엽산 = productIngredientRepository.findByIngredientName("엽산").stream().findFirst().orElseThrow(() -> new RuntimeException("엽산 성분을 찾을 수 없습니다."));
+        ProductIngredient 철분 = productIngredientRepository.findByIngredientName("철분").stream().findFirst().orElseThrow(() -> new RuntimeException("철분 성분을 찾을 수 없습니다."));
+        ProductIngredient 크랜베리 = productIngredientRepository.findByIngredientName("크랜베리 추출물").stream().findFirst().orElseThrow(() -> new RuntimeException("크랜베리 추출물 성분을 찾을 수 없습니다."));
+        ProductIngredient GABA = productIngredientRepository.findByIngredientName("GABA").stream().findFirst().orElseThrow(() -> new RuntimeException("GABA 성분을 찾을 수 없습니다."));
+        ProductIngredient 비타민B6 = productIngredientRepository.findByIngredientName("비타민B군").stream().findFirst().orElseThrow(() -> new RuntimeException("비타민B군 성분을 찾을 수 없습니다."));
+        ProductIngredient 칼슘 = productIngredientRepository.findByIngredientName("칼슘").stream().findFirst().orElseThrow(() -> new RuntimeException("칼슘 성분을 찾을 수 없습니다."));
+        ProductIngredient 비타민D = productIngredientRepository.findByIngredientName("비타민D").stream().findFirst().orElseThrow(() -> new RuntimeException("비타민D 성분을 찾을 수 없습니다."));
+        ProductIngredient 마그네슘 = productIngredientRepository.findByIngredientName("마그네슘").stream().findFirst().orElseThrow(() -> new RuntimeException("마그네슘 성분을 찾을 수 없습니다."));
+        ProductIngredient 비타민C = productIngredientRepository.findByIngredientName("비타민C").stream().findFirst().orElseThrow(() -> new RuntimeException("비타민C 성분을 찾을 수 없습니다."));
+        ProductIngredient 코엔자임Q10 = productIngredientRepository.findByIngredientName("코엔자임Q10").stream().findFirst().orElseThrow(() -> new RuntimeException("코엔자임Q10 성분을 찾을 수 없습니다."));
+        ProductIngredient 오메가3 = productIngredientRepository.findByIngredientName("오메가-3").stream().findFirst().orElseThrow(() -> new RuntimeException("오메가-3 성분을 찾을 수 없습니다."));
+        ProductIngredient 루테인 = productIngredientRepository.findByIngredientName("루테인").stream().findFirst().orElseThrow(() -> new RuntimeException("루테인 성분을 찾을 수 없습니다."));
+        ProductIngredient 콜라겐 = productIngredientRepository.findByIngredientName("콜라겐").stream().findFirst().orElseThrow(() -> new RuntimeException("콜라겐 성분을 찾을 수 없습니다."));
+        ProductIngredient 인지질 = productIngredientRepository.findByIngredientName("인지질(PS)").stream().findFirst().orElseThrow(() -> new RuntimeException("인지질(PS) 성분을 찾을 수 없습니다."));
+        ProductIngredient 비오틴 = productIngredientRepository.findByIngredientName("비오틴").stream().findFirst().orElseThrow(() -> new RuntimeException("비오틴 성분을 찾을 수 없습니다."));
 
         // 📌 전체 상품 데이터 추가
         List<Product> products = Arrays.asList(
