@@ -61,20 +61,34 @@ export const fetchFilteredProducts = createAsyncThunk(
 
 // 특정 카테고리에 해당하는 상품 목록 가져오기
 export const fetchProductsByCategory = createAsyncThunk(
-    "products/fetchProductsByCategory",
-    async (categoryId, { rejectWithValue }) => {
+  "products/fetchProductsByCategory",
+  async (categoryId, { rejectWithValue }) => {
+    try {
+      const response = await fetchWithAuth(`/api/products/by-category/${categoryId}`);
+      if (!response.ok) {
+        throw new Error("상품 데이터를 가져오지 못했습니다.");
+      }
+      return await response.json();
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const fetchSortedProducts = createAsyncThunk(
+    "products/fetchSortedProducts",
+    async (_, { rejectWithValue }) => {
         try {
-            const response = await fetchWithAuth(`${API_URL}products/by-category/${categoryId}`, { method: "GET" });
+            const response = await fetchWithAuth(`${API_URL}products/sorted-by-category`, { method: "GET" });
 
             if (!response.ok) {
                 const errorData = await response.json();
                 return rejectWithValue(errorData.message || "알 수 없는 에러");
             }
 
-            const data = await response.json();
-            return data;
+            return await response.json();
         } catch (error) {
-            return rejectWithValue("카테고리별 상품 가져오기 실패: 네트워크 또는 서버 오류");
+            return rejectWithValue("상품 정렬 실패: 네트워크 또는 서버 오류");
         }
     }
 );

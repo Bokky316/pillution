@@ -1,26 +1,30 @@
 package com.javalab.student.service;
 
 import com.javalab.student.dto.*;
-import com.javalab.student.entity.Product;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Service
 public interface ProductService {
 
+    /** 상품 생성 */
     ProductDto createProduct(ProductFormDto productFormDto);
 
+    /** 상품 정보 수정 */
     ProductDto updateProduct(Long id, ProductFormDto productFormDto);
 
+    /** 상품 단건 조회 */
     ProductDto getProductById(Long id);
 
-    PageResponseDTO<ProductDto> getAllProducts(PageRequestDTO pageRequestDTO);
-
+    /** 상품 활성화/비활성화 */
     void toggleProductActive(Long id);
 
-    // 카테고리 포함된 상품 리스트 조회
+    /** 전체 상품 목록 조회 */
     List<ProductResponseDTO> getProductList();
 
-    List<ProductResponseDTO> getProductsByCategoryAndIngredient(Long categoryId, Long ingredientId);
+    /** 영양 성분과 카테고리 기준으로 정렬된 상품 조회 */
+    List<ProductResponseDTO> getProductsSortedByIngredientAndCategory(Long ingredientId);
 
     List<ProductResponseDTO> getProductsByCategory(Long categoryId);
 }

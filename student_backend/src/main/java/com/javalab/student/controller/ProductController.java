@@ -10,8 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 
 import java.util.List;
@@ -31,9 +29,7 @@ public class ProductController {
         this.productService = productService;
     }
 
-    /**
-     * 특정 상품 상세 정보 조회
-     */
+    /** 특정 상품 상세 정보 조회 */
     @GetMapping("/{productId}")
     public ResponseEntity<Product> getProductDetails(@PathVariable Long productId) {
         try {
@@ -49,13 +45,10 @@ public class ProductController {
         }
     }
 
-    /**
-     * 상품 등록
-     */
+    /** 상품 등록 */
     @PostMapping
     public ResponseEntity<ProductDto> createProduct(@RequestBody @Valid ProductFormDto productFormDto) {
         log.info("상품 등록 요청 수신: {}", productFormDto);
-
         try {
             ProductDto savedProduct = productService.createProduct(productFormDto);
             log.info("상품 등록 성공: {}", savedProduct);
@@ -66,49 +59,41 @@ public class ProductController {
         }
     }
 
-    /**
-     * 상품 수정
-     */
+    /** 상품 수정 */
     @PutMapping("/{id}")
     public ResponseEntity<ProductDto> updateProduct(@PathVariable("id") Long id, @RequestBody @Valid ProductFormDto productFormDto) {
         return ResponseEntity.ok(productService.updateProduct(id, productFormDto));
     }
 
-    /**
-     * 페이징 처리된 상품 목록 조회
-     */
+    /** 전체 상품 목록 조회 */
     @GetMapping
-    public ResponseEntity<PageResponseDTO<ProductDto>> getAllProducts(
-            @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "size", defaultValue = "20") int size) {
-
-        PageRequestDTO pageRequestDTO = PageRequestDTO.builder()
-                .page(page)
-                .size(size)
-                .build();
-        log.info("페이지 요청: {}", pageRequestDTO);
-
-        PageResponseDTO<ProductDto> responseDTO = productService.getAllProducts(pageRequestDTO);
-        return ResponseEntity.ok(responseDTO);
+    public ResponseEntity<List<ProductResponseDTO>> getAllProducts() {
+        List<ProductResponseDTO> products = productService.getProductList();
+        return ResponseEntity.ok(products);
     }
 
-    /**
-     * 상품 활성/비활성
-     */
+    /** 상품 활성/비활성 */
     @PatchMapping("/{id}/toggle-active")
     public ResponseEntity<Void> toggleProductActive(@PathVariable("id") Long id) {
         productService.toggleProductActive(id);
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/filter")
-    public ResponseEntity<List<ProductResponseDTO>> filterProducts(
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Long ingredientId) {
-
-        List<ProductResponseDTO> filteredProducts = productService.getProductsByCategoryAndIngredient(categoryId, ingredientId);
-        return ResponseEntity.ok(filteredProducts);
+    /** 영양 성분 기반으로 카테고리별로 정렬된 상품 리스트 API */
+    @GetMapping("/sorted-by-ingredient-and-category")
+    public ResponseEntity<List<ProductResponseDTO>> getProductsSortedByIngredientAndCategory(
+            @RequestParam Long ingredientId) {
+        List<ProductResponseDTO> products = productService.getProductsSortedByIngredientAndCategory(ingredientId);
+        return ResponseEntity.ok(products);
     }
 
+    /** 특정 카테고리에 속한 상품 목록 조회 */
+    @GetMapping("/by-category/{categoryId}")
+    public ResponseEntity<List<ProductResponseDTO>> getProductsByCategory(@PathVariable Long categoryId) {
+        List<ProductResponseDTO> products = productService.getProductsByCategory(categoryId);
+        if (products.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(products);
+        }
+        return ResponseEntity.ok(products);
+    }
 }
-
