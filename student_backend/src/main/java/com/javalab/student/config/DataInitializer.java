@@ -1,3 +1,4 @@
+/*
 
 
 package com.javalab.student.config;
@@ -673,3 +674,4 @@ public class DataInitializer implements CommandLineRunner {
 }
 
 
+*/
