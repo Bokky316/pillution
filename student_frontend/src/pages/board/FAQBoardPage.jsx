@@ -17,10 +17,8 @@ import {
     DialogContent,
     DialogContentText,
     DialogTitle,
-    Snackbar,
-    IconButton
+    Snackbar
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import {
     fetchFAQPosts,
     deleteFAQPost,
@@ -41,7 +39,7 @@ function FAQBoardPage() {
     } = useSelector((state) => state.faq);
     const auth = useSelector((state) => state.auth);
 
-    const [expandedPosts, setExpandedPosts] = useState({});
+    const [expandedPostId, setExpandedPostId] = useState(null);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [postToDelete, setPostToDelete] = useState(null);
     const [snackbar, setSnackbar] = useState({ open: false, message: '' });
@@ -68,10 +66,7 @@ function FAQBoardPage() {
     if (error) return <Typography align="center" color="error" variant="h6">{error}</Typography>;
 
     const handlePostClick = (postId) => {
-        setExpandedPosts((prev) => ({
-            ...prev,
-            [postId]: !prev[postId]
-        }));
+        setExpandedPostId(prevPostId => (prevPostId === postId ? null : postId));
     };
 
     const handleEditPost = (postId) => {
@@ -139,10 +134,10 @@ function FAQBoardPage() {
                 </Box>
             )}
 
-            <TableContainer component={Paper} sx={{ width: '100%', overflowX: 'auto', marginBottom: '120px' }}>
+            <TableContainer sx={{ marginBottom: '180px' }}>
                 <Table>
                     <TableHead>
-                        <TableRow>
+                        <TableRow sx={{ borderTop: '2px solid #888' }}>
                             <TableCell align="center" style={{ width: '15%', fontWeight: 'bold' }}>분류</TableCell>
                             <TableCell align="left" style={{ width: '65%', fontWeight: 'bold' }}>제목</TableCell>
                             {userRole === 'ADMIN' && (
@@ -175,13 +170,13 @@ function FAQBoardPage() {
                                             </TableCell>
                                         )}
                                     </TableRow>
-                                    {expandedPosts[post.id] && (
+                                    {expandedPostId === post.id && (
                                         <TableRow>
                                             <TableCell
                                                 colSpan={userRole === 'ADMIN' ? 3 : 2}
-                                                sx={{ backgroundColor: '#f5f5f5', padding: '20px 60px', paddingLeft: '70px' }}
+                                                sx={{ backgroundColor: '#f5f5f5', padding: '20px 60px', paddingLeft: '80px' }}
                                             >
-                                                <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
+                                                <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", marginTop: 2, marginBottom: 2 }}>
                                                     {post.content}
                                                 </Typography>
                                             </TableCell>

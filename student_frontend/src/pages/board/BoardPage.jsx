@@ -41,7 +41,7 @@ function BoardPage() {
     return (
         <Container maxWidth="lg">
             {/* 상단 타이틀 */}
-            <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ my: 4 }}>
+            <Typography variant="h4" component="h1" gutterBottom align="left" sx={{ my: 4 }}>
                 필루션 소식
             </Typography>
 

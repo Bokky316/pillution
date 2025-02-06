@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import {
     Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, Paper, Button, Typography, Box,
+    TableHead, TableRow, Button, Typography, Box,
     Snackbar, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
     IconButton
 } from '@mui/material';
@@ -65,7 +65,7 @@ function NewsBoardPage() {
                     setSnackbarMessage("게시글이 성공적으로 삭제되었습니다.");
                     setSnackbarOpen(true);
                 })
-                .catch((error) => {
+                .catch(() => {
                     setSnackbarMessage("게시글 삭제 중 오류가 발생했습니다.");
                     setSnackbarOpen(true);
                 });
@@ -79,6 +79,11 @@ function NewsBoardPage() {
 
     const handleCloseSnackbar = () => {
         setSnackbarOpen(false);
+    };
+
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`;
     };
 
     if (loading) return <Typography align="center" variant="h6">로딩 중...</Typography>;
@@ -106,24 +111,39 @@ function NewsBoardPage() {
                 </Box>
             )}
 
-            <TableContainer component={Paper} elevation={3}>
-                <Table>
+            <TableContainer>
+                <Table sx={{ borderLeft: 'none', borderRight: 'none' }}>
                     <TableHead>
-                        <TableRow>
-                            <TableCell align="left" style={{ fontWeight: 'bold' }}>분류</TableCell>
-                            <TableCell align="left" style={{ fontWeight: 'bold' }}>제목</TableCell>
-                            <TableCell align="left" style={{ fontWeight: 'bold' }}>작성일</TableCell>
+                        <TableRow sx={{ borderTop: '2px solid #888' }}>
+                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>분류</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>제목</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>작성일</TableCell>
                             {userRole === 'ADMIN' && (
-                                <TableCell align="center" style={{ fontWeight: 'bold' }}>관리</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold' }}>관리</TableCell>
                             )}
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {posts.length > 0 ? (
                             posts.map(post => (
-                                <TableRow key={post.id} hover>
-                                    <TableCell>{post.category}</TableCell>
-                                    <TableCell>
+                                <TableRow key={post.id}>
+                                    <TableCell align="center">
+                                        <Typography
+                                            sx={{
+                                                display: "inline-block",
+                                                backgroundColor: "primary.main",
+                                                color: "white",
+                                                borderRadius: "20px",
+                                                padding: "2px 10px",
+                                                fontSize: "0.75rem",
+                                                fontWeight: "bold",
+                                            }}
+                                        >
+                                            {post.category}
+                                        </Typography>
+                                    </TableCell>
+
+                                    <TableCell align="left">
                                         <Link
                                             to={`/post/${post.id}`}
                                             style={{ textDecoration: 'none', color: 'black' }}
@@ -131,8 +151,8 @@ function NewsBoardPage() {
                                             {post.title}
                                         </Link>
                                     </TableCell>
-                                    <TableCell>
-                                        {new Date(post.createdAt).toLocaleDateString()}
+                                    <TableCell align="center" sx={{ color: '#666' }}>
+                                        {formatDate(post.createdAt)}
                                     </TableCell>
                                     {userRole === 'ADMIN' && (
                                         <TableCell align="center">
@@ -187,10 +207,10 @@ function NewsBoardPage() {
             <Snackbar
                 anchorOrigin={{
                     vertical: 'bottom',
-                    horizontal: 'left',  // 왼쪽으로 변경
+                    horizontal: 'left',
                 }}
                 open={snackbarOpen}
-                autoHideDuration={3000}  // 3초로 변경
+                autoHideDuration={3000}
                 onClose={handleCloseSnackbar}
                 message={snackbarMessage}
                 action={
@@ -204,28 +224,6 @@ function NewsBoardPage() {
                     </IconButton>
                 }
             />
-
-            <Dialog
-                open={deleteDialogOpen}
-                onClose={handleDeleteCancel}
-                aria-labelledby="alert-dialog-title"
-                aria-describedby="alert-dialog-description"
-            >
-                <DialogTitle id="alert-dialog-title">{"게시글 삭제 확인"}</DialogTitle>
-                <DialogContent>
-                    <DialogContentText id="alert-dialog-description">
-                        정말로 이 게시글을 삭제하시겠습니까?
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleDeleteConfirm} color="primary" autoFocus>
-                        확인
-                    </Button>
-                    <Button onClick={handleDeleteCancel} color="error">
-                        취소
-                    </Button>
-                </DialogActions>
-            </Dialog>
         </Box>
     );
 }

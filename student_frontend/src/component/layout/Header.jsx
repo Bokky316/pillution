@@ -27,7 +27,8 @@ const Header = () => {
         handleMenuClose();
         if (path === "/cart" && !isLoggedIn) {
             navigate("/login");
-        } else {
+        }
+        else {
             navigate(path);
         }
     };
@@ -44,13 +45,6 @@ const Header = () => {
             console.error("로그아웃 실패:", error.message);
             alert("로그아웃 중 오류가 발생했습니다.");
         }
-    };
-
-    const handleMenuItemClick = (path) => {
-        if (path === "/board") {
-          sessionStorage.setItem('headerBoardClick', 'true');
-        }
-        navigate(path);
     };
 
     return (

@@ -101,7 +101,6 @@ function PostDetailPage() {
                     <Table sx={{ borderCollapse: 'collapse' }}>
                         <TableBody>
                             <TableRow
-                                hover
                                 onClick={() => prevPost && navigate(`/post/${prevPost.id}`)}
                                 style={{ cursor: prevPost ? 'pointer' : 'default' }}
                             >
@@ -110,7 +109,6 @@ function PostDetailPage() {
                                 </TableCell>
                             </TableRow>
                             <TableRow
-                                hover
                                 onClick={() => nextPost && navigate(`/post/${nextPost.id}`)}
                                 style={{ cursor: nextPost ? 'pointer' : 'default' }}
                             >
@@ -128,7 +126,7 @@ function PostDetailPage() {
                         color="primary"
                         size="medium"
                         onClick={() => navigate('/board')}
-                        sx={{ mt: 2, px: 4, py: 2 }}
+                        sx={{ mt: 2, px: 4, py: 1 }} // py 값을 1로 줄여서 위아래 크기를 줄임
                     >
                         목록으로 가기
                     </Button>
