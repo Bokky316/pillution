@@ -84,5 +84,4 @@ public class ProductServiceImpl implements ProductService {
                 .map(ProductResponseDTO::fromEntity)
                 .collect(Collectors.toList());
     }
-
 }
