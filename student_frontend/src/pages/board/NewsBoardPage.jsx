@@ -18,11 +18,13 @@ function NewsBoardPage() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
+    // 상태 관리
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [postToDelete, setPostToDelete] = useState(null);
 
+    // Redux 상태 가져오기
     const {
         posts,
         loading,
@@ -32,38 +34,45 @@ function NewsBoardPage() {
     } = useSelector(state => state.news);
 
     const auth = useSelector((state) => state.auth);
-
     const userRole = auth?.user?.authorities?.some(auth => auth.authority === "ROLE_ADMIN") ? "ADMIN" : "USER";
 
+    // 게시글 데이터 가져오기
     useEffect(() => {
         dispatch(fetchNewsPosts({ page: currentPage }));
     }, [dispatch, currentPage]);
 
+    // 사용자 인증 정보 로컬 스토리지에 저장
     useEffect(() => {
         if (auth?.user) {
             localStorage.setItem("auth", JSON.stringify(auth));
         }
     }, [auth]);
 
+    // 페이지 이동 처리
     const handlePageClick = (page) => {
         dispatch(setCurrentPage(page));
     };
 
+    // 게시글 수정 버튼 클릭 처리
     const handleEditPost = (postId) => {
         navigate(`/post/${postId}/edit`);
     };
 
+    // 삭제 버튼 클릭 처리 (삭제 확인 다이얼로그 열기)
     const handleDeleteClick = (postId) => {
         setPostToDelete(postId);
         setDeleteDialogOpen(true);
     };
 
+    // 삭제 확인 처리
     const handleDeleteConfirm = () => {
         if (postToDelete) {
             dispatch(deleteNewsPost(postToDelete))
+                .unwrap() // Redux Toolkit의 unwrap()으로 비동기 작업 결과 처리
                 .then(() => {
                     setSnackbarMessage("게시글이 성공적으로 삭제되었습니다.");
                     setSnackbarOpen(true);
+                    dispatch(fetchNewsPosts({ page: currentPage })); // 삭제 후 목록 새로고침
                 })
                 .catch(() => {
                     setSnackbarMessage("게시글 삭제 중 오류가 발생했습니다.");
@@ -71,16 +80,21 @@ function NewsBoardPage() {
                 });
         }
         setDeleteDialogOpen(false);
+        setPostToDelete(null); // 초기화
     };
 
+    // 삭제 취소 처리
     const handleDeleteCancel = () => {
         setDeleteDialogOpen(false);
+        setPostToDelete(null); // 초기화
     };
 
+    // 스낵바 닫기 처리
     const handleCloseSnackbar = () => {
         setSnackbarOpen(false);
     };
 
+    // 날짜 포맷팅 함수
     const formatDate = (dateString) => {
         const date = new Date(dateString);
         return `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`;
@@ -93,24 +107,20 @@ function NewsBoardPage() {
         <Box maxWidth="lg" mx="auto" p={3} mb={18}>
             <Typography variant="h4" align="center" gutterBottom>공지사항</Typography>
 
+            {/* 관리자 전용 게시글 등록 버튼 */}
             {userRole === 'ADMIN' && (
                 <Box display="flex" justifyContent="flex-end" mb={2}>
                     <Button
                         variant="contained"
                         color="primary"
-                        onClick={() => {
-                            navigate('/post/create', {
-                                state: { defaultCategory: '공지사항' }
-                            });
-                            setSnackbarMessage("새 게시글 작성 페이지로 이동합니다.");
-                            setSnackbarOpen(true);
-                        }}
+                        onClick={() => navigate('/post/create', { state: { defaultCategory: '공지사항' } })}
                     >
                         게시글 등록
                     </Button>
                 </Box>
             )}
 
+            {/* 테이블 렌더링 */}
             <TableContainer>
                 <Table sx={{ borderLeft: 'none', borderRight: 'none' }}>
                     <TableHead>
@@ -142,12 +152,8 @@ function NewsBoardPage() {
                                             {post.category}
                                         </Typography>
                                     </TableCell>
-
                                     <TableCell align="left">
-                                        <Link
-                                            to={`/post/${post.id}`}
-                                            style={{ textDecoration: 'none', color: 'black' }}
-                                        >
+                                        <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'black' }}>
                                             {post.title}
                                         </Link>
                                     </TableCell>
@@ -177,10 +183,7 @@ function NewsBoardPage() {
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell
-                                    colSpan={userRole === 'ADMIN' ? 4 : 3}
-                                    align="center"
-                                >
+                                <TableCell colSpan={userRole === 'ADMIN' ? 4 : 3} align="center">
                                     게시글이 없습니다.
                                 </TableCell>
                             </TableRow>
@@ -189,6 +192,7 @@ function NewsBoardPage() {
                 </Table>
             </TableContainer>
 
+            {/* 페이지네이션 */}
             <Box display="flex" justifyContent="center" gap={0.5} mt={3}>
                 {[...Array(totalPages)].map((_, index) => (
                     <Button
@@ -204,6 +208,7 @@ function NewsBoardPage() {
                 ))}
             </Box>
 
+            {/* 스낵바 */}
             <Snackbar
                 anchorOrigin={{
                     vertical: 'bottom',
@@ -214,16 +219,23 @@ function NewsBoardPage() {
                 onClose={handleCloseSnackbar}
                 message={snackbarMessage}
                 action={
-                    <IconButton
-                        size="small"
-                        aria-label="close"
-                        color="inherit"
-                        onClick={handleCloseSnackbar}
-                    >
+                    <IconButton size="small" aria-label="close" color="inherit" onClick={handleCloseSnackbar}>
                         <CloseIcon fontSize="small" />
                     </IconButton>
                 }
             />
+
+            {/* 삭제 확인 다이얼로그 */}
+            <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
+                <DialogTitle>게시글 삭제</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>정말로 이 게시글을 삭제하시겠습니까?</DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleDeleteConfirm} color="error">삭제</Button>
+                    <Button onClick={handleDeleteCancel} color="primary">취소</Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }

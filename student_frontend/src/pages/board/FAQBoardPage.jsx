@@ -2,86 +2,89 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-    Button,
-    Typography,
-    Box,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Paper,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
-    Snackbar
+    Table, TableBody, TableCell, TableContainer,
+    TableHead, TableRow, Button, Typography, Box,
+    Snackbar, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
+    IconButton
 } from '@mui/material';
+import { Close as CloseIcon } from '@mui/icons-material';
 import {
     fetchFAQPosts,
     deleteFAQPost,
     setSelectedCategory
 } from "../../redux/faqSlice";
 
+// FAQ 카테고리 목록
 const categories = ["전체", "제품", "회원정보", "주문/결제", "교환/반품", "배송", "기타"];
 
 function FAQBoardPage() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
+
+    // Redux 상태에서 필요한 값 가져오기
     const {
-        filteredPosts,
-        selectedCategory,
-        loading,
-        error
+        filteredPosts,  // 선택된 카테고리에 따라 필터링된 게시글 목록
+        selectedCategory,   // 현재 선택된 카테고리
+        loading,    // 로딩 상태
+        error   // 에러 메시지
     } = useSelector((state) => state.faq);
-    const auth = useSelector((state) => state.auth);
+    const auth = useSelector((state) => state.auth);    // 인증 정보 가져오기
 
-    const [expandedPostId, setExpandedPostId] = useState(null);
-    const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-    const [postToDelete, setPostToDelete] = useState(null);
-    const [snackbar, setSnackbar] = useState({ open: false, message: '' });
+    // 로컬 상태 관리
+    const [expandedPostId, setExpandedPostId] = useState(null);    // 확장된 게시글 ID
+    const [openDeleteDialog, setOpenDeleteDialog] = useState(false);    // 삭제 다이얼로그 열림 상태
+    const [postToDelete, setPostToDelete] = useState(null);    // 삭제할 게시글 ID
+    const [snackbar, setSnackbar] = useState({ open: false, message: '' });    // 스낵바 상태
 
+    // 사용자 권한 확인 (관리자인지 여부)
     const userRole = auth?.user?.authorities?.some(auth => auth.authority === "ROLE_ADMIN") ? "ADMIN" : "USER";
 
+    // 컴포넌트가 처음 렌더링될 때 FAQ 게시글 목록 가져오기
     useEffect(() => {
         dispatch(fetchFAQPosts());
     }, [dispatch]);
 
+    // 인증 정보가 변경될 때 로컬 스토리지에 저장
     useEffect(() => {
         if (auth?.user) {
             localStorage.setItem("auth", JSON.stringify(auth));
         }
     }, [auth]);
 
+    // 새 게시글 등록 시 스낵바 메시지 표시
     useEffect(() => {
         if (location.state?.newPost) {
             setSnackbar({ open: true, message: "새 게시글이 등록되었습니다." });
         }
     }, [location.state]);
 
+    // 로딩 중일 때 표시할 UI
     if (loading) return <Typography align="center" variant="h6">로딩 중...</Typography>;
+    // 에러 발생 시 표시할 UI
     if (error) return <Typography align="center" color="error" variant="h6">{error}</Typography>;
 
+    // 게시글 클릭 시 확장/축소 처리
     const handlePostClick = (postId) => {
         setExpandedPostId(prevPostId => (prevPostId === postId ? null : postId));
     };
 
+    // 게시글 수정 버튼 클릭 시 수정 페이지로 이동
     const handleEditPost = (postId) => {
         navigate(`/faq/post/${postId}/edit`);
     };
 
+    // 삭제 버튼 클릭 시 삭제 다이얼로그 열기
     const handleDeletePost = (postId) => {
         setPostToDelete(postId);
         setOpenDeleteDialog(true);
     };
 
+    // 삭제 확인 처리 함수
     const handleConfirmDelete = async () => {
         if (postToDelete) {
             try {
-                await dispatch(deleteFAQPost(postToDelete)).unwrap();
+                await dispatch(deleteFAQPost(postToDelete)).unwrap();   // 삭제 요청 디스패치 및 결과 확인
                 setSnackbar({ open: true, message: "게시글이 삭제되었습니다." });
             } catch (err) {
                 setSnackbar({ open: true, message: "게시글 삭제에 실패했습니다." });
@@ -91,11 +94,13 @@ function FAQBoardPage() {
         setPostToDelete(null);
     };
 
+    // 삭제 다이얼로그 닫기 처리 함수
     const handleCloseDeleteDialog = () => {
         setOpenDeleteDialog(false);
         setPostToDelete(null);
     };
 
+    // 스낵바 닫기 처리 함수
     const handleCloseSnackbar = () => {
         setSnackbar({ ...snackbar, open: false });
     };
@@ -104,6 +109,7 @@ function FAQBoardPage() {
         <Box sx={{ width: '100%', overflowX: 'hidden', padding: { xs: '0 8px', sm: '0 16px', md: '0 24px' } }}>
             <Typography variant="h4" align="center" gutterBottom sx={{ mt: 3 }}>자주 묻는 질문</Typography>
 
+            {/* 카테고리 버튼 */}
             <Box display="flex" justifyContent="center" mb={3} flexWrap="wrap">
                 {categories.map(category => (
                     <Button
@@ -120,6 +126,7 @@ function FAQBoardPage() {
                 ))}
             </Box>
 
+            {/* 관리자 전용 게시글 등록 버튼 */}
             {userRole === 'ADMIN' && (
                 <Box display="flex" justifyContent="flex-end" mb={2}>
                     <Button
@@ -134,6 +141,7 @@ function FAQBoardPage() {
                 </Box>
             )}
 
+            {/* 게시글 테이블 */}
             <TableContainer sx={{ marginBottom: '180px' }}>
                 <Table>
                     <TableHead>
@@ -146,6 +154,7 @@ function FAQBoardPage() {
                         </TableRow>
                     </TableHead>
                     <TableBody>
+                        {/* 게시글 목록 렌더링 */}
                         {Array.isArray(filteredPosts) && filteredPosts.length > 0 ? (
                             [...filteredPosts].reverse().map(post => (
                                 <React.Fragment key={post.id}>
@@ -170,6 +179,7 @@ function FAQBoardPage() {
                                             </TableCell>
                                         )}
                                     </TableRow>
+                                    {/* 게시글 내용 확장 */}
                                     {expandedPostId === post.id && (
                                         <TableRow>
                                             <TableCell
@@ -185,6 +195,7 @@ function FAQBoardPage() {
                                 </React.Fragment>
                             ))
                         ) : (
+                            /* 게시글이 없을 경우 */
                             <TableRow>
                                 <TableCell colSpan={userRole === 'ADMIN' ? 3 : 2} align="center">
                                     게시글이 없습니다.
@@ -195,18 +206,26 @@ function FAQBoardPage() {
                 </Table>
             </TableContainer>
 
+            {/* 삭제 확인 다이얼로그 */}
             <Dialog open={openDeleteDialog} onClose={handleCloseDeleteDialog}>
                 <DialogTitle>삭제 확인</DialogTitle>
                 <DialogContent>
                     <DialogContentText>정말로 이 게시글을 삭제하시겠습니까?</DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseDeleteDialog} color="primary">취소</Button>
                     <Button onClick={handleConfirmDelete} color="error" autoFocus>삭제</Button>
+                    <Button onClick={handleCloseDeleteDialog} color="primary">취소</Button>
                 </DialogActions>
             </Dialog>
 
-            <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={handleCloseSnackbar} message={snackbar.message} />
+            {/* 스낵바 */}
+            <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={handleCloseSnackbar} message={snackbar.message}
+                action={
+                    <IconButton size="small" aria-label="close" color="inherit" onClick={handleCloseSnackbar}>
+                        <CloseIcon fontSize="small" />
+                    </IconButton>
+                }
+            />
         </Box>
     );
 }
