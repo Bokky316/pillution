@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -24,8 +24,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import {
     fetchFAQPosts,
     deleteFAQPost,
-    setSelectedCategory,
-    togglePost
+    setSelectedCategory
 } from "../../redux/faqSlice";
 
 const categories = ["전체", "제품", "회원정보", "주문/결제", "교환/반품", "배송", "기타"];
@@ -37,14 +36,15 @@ function FAQBoardPage() {
     const {
         filteredPosts,
         selectedCategory,
-        expandedPosts,
         loading,
         error
     } = useSelector((state) => state.faq);
     const auth = useSelector((state) => state.auth);
-    const [openDeleteDialog, setOpenDeleteDialog] = React.useState(false);
-    const [postToDelete, setPostToDelete] = React.useState(null);
-    const [snackbar, setSnackbar] = React.useState({ open: false, message: '' });
+
+    const [expandedPosts, setExpandedPosts] = useState({});
+    const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+    const [postToDelete, setPostToDelete] = useState(null);
+    const [snackbar, setSnackbar] = useState({ open: false, message: '' });
 
     const userRole = auth?.user?.authorities?.some(auth => auth.authority === "ROLE_ADMIN") ? "ADMIN" : "USER";
 
@@ -68,7 +68,10 @@ function FAQBoardPage() {
     if (error) return <Typography align="center" color="error" variant="h6">{error}</Typography>;
 
     const handlePostClick = (postId) => {
-        dispatch(togglePost(postId));
+        setExpandedPosts((prev) => ({
+            ...prev,
+            [postId]: !prev[postId]
+        }));
     };
 
     const handleEditPost = (postId) => {
@@ -103,18 +106,8 @@ function FAQBoardPage() {
     };
 
     return (
-        <Box
-            sx={{
-                width: '100%',
-                overflowX: 'hidden',
-                padding: {
-                    xs: '0 8px',
-                    sm: '0 16px',
-                    md: '0 24px'
-                }
-            }}
-        >
-            <Typography variant="h4" align="center" gutterBottom>자주 묻는 질문</Typography>
+        <Box sx={{ width: '100%', overflowX: 'hidden', padding: { xs: '0 8px', sm: '0 16px', md: '0 24px' } }}>
+            <Typography variant="h4" align="center" gutterBottom sx={{ mt: 3 }}>자주 묻는 질문</Typography>
 
             <Box display="flex" justifyContent="center" mb={3} flexWrap="wrap">
                 {categories.map(category => (
@@ -146,18 +139,7 @@ function FAQBoardPage() {
                 </Box>
             )}
 
-            <TableContainer
-                component={Paper}
-                sx={{
-                    width: '100%',
-                    overflowX: 'auto',
-                    marginBottom: '120px',
-                    '& table': {
-                        width: '100%',
-                        minWidth: '600px'
-                    }
-                }}
-            >
+            <TableContainer component={Paper} sx={{ width: '100%', overflowX: 'auto', marginBottom: '120px' }}>
                 <Table>
                     <TableHead>
                         <TableRow>
@@ -173,27 +155,20 @@ function FAQBoardPage() {
                             [...filteredPosts].reverse().map(post => (
                                 <React.Fragment key={post.id}>
                                     <TableRow>
-                                        <TableCell align="center" onClick={() => handlePostClick(post.id)}>
-                                            {post.category}
-                                        </TableCell>
-                                        <TableCell onClick={() => handlePostClick(post.id)}>
+                                        <TableCell align="center">{post.category}</TableCell>
+                                        <TableCell
+                                            onClick={() => handlePostClick(post.id)}
+                                            sx={{ cursor: "pointer" }}
+                                        >
                                             {post.title}
                                         </TableCell>
                                         {userRole === 'ADMIN' && (
                                             <TableCell align="center">
                                                 <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
-                                                    <Button
-                                                        variant="outlined"
-                                                        color="primary"
-                                                        onClick={() => handleEditPost(post.id)}
-                                                    >
+                                                    <Button variant="outlined" color="primary" onClick={() => handleEditPost(post.id)}>
                                                         수정
                                                     </Button>
-                                                    <Button
-                                                        variant="outlined"
-                                                        color="error"
-                                                        onClick={() => handleDeletePost(post.id)}
-                                                    >
+                                                    <Button variant="outlined" color="error" onClick={() => handleDeletePost(post.id)}>
                                                         삭제
                                                     </Button>
                                                 </Box>
@@ -204,7 +179,7 @@ function FAQBoardPage() {
                                         <TableRow>
                                             <TableCell
                                                 colSpan={userRole === 'ADMIN' ? 3 : 2}
-                                                sx={{ backgroundColor: '#f5f5f5', padding: '20px 60px' }}
+                                                sx={{ backgroundColor: '#f5f5f5', padding: '20px 60px', paddingLeft: '70px' }}
                                             >
                                                 <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
                                                     {post.content}
@@ -225,40 +200,18 @@ function FAQBoardPage() {
                 </Table>
             </TableContainer>
 
-            <Dialog
-                open={openDeleteDialog}
-                onClose={handleCloseDeleteDialog}
-                aria-labelledby="alert-dialog-title"
-                aria-describedby="alert-dialog-description"
-            >
-                <DialogTitle id="alert-dialog-title">삭제 확인</DialogTitle>
+            <Dialog open={openDeleteDialog} onClose={handleCloseDeleteDialog}>
+                <DialogTitle>삭제 확인</DialogTitle>
                 <DialogContent>
-                    <DialogContentText id="alert-dialog-description">
-                        정말로 이 게시글을 삭제하시겠습니까?
-                    </DialogContentText>
+                    <DialogContentText>정말로 이 게시글을 삭제하시겠습니까?</DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseDeleteDialog} color="primary">
-                        취소
-                    </Button>
-                    <Button onClick={handleConfirmDelete} color="error" autoFocus>
-                        삭제
-                    </Button>
+                    <Button onClick={handleCloseDeleteDialog} color="primary">취소</Button>
+                    <Button onClick={handleConfirmDelete} color="error" autoFocus>삭제</Button>
                 </DialogActions>
             </Dialog>
 
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={3000}
-                onClose={handleCloseSnackbar}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                message={snackbar.message}
-                action={
-                    <IconButton size="small" aria-label="close" color="inherit" onClick={handleCloseSnackbar}>
-                        <CloseIcon fontSize="small" />
-                    </IconButton>
-                }
-            />
+            <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={handleCloseSnackbar} message={snackbar.message} />
         </Box>
     );
 }

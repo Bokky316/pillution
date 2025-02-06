@@ -46,6 +46,13 @@ const Header = () => {
         }
     };
 
+    const handleMenuItemClick = (path) => {
+        if (path === "/board") {
+          sessionStorage.setItem('headerBoardClick', 'true');
+        }
+        navigate(path);
+    };
+
     return (
         <AppBar position="static" className="nav-bar" sx={{
             width: '100vw',

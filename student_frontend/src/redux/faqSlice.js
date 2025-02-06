@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-// Async thunk for fetching FAQ posts
+// FAQ 게시물 가져오기를 위한 비동기 Async
 export const fetchFAQPosts = createAsyncThunk(
     'faq/fetchFAQPosts',
     async (_, { rejectWithValue }) => {
@@ -14,7 +14,7 @@ export const fetchFAQPosts = createAsyncThunk(
     }
 );
 
-// Async thunk for deleting a FAQ post
+// FAQ 게시물 삭제를 위한 비동기식 Async
 export const deleteFAQPost = createAsyncThunk(
     'faq/deleteFAQPost',
     async (postId, { rejectWithValue }) => {

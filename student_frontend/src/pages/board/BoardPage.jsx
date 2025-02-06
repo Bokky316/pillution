@@ -11,29 +11,43 @@ function BoardPage() {
     const currentBoard = useSelector(state => state.board.currentBoard);
     const location = useLocation();
 
-    // 새로고침 시 localStorage에서 현재 게시판 상태를 불러오기
     useEffect(() => {
-        const savedBoard = localStorage.getItem("currentBoard") || "news";
-        dispatch(setCurrentBoard(savedBoard));
-    }, [location, dispatch]);
+        const isNewVisit = !sessionStorage.getItem('boardPageVisited');
+        const isHeaderClick = sessionStorage.getItem('headerBoardClick') === 'true';
 
-    // 게시판 변경 시 localStorage에 저장
+        if (isNewVisit || isHeaderClick) {
+            // 새로운 방문 또는 헤더를 통한 재접근
+            dispatch(setCurrentBoard("news"));
+            localStorage.setItem("currentBoard", "news");
+            sessionStorage.setItem('boardPageVisited', 'true');
+            sessionStorage.removeItem('headerBoardClick');
+        } else {
+            // 새로고침
+            const savedBoard = localStorage.getItem("currentBoard") || "news";
+            dispatch(setCurrentBoard(savedBoard));
+        }
+
+        // 컴포넌트가 언마운트될 때 세션 스토리지 클리어
+        return () => {
+            sessionStorage.removeItem('boardPageVisited');
+        };
+    }, [location.key, dispatch]);
+
     const handleBoardChange = (board) => {
         dispatch(setCurrentBoard(board));
         localStorage.setItem("currentBoard", board);
     };
 
     return (
-        <Container sx={{ mt: 4, mb: 6 }}>
+        <Container maxWidth="lg">
             {/* 상단 타이틀 */}
-            <Box textAlign="left" mb={3}>
-                <Typography variant="h4" sx={{ fontWeight: "bold" }}>필루션 소식</Typography>
-            </Box>
+            <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ my: 4 }}>
+                필루션 소식
+            </Typography>
 
             {/* 탭 메뉴 */}
-            <Box display="flex" justifyContent="center">
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
                 <Button
-                    disableRipple
                     onClick={() => handleBoardChange("news")}
                     sx={{
                         borderRadius: 0,
@@ -48,7 +62,6 @@ function BoardPage() {
                     공지사항
                 </Button>
                 <Button
-                    disableRipple
                     onClick={() => handleBoardChange("faq")}
                     sx={{
                         borderRadius: 0,
