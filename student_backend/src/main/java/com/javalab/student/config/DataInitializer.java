@@ -15,8 +15,6 @@ import java.util.List;
 
 import com.javalab.student.entity.Product;
 import com.javalab.student.entity.ProductCategory;
-import com.javalab.student.entity.ProductCategoryMapping;
-import com.javalab.student.repository.ProductCategoryMappingRepository;
 import com.javalab.student.repository.ProductCategoryRepository;
 import com.javalab.student.repository.ProductRepository;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +26,7 @@ public class DataInitializer implements CommandLineRunner {
 
     private final ProductCategoryRepository productCategoryRepository;
     private final ProductRepository productRepository;
-    private final ProductCategoryMappingRepository productCategoryMappingRepository;
+    private final ProductIngredientRepository productIngredientRepository;
     private final SurveyCategoryRepository categoryRepository;
     private final SurveySubCategoryRepository subCategoryRepository;
     private final SurveyQuestionRepository questionRepository;
@@ -49,8 +47,8 @@ public class DataInitializer implements CommandLineRunner {
         createLifestyleQuestions(category3);
 
         initializeProductCategories();
+        initializeProductIngredients();
         initializeProducts();
-        initializeProductCategoryMappings();
     }
 
     private SurveyCategory createCategory(String name) {
@@ -487,78 +485,91 @@ public class DataInitializer implements CommandLineRunner {
         );
 
         categories.forEach(category -> {
-            ProductCategory productCategory = new ProductCategory();
-            productCategory.setName(category);
-            productCategoryRepository.save(productCategory);
+            if (productCategoryRepository.findByName(category).isEmpty()) {
+                ProductCategory productCategory = new ProductCategory();
+                productCategory.setName(category);
+                productCategoryRepository.save(productCategory);
+            }
         });
     }
 
+    private void initializeProductIngredients() {
+        List<String> ingredients = Arrays.asList(
+                "오메가-3", "코엔자임Q10", "비타민B군", "비타민C", "철분",
+                "아연", "마그네슘", "비오틴", "루테인", "인지질(PS)",
+                "GABA", "칼슘", "비타민D", "크랜베리 추출물", "글루타민",
+                "콜라겐", "엽산", "감마리놀렌산(GLA)", "쏘팔메토", "아르기닌"
+        );
+
+        ingredients.forEach(ingredient -> {
+            if (productIngredientRepository.findByIngredientName(ingredient).isEmpty()) {
+                ProductIngredient productIngredient = new ProductIngredient();
+                productIngredient.setIngredientName(ingredient);
+                productIngredientRepository.save(productIngredient);
+            }
+        });
+    }
+
+    @Transactional
     private void initializeProducts() {
+        // 📌 카테고리 가져오기
+        ProductCategory 여성건강 = productCategoryRepository.findByName("여성 건강/PMS").orElseThrow();
+        ProductCategory 관절뼈 = productCategoryRepository.findByName("관절/뼈").orElseThrow();
+        ProductCategory 구강관리 = productCategoryRepository.findByName("구강 관리").orElseThrow();
+        ProductCategory 다이어트 = productCategoryRepository.findByName("다이어트").orElseThrow();
+        ProductCategory 마음건강 = productCategoryRepository.findByName("마음 건강").orElseThrow();
+        ProductCategory 피부 = productCategoryRepository.findByName("피부").orElseThrow();
+        ProductCategory 노화항산화 = productCategoryRepository.findByName("노화/항산화").orElseThrow();
+        ProductCategory 피로활력 = productCategoryRepository.findByName("피로/활력").orElseThrow();
+        ProductCategory 간건강 = productCategoryRepository.findByName("간 건강").orElseThrow();
+        ProductCategory 장건강 = productCategoryRepository.findByName("장 건강").orElseThrow();
+        ProductCategory 위소화 = productCategoryRepository.findByName("위/소화").orElseThrow();
+        ProductCategory 눈건강 = productCategoryRepository.findByName("눈 건강").orElseThrow();
+        ProductCategory 면역력 = productCategoryRepository.findByName("면역력").orElseThrow();
+        ProductCategory 빈혈 = productCategoryRepository.findByName("빈혈").orElseThrow();
+        ProductCategory 수면 = productCategoryRepository.findByName("수면").orElseThrow();
+        ProductCategory 모발두피 = productCategoryRepository.findByName("모발/두피").orElseThrow();
+        ProductCategory 만성질환 = productCategoryRepository.findByName("만성질환").orElseThrow();
+
+        // 📌 영양 성분 가져오기
+        ProductIngredient 감마리놀렌산 = productIngredientRepository.findByIngredientName("감마리놀렌산(GLA)").stream().findFirst().orElseThrow(() -> new RuntimeException("감마리놀렌산(GLA) 성분을 찾을 수 없습니다."));
+        ProductIngredient 엽산 = productIngredientRepository.findByIngredientName("엽산").stream().findFirst().orElseThrow(() -> new RuntimeException("엽산 성분을 찾을 수 없습니다."));
+        ProductIngredient 철분 = productIngredientRepository.findByIngredientName("철분").stream().findFirst().orElseThrow(() -> new RuntimeException("철분 성분을 찾을 수 없습니다."));
+        ProductIngredient 크랜베리 = productIngredientRepository.findByIngredientName("크랜베리 추출물").stream().findFirst().orElseThrow(() -> new RuntimeException("크랜베리 추출물 성분을 찾을 수 없습니다."));
+        ProductIngredient GABA = productIngredientRepository.findByIngredientName("GABA").stream().findFirst().orElseThrow(() -> new RuntimeException("GABA 성분을 찾을 수 없습니다."));
+        ProductIngredient 비타민B6 = productIngredientRepository.findByIngredientName("비타민B군").stream().findFirst().orElseThrow(() -> new RuntimeException("비타민B군 성분을 찾을 수 없습니다."));
+        ProductIngredient 칼슘 = productIngredientRepository.findByIngredientName("칼슘").stream().findFirst().orElseThrow(() -> new RuntimeException("칼슘 성분을 찾을 수 없습니다."));
+        ProductIngredient 비타민D = productIngredientRepository.findByIngredientName("비타민D").stream().findFirst().orElseThrow(() -> new RuntimeException("비타민D 성분을 찾을 수 없습니다."));
+        ProductIngredient 마그네슘 = productIngredientRepository.findByIngredientName("마그네슘").stream().findFirst().orElseThrow(() -> new RuntimeException("마그네슘 성분을 찾을 수 없습니다."));
+        ProductIngredient 비타민C = productIngredientRepository.findByIngredientName("비타민C").stream().findFirst().orElseThrow(() -> new RuntimeException("비타민C 성분을 찾을 수 없습니다."));
+        ProductIngredient 코엔자임Q10 = productIngredientRepository.findByIngredientName("코엔자임Q10").stream().findFirst().orElseThrow(() -> new RuntimeException("코엔자임Q10 성분을 찾을 수 없습니다."));
+        ProductIngredient 오메가3 = productIngredientRepository.findByIngredientName("오메가-3").stream().findFirst().orElseThrow(() -> new RuntimeException("오메가-3 성분을 찾을 수 없습니다."));
+        ProductIngredient 루테인 = productIngredientRepository.findByIngredientName("루테인").stream().findFirst().orElseThrow(() -> new RuntimeException("루테인 성분을 찾을 수 없습니다."));
+        ProductIngredient 콜라겐 = productIngredientRepository.findByIngredientName("콜라겐").stream().findFirst().orElseThrow(() -> new RuntimeException("콜라겐 성분을 찾을 수 없습니다."));
+        ProductIngredient 인지질 = productIngredientRepository.findByIngredientName("인지질(PS)").stream().findFirst().orElseThrow(() -> new RuntimeException("인지질(PS) 성분을 찾을 수 없습니다."));
+        ProductIngredient 비오틴 = productIngredientRepository.findByIngredientName("비오틴").stream().findFirst().orElseThrow(() -> new RuntimeException("비오틴 성분을 찾을 수 없습니다."));
+
+        // 📌 전체 상품 데이터 추가
         List<Product> products = Arrays.asList(
-                Product.builder().name("종근당 황후의봄").description("여성 건강을 위한 감마리놀렌산(GLA) 보충제").price(new BigDecimal("30000")).stock(50).active(1).build(),
-                Product.builder().name("뉴트라라이프 보라지 오일").description("감마리놀렌산(GLA) 함유 보충제").price(new BigDecimal("28000")).stock(40).active(1).build(),
-                Product.builder().name("솔가 엽산 400mcg").description("여성 건강과 임신 준비를 위한 엽산 보충제").price(new BigDecimal("15000")).stock(100).active(1).build(),
-                Product.builder().name("네이처메이드 엽산 800mcg").description("체내 엽산 보충을 위한 제품").price(new BigDecimal("17000")).stock(80).active(1).build(),
-                Product.builder().name("페로글로빈 철분 시럽").description("빈혈 예방을 위한 철분 보충제").price(new BigDecimal("20000")).stock(60).active(1).build(),
-                Product.builder().name("센트룸 철분 플러스").description("철분과 비타민이 포함된 영양제").price(new BigDecimal("22000")).stock(70).active(1).build(),
-                Product.builder().name("네이처스웨이 크랜베리 프루트").description("비뇨기 건강을 위한 크랜베리 추출물 보충제").price(new BigDecimal("25000")).stock(50).active(1).build(),
-                Product.builder().name("솔가 크랜베리 추출물").description("비뇨기 건강에 도움을 주는 크랜베리 추출물").price(new BigDecimal("26000")).stock(40).active(1).build(),
-                Product.builder().name("나우푸드 GABA 500mg").description("긴장 완화와 숙면을 위한 GABA 보충제").price(new BigDecimal("28000")).stock(90).active(1).build(),
-                Product.builder().name("솔가 GABA").description("스트레스 완화 및 신경 안정 보충제").price(new BigDecimal("30000")).stock(85).active(1).build(),
-                Product.builder().name("솔가 비타민 B6 100mg").description("PMS 및 신경 건강을 위한 비타민 B6 보충제").price(new BigDecimal("16000")).stock(100).active(1).build(),
-                Product.builder().name("네이처메이드 비타민 B6").description("건강한 신경 기능을 지원하는 보충제").price(new BigDecimal("18000")).stock(95).active(1).build(),
-                Product.builder().name("센트룸 칼슘+D3").description("뼈 건강을 위한 칼슘과 비타민D 보충제").price(new BigDecimal("22000")).stock(100).active(1).build(),
-                Product.builder().name("오스칼 칼슘").description("뼈와 치아 건강을 위한 칼슘 보충제").price(new BigDecimal("21000")).stock(90).active(1).build(),
-                Product.builder().name("솔가 비타민 D3 1000IU").description("뼈 건강과 면역력 향상을 위한 비타민D 보충제").price(new BigDecimal("19000")).stock(110).active(1).build(),
-                Product.builder().name("네이처메이드 비타민 D3 2000IU").description("체내 비타민D 보충을 위한 제품").price(new BigDecimal("20000")).stock(100).active(1).build(),
-                Product.builder().name("닥터스베스트 고흡수 마그네슘").description("근육 이완과 신경 안정에 도움을 주는 마그네슘").price(new BigDecimal("24000")).stock(100).active(1).build(),
-                Product.builder().name("나우푸드 마그네슘 캡슐").description("마그네슘 보충을 위한 제품").price(new BigDecimal("23000")).stock(100).active(1).build(),
-                Product.builder().name("얼라이브 비타민 C 1000mg").description("면역력 향상과 항산화 효과를 위한 비타민 C").price(new BigDecimal("18000")).stock(150).active(1).build(),
-                Product.builder().name("솔가 에스터-C 500mg").description("흡수가 잘되는 비타민 C 보충제").price(new BigDecimal("19000")).stock(130).active(1).build(),
-                Product.builder().name("나우푸드 CoQ10 100mg").description("항산화 및 심혈관 건강을 위한 CoQ10 보충제").price(new BigDecimal("29000")).stock(90).active(1).build(),
-                Product.builder().name("닥터스베스트 CoQ10").description("에너지 생산과 세포 건강을 위한 CoQ10 보충제").price(new BigDecimal("28000")).stock(80).active(1).build(),
-                Product.builder().name("솔가 비타민 B2 100mg").description("구강 건강 및 에너지 대사 지원").price(new BigDecimal("16000")).stock(100).active(1).build(),
-                Product.builder().name("네이처스웨이 리보플라빈").description("비타민 B2 보충을 위한 제품").price(new BigDecimal("17000")).stock(90).active(1).build(),
-                Product.builder().name("솔가 비오틴 5000mcg").description("모발 건강과 피부 강화를 위한 비오틴").price(new BigDecimal("25000")).stock(70).active(1).build(),
-                Product.builder().name("나우푸드 비오틴 5000mcg").description("손톱 및 모발 건강을 위한 비오틴 보충제").price(new BigDecimal("24000")).stock(75).active(1).build()
+                Product.builder().name("종근당 황후의봄").description("여성 건강을 위한 감마리놀렌산 보충제").price(new BigDecimal("30000")).stock(50).active(true).categories(List.of(여성건강)).ingredients(List.of(감마리놀렌산)).build(),
+                Product.builder().name("뉴트라라이프 보라지 오일").description("감마리놀렌산 함유 보충제").price(new BigDecimal("28000")).stock(40).active(true).categories(List.of(여성건강)).ingredients(List.of(감마리놀렌산)).build(),
+                Product.builder().name("솔가 엽산 400mcg").description("여성 건강과 임신 준비를 위한 엽산 보충제").price(new BigDecimal("15000")).stock(100).active(true).categories(List.of(여성건강)).ingredients(List.of(엽산)).build(),
+                Product.builder().name("페로글로빈 철분 시럽").description("빈혈 예방을 위한 철분 보충제").price(new BigDecimal("20000")).stock(60).active(true).categories(List.of(빈혈)).ingredients(List.of(철분)).build(),
+                Product.builder().name("센트룸 칼슘+D3").description("뼈 건강을 위한 칼슘과 비타민D 보충제").price(new BigDecimal("22000")).stock(100).active(true).categories(List.of(관절뼈)).ingredients(List.of(칼슘, 비타민D)).build(),
+                Product.builder().name("나우푸드 GABA 500mg").description("긴장 완화와 숙면을 위한 GABA 보충제").price(new BigDecimal("28000")).stock(90).active(true).categories(List.of(수면, 마음건강)).ingredients(List.of(GABA)).build(),
+                Product.builder().name("솔가 비타민 B6 100mg").description("PMS 및 신경 건강을 위한 비타민 B6 보충제").price(new BigDecimal("16000")).stock(100).active(true).categories(List.of(여성건강, 피로활력)).ingredients(List.of(비타민B6)).build(),
+                Product.builder().name("닥터스베스트 고흡수 마그네슘").description("근육 이완과 신경 안정에 도움을 주는 마그네슘").price(new BigDecimal("24000")).stock(100).active(true).categories(List.of(수면, 관절뼈)).ingredients(List.of(마그네슘)).build(),
+                Product.builder().name("얼라이브 비타민 C 1000mg").description("면역력 향상과 항산화 효과를 위한 비타민 C").price(new BigDecimal("18000")).stock(150).active(true).categories(List.of(구강관리, 면역력)).ingredients(List.of(비타민C)).build(),
+                Product.builder().name("나우푸드 CoQ10 100mg").description("항산화 및 심혈관 건강을 위한 CoQ10 보충제").price(new BigDecimal("29000")).stock(90).active(true).categories(List.of(노화항산화, 만성질환)).ingredients(List.of(코엔자임Q10)).build(),
+                Product.builder().name("네이처메이드 오메가-3").description("심혈관 건강을 위한 고순도 오메가-3").price(new BigDecimal("31000")).stock(85).active(true).categories(List.of(노화항산화, 간건강)).ingredients(List.of(오메가3)).build(),
+                Product.builder().name("닥터스베스트 루테인").description("눈 건강을 위한 루테인 보충제").price(new BigDecimal("22000")).stock(90).active(true).categories(List.of(눈건강)).ingredients(List.of(루테인)).build(),
+                Product.builder().name("네오셀 슈퍼 콜라겐+C").description("피부 건강을 위한 콜라겐 보충제").price(new BigDecimal("33000")).stock(75).active(true).categories(List.of(피부)).ingredients(List.of(콜라겐)).build(),
+                Product.builder().name("닥터스베스트 포스파티딜세린").description("인지력 개선을 위한 인지질 보충제").price(new BigDecimal("28000")).stock(60).active(true).categories(List.of(만성질환)).ingredients(List.of(인지질)).build()
         );
 
         productRepository.saveAll(products);
     }
 
-
-    private void initializeProductCategoryMappings() {
-        List<ProductCategoryMapping> mappings = Arrays.asList(
-                new ProductCategoryMapping(null, 1L, 1L),
-                new ProductCategoryMapping(null, 2L, 1L),
-                new ProductCategoryMapping(null, 3L, 1L),
-                new ProductCategoryMapping(null, 4L, 1L),
-                new ProductCategoryMapping(null, 5L, 14L),
-                new ProductCategoryMapping(null, 6L, 14L),
-                new ProductCategoryMapping(null, 7L, 1L),
-                new ProductCategoryMapping(null, 8L, 1L),
-                new ProductCategoryMapping(null, 9L, 16L),
-                new ProductCategoryMapping(null, 10L, 16L),
-                new ProductCategoryMapping(null, 11L, 1L),
-                new ProductCategoryMapping(null, 12L, 1L),
-                new ProductCategoryMapping(null, 13L, 2L),
-                new ProductCategoryMapping(null, 14L, 2L),
-                new ProductCategoryMapping(null, 15L, 2L),
-                new ProductCategoryMapping(null, 16L, 2L),
-                new ProductCategoryMapping(null, 17L, 2L),
-                new ProductCategoryMapping(null, 18L, 2L),
-                new ProductCategoryMapping(null, 19L, 13L),
-                new ProductCategoryMapping(null, 20L, 13L),
-                new ProductCategoryMapping(null, 21L, 7L),
-                new ProductCategoryMapping(null, 22L, 7L),
-                new ProductCategoryMapping(null, 23L, 3L),
-                new ProductCategoryMapping(null, 24L, 3L),
-                new ProductCategoryMapping(null, 25L, 17L),
-                new ProductCategoryMapping(null, 26L, 17L)
-        );
-
-        productCategoryMappingRepository.saveAll(mappings);
-    }
 
 }
 
