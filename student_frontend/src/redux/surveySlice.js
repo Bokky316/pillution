@@ -91,11 +91,6 @@ export const submitSurvey = createAsyncThunk(
   }
 );
 
-export const setFilteredSubCategories = createAction(
-  'survey/setFilteredSubCategories',
-  (subCategories) => ({ payload: subCategories })
-);
-
 const surveySlice = createSlice({
   name: 'survey',
   initialState: {
@@ -113,58 +108,59 @@ const surveySlice = createSlice({
     gender: null,
     selectedSymptoms: [],
     filteredSubCategories: null,
-    relatedQuestions: [],
+    filteredCategories: null,
   },
   reducers: {
     updateResponse: (state, action) => {
-      const { questionId, answer } = action.payload;
+      const { questionId, value } = action.payload;
       const question = state.questions.find(q => q.id === questionId);
 
       if (!question) return;
 
-      if (questionId === 2) {
-        state.gender = answer === '1' ? 'female' : 'male';
-        state.responses[questionId] = answer;
-        return;
-      }
+       switch (question.questionType) {
+          case 'MULTIPLE_CHOICE':
+            state.responses[questionId] = state.responses[questionId] || [];
+            const optionId = parseInt(value, 10);
+            const lastOptionIndex = question.options.length - 1;
+            const lastOptionId = question.options[lastOptionIndex].id;
 
-      if (question.questionType === 'MULTIPLE_CHOICE') {
-        let selectedOptions = [...(state.responses[questionId] || [])];
-        const lastOptionIndex = question.options.length - 1;
-        const lastOptionId = question.options[lastOptionIndex].id.toString();
-
-        const isSymptomQuestion =
-          question.questionText.includes('주요 증상') ||
-          question.questionText.includes('불편하거나 걱정되는 것');
-
-        if (answer === lastOptionId) {
-          selectedOptions = selectedOptions.includes(lastOptionId) ? [] : [lastOptionId];
-        } else {
-          if (selectedOptions.includes(lastOptionId)) {
-            selectedOptions = [];
-          }
-
-          const index = selectedOptions.indexOf(answer);
-          if (index > -1) {
-            selectedOptions.splice(index, 1);
-          } else {
-            if (isSymptomQuestion && selectedOptions.length >= 3) {
-              return;
+            if (optionId === lastOptionId) {
+              // 마지막 옵션이 선택된 경우, 다른 모든 선택을 해제하고 마지막 옵션만 선택
+              state.responses[questionId] = [lastOptionId];
+            } else {
+              const index = state.responses[questionId].indexOf(optionId);
+              if (index > -1) {
+                // 이미 선택된 옵션을 제거
+                state.responses[questionId] = state.responses[questionId].filter(id => id !== optionId);
+              } else {
+                // 마지막 옵션이 선택되어 있다면 제거
+                if (state.responses[questionId].includes(lastOptionId)) {
+                  state.responses[questionId] = state.responses[questionId].filter(id => id !== lastOptionId);
+                }
+                // 새 옵션 추가
+                if (question.questionText.includes('불편하거나 걱정되는 것') && state.responses[questionId].length >= 3) {
+                  return;
+                }
+                state.responses[questionId].push(optionId);
+              }
             }
-            selectedOptions.push(answer);
-          }
-        }
+            break;
 
-        state.responses[questionId] = selectedOptions;
+        case 'SINGLE_CHOICE':
+          state.responses[questionId] = parseInt(value, 10);
+          break;
 
-        if (isSymptomQuestion) {
-          state.selectedSymptoms = selectedOptions;
-        }
-      } else if (question.questionType === 'SINGLE_CHOICE') {
-        state.responses[questionId] = answer;
-      } else if (question.questionType === 'TEXT') {
-        state.responses[questionId] = answer;
+        case 'TEXT':
+          state.responses[questionId] = value;
+          break;
       }
+
+      // 특별 처리가 필요한 질문 처리
+        if (question.questionText === "성별을 알려주세요") {
+          state.gender = parseInt(value, 10) === 1 ? '여성' : '남성';
+        } else if (question.questionText.includes("불편하거나 걱정되는 것")) {
+          state.selectedSymptoms = state.responses[questionId];
+        }
     },
 
     setCurrentCategoryIndex: (state, action) => {
@@ -181,30 +177,19 @@ const surveySlice = createSlice({
 
     clearResponses: (state) => {
       state.responses = {};
-    },
-
-    filterSubCategories: (state, action) => {
-      const selectedSymptoms = action.payload;
-      const currentCategory = state.categories[state.currentCategoryIndex];
-      if (currentCategory && currentCategory.name === "2. 증상·불편") {
-        state.filteredSubCategories = currentCategory.subCategories.filter(sub =>
-          sub.name === "주요 증상" ||
-          sub.name === "추가 증상" ||
-          selectedSymptoms.includes(sub.id.toString())
-        );
-      } else {
-        state.filteredSubCategories = null;
-      }
-    },
-
-    setSelectedSymptoms: (state, action) => {
-      state.selectedSymptoms = action.payload;
+      state.gender = null;
+      state.selectedSymptoms = [];
     },
 
     setFilteredSubCategories: (state, action) => {
       state.filteredSubCategories = action.payload;
     },
+
+    setFilteredCategories: (state, action) => {
+      state.filteredCategories = action.payload;
+    },
   },
+
   extraReducers: (builder) => {
     builder
       .addCase(fetchCategories.pending, (state) => {
@@ -258,8 +243,9 @@ export const {
   setCurrentCategoryIndex,
   setCurrentSubCategoryIndex,
   clearResponses,
-  filterSubCategories,
-  setSelectedSymptoms
+  setFilteredSubCategories,
+  setFilteredCategories
 } = surveySlice.actions;
 
 export default surveySlice.reducer;
+

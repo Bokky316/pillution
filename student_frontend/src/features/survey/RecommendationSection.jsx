@@ -1,6 +1,6 @@
 import React from 'react';
 import { Typography, Grid } from '@mui/material';
-import ProductCard from '@/features/product/ProductCard';
+import ProductCard from '@/features/survey/RecommendationCard';
 
 const RecommendationSection = React.memo(({ title, products }) => {
   if (!products || products.length === 0) return null;

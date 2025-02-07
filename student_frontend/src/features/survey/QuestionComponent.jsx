@@ -4,16 +4,12 @@ import { Box, Typography, RadioGroup, FormControlLabel, Radio, Checkbox, TextFie
 const QuestionComponent = ({ question, response, onResponseChange }) => {
   const handleChange = (event) => {
     let value;
-    if (question.questionType === 'MULTIPLE_CHOICE') {
-      const optionId = parseInt(event.target.value, 10);
-      onResponseChange(question.id, optionId);
-    } else if (question.questionType === 'SINGLE_CHOICE') {
+    if (question.questionType === 'MULTIPLE_CHOICE' || question.questionType === 'SINGLE_CHOICE') {
       value = parseInt(event.target.value, 10);
-      onResponseChange(question.id, value);
     } else {
       value = event.target.value;
-      onResponseChange(question.id, value);
     }
+    onResponseChange(value);
   };
 
   switch (question.questionType) {
@@ -25,6 +21,19 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
           value={response || ''}
           onChange={handleChange}
           margin="normal"
+          InputProps={{
+            endAdornment: question.questionText.includes('키') ? 'cm' :
+                         question.questionText.includes('몸무게') ? 'kg' : null,
+            inputProps: {
+              style: { textAlign: 'right' },
+            }
+          }}
+          placeholder={
+            question.questionText.includes('키') ? '키를 입력하세요 (예: 170)' :
+            question.questionText.includes('몸무게') ? '몸무게를 입력하세요 (예: 65)' :
+            question.questionText.includes('나이') ? '나이를 입력하세요' :
+            '입력하세요'
+          }
         />
       );
     case 'SINGLE_CHOICE':
@@ -55,16 +64,8 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
               key={option.id}
               control={
                 <Checkbox
-                  checked={Array.isArray(response) && response.includes(option.id.toString())}
-                  onChange={(event) => {
-                    const selectedOptionId = option.id.toString();
-                    if (question.questionText === "불편하거나 걱정되는 것을 최대 3가지 선택하세요") {
-                      // 주요 증상 질문인 경우 특별 처리
-                      onResponseChange(question.id, selectedOptionId, option.relatedQuestionIds);
-                    } else {
-                      onResponseChange(question.id, selectedOptionId);
-                    }
-                  }}
+                  checked={Array.isArray(response) && response.includes(option.id)}
+                  onChange={() => onResponseChange(option.id)}
                   value={option.id.toString()}
                 />
               }
