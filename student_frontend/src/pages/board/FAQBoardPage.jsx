@@ -24,10 +24,10 @@ function FAQBoardPage() {
 
     // Redux 상태에서 필요한 값 가져오기
     const {
-        filteredPosts,  // 선택된 카테고리에 따라 필터링된 게시글 목록
-        selectedCategory,   // 현재 선택된 카테고리
+        filteredPosts,    // 선택된 카테고리에 따라 필터링된 게시글 목록
+        selectedCategory,    // 현재 선택된 카테고리
         loading,    // 로딩 상태
-        error   // 에러 메시지
+        error    // 에러 메시지
     } = useSelector((state) => state.faq);
     const auth = useSelector((state) => state.auth);    // 인증 정보 가져오기
 
@@ -40,10 +40,11 @@ function FAQBoardPage() {
     // 사용자 권한 확인 (관리자인지 여부)
     const userRole = auth?.user?.authorities?.some(auth => auth.authority === "ROLE_ADMIN") ? "ADMIN" : "USER";
 
-    // 컴포넌트가 처음 렌더링될 때 FAQ 게시글 목록 가져오기
+    // 컴포넌트 마운트 시 카테고리 초기화 및 게시글 fetch
     useEffect(() => {
+        dispatch(setSelectedCategory("전체")); // 카테고리를 "전체"로 초기화
         dispatch(fetchFAQPosts());
-    }, [dispatch]);
+    }, [dispatch, location.key]); // location.key를 의존성 배열에 추가
 
     // 인증 정보가 변경될 때 로컬 스토리지에 저장
     useEffect(() => {
@@ -84,7 +85,8 @@ function FAQBoardPage() {
     const handleConfirmDelete = async () => {
         if (postToDelete) {
             try {
-                await dispatch(deleteFAQPost(postToDelete)).unwrap();   // 삭제 요청 디스패치 및 결과 확인
+                await dispatch(deleteFAQPost(postToDelete)).unwrap();
+                // 삭제 요청 디스패치 및 결과 확인
                 setSnackbar({ open: true, message: "게시글이 삭제되었습니다." });
             } catch (err) {
                 setSnackbar({ open: true, message: "게시글 삭제에 실패했습니다." });
