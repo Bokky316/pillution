@@ -12,10 +12,13 @@ import com.javalab.student.entity.HealthRecord;
 import com.javalab.student.repository.MemberRepository;
 import com.javalab.student.repository.MemberResponseRepository;
 import com.javalab.student.repository.HealthRecordRepository;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -27,6 +30,7 @@ import java.util.stream.Collectors;
  * 적절한 제품과 영양 성분을 추천합니다.
  */
 @Service
+@Slf4j
 public class RecommendationService {
     @Autowired
     private MemberRepository memberRepository;
@@ -49,6 +53,8 @@ public class RecommendationService {
      * @return 건강 분석 결과, 추천 제품, 추천 영양 성분을 포함하는 Map
      * @throws IllegalStateException 인증된 사용자 정보를 찾을 수 없는 경우
      */
+    @Transactional
+    @SneakyThrows(Exception.class)
     public Map<String, Object> getHealthAnalysisAndRecommendations() {
         Map<String, Object> result = new HashMap<>();
 
@@ -73,15 +79,19 @@ public class RecommendationService {
         double weight = 0;
 
         for (MemberResponse response : ageHeightWeightResponses) {
+            log.debug("Processing response: questionId={}, responseText={}", response.getQuestion().getId(), response.getResponseText());
             switch (response.getQuestion().getId().intValue()) {
                 case 3:
                     age = Integer.parseInt(response.getResponseText());
+                    log.debug("Age set to: {}", age);
                     break;
                 case 4:
                     height = Double.parseDouble(response.getResponseText());
+                    log.debug("Height set to: {}", height);
                     break;
                 case 5:
                     weight = Double.parseDouble(response.getResponseText());
+                    log.debug("Weight set to: {}", weight);
                     break;
             }
         }
@@ -89,24 +99,34 @@ public class RecommendationService {
         if (age == 0 || height == 0 || weight == 0) {
             throw new IllegalStateException("나이, 키, 몸무게 정보 중 누락된 정보가 있습니다.");
         }
+        log.debug("Final values - age: {}, height: {}, weight: {}", age, height, weight);
 
         double bmi = calculateBMI(height, weight);
+        log.debug("Calculated BMI: {}", bmi);
 
         // 건강 분석 수행
         HealthAnalysisDTO healthAnalysis = analyzeHealth(member.getId(), age, bmi, ageHeightWeightResponses);
+        log.debug("HealthAnalysisDTO: {}", healthAnalysis);
         result.put("healthAnalysis", healthAnalysis);
 
         // 제품 추천
+        Map<String, Integer> ingredientScores = nutrientScoreService.calculateIngredientScores(ageHeightWeightResponses, age, bmi);
+        Map<String, List<String>> recommendedIngredientsMap = nutrientScoreService.getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
+
+        List<String> recommendedIngredients = new ArrayList<>();
+        recommendedIngredients.addAll(recommendedIngredientsMap.getOrDefault("essential", Collections.emptyList()));
+        recommendedIngredients.addAll(recommendedIngredientsMap.getOrDefault("additional", Collections.emptyList()));
+
         Map<String, List<ProductRecommendationDTO>> recommendations =
-                productRecommendationService.recommendProducts(member.getId(), age, bmi, ageHeightWeightResponses);
+                productRecommendationService.recommendProductsByIngredients(recommendedIngredients, ingredientScores);
         result.put("recommendations", recommendations);
 
         // 영양 성분 추천
-        Map<String, Integer> ingredientScores = nutrientScoreService.calculateIngredientScores(ageHeightWeightResponses, age, bmi);
-        List<String> recommendedIngredients = nutrientScoreService.getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
+        result.put("recommendedIngredients", recommendedIngredientsMap);
 
         // 건강 기록 저장
-        saveHealthRecord(member, healthAnalysis, recommendedIngredients, recommendations.get("essential"));
+        List<ProductRecommendationDTO> essentialProducts = recommendations.getOrDefault("essential", Collections.emptyList());
+        saveHealthRecord(member, healthAnalysis, recommendedIngredients, essentialProducts);
 
         return result;
     }
@@ -183,9 +203,19 @@ public class RecommendationService {
      * @param weight 몸무게(kg)
      * @return 계산된 BMI 값
      */
+    // BMI 계산 메서드 수정
     private double calculateBMI(double height, double weight) {
-        return weight / (height * height);
+        log.debug("Calculating BMI - height: {}, weight: {}", height, weight);
+        if (height <= 0 || weight <= 0) {
+            log.warn("Invalid height or weight: height={}, weight={}", height, weight);
+            return 0.0;
+        }
+        double bmi = weight / ((height / 100) * (height / 100));
+        log.debug("Calculated BMI: {}", bmi);
+        return bmi;
     }
+
+
 
     /**
      * BMI와 위험 수준을 기반으로 전반적인 건강 평가를 생성합니다.
@@ -235,15 +265,21 @@ public class RecommendationService {
                                   List<String> recommendedIngredients,
                                   List<ProductRecommendationDTO> recommendedProducts) {
         try {
+            // recommendedIngredients가 null이면 빈 리스트로 초기화
+            List<String> safeRecommendedIngredients = Optional.ofNullable(recommendedIngredients).orElse(Collections.emptyList());
+
+            // recommendedProducts가 null이면 빈 리스트로 초기화
+            List<ProductRecommendationDTO> safeRecommendedProducts = Optional.ofNullable(recommendedProducts).orElse(Collections.emptyList());
+
             HealthRecord record = HealthRecord.builder()
                     .member(member)
                     .recordDate(LocalDateTime.now())
                     .bmi(analysisDTO.getBmi())
                     .riskLevels(objectMapper.writeValueAsString(analysisDTO.getRiskLevels()))
                     .overallAssessment(analysisDTO.getOverallAssessment())
-                    .recommendedIngredients(String.join(", ", recommendedIngredients))
+                    .recommendedIngredients(String.join(", ", safeRecommendedIngredients))
                     .recommendedProducts(objectMapper.writeValueAsString(
-                            recommendedProducts.stream()
+                            safeRecommendedProducts.stream()
                                     .map(dto -> Map.of(
                                             "id", dto.getId(),
                                             "name", dto.getName(),
@@ -257,7 +293,9 @@ public class RecommendationService {
                     .build();
 
             healthRecordRepository.save(record);
+            log.info("건강 기록이 성공적으로 저장되었습니다. 회원 ID: {}", member.getId());
         } catch (Exception e) {
+            log.error("건강 기록 저장 중 오류 발생. 회원 ID: {}", member.getId(), e);
             throw new RuntimeException("건강 기록 저장 중 오류 발생", e);
         }
     }

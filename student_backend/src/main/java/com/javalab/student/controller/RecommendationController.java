@@ -4,18 +4,18 @@ import com.javalab.student.dto.HealthAnalysisDTO;
 import com.javalab.student.dto.ProductRecommendationDTO;
 import com.javalab.student.entity.HealthRecord;
 import com.javalab.student.entity.MemberResponse;
-import com.javalab.student.security.dto.MemberSecurityDto;
 import com.javalab.student.service.recommendation.RecommendationService;
 import com.javalab.student.service.recommendation.ProductRecommendationService;
 import com.javalab.student.service.recommendation.RiskCalculationService;
 import com.javalab.student.service.recommendation.NutrientScoreService;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.security.core.Authentication;
 
-import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +25,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/recommendation")
+@Slf4j
 public class RecommendationController {
 
     @Autowired
@@ -48,10 +49,10 @@ public class RecommendationController {
         try {
             Map<String, Object> result = recommendationService.getHealthAnalysisAndRecommendations();
             return ResponseEntity.ok(result);
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "An unexpected error occurred"));
+        } catch (RuntimeException e) {
+            log.error("건강 분석 및 추천 정보 조회 중 오류 발생", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "건강 분석 및 추천 정보 조회 중 오류가 발생했습니다."));
         }
     }
 
@@ -72,21 +73,36 @@ public class RecommendationController {
     }
 
     /**
-     * 사용자 정보를 기반으로 제품을 추천합니다.
-     * @param data 회원 ID, 나이, BMI, 응답 정보를 포함한 Map
+     * 추천 영양 성분에 따른 제품 추천 API.
+     * @param data 나이, BMI, 응답, 추천 영양 성분 정보를 포함한 Map
      * @return 추천된 제품 목록을 포함한 ResponseEntity
      */
-    @PostMapping("/recommend-products")
-    public ResponseEntity<Map<String, List<ProductRecommendationDTO>>> recommendProducts(@RequestBody Map<String, Object> data) {
-        Long memberId = (Long) data.get("memberId");
+    @PostMapping("/recommend-products-by-ingredients")
+    public ResponseEntity<Map<String, List<ProductRecommendationDTO>>> recommendProductsByIngredients(@RequestBody Map<String, Object> data) {
         int age = (int) data.get("age");
         double bmi = (double) data.get("bmi");
         List<MemberResponse> responses = (List<MemberResponse>) data.get("responses");
 
+        // 1. 영양 성분 점수 계산
+        Map<String, Integer> ingredientScores = nutrientScoreService.calculateIngredientScores(responses, age, bmi);
+
+        // 2. HealthAnalysisDTO 생성 (필요한 정보만 포함)
+        HealthAnalysisDTO healthAnalysis = new HealthAnalysisDTO(); // 기본 생성자 사용
+
+        // 3. 추천 영양 성분 목록 가져오기
+        Map<String, List<String>> recommendedIngredientsMap = nutrientScoreService.getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
+
+        // 4. essential 과 additional 리스트를 합치기
+        List<String> recommendedIngredients = new ArrayList<>();
+        recommendedIngredientsMap.values().forEach(recommendedIngredients::addAll);
+
+        // 5. 제품 추천
         Map<String, List<ProductRecommendationDTO>> recommendations =
-                productRecommendationService.recommendProducts(memberId, age, bmi, responses);
+                productRecommendationService.recommendProductsByIngredients(recommendedIngredients, ingredientScores);
+
         return ResponseEntity.ok(recommendations);
     }
+
 
     /**
      * 사용자의 응답, 나이, BMI를 기반으로 영양 점수를 계산합니다.
@@ -118,6 +134,4 @@ public class RecommendationController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
-
-
 }

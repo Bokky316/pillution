@@ -57,12 +57,13 @@ const recommendationSlice = createSlice({
   name: 'recommendations',
   initialState: {
     healthAnalysis: null,
-    recommendations: { essential: [], additional: [] },
-    recommendedIngredients: [],
+    recommendations: { multiIngredient: [], singleRecommendedWithOther: [], 루테인:[],프로바이오틱스:[],비타민D:[],오메가3:[] }, // 초기값 설정
+    recommendedIngredients: { essential: [], additional: [] },
     healthHistory: [],
     loading: false,
     error: null,
   },
+
   reducers: {},
   extraReducers: (builder) => {
     builder
@@ -74,7 +75,7 @@ const recommendationSlice = createSlice({
         state.loading = false;
         state.healthAnalysis = action.payload.healthAnalysis;
         state.recommendations = action.payload.recommendations;
-        state.recommendedIngredients = action.payload.recommendedIngredients || [];
+        state.recommendedIngredients = action.payload.recommendedIngredients || { essential: [], additional: [] };
       })
       .addCase(fetchHealthHistory.fulfilled, (state, action) => {
         state.healthHistory = action.payload;
