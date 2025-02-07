@@ -148,7 +148,7 @@ public class RecommendationService {
         // 전반적인 건강 평가 생성
         String overallAssessment = generateOverallAssessment(bmi, riskLevels);
 
-        return new HealthAnalysisDTO(bmi, riskLevels, overallAssessment);
+        return new HealthAnalysisDTO(bmi, riskLevels, overallAssessment, responses);
     }
 
     /**

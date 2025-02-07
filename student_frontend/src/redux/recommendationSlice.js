@@ -34,7 +34,7 @@ export const fetchHealthHistory = createAsyncThunk(
   'recommendations/fetchHealthHistory',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetchWithAuth(`${API_URL}recommendation/analysis`, {
+      const response = await fetchWithAuth(`${API_URL}recommendation/history`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -57,7 +57,7 @@ const recommendationSlice = createSlice({
   name: 'recommendations',
   initialState: {
     healthAnalysis: null,
-    recommendations: { multiIngredient: [], singleRecommendedWithOther: [], 루테인:[],프로바이오틱스:[],비타민D:[],오메가3:[] }, // 초기값 설정
+    recommendations: {}, // 백엔드 응답 구조에 맞게 빈 객체로 초기화
     recommendedIngredients: { essential: [], additional: [] },
     healthHistory: [],
     loading: false,
@@ -67,23 +67,28 @@ const recommendationSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
+      // 건강 분석 및 추천 정보 요청 시작
       .addCase(fetchHealthAnalysisAndRecommendations.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
+      // 건강 분석 및 추천 정보 요청 성공
       .addCase(fetchHealthAnalysisAndRecommendations.fulfilled, (state, action) => {
         state.loading = false;
         state.healthAnalysis = action.payload.healthAnalysis;
         state.recommendations = action.payload.recommendations;
         state.recommendedIngredients = action.payload.recommendedIngredients || { essential: [], additional: [] };
       })
+      // 건강 기록 히스토리 요청 성공
       .addCase(fetchHealthHistory.fulfilled, (state, action) => {
         state.healthHistory = action.payload;
       })
+      // 건강 분석 및 추천 정보 요청 실패
       .addCase(fetchHealthAnalysisAndRecommendations.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
+      // 건강 기록 히스토리 요청 실패
       .addCase(fetchHealthHistory.rejected, (state, action) => {
         state.error = action.payload;
       });

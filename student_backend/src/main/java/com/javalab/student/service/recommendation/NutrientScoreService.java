@@ -63,11 +63,28 @@ public class NutrientScoreService {
         List<String> essentialIngredients = new ArrayList<>();
         List<String> additionalIngredients = new ArrayList<>();
 
-        for (Map.Entry<String, Integer> entry : ingredientScores.entrySet()) {
-            if (entry.getValue() > 25) {
-                essentialIngredients.add(entry.getKey());
-            } else if (entry.getValue() > 10) {
-                additionalIngredients.add(entry.getKey());
+        // 주요 증상에 따라 무조건 essentialIngredients에 추가
+        addEssentialIngredientsByMainSymptoms(healthAnalysis, essentialIngredients);
+
+        // 점수 기준으로 정렬
+        List<Map.Entry<String, Integer>> sortedIngredients = new ArrayList<>(ingredientScores.entrySet());
+        sortedIngredients.sort((e1, e2) -> e2.getValue().compareTo(e1.getValue()));
+
+        // 상위 5개 성분을 essential로 추천 (이미 추가된 성분 제외)
+        int count = 0;
+        for (int i = 0; i < sortedIngredients.size(); i++) {
+            String ingredient = sortedIngredients.get(i).getKey();
+            if (!essentialIngredients.contains(ingredient) && count < 5) {
+                essentialIngredients.add(ingredient);
+                count++;
+            }
+        }
+
+        // 나머지 성분을 additional로 추천
+        for (int i = 0; i < sortedIngredients.size(); i++) {
+            String ingredient = sortedIngredients.get(i).getKey();
+            if (!essentialIngredients.contains(ingredient)) {
+                additionalIngredients.add(ingredient);
             }
         }
 
@@ -75,6 +92,27 @@ public class NutrientScoreService {
         recommendedIngredients.put("additional", additionalIngredients);
 
         return recommendedIngredients;
+    }
+
+    /**
+     * 주요 증상 관련 문항에 사용자가 체크한 경우, 해당 문항에 매핑된 영양제를 무조건 추천 영양제에 포함
+     * @param healthAnalysis 건강 분석 결과
+     * @param essentialIngredients 필수 영양제 목록
+     */
+    private void addEssentialIngredientsByMainSymptoms(HealthAnalysisDTO healthAnalysis, List<String> essentialIngredients) {
+        Map<String, Integer> ingredientScores = new HashMap<>();
+        List<MemberResponse> responses = healthAnalysis.getResponses();
+        if (responses == null) {
+            System.out.println("Warning: responses is null in HealthAnalysisDTO");
+            return;
+        }
+        Set<String> mainSymptoms = getMainSymptoms(responses);
+
+        // 주요 증상에 대한 점수 계산 (여기서 ingredientScores가 업데이트됨)
+        calculateMainSymptomScores(responses, ingredientScores, mainSymptoms);
+
+        // ingredientScores에 있는 모든 영양제를 essentialIngredients에 추가
+        essentialIngredients.addAll(ingredientScores.keySet());
     }
 
     /**

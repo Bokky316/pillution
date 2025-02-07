@@ -2,6 +2,7 @@ package com.javalab.student.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import java.time.LocalDateTime;
 
@@ -24,10 +25,9 @@ public class MemberResponse extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id", nullable = false)
+    @JsonBackReference // 이 부분을 추가/수정했습니다.
     private SurveyQuestion question;
 
     @Column(name = "response_text", columnDefinition = "TEXT")
     private String responseText;
 }
-
-

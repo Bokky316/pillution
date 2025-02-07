@@ -1,14 +1,6 @@
 import React from 'react';
 import { Typography, Box, List, ListItem, ListItemText } from '@mui/material';
 
-/**
- * HealthHistorySection 컴포넌트
- * 사용자의 과거 건강 기록을 표시하는 컴포넌트
- *
- * @component
- * @param {Object} props
- * @param {Array} props.healthHistory - 과거 건강 기록 배열
- */
 const HealthHistorySection = ({ healthHistory }) => {
   return (
     <Box>

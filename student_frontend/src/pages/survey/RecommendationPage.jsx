@@ -8,6 +8,7 @@ import HealthHistorySection from '@/features/survey/HealthHistorySection';
 
 /**
  * 건강 분석 및 추천 정보를 표시하는 페이지 컴포넌트
+ * @returns {JSX.Element} RecommendationPage 컴포넌트
  */
 const RecommendationPage = () => {
   const dispatch = useDispatch();
@@ -22,17 +23,24 @@ const RecommendationPage = () => {
 
   const [snackbarOpen, setSnackbarOpen] = React.useState(false);
 
+  // 컴포넌트 마운트 시 데이터 fetch
   useEffect(() => {
     dispatch(fetchHealthAnalysisAndRecommendations());
     dispatch(fetchHealthHistory());
   }, [dispatch]);
 
+  // 에러 발생 시 스낵바 표시
   useEffect(() => {
     if (error) {
       setSnackbarOpen(true);
     }
   }, [error]);
 
+  // 데이터 확인을 위한 로그
+  console.log('recommendations:', recommendations);
+  console.log('recommendedIngredients:', recommendedIngredients);
+
+  // 로딩 중일 때 표시할 내용
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
@@ -48,18 +56,22 @@ const RecommendationPage = () => {
           맞춤 건강 분석 및 영양제 추천
         </Typography>
       </Box>
+      
+      {/* 건강 분석 결과 섹션 */}
       {healthAnalysis && (
         <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
           <HealthAnalysisSection healthAnalysis={healthAnalysis} />
         </Paper>
       )}
-      {recommendedIngredients && recommendedIngredients.length > 0 && (
+      
+      {/* 추천 영양 성분 섹션 */}
+      {recommendedIngredients && recommendedIngredients.essential && recommendedIngredients.essential.length > 0 && (
         <Box mb={6}>
           <Typography variant="h5" gutterBottom fontWeight="bold" color="primary">
             추천 영양 성분
           </Typography>
           <Paper elevation={3} sx={{ p: 3 }}>
-            {recommendedIngredients.map((ingredient, index) => (
+            {recommendedIngredients.essential.map((ingredient, index) => (
               <Typography key={index} variant="body1" gutterBottom>
                 • {ingredient}
               </Typography>
@@ -67,21 +79,26 @@ const RecommendationPage = () => {
           </Paper>
         </Box>
       )}
-      {recommendations && (
+      
+      {/* 추천 제품 섹션 */}
+      {recommendations && Object.keys(recommendations).length > 0 && (
         <>
-          <Box mb={6}>
-            <RecommendationSection title="필수 추천 제품" products={recommendations.essential || []} maxItems={3} />
-          </Box>
-          <Box mb={6}>
-            <RecommendationSection title="추가 추천 제품" products={recommendations.additional || []} maxItems={5} />
-          </Box>
+          {Object.entries(recommendations).map(([key, products]) => (
+            <Box key={key} mb={6}>
+              <RecommendationSection title={`${key} 추천 제품`} products={products} maxItems={5} />
+            </Box>
+          ))}
         </>
       )}
+      
+{/*        */}{/* 건강 기록 히스토리 섹션 */}{/*
       {healthHistory && healthHistory.length > 0 && (
         <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
           <HealthHistorySection healthHistory={healthHistory} />
         </Paper>
       )}
+       */}
+      {/* 에러 메시지 스낵바 */}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={6000}

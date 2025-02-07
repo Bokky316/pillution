@@ -1,25 +1,6 @@
-
 import React from 'react';
 import { Typography, Box, Grid } from '@mui/material';
 
-/**
- * HealthAnalysisSection 컴포넌트
- * 사용자의 건강 분석 결과를 표시하는 컴포넌트
- *
- * @component
- * @param {Object} props
- * @param {Object} props.healthAnalysis - 건강 분석 결과 객체
- *
- * @example
- * const healthAnalysis = {
- *   bmi: 22.5,
- *   riskLevels: { 심혈관: '낮음', 당뇨: '중간' },
- *   overallAssessment: '전반적으로 건강한 상태입니다.'
- * };
- * return (
- *   <HealthAnalysisSection healthAnalysis={healthAnalysis} />
- * )
- */
 const HealthAnalysisSection = ({ healthAnalysis }) => {
   return (
     <Box>
