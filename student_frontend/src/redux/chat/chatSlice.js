@@ -103,13 +103,11 @@ const chatSlice = createSlice({
          * @param {Object} action - 액션 객체
          */
         addMessage: (state, action) => {
-            if (state.selectedRoom === action.payload.roomId) {
+             // 이미 메시지가 있는지 확인
+            if (!state.messages.find(msg => msg.id === action.payload.id)) {
                 state.messages.push(action.payload);
             }
-            // 읽지 않은 메시지 추가
-            if (!action.payload.read) {
-                state.unreadMessages.push(action.payload);
-            }
+
         },
         markMessageAsRead: (state, action) => {
             const messageId = action.payload;
@@ -156,7 +154,8 @@ const chatSlice = createSlice({
             })
             // sendMessage 액션 처리
             .addCase(sendMessage.fulfilled, (state, action) => {
-                state.messages.push(action.payload);
+                // 필요하다면 메시지 전송 성공 후 추가적인 상태 업데이트
+                console.log("sendMessage.fulfilled", action.payload);
             })
             // createChatRoom 액션 처리
             .addCase(createChatRoom.fulfilled, (state, action) => {
@@ -171,7 +170,6 @@ const chatSlice = createSlice({
                     state.messages = [];
                 }
             });
-
     }
 });
 

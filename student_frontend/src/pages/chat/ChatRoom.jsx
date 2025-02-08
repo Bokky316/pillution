@@ -1,6 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, List, ListItemButton, ListItemText, Typography, IconButton } from '@mui/material';
+import {
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Button,
+    TextField,
+    Box,
+    List,
+    ListItemButton,
+    ListItemText,
+    Typography,
+    IconButton,
+    Badge
+} from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { selectChatRoom, sendMessage, fetchChatRooms, createChatRoom, leaveChatRoom, addMessage } from '@/redux/chat/chatSlice';
 import { API_URL, SERVER_URL } from "@/constant";
@@ -36,6 +50,7 @@ const ChatRoom = ({ onClose }) => {
     const [isTyping, setIsTyping] = useState({});
     const [stompClient, setStompClient] = useState(null);
     const [notification, setNotification] = useState(null);
+    const [unreadCounts, setUnreadCounts] = useState({}); // 읽지 않은 메시지 수 상태
 
     useEffect(() => {
         dispatch(fetchChatRooms());
@@ -59,65 +74,58 @@ const ChatRoom = ({ onClose }) => {
         }
     }, [debouncedQuery]);
 
-    useEffect(() => {
+   useEffect(() => {
         const socket = new SockJS(`${SERVER_URL}ws`);
         const client = Stomp.over(socket);
 
-        client.connect({}, () => {
-            setStompClient(client);
+        const connectWebSocket = () => {
+            client.connect({}, () => {
+                setStompClient(client);
+                console.log('WebSocket 연결 성공');
 
-            // 개인 메시지 구독
-            client.subscribe(`/user/${user.id}/queue/messages`, (message) => {
-                const parsedMessage = JSON.parse(message.body);
-                dispatch(addMessage(parsedMessage));
-
-                // 알림 표시
-                if (Notification.permission === 'granted' && document.hidden) {
-                    new Notification('새 메시지가 도착했습니다', {
-                        body: parsedMessage.content,
-                        icon: '/path/to/icon.png'
-                    });
-                }
-            });
-
-            // 타이핑 상태 구독
-            client.subscribe('/topic/chat.typing', (message) => {
-                const typingInfo = JSON.parse(message.body);
-                if (typingInfo.senderId !== user.id) {
-                    setIsTyping(prev => ({
-                        ...prev,
-                        [typingInfo.roomId]: typingInfo.senderId
-                    }));
-                    setTimeout(() => {
-                        setIsTyping(prev => {
-                            const newState = { ...prev };
-                            delete newState[typingInfo.roomId];
-                            return newState;
-                        });
-                    }, 3000);
-                }
-            });
-
-            // 채팅방 관련 메시지 구독 (퇴장 메시지 포함)
-            if (selectedRoom) {
-                client.subscribe(`/topic/chat/${selectedRoom}`, (message) => {
+                // 개인 메시지 구독
+                client.subscribe(`/user/${user.id}/queue/messages`, (message) => {
                     const parsedMessage = JSON.parse(message.body);
-                    // 메시지 타입에 따라 처리 (퇴장 메시지인지 일반 메시지인지)
-                    if (parsedMessage.isSystemMessage) {
-                        // 시스템 메시지 처리 로직 (예: UI 업데이트)
-                        dispatch(fetchChatRooms()); // 채팅방 목록 갱신
-                        dispatch(selectChatRoom(selectedRoom)); // 메시지 목록 갱신
-                    } else {
-                        dispatch(addMessage(parsedMessage)); // 일반 메시지 처리
+                    dispatch(addMessage(parsedMessage));
+                    dispatch(fetchChatRooms()); // 채팅방 목록 갱신
+                     if (selectedRoom) {
+                        dispatch(selectChatRoom(selectedRoom)); // 선택된 채팅방 메시지 갱신
+                    }
+
+                    // 알림 표시
+                    if (Notification.permission === 'granted' && document.hidden) {
+                        new Notification('새 메시지가 도착했습니다', {
+                            body: parsedMessage.content,
+                            icon: '/path/to/icon.png'
+                        });
                     }
                 });
-            }
 
-        }, (error) => {
-            console.error("WebSocket 연결 오류:", error);
-            dispatch(showSnackbar("❌ WebSocket 연결에 실패했습니다."));
-            // 필요한 경우 재연결 시도
-        });
+                // 타이핑 상태 구독
+                client.subscribe('/topic/chat.typing', (message) => {
+                    const typingInfo = JSON.parse(message.body);
+                    if (typingInfo.senderId !== user.id) {
+                        setIsTyping(prev => ({
+                            ...prev,
+                            [typingInfo.roomId]: typingInfo.senderId
+                        }));
+                        setTimeout(() => {
+                            setIsTyping(prev => {
+                                const newState = { ...prev };
+                                delete newState[typingInfo.roomId];
+                                return newState;
+                            });
+                        }, 3000);
+                    }
+                });
+            }, (error) => {
+                console.error("WebSocket 연결 오류:", error);
+                dispatch(showSnackbar("❌ WebSocket 연결에 실패했습니다."));
+                setTimeout(connectWebSocket, 5000); // 재연결 시도
+            });
+        };
+
+        connectWebSocket();
 
         // 알림 권한 요청
         if (Notification.permission === 'default') {
@@ -125,11 +133,12 @@ const ChatRoom = ({ onClose }) => {
         }
 
         return () => {
-            if (client.connected) {
-                client.disconnect();
+            if (stompClient) {
+                stompClient.disconnect();
             }
         };
     }, [dispatch, user.id, selectedRoom]);
+
 
     const fetchUsers = async (query) => {
         if (!query) return;
@@ -158,8 +167,9 @@ const ChatRoom = ({ onClose }) => {
 
             stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(message));
             setNewMessage('');
-            // 메시지 전송 후 강제 리렌더링
-            dispatch(selectChatRoom(selectedRoom));
+             if (selectedRoom) {
+                dispatch(selectChatRoom(selectedRoom)); // 선택된 채팅방 메시지 갱신
+            }
         } else {
             dispatch(showSnackbar("채팅방을 선택해주세요."));
         }
@@ -179,6 +189,7 @@ const ChatRoom = ({ onClose }) => {
             setOpenNewChatModal(false);
             setSelectedUser(null);
             dispatch(showSnackbar("새로운 채팅방이 생성되었습니다."));
+             dispatch(fetchChatRooms()); // 채팅방 목록 갱신
         } catch (error) {
             console.error("채팅방 생성 실패:", error.message);
             dispatch(showSnackbar("채팅방 생성에 실패했습니다."));
@@ -190,6 +201,7 @@ const ChatRoom = ({ onClose }) => {
         try {
             await dispatch(leaveChatRoom(roomId)).unwrap();
             dispatch(showSnackbar("✅ 채팅방에서 나갔습니다."));
+             dispatch(fetchChatRooms()); // 채팅방 목록 갱신
         } catch (error) {
             console.error('채팅방 나가기 오류:', error);
             dispatch(showSnackbar("❌ 채팅방 나가기에 실패했습니다."));
@@ -206,6 +218,26 @@ const ChatRoom = ({ onClose }) => {
             }));
         }
     };
+
+    // 읽지 않은 메시지 수를 가져오는 함수
+    const fetchUnreadCount = async (roomId) => {
+        try {
+            const response = await fetchWithAuth(`${API_URL}chat/rooms/${roomId}/unread`);
+            if (response.ok) {
+                const count = await response.json();
+                setUnreadCounts(prev => ({ ...prev, [roomId]: count }));
+            } else {
+                console.error("읽지 않은 메시지 수 조회 실패");
+            }
+        } catch (error) {
+            console.error("읽지 않은 메시지 수 조회 실패:", error);
+        }
+    };
+
+    useEffect(() => {
+        // 컴포넌트가 마운트될 때와 채팅방 목록이 변경될 때 읽지 않은 메시지 수를 가져옴
+        dispatch(fetchChatRooms());
+    }, [dispatch, chatRooms]);
 
     return (
         <Dialog onClose={onClose} open={true} maxWidth="md" fullWidth>
@@ -225,9 +257,17 @@ const ChatRoom = ({ onClose }) => {
                         <ListItemButton
                             key={room.id}
                             selected={selectedRoom === room.id}
-                            onClick={() => dispatch(selectChatRoom(room.id))}
+                            onClick={() => {
+                                dispatch(selectChatRoom(room.id));
+                            }}
                         >
                             <ListItemText primary={room.name} />
+                            {/* 읽지 않은 메시지 수 배지 */}
+                            {unreadCounts[room.id] > 0 && (
+                                <Badge badgeContent={unreadCounts[room.id]} color="primary">
+                                    <Typography variant="caption" color="white">{unreadCounts[room.id]}</Typography>
+                                </Badge>
+                            )}
                             {selectedRoom === room.id && (
                                 <IconButton onClick={(e) => {
                                     e.stopPropagation();
