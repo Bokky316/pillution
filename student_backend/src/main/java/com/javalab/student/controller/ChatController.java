@@ -2,6 +2,7 @@ package com.javalab.student.controller;
 
 import com.javalab.student.dto.ChatMessageDto;
 import com.javalab.student.dto.ChatRoomDto;
+import com.javalab.student.security.dto.MemberSecurityDto;
 import com.javalab.student.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -52,11 +54,12 @@ public class ChatController {
 
     /**
      * 특정 사용자의 채팅방 목록을 조회합니다.
-     * @param userId 사용자 ID
+     * @param memberSecurityDto 현재 인증된 사용자 정보
      * @return 사용자가 참여중인 채팅방 목록
      */
-    @GetMapping("/rooms/user/{userId}")
-    public ResponseEntity<List<ChatRoomDto>> getUserChatRooms(@PathVariable("userId") Long userId) {
+    @GetMapping("/rooms/user")
+    public ResponseEntity<List<ChatRoomDto>> getUserChatRooms(@AuthenticationPrincipal MemberSecurityDto memberSecurityDto) {
+        Long userId = memberSecurityDto.getId();
         log.info("✅ 사용자의 채팅방 목록 조회 요청: userId={}", userId);
         try {
             List<ChatRoomDto> chatRooms = chatService.getUserChatRooms(userId);
@@ -94,11 +97,12 @@ public class ChatController {
     /**
      * 채팅방에 새로운 참가자를 추가합니다.
      * @param roomId 채팅방 ID
-     * @param userId 추가할 사용자 ID
+     * @param memberSecurityDto 현재 인증된 사용자 정보
      * @return 처리 결과
      */
     @PostMapping("/rooms/{roomId}/participants")
-    public ResponseEntity<Void> addParticipantToChatRoom(@PathVariable("roomId") Long roomId, @RequestParam("userId") Long userId) {
+    public ResponseEntity<Void> addParticipantToChatRoom(@PathVariable("roomId") Long roomId, @AuthenticationPrincipal MemberSecurityDto memberSecurityDto) {
+        Long userId = memberSecurityDto.getId();
         log.info("✅ 채팅방 참가자 추가 요청: roomId={}, userId={}", roomId, userId);
         chatService.addParticipantToChatRoom(roomId, userId);
         return ResponseEntity.ok().build();
@@ -107,11 +111,12 @@ public class ChatController {
     /**
      * 채팅방의 읽지 않은 메시지 수를 조회합니다.
      * @param roomId 채팅방 ID
-     * @param userId 사용자 ID
+     * @param memberSecurityDto 현재 인증된 사용자 정보
      * @return 읽지 않은 메시지 수
      */
     @GetMapping("/rooms/{roomId}/unread")
-    public ResponseEntity<Integer> getUnreadMessageCount(@PathVariable("roomId") Long roomId, @RequestParam("userId") Long userId) {
+    public ResponseEntity<Integer> getUnreadMessageCount(@PathVariable("roomId") Long roomId, @AuthenticationPrincipal MemberSecurityDto memberSecurityDto) {
+        Long userId = memberSecurityDto.getId();
         log.info("✅ 읽지 않은 메시지 수 조회 요청: roomId={}, userId={}", roomId, userId);
         return ResponseEntity.ok(chatService.getUnreadMessageCount(roomId, userId));
     }
@@ -119,13 +124,72 @@ public class ChatController {
     /**
      * 채팅 메시지를 읽음 처리합니다.
      * @param messageId 메시지 ID
-     * @param userId 사용자 ID
+     * @param memberSecurityDto 현재 인증된 사용자 정보
      * @return 처리 결과
      */
     @PostMapping("/messages/{messageId}/read")
-    public ResponseEntity<Void> markMessageAsRead(@PathVariable("messageId") Long messageId, @RequestParam("userId") Long userId) {
+    public ResponseEntity<Void> markMessageAsRead(@PathVariable("messageId") Long messageId, @AuthenticationPrincipal MemberSecurityDto memberSecurityDto) {
+        Long userId = memberSecurityDto.getId();
         log.info("✅ 메시지 읽음 처리 요청: messageId={}, userId={}", messageId, userId);
         chatService.markMessageAsRead(messageId, userId);
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 사용자가 채팅방을 나갑니다.
+     * @param roomId 채팅방 ID
+     * @param memberSecurityDto 현재 인증된 사용자 정보
+     * @return 처리 결과
+     */
+    @PostMapping("/rooms/{roomId}/leave")
+    public ResponseEntity<Void> leaveChatRoom(@PathVariable("roomId") Long roomId, @AuthenticationPrincipal MemberSecurityDto memberSecurityDto) {
+        Long userId = memberSecurityDto.getId();
+        log.info("✅ 채팅방 나가기 요청: roomId={}, userId={}", roomId, userId);
+        chatService.leaveChatRoom(roomId);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 사용자의 입력 상태를 설정합니다.
+     * @param roomId 채팅방 ID
+     * @param memberSecurityDto 현재 인증된 사용자 정보
+     * @param isTyping 입력 중 여부
+     * @return 처리 결과
+     */
+    @PostMapping("/rooms/{roomId}/typing")
+    public ResponseEntity<Void> setUserTypingStatus(
+            @PathVariable("roomId") Long roomId,
+            @AuthenticationPrincipal MemberSecurityDto memberSecurityDto,
+            @RequestParam("isTyping") boolean isTyping) {
+        Long userId = memberSecurityDto.getId();
+        log.info("✅ 사용자 입력 상태 설정 요청: roomId={}, userId={}, isTyping={}", roomId, userId, isTyping);
+        chatService.setUserTypingStatus(roomId, userId, isTyping);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * WebSocket을 통해 사용자의 타이핑 상태를 전송합니다.
+     * @param message 타이핑 상태 메시지
+     * @return 전송된 타이핑 상태 메시지
+     */
+    @MessageMapping("/chat.typing")
+    @SendTo("/topic/chat.typing")
+    public ChatMessageDto typing(@Payload ChatMessageDto message) {
+        log.info("✅ 타이핑 메시지 : " + message);
+        // chatService.setUserTypingStatus(message.getRoomId(), message.getSenderId(), message.isTyping()); // 이 줄은 제거하거나 주석 처리
+        return message;
+    }
+
+    /**
+     * WebSocket을 통해 메시지 읽음 상태를 업데이트합니다.
+     * @param message 읽음 상태 메시지
+     * @return 업데이트된 읽음 상태 메시지
+     */
+    @MessageMapping("/chat.read")
+    @SendTo("/topic/chat.read")
+    public ChatMessageDto read(@Payload ChatMessageDto message) {
+        log.info("✅ 읽음 메시지 : " + message);
+        chatService.updateMessageReadStatus(message.getId(), message.getSenderId());
+        return message;
     }
 }

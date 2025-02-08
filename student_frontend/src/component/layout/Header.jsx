@@ -7,14 +7,14 @@ import {
 import MenuIcon from '@mui/icons-material/Menu';
 import { Link, useNavigate } from "react-router-dom";
 import { clearUser } from "@/redux/authSlice";
-import { fetchWithAuth, fetchWithoutAuth } from "@features/auth/utils/fetchWithAuth";
+import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
 import { API_URL } from "@/constant";
 import { SERVER_URL } from '@/constant';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import { persistor } from "@/redux/store";
-import { hideSnackbar } from '@/redux/snackbarSlice';
-import MessageList from "@features/auth/components/MessageList";
+import { hideSnackbar } from '@/redux/snackbarSlice'; // ✅ 스낵바 관련 액션 추가
+import MessageList from "@features/auth/components/MessageList";// ✅ MessageList 컴포넌트 import
 import "../../assets/styles/header.css";
 
 const Header = () => {
@@ -24,7 +24,7 @@ const Header = () => {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const [openMessagesModal, setOpenMessagesModal] = React.useState(false);
     const delayedUnreadCount = useSelector(state => state.messages.unreadCount || 0);
-    const { open, message } = useSelector(state => state.snackbar);
+    const { open, message } = useSelector(state => state.snackbar); // ✅ 스낵바 상태 추가
 
     const handleMenuOpen = (event) => {
         setAnchorEl(event.currentTarget);
@@ -57,14 +57,15 @@ const Header = () => {
         }
     };
 
+    // ✅ 메시지 읽음 처리 함수 추가
     const handleReadMessages = async (messageId) => {
         try {
             await fetchWithAuth(`${API_URL}messages/read/${messageId}`, { method: "POST" });
+            // Redux 상태 업데이트 로직 추가 (필요시)
         } catch (error) {
             console.error("메시지 읽음 처리 실패:", error.message);
         }
     };
-
     return (
         <>
             <AppBar position="static" className="nav-bar" sx={{
@@ -75,7 +76,7 @@ const Header = () => {
                 right: '50%',
                 marginLeft: '-50vw',
                 marginRight: '-50vw',
-                backgroundColor: 'transparent',
+                backgroundColor: 'transparent',  // 배경색을 투명하게 설정
             }}>
                 <Toolbar sx={{
                     minHeight: '80px',
@@ -84,8 +85,8 @@ const Header = () => {
                     maxWidth: '1280px',
                     margin: '0 auto',
                     width: '100%',
-                    backgroundColor: '#f4f4f4',
-                    color: '#000000',
+                    backgroundColor: '#f4f4f4',  // 툴바의 배경색을 흰색으로 설정
+                    color: '#000000',  // 텍스트 색상을 검정색으로 설정
                 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <IconButton
@@ -126,6 +127,7 @@ const Header = () => {
                         )}
                         {isLoggedIn && user ? (
                             <>
+                                {/* 🔹 배지를 클릭하면 메시지 목록 모달이 열리도록 설정 */}
                                 <Badge
                                     badgeContent={delayedUnreadCount > 0 ? delayedUnreadCount : null}
                                     color="error"
@@ -152,16 +154,18 @@ const Header = () => {
                 </Toolbar>
             </AppBar>
 
+            {/* ✅ 이름 위의 읽지 않은 메시지 숫자의 배지 클릭시 메시지 목록 모달 */}
             <Dialog open={openMessagesModal} onClose={() => setOpenMessagesModal(false)} fullWidth maxWidth="md">
                 <DialogTitle>메시지 목록</DialogTitle>
                 <DialogContent>
-                    <MessageList onMessageRead={handleReadMessages} />
+                    <MessageList onMessageRead={handleReadMessages} /> {/* ✅ 메시지를 읽었을 때 처리 */}
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setOpenMessagesModal(false)}>닫기</Button>
                 </DialogActions>
             </Dialog>
 
+            {/* ✅ 스낵바 알림 */}
             <Snackbar
                 open={open}
                 autoHideDuration={3000}
