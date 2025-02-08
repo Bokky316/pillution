@@ -110,6 +110,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/recommendations/**").authenticated()
                 .requestMatchers("/members/login").permitAll()
                 .requestMatchers("/api/products/**").permitAll()
+                .requestMatchers("/api/products/:productId").permitAll()
                 .requestMatchers("/api/categories").permitAll()
                 .requestMatchers("/api/auth/userInfo").permitAll()
 

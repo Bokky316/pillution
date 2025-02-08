@@ -78,7 +78,7 @@ export default function ProductListPage() {
 
   // 상품 카드 클릭 핸들러
   const handleCardClick = (id) => {
-    navigate(`/viewProduct/${id}`);
+    navigate(`/Products/${id}`);
   };
 
   // 총 페이지 수 계산
