@@ -40,7 +40,14 @@ public class ChatController {
     @PostMapping("/rooms")
     public ResponseEntity<ChatRoomDto> createChatRoom(@RequestBody ChatRoomDto chatRoomDto) {
         log.info("✅ 채팅방 생성 요청: name={}, participantIds={}", chatRoomDto.getName(), chatRoomDto.getParticipantIds());
-        return ResponseEntity.ok(chatService.createChatRoom(chatRoomDto.getName(), chatRoomDto.getParticipantIds()));
+        ChatRoomDto createdRoom = chatService.createChatRoom(chatRoomDto.getName(), chatRoomDto.getParticipantIds());
+
+        // 채팅방에 참여하고 있는 사용자들에게 새로운 채팅방이 생성되었음을 알리는 이벤트 발행
+        chatRoomDto.getParticipantIds().forEach(userId -> {
+            messagingTemplate.convertAndSendToUser(userId.toString(), "/queue/newChatRoom", createdRoom);
+        });
+
+        return ResponseEntity.ok(createdRoom);
     }
 
     /**
@@ -129,12 +136,11 @@ public class ChatController {
      * @return 처리 결과
      */
     @PostMapping("/messages/{messageId}/read")
-    public ResponseEntity<Void> markMessageAsRead(@PathVariable("messageId") Long messageId, @AuthenticationPrincipal MemberSecurityDto memberSecurityDto) {
-        Long userId = memberSecurityDto.getId();
-        log.info("✅ 메시지 읽음 처리 요청: messageId={}, userId={}", messageId, userId);
-        chatService.markMessageAsRead(messageId, userId);
+    public ResponseEntity<Void> markMessageAsRead(@PathVariable Long messageId, @AuthenticationPrincipal MemberSecurityDto memberSecurityDto) {
+        chatService.markMessageAsRead(messageId, memberSecurityDto.getId());
         return ResponseEntity.ok().build();
     }
+
 
     /**
      * 사용자가 채팅방을 나갑니다.

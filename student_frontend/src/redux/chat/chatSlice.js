@@ -103,19 +103,12 @@ const chatSlice = createSlice({
          * @param {Object} action - 액션 객체
          */
         addMessage: (state, action) => {
-             // 이미 메시지가 있는지 확인
-            if (!state.messages.find(msg => msg.id === action.payload.id)) {
-                state.messages.push(action.payload);
-            }
-
-        },
-        markMessageAsRead: (state, action) => {
-            const messageId = action.payload;
-            state.unreadMessages = state.unreadMessages.filter(msg => msg.id !== messageId);
-            state.messages = state.messages.map(msg =>
-                msg.id === messageId ? { ...msg, read: true } : msg
-            );
-        },
+              const newMessage = action.payload;
+              const existingMessage = state.messages.find(msg => msg.id === newMessage.id);
+              if (!existingMessage) {
+                state.messages.push(newMessage);
+              }
+            },
         /**
          * 채팅방 목록을 설정
          * @param {Object} state - 현재 상태

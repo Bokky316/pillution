@@ -5,6 +5,7 @@ import com.javalab.student.entity.Member;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,6 +20,7 @@ public class ChatRoomDto {
     private String name;
     private List<Long> participantIds;
     private List<String> participantNames;
+    private LocalDateTime createdDate;
 
     public ChatRoomDto() {}
 
@@ -35,5 +37,6 @@ public class ChatRoomDto {
         this.participantNames = chatRoom.getParticipants().stream()
                 .map(Member::getName)
                 .collect(Collectors.toList());
+        this.createdDate = chatRoom.getRegTime();
     }
 }

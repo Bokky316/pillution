@@ -43,15 +43,13 @@ public class ChatService {
     @Transactional
     public ChatRoomDto createChatRoom(String name, List<Long> participantIds) {
         List<Member> participants = memberRepository.findAllById(participantIds);
-        if (participants.size() != participantIds.size()) {
-            throw new RuntimeException("일부 참가자를 찾을 수 없습니다.");
-        }
-        ChatRoom chatRoom = ChatRoom.builder()
-                .name(name)
-                .participants(participants)
-                .build();
-        chatRoomRepository.save(chatRoom);
-        return new ChatRoomDto(chatRoom);
+
+        ChatRoom chatRoom = new ChatRoom();
+        chatRoom.setName(name);
+        chatRoom.setParticipants(participants);
+        ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
+
+        return new ChatRoomDto(savedChatRoom);
     }
 
     /**
@@ -120,12 +118,15 @@ public class ChatService {
      */
     @Transactional(readOnly = true)
     public List<ChatRoomDto> getUserChatRooms(Long userId) {
-        Member member = memberRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
-        return chatRoomRepository.findByParticipantsContaining(member).stream()
-                .map(ChatRoomDto::new)
-                .collect(Collectors.toList());
+        Member member = memberRepository.findById(userId).orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        List<ChatRoom> chatRooms = chatRoomRepository.findByParticipantsContaining(member);
+        return chatRooms.stream().map(room -> {
+            ChatRoomDto dto = new ChatRoomDto(room);
+            dto.setParticipantIds(room.getParticipants().stream().map(Member::getId).collect(Collectors.toList()));
+            return dto;
+        }).collect(Collectors.toList());
     }
+
 
     /**
      * 채팅방에 새로운 참가자를 추가합니다.
@@ -168,9 +169,12 @@ public class ChatService {
     public void markMessageAsRead(Long messageId, Long userId) {
         ChatMessage message = chatMessageRepository.findById(messageId)
                 .orElseThrow(() -> new RuntimeException("메시지를 찾을 수 없습니다."));
-        message.markAsRead(userId);
-        chatMessageRepository.save(message);
+        if (!message.getReadByUserIds().contains(userId)) {
+            message.getReadByUserIds().add(userId);
+            chatMessageRepository.save(message);
+        }
     }
+
 
     /**
      * 사용자가 채팅방을 나갑니다.
