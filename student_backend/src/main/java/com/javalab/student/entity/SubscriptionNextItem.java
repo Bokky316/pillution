@@ -5,8 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 /**
- * SubscriptionItem (구독 상품) 엔티티
- * - 현재 구독에 포함된 상품 목록 저장
+ * SubscriptionNextItem (다음 회차 예정 상품) 엔티티
+ * - 사용자가 다음 회차 결제 시 추가/수정한 상품을 저장
  */
 @Entity
 @Getter
@@ -14,8 +14,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@JsonIgnoreProperties({"subscription"}) // 순환참조 방지
-public class SubscriptionItem {
+@JsonIgnoreProperties({"subscription"}) // 순환 참조 방지
+public class SubscriptionNextItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,14 +23,14 @@ public class SubscriptionItem {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subscription_id", nullable = false)
-    @JsonIgnoreProperties({"items"})
+    @JsonIgnoreProperties({"nextItems"})
     private Subscription subscription;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
-    @JsonIgnoreProperties({"subscriptionItems"})
+    @JsonIgnoreProperties({"subscriptionNextItems"})
     private Product product;
 
-    private int quantity;
-    private double price;
+    private int nextMonthQuantity; // 다음 회차 반영할 수량
+    private double nextMonthPrice; // 다음 회차 반영할 가격
 }

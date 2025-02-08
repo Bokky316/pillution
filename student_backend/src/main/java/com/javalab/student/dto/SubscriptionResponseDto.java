@@ -6,6 +6,10 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * SubscriptionResponseDto
+ * - 구독 정보를 클라이언트에 반환하기 위한 DTO
+ */
 @Getter
 public class SubscriptionResponseDto {
     private Long id;
@@ -17,8 +21,9 @@ public class SubscriptionResponseDto {
     private String paymentMethod;
     private String deliveryAddress;
     private List<SubscriptionItemDto> items;
-    private LocalDate lastBillingDate; // 추가: 최근 결제일
-    private int currentCycle; // 추가: 현재 회차 정보
+    private List<SubscriptionNextItemDto> nextItems; // 다음 회차 결제 예정 상품들
+    private LocalDate lastBillingDate;
+    private int currentCycle;
 
     public SubscriptionResponseDto(Subscription subscription) {
         this.id = subscription.getId();
@@ -29,16 +34,16 @@ public class SubscriptionResponseDto {
         this.status = subscription.getStatus();
         this.paymentMethod = subscription.getPaymentMethod();
         this.deliveryAddress = subscription.getDeliveryAddress();
+        this.lastBillingDate = subscription.getLastBillingDate();
+        this.currentCycle = subscription.getCurrentCycle();
+
+        // ✅ Lazy-Loading 방지: DTO 리스트로 변환
         this.items = subscription.getItems().stream()
                 .map(SubscriptionItemDto::new)
                 .collect(Collectors.toList());
 
-        // 최근 결제일 계산 (가정: 결제는 매월 1회, 이전 결제일은 다음 결제일 - 1개월)
-        this.lastBillingDate = subscription.getNextBillingDate().minusMonths(1);
-
-        // 현재 구독 회차 계산 (가정: 구독 시작일부터 현재까지의 개월 수)
-        this.currentCycle = (int) subscription.getStartDate().until(LocalDate.now()).toTotalMonths();
-
+        this.nextItems = subscription.getNextItems().stream()
+                .map(SubscriptionNextItemDto::new)
+                .collect(Collectors.toList());
     }
 }
-
