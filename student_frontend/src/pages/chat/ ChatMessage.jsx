@@ -1,6 +1,8 @@
+/*
 import React from 'react';
 import { Box, Typography, Avatar } from '@mui/material';
 
+ */
 /**
  * ChatMessage 컴포넌트
  *
@@ -9,7 +11,8 @@ import { Box, Typography, Avatar } from '@mui/material';
  * @param {Object} props
  * @param {Object} props.message - 메시지 객체
  * @param {boolean} props.isCurrentUser - 현재 사용자의 메시지인지 여부
- */
+ *//*
+
 const ChatMessage = ({ message, isCurrentUser }) => {
   return (
     <Box
@@ -49,3 +52,4 @@ const ChatMessage = ({ message, isCurrentUser }) => {
 };
 
 export default ChatMessage;
+ */

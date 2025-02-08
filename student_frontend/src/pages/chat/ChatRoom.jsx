@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, List, ListItemButton, ListItemText, Typography, Autocomplete, IconButton } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, List, ListItemButton, ListItemText, Typography, IconButton } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { selectChatRoom, sendMessage, fetchChatRooms, createChatRoom, leaveChatRoom } from '@/redux/chat/chatSlice';
-import { API_URL } from "@/constant";
+import { selectChatRoom, sendMessage, fetchChatRooms, createChatRoom, leaveChatRoom, addMessage } from '@/redux/chat/chatSlice';
+import { API_URL, SERVER_URL } from "@/constant";
 import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
 import { showSnackbar } from "@/redux/snackbarSlice";
 import useDebounce from "@hook/useDebounce";
-import { Stomp } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import { Stomp } from '@stomp/stompjs';
 
 const ChatRoom = ({ onClose }) => {
     const dispatch = useDispatch();
@@ -24,20 +24,24 @@ const ChatRoom = ({ onClose }) => {
     const [isTyping, setIsTyping] = useState({});
     const [stompClient, setStompClient] = useState(null);
 
+    // 채팅방 목록을 가져오는 useEffect
     useEffect(() => {
         dispatch(fetchChatRooms());
     }, [dispatch]);
 
+    // 선택된 채팅방의 메시지를 가져오는 useEffect
     useEffect(() => {
         if (selectedRoom) {
             dispatch(selectChatRoom(selectedRoom));
         }
     }, [dispatch, selectedRoom]);
 
+    // 메시지 목록이 업데이트될 때 스크롤을 맨 아래로 이동시키는 useEffect
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
+    // 사용자 검색을 위한 useEffect
     useEffect(() => {
         if (debouncedQuery.length >= 2) {
             fetchUsers(debouncedQuery);
@@ -46,70 +50,58 @@ const ChatRoom = ({ onClose }) => {
         }
     }, [debouncedQuery]);
 
-    // WebSocket 연결 설정
+    // WebSocket 연결 설정을 위한 useEffect
     useEffect(() => {
-        const socket = new SockJS(`${API_URL}ws`);
+        const socket = new SockJS(`${SERVER_URL}ws`);
         const client = Stomp.over(socket);
 
         client.connect({}, () => {
             console.log('WebSocket 연결 성공');
             setStompClient(client);
 
-            if (selectedRoom) {
-                subscribeTyping(client, selectedRoom);
-            }
+            // 전체 채팅 메시지 구독
+            client.subscribe('/topic/chat', (message) => {
+                const receivedMessage = JSON.parse(message.body);
+                dispatch(addMessage(receivedMessage));
+            });
+
+            // 개인 채팅 메시지 구독
+            client.subscribe(`/topic/chat/${user.id}`, async (message) => {
+                console.log("새로운 메시지 도착:", message.body);
+                const parsedMessage = JSON.parse(message.body);
+                dispatch(addMessage(parsedMessage));
+                await fetchMessages(user.id, dispatch);
+            });
+
+            // 타이핑 상태 구독
+            client.subscribe('/topic/chat.typing', (message) => {
+                const typingInfo = JSON.parse(message.body);
+                if (typingInfo.senderId !== user.id) {
+                    setIsTyping(prev => ({
+                        ...prev,
+                        [typingInfo.roomId]: typingInfo.senderId
+                    }));
+                    setTimeout(() => {
+                        setIsTyping(prev => {
+                            const newState = { ...prev };
+                            delete newState[typingInfo.roomId];
+                            return newState;
+                        });
+                    }, 3000);
+                }
+            });
         }, (error) => {
             console.error('WebSocket 연결 오류:', error);
         });
 
         return () => {
-            if (client) {
-                client.disconnect(() => {
-                    console.log('WebSocket 연결 해제');
-                });
+            if (client.connected) {
+                client.disconnect();
             }
         };
-    }, [selectedRoom]);
+    }, [dispatch, user.id]);
 
-    useEffect(() => {
-        if (stompClient) {
-            stompClient.unsubscribe(`/topic/chat.typing`);
-            subscribeTyping(stompClient, selectedRoom);
-        }
-    }, [selectedRoom, stompClient]);
-
-    const subscribeTyping = (client, roomId) => {
-        if (roomId) {
-            client.subscribe(`/topic/chat.typing`, (message) => {
-                const receivedMessage = JSON.parse(message.body);
-                if (receivedMessage.senderId !== user.id) {
-                    setIsTyping(prev => ({
-                        ...prev,
-                        [roomId]: receivedMessage.senderId
-                    }));
-                }
-                setTimeout(() => {
-                    setIsTyping(prev => {
-                        const newState = { ...prev };
-                        delete newState[roomId];
-                        return newState;
-                    });
-                }, 3000);
-            });
-        }
-    };
-
-    const sendTyping = (roomId) => {
-        if (stompClient) {
-            const message = {
-                roomId: roomId,
-                senderId: user.id,
-                typing: true
-            };
-            stompClient.send("/app/chat.typing", {}, JSON.stringify(message));
-        }
-    };
-
+    // 사용자 검색 함수
     const fetchUsers = async (query) => {
         if (!query) return;
 
@@ -127,18 +119,22 @@ const ChatRoom = ({ onClose }) => {
         }
     };
 
+    // 메시지 전송 함수
     const handleSendMessage = () => {
-        if (newMessage.trim() && selectedRoom) {
-            dispatch(sendMessage({
+        if (newMessage.trim() && selectedRoom && stompClient) {
+            const message = {
                 roomId: selectedRoom,
+                senderId: user.id,
                 content: newMessage
-            }));
+            };
+            stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(message));
             setNewMessage('');
         } else {
-            dispatch(showSnackbar("❌ 채팅방을 선택해주세요."));
+            dispatch(showSnackbar("채팅방을 선택해주세요."));
         }
     };
 
+    // 새 채팅방 생성 함수
     const handleCreateNewChat = async () => {
         if (!selectedUser) {
             dispatch(showSnackbar("❌ 대화 상대를 선택해주세요."));
@@ -147,7 +143,7 @@ const ChatRoom = ({ onClose }) => {
         try {
             await dispatch(createChatRoom({
                 name: `${user.name}, ${selectedUser.name}`,
-                participantIds: [selectedUser.id]
+                participantIds: [user.id, selectedUser.id]
             })).unwrap();
 
             setOpenNewChatModal(false);
@@ -159,6 +155,7 @@ const ChatRoom = ({ onClose }) => {
         }
     };
 
+    // 채팅방 나가기 함수
     const handleLeaveChatRoom = async (roomId) => {
         try {
             await dispatch(leaveChatRoom(roomId)).unwrap();
@@ -169,8 +166,15 @@ const ChatRoom = ({ onClose }) => {
         }
     };
 
+    // 타이핑 상태 전송 함수
     const handleTyping = (roomId) => {
-        sendTyping(roomId);
+        if (stompClient && stompClient.connected) {
+            stompClient.send("/app/chat.typing", {}, JSON.stringify({
+                roomId: roomId,
+                senderId: user.id,
+                typing: true
+            }));
+        }
     };
 
     return (
@@ -213,7 +217,9 @@ const ChatRoom = ({ onClose }) => {
                                     <Box key={message.id} sx={{mb: 1}}>
                                         <Typography variant="subtitle2">{message.senderName}</Typography>
                                         <Typography>{message.content}</Typography>
-                                        <Typography variant="caption">{new Date(message.timestamp).toLocaleTimeString()}</Typography>
+                                        <Typography variant="caption">
+                                            {new Date(message.timestamp).toLocaleTimeString()}
+                                        </Typography>
                                     </Box>
                                 ))}
                                 <div ref={messagesEndRef} />

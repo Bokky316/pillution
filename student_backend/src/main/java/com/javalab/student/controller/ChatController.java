@@ -6,6 +6,7 @@ import com.javalab.student.security.dto.MemberSecurityDto;
 import com.javalab.student.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -66,9 +67,10 @@ public class ChatController {
             return ResponseEntity.ok(chatRooms);
         } catch (Exception e) {
             log.error("❌ 사용자의 채팅방 목록을 가져오는 중 오류 발생. 사용자 ID: " + userId, e);
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
 
     /**
      * 특정 채팅방의 메시지 목록을 조회합니다.
@@ -145,9 +147,15 @@ public class ChatController {
     public ResponseEntity<Void> leaveChatRoom(@PathVariable("roomId") Long roomId, @AuthenticationPrincipal MemberSecurityDto memberSecurityDto) {
         Long userId = memberSecurityDto.getId();
         log.info("✅ 채팅방 나가기 요청: roomId={}, userId={}", roomId, userId);
-        chatService.leaveChatRoom(roomId);
-        return ResponseEntity.ok().build();
+        try {
+            chatService.leaveChatRoom(roomId, userId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("❌ 채팅방 나가기 처리 중 오류 발생", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
+
 
     /**
      * 사용자의 입력 상태를 설정합니다.
@@ -176,7 +184,6 @@ public class ChatController {
     @SendTo("/topic/chat.typing")
     public ChatMessageDto typing(@Payload ChatMessageDto message) {
         log.info("✅ 타이핑 메시지 : " + message);
-        // chatService.setUserTypingStatus(message.getRoomId(), message.getSenderId(), message.isTyping()); // 이 줄은 제거하거나 주석 처리
         return message;
     }
 
