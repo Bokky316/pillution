@@ -20,4 +20,5 @@ public interface MemberResponseRepository extends JpaRepository<MemberResponse, 
 
     @Query("SELECT mr FROM MemberResponse mr WHERE mr.member.id = :memberId AND mr.question.id IN (3, 4, 5)")
     List<MemberResponse> findAgeHeightAndWeightResponses(@Param("memberId") Long memberId);
+
 }

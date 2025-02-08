@@ -1,111 +1,137 @@
 package com.javalab.student.controller;
 
+import com.javalab.student.dto.HealthAnalysisDTO;
 import com.javalab.student.dto.ProductRecommendationDTO;
-import com.javalab.student.service.RecommendationService;
-import com.javalab.student.service.MemberService;
+import com.javalab.student.entity.HealthRecord;
+import com.javalab.student.entity.MemberResponse;
+import com.javalab.student.service.recommendation.RecommendationService;
+import com.javalab.student.service.recommendation.ProductRecommendationService;
+import com.javalab.student.service.recommendation.RiskCalculationService;
+import com.javalab.student.service.recommendation.NutrientScoreService;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
- * 제품 추천 관련 API를 처리하는 컨트롤러
+ * 건강 추천 관련 API를 처리하는 컨트롤러 클래스입니다.
+ * 이 클래스는 건강 분석, 제품 추천, 위험도 계산, 영양 점수 계산 등의 기능을 제공합니다.
  */
 @RestController
-@RequestMapping("/api/recommendations")
+@RequestMapping("/api/recommendation")
+@Slf4j
 public class RecommendationController {
 
-    private static final Logger logger = LoggerFactory.getLogger(RecommendationController.class);
-
-    private final RecommendationService recommendationService;
-    private final MemberService memberService;
+    @Autowired
+    private RecommendationService recommendationService;
 
     @Autowired
-    public RecommendationController(RecommendationService recommendationService, MemberService memberService) {
-        this.recommendationService = recommendationService;
-        this.memberService = memberService;
-    }
+    private ProductRecommendationService productRecommendationService;
+
+    @Autowired
+    private RiskCalculationService riskCalculationService;
+
+    @Autowired
+    private NutrientScoreService nutrientScoreService;
 
     /**
-     * 사용자에 대한 전체 제품 추천을 반환합니다.
-     * @param authentication 현재 인증된 사용자의 정보
-     * @return 추천 제품 목록 (필수 추천 및 추가 추천으로 분류)
+     * 현재 로그인한 사용자의 건강 분석 및 추천 정보를 제공합니다.
+     * @return 건강 분석 및 추천 정보를 포함한 ResponseEntity
      */
-    @GetMapping
-    public ResponseEntity<Map<String, Object>> getRecommendations(Authentication authentication) {
-        Map<String, Object> response = new HashMap<>();
-
+    @GetMapping("/analysis")
+    public ResponseEntity<Map<String, Object>> getHealthAnalysisAndRecommendations() {
         try {
-            if (authentication == null || !authentication.isAuthenticated()) {
-                logger.error("User is not authenticated");
-                response.put("status", "error");
-                response.put("message", "User is not authenticated");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-            }
-
-            String userEmail = authentication.getName();
-            logger.info("Fetching recommendations for user: {}", userEmail);
-
-            Map<String, List<ProductRecommendationDTO>> recommendations =
-                    recommendationService.recommendProducts(userEmail);
-
-            response.put("status", "success");
-            response.put("data", recommendations);
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            logger.error("Error while fetching recommendations", e);
-            response.put("status", "error");
-            response.put("message", "Error fetching recommendations: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            Map<String, Object> result = recommendationService.getHealthAnalysisAndRecommendations();
+            return ResponseEntity.ok(result);
+        } catch (RuntimeException e) {
+            log.error("건강 분석 및 추천 정보 조회 중 오류 발생", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "건강 분석 및 추천 정보 조회 중 오류가 발생했습니다."));
         }
     }
 
+
     /**
-     * 특정 카테고리 내에서 사용자에 대한 제품 추천을 반환합니다.
-     * @param categoryId 카테고리 ID
-     * @param authentication 현재 인증된 사용자의 정보
-     * @return 해당 카테고리 내의 추천 제품 목록
+     * 사용자의 나이, BMI, 응답을 기반으로 건강 위험도를 계산합니다.
+     * @param data 나이, BMI, 응답 정보를 포함한 Map
+     * @return 계산된 위험도 정보를 포함한 ResponseEntity
      */
-    @GetMapping("/category/{categoryId}")
-    public ResponseEntity<Map<String, Object>> getRecommendationsByCategory(
-            @PathVariable Long categoryId,
-            Authentication authentication) {
-        Map<String, Object> response = new HashMap<>();
+    @PostMapping("/calculate-risks")
+    public ResponseEntity<Map<String, String>> calculateRisks(@RequestBody Map<String, Object> data) {
+        int age = (int) data.get("age");
+        double bmi = (double) data.get("bmi");
+        List<MemberResponse> responses = (List<MemberResponse>) data.get("responses");
 
+        Map<String, String> risks = riskCalculationService.calculateAllRisks(age, bmi, responses);
+        return ResponseEntity.ok(risks);
+    }
+
+    /**
+     * 추천 영양 성분에 따른 제품 추천 API.
+     * @param data 나이, BMI, 응답, 추천 영양 성분 정보를 포함한 Map
+     * @return 추천된 제품 목록을 포함한 ResponseEntity
+     */
+    @PostMapping("/recommend-products-by-ingredients")
+    public ResponseEntity<Map<String, List<ProductRecommendationDTO>>> recommendProductsByIngredients(@RequestBody Map<String, Object> data) {
+        int age = (int) data.get("age");
+        double bmi = (double) data.get("bmi");
+        List<MemberResponse> responses = (List<MemberResponse>) data.get("responses");
+
+        // 1. 영양 성분 점수 계산
+        Map<String, Integer> ingredientScores = nutrientScoreService.calculateIngredientScores(responses, age, bmi);
+
+        // 2. HealthAnalysisDTO 생성 (필요한 정보만 포함)
+        HealthAnalysisDTO healthAnalysis = new HealthAnalysisDTO(); // 기본 생성자 사용
+
+        // 3. 추천 영양 성분 목록 가져오기
+        Map<String, List<String>> recommendedIngredientsMap = nutrientScoreService.getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
+
+        // 4. essential 과 additional 리스트를 합치기
+        List<String> recommendedIngredients = new ArrayList<>();
+        recommendedIngredientsMap.values().forEach(recommendedIngredients::addAll);
+
+        // 5. 제품 추천
+        Map<String, List<ProductRecommendationDTO>> recommendations =
+                productRecommendationService.recommendProductsByIngredients(recommendedIngredients, ingredientScores);
+
+        return ResponseEntity.ok(recommendations);
+    }
+
+
+    /**
+     * 사용자의 응답, 나이, BMI를 기반으로 영양 점수를 계산합니다.
+     * @param data 응답, 나이, BMI 정보를 포함한 Map
+     * @return 계산된 영양 점수를 포함한 ResponseEntity
+     */
+    @PostMapping("/calculate-nutrient-scores")
+    public ResponseEntity<Map<String, Integer>> calculateNutrientScores(@RequestBody Map<String, Object> data) {
+        List<MemberResponse> responses = (List<MemberResponse>) data.get("responses");
+        int age = (int) data.get("age");
+        double bmi = (double) data.get("bmi");
+
+        Map<String, Integer> scores = nutrientScoreService.calculateIngredientScores(responses, age, bmi);
+        return ResponseEntity.ok(scores);
+    }
+
+    /**
+     * 현재 로그인한 사용자의 건강 기록 히스토리를 조회합니다.
+     * @return 건강 기록 리스트를 포함한 ResponseEntity
+     */
+    @GetMapping("/history")
+    public ResponseEntity<List<HealthRecord>> getHealthHistory() {
         try {
-            if (authentication == null || !authentication.isAuthenticated()) {
-                logger.error("User is not authenticated");
-                response.put("status", "error");
-                response.put("message", "User is not authenticated");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-            }
-
-            String userEmail = authentication.getName();
-            logger.info("Fetching recommendations for user: {} in category: {}", userEmail, categoryId);
-
-            // 여기서는 카테고리 ID를 사용하지 않고, 전체 추천을 가져옵니다.
-            // 카테고리별 필터링은 프론트엔드에서 처리하거나,
-            // RecommendationService에 새로운 메서드를 추가해야 할 수 있습니다.
-            Map<String, List<ProductRecommendationDTO>> recommendations =
-                    recommendationService.recommendProducts(userEmail);
-
-            response.put("status", "success");
-            response.put("data", recommendations);
-            return ResponseEntity.ok(response);
-
+            List<HealthRecord> history = recommendationService.getHealthHistory();
+            return ResponseEntity.ok(history);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         } catch (Exception e) {
-            logger.error("Error while fetching recommendations by category", e);
-            response.put("status", "error");
-            response.put("message", "Error fetching recommendations: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 }

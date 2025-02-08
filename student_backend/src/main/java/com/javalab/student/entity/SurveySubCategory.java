@@ -24,9 +24,11 @@ public class SurveySubCategory extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
+    @JsonBackReference // 이 부분을 추가/수정했습니다.
     private SurveyCategory category;
 
     @OneToMany(mappedBy = "subCategory", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     @Builder.Default
     private List<SurveyQuestion> questions = new ArrayList<>();
 
@@ -35,4 +37,3 @@ public class SurveySubCategory extends BaseEntity {
         question.setSubCategory(this);
     }
 }
-

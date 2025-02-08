@@ -1,4 +1,4 @@
-package com.javalab.student.service;
+package com.javalab.student.service.survey;
 
 import com.javalab.student.dto.SurveyResponseDto;
 import com.javalab.student.dto.SurveySubmissionDto;

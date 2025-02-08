@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -18,4 +19,5 @@ public class ProductRecommendationDTO {
     private BigDecimal price;
     private int score;
     private String mainIngredient;
+    private Map<String, Integer> ingredientScores;
 }

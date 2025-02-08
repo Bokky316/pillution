@@ -1,23 +1,37 @@
 import React from 'react';
-import { Typography, Grid } from '@mui/material';
+import { Typography, Box } from '@mui/material';
 import ProductCard from '@/features/survey/RecommendationCard';
 
-const RecommendationSection = React.memo(({ title, products }) => {
+const RecommendationSection = React.memo(({ title, products, maxItems }) => {
   if (!products || products.length === 0) return null;
 
   return (
-    <div>
-      <Typography variant="h5" gutterBottom>
+    <Box>
+      <Typography variant="h5" gutterBottom fontWeight="bold" color="primary">
         {title}
       </Typography>
-      <Grid container spacing={3}>
-        {products.map((product) => (
-          <Grid item xs={12} sm={6} md={4} key={product.id}>
+      <Box
+        display="flex"
+        flexWrap="nowrap"
+        overflow="auto"
+        gap={2}
+        sx={{
+          '&::-webkit-scrollbar': {
+            height: '8px',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'rgba(0,0,0,.2)',
+            borderRadius: '4px',
+          }
+        }}
+      >
+        {products.slice(0, maxItems).map((product) => (
+          <Box key={product.id} flexShrink={0} width={200}>
             <ProductCard product={product} />
-          </Grid>
+          </Box>
         ))}
-      </Grid>
-    </div>
+      </Box>
+    </Box>
   );
 });
 

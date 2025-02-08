@@ -22,6 +22,7 @@ public class SurveyCategory extends BaseEntity {
     private String name;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference // 이 부분을 추가/수정했습니다.
     @Builder.Default
     private List<SurveySubCategory> subCategories = new ArrayList<>();
 
@@ -30,4 +31,3 @@ public class SurveyCategory extends BaseEntity {
         subCategory.setCategory(this);
     }
 }
-
