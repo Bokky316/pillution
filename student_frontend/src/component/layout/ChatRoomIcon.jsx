@@ -1,38 +1,45 @@
-import React, { useState } from 'react';
-import { Fab } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Fab, Badge } from '@mui/material';
 import ChatIcon from '@mui/icons-material/Chat';
 import ChatRoom from '@/pages/chat/ChatRoom';
+import { useSelector } from 'react-redux';
 
-/**
- * 채팅방 아이콘 컴포넌트
- * 화면 우측 하단에 고정된 채팅 아이콘을 표시하고, 클릭 시 채팅방을 열 수 있습니다.
- */
 const ChatRoomIcon = () => {
-    // 채팅방 열림/닫힘 상태
     const [open, setOpen] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const messages = useSelector(state => state.chat.messages);
 
-    /**
-     * 채팅방 열기 핸들러
-     */
+    useEffect(() => {
+        const count = messages.filter(msg => !msg.read).length;
+        setUnreadCount(count);
+    }, [messages]);
+
     const handleOpen = () => setOpen(true);
-
-    /**
-     * 채팅방 닫기 핸들러
-     */
     const handleClose = () => setOpen(false);
 
     return (
         <>
-            {/* 채팅 아이콘 */}
-            <Fab
-                color="primary"
-                aria-label="chat"
-                onClick={handleOpen}
-                sx={{ position: 'fixed', bottom: 16, right: 16 }}
+            <Badge
+                badgeContent={unreadCount}
+                color="error"
+                role="status"
+                aria-label={`${unreadCount}개의 읽지 않은 메시지가 있습니다`}
+                sx={{
+                    '& .MuiBadge-badge': {
+                        right: 30,
+                        top: 15
+                    }
+                }}
             >
-                <ChatIcon />
-            </Fab>
-            {/* 채팅방 컴포넌트 (조건부 렌더링) */}
+                <Fab
+                    color="primary"
+                    aria-label="채팅 열기"
+                    onClick={handleOpen}
+                    sx={{ position: 'fixed', bottom: 16, right: 16 }}
+                >
+                    <ChatIcon />
+                </Fab>
+            </Badge>
             {open && <ChatRoom onClose={handleClose} />}
         </>
     );

@@ -23,25 +23,22 @@ const ChatRoom = ({ onClose }) => {
     const messagesEndRef = useRef(null);
     const [isTyping, setIsTyping] = useState({});
     const [stompClient, setStompClient] = useState(null);
+    const [notification, setNotification] = useState(null);
 
-    // 채팅방 목록을 가져오는 useEffect
     useEffect(() => {
         dispatch(fetchChatRooms());
     }, [dispatch]);
 
-    // 선택된 채팅방의 메시지를 가져오는 useEffect
     useEffect(() => {
         if (selectedRoom) {
             dispatch(selectChatRoom(selectedRoom));
         }
     }, [dispatch, selectedRoom]);
 
-    // 메시지 목록이 업데이트될 때 스크롤을 맨 아래로 이동시키는 useEffect
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    // 사용자 검색을 위한 useEffect
     useEffect(() => {
         if (debouncedQuery.length >= 2) {
             fetchUsers(debouncedQuery);
@@ -50,27 +47,25 @@ const ChatRoom = ({ onClose }) => {
         }
     }, [debouncedQuery]);
 
-    // WebSocket 연결 설정을 위한 useEffect
     useEffect(() => {
         const socket = new SockJS(`${SERVER_URL}ws`);
         const client = Stomp.over(socket);
 
         client.connect({}, () => {
-            console.log('WebSocket 연결 성공');
             setStompClient(client);
 
-            // 전체 채팅 메시지 구독
-            client.subscribe('/topic/chat', (message) => {
-                const receivedMessage = JSON.parse(message.body);
-                dispatch(addMessage(receivedMessage));
-            });
-
-            // 개인 채팅 메시지 구독
-            client.subscribe(`/topic/chat/${user.id}`, async (message) => {
-                console.log("새로운 메시지 도착:", message.body);
+            // 개인 메시지 구독
+            client.subscribe(`/user/${user.id}/queue/messages`, (message) => {
                 const parsedMessage = JSON.parse(message.body);
                 dispatch(addMessage(parsedMessage));
-                await fetchMessages(user.id, dispatch);
+
+                // 알림 표시
+                if (Notification.permission === 'granted' && document.hidden) {
+                    new Notification('새 메시지가 도착했습니다', {
+                        body: parsedMessage.content,
+                        icon: '/path/to/icon.png'
+                    });
+                }
             });
 
             // 타이핑 상태 구독
@@ -90,9 +85,12 @@ const ChatRoom = ({ onClose }) => {
                     }, 3000);
                 }
             });
-        }, (error) => {
-            console.error('WebSocket 연결 오류:', error);
         });
+
+        // 알림 권한 요청
+        if (Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
 
         return () => {
             if (client.connected) {
@@ -101,10 +99,8 @@ const ChatRoom = ({ onClose }) => {
         };
     }, [dispatch, user.id]);
 
-    // 사용자 검색 함수
     const fetchUsers = async (query) => {
         if (!query) return;
-
         try {
             const response = await fetchWithAuth(`${API_URL}members/search?query=${query}`);
             if (response.ok) {
@@ -114,19 +110,20 @@ const ChatRoom = ({ onClose }) => {
                 setUsers([]);
             }
         } catch (error) {
-            console.error("🚨 사용자 검색 실패:", error.message);
+            console.error("사용자 검색 실패:", error.message);
             setUsers([]);
         }
     };
 
-    // 메시지 전송 함수
     const handleSendMessage = () => {
         if (newMessage.trim() && selectedRoom && stompClient) {
             const message = {
                 roomId: selectedRoom,
                 senderId: user.id,
-                content: newMessage
+                content: newMessage,
+                timestamp: new Date().toISOString()
             };
+
             stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(message));
             setNewMessage('');
         } else {
@@ -134,10 +131,9 @@ const ChatRoom = ({ onClose }) => {
         }
     };
 
-    // 새 채팅방 생성 함수
     const handleCreateNewChat = async () => {
         if (!selectedUser) {
-            dispatch(showSnackbar("❌ 대화 상대를 선택해주세요."));
+            dispatch(showSnackbar("대화 상대를 선택해주세요."));
             return;
         }
         try {
@@ -148,10 +144,10 @@ const ChatRoom = ({ onClose }) => {
 
             setOpenNewChatModal(false);
             setSelectedUser(null);
-            dispatch(showSnackbar("✅ 새로운 채팅방이 생성되었습니다."));
+            dispatch(showSnackbar("새로운 채팅방이 생성되었습니다."));
         } catch (error) {
-            console.error("🚨 채팅방 생성 실패:", error.message);
-            dispatch(showSnackbar("❌ 채팅방 생성에 실패했습니다."));
+            console.error("채팅방 생성 실패:", error.message);
+            dispatch(showSnackbar("채팅방 생성에 실패했습니다."));
         }
     };
 

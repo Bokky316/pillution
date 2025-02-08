@@ -93,7 +93,8 @@ const chatSlice = createSlice({
         selectedRoom: null, // 현재 선택된 채팅방 ID
         messages: [],        // 현재 채팅방의 메시지 목록
         status: 'idle',      // 비동기 작업 상태 ('idle', 'loading', 'succeeded', 'failed')
-        error: null          // 오류 메시지
+        error: null ,         // 오류 메시지
+        unreadMessages: []  // 읽지 않은 메시지
     },
     reducers: {
         /**
@@ -105,6 +106,17 @@ const chatSlice = createSlice({
             if (state.selectedRoom === action.payload.roomId) {
                 state.messages.push(action.payload);
             }
+            // 읽지 않은 메시지 추가
+            if (!action.payload.read) {
+                state.unreadMessages.push(action.payload);
+            }
+        },
+        markMessageAsRead: (state, action) => {
+            const messageId = action.payload;
+            state.unreadMessages = state.unreadMessages.filter(msg => msg.id !== messageId);
+            state.messages = state.messages.map(msg =>
+                msg.id === messageId ? { ...msg, read: true } : msg
+            );
         },
         /**
          * 채팅방 목록을 설정
@@ -150,11 +162,11 @@ const chatSlice = createSlice({
             .addCase(createChatRoom.fulfilled, (state, action) => {
                 state.chatRooms.push(action.payload);
             })
-            // leaveChatRoom 액션 처리
+            // leaveChatRoom 액션 처리 부분 수정
             .addCase(leaveChatRoom.fulfilled, (state, action) => {
-                // action.payload는 roomId가 아니라 { roomId, userId } 객체여야 함
-                state.chatRooms = state.chatRooms.filter(room => room.id !== action.payload.roomId);
-                if (state.selectedRoom === action.payload.roomId) {
+                // action.payload는 단순 roomId입니다 (thunk에서 반환한 값)
+                state.chatRooms = state.chatRooms.filter(room => room.id !== action.payload);
+                if (state.selectedRoom === action.payload) {
                     state.selectedRoom = null;
                     state.messages = [];
                 }
