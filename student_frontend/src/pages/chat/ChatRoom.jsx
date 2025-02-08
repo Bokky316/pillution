@@ -152,23 +152,18 @@ const ChatRoom = ({ onClose }) => {
     };
 
     const handleSendMessage = () => {
-        if (newMessage.trim() && selectedRoom && stompClient) {
-            const message = {
-                id: Date.now(), // 임시 ID 부여
-                roomId: selectedRoom,
-                senderId: user.id,
-                content: newMessage,
-                timestamp: new Date().toISOString()
-            };
-
-            // WebSocket을 통한 메시지 전송
-            stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(message));
-            setNewMessage('');
-
-        } else {
-            dispatch(showSnackbar("채팅방을 선택해주세요."));
-        }
-    };
+           if (newMessage.trim() && selectedRoom && stompClient) {
+                const message = {
+                    roomId: selectedRoom,
+                    senderId: user.id,
+                    content: newMessage
+                };
+                stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(message));
+                setNewMessage('');
+            } else {
+                dispatch(showSnackbar("채팅방을 선택해주세요."));
+            }
+        };
 
     const handleCreateNewChat = async () => {
         if (!selectedUser) {
@@ -220,9 +215,7 @@ const ChatRoom = ({ onClose }) => {
             }, 3000);
         }
     };
-
-
-      // 읽지 않은 메시지 수를 가져오는 함수
+    // 읽지 않은 메시지 수를 가져오는 함수
        const fetchUnreadCount = async (roomId) => {
            try {
                const response = await fetchWithAuth(`${API_URL}chat/unread-count?roomId=${roomId}`);
