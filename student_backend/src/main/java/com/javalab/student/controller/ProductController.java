@@ -31,7 +31,7 @@ public class ProductController {
 
     /** 특정 상품 상세 정보 조회 */
     @GetMapping("/{productId}")
-    public ResponseEntity<Product> getProductDetails(@PathVariable Long productId) {
+    public ResponseEntity<Product> getProductDetails(@PathVariable("productId") Long productId) {
         try {
             return productRepository.findById(productId)
                     .map(ResponseEntity::ok)
