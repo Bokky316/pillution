@@ -1,37 +1,31 @@
 package com.javalab.student.config.redis;
 
+import com.javalab.student.service.webSoket.MessageSubscriberService;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.listener.PatternTopic;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
+import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-/**
- * Redis 설정 클래스
- * - RedisTemplate 및 CacheManager 빈 등록
- * - Redis를 활용한 캐싱 기능 활성화 (@EnableCaching)
- * - Redis에 저장되는 Key, Value의 직렬화 방식 지정
- * - RedisConnectionFactory를 활용하여 Redis 서버와 연결
- */
 @Configuration
 @EnableCaching // Spring의 캐싱 기능 활성화
 public class RedisConfig {
 
     /**
-     * 🔹 RedisTemplate 빈 등록
-     * - RedisTemplate은 Spring에서 Redis 데이터를 다룰 때 사용하는 주요 인터페이스
-     * - Redis에 데이터를 저장하거나 조회할 때 사용됨
-     * - Key와 Value의 직렬화(Serialization) 방식을 설정해야 함
-     * - LettuceConnectionFactory를 사용하여 Redis 서버와 연결
-     * @param connectionFactory Redis 연결을 위한 LettuceConnectionFactory
-     * @return 설정된 RedisTemplate 객체
+     * 🔹 사용자 권한 관리용 RedisTemplate (Object 저장)
+     * - 기존 코드 유지
      */
     @Bean
+    @Primary // 기본적으로 주입되는 RedisTemplate 지정
     public RedisTemplate<String, Object> redisTemplate(LettuceConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory); // Redis 연결 설정
@@ -48,7 +42,7 @@ public class RedisConfig {
     }
 
     /**
-     * 🔹 CacheManager 빈 등록
+     * 🔹 CacheManager 빈 등록 (기존 코드 유지)
      * - Spring의 캐싱 기능과 Redis를 연결하는 역할
      * - RedisCacheManager를 사용하여 Redis를 캐시 저장소로 활용
      * - CacheManager는 RedisConnectionFactory를 사용하여 Redis와 연결됨
@@ -56,5 +50,35 @@ public class RedisConfig {
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
         return RedisCacheManager.builder(redisConnectionFactory).build();
+    }
+
+    /**
+     * 🔹 메시징 전용 RedisTemplate (String 저장)
+     * - Pub/Sub을 위한 RedisTemplate
+     * - 메시지는 단순한 문자열 형태로 주고받으므로 String 직렬화 사용
+     */
+    @Bean(name = "redisStringTemplate")
+    public RedisTemplate<String, String> redisStringTemplate(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, String> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+
+        StringRedisSerializer stringSerializer = new StringRedisSerializer();
+        template.setKeySerializer(stringSerializer);
+        template.setValueSerializer(stringSerializer);
+
+        return template;
+    }
+
+    /**
+     * 🔹 Redis Pub/Sub 메시지 리스너 컨테이너 설정
+     * - "chat_channel"을 구독하여 메시지를 수신할 수 있도록 설정
+     */
+    @Bean
+    public RedisMessageListenerContainer redisMessageListenerContainer(
+            RedisConnectionFactory connectionFactory, MessageSubscriberService subscriber) {
+        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+        container.setConnectionFactory(connectionFactory);
+        container.addMessageListener(new MessageListenerAdapter(subscriber), new PatternTopic("chat_channel"));
+        return container;
     }
 }

@@ -1,14 +1,13 @@
 package com.javalab.student.controller;
 
-import com.javalab.student.dto.HealthAnalysisDTO;
-import com.javalab.student.dto.ProductRecommendationDTO;
-import com.javalab.student.entity.HealthRecord;
-import com.javalab.student.entity.MemberResponse;
-import com.javalab.student.service.recommendation.RecommendationService;
-import com.javalab.student.service.recommendation.ProductRecommendationService;
-import com.javalab.student.service.recommendation.RiskCalculationService;
-import com.javalab.student.service.recommendation.NutrientScoreService;
-import lombok.SneakyThrows;
+import com.javalab.student.dto.healthSurvey.HealthAnalysisDTO;
+import com.javalab.student.dto.healthSurvey.ProductRecommendationDTO;
+import com.javalab.student.entity.healthSurvey.HealthRecord;
+import com.javalab.student.entity.healthSurvey.MemberResponse;
+import com.javalab.student.service.healthSurvey.RecommendationService;
+import com.javalab.student.service.healthSurvey.ProductRecommendationService;
+import com.javalab.student.service.healthSurvey.RiskCalculationService;
+import com.javalab.student.service.healthSurvey.NutrientScoreService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

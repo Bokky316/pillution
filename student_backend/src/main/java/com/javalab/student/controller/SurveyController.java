@@ -1,8 +1,8 @@
 package com.javalab.student.controller;
 
-import com.javalab.student.dto.SurveySubmissionDto;
+import com.javalab.student.dto.healthSurvey.SurveySubmissionDto;
 import com.javalab.student.entity.Member;
-import com.javalab.student.service.survey.SurveyService;
+import com.javalab.student.service.healthSurvey.SurveyService;
 import com.javalab.student.service.MemberService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

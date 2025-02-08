@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.Cookie;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -221,6 +222,27 @@ public class MemberController {
         response.put("message", "로그인 실패");
         response.put("status", "failed");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response); // HTTP 401 Unauthorized
+    }
+
+    /**
+     * 사용자 검색 API (이름을 기반으로 검색)
+     * @param query - 클라이언트에서 입력한 검색어
+     * @return 사용자 목록 (JSON 형태)
+     */
+    @GetMapping("/search")
+    public ResponseEntity<Map<String, Object>> searchMembers(@RequestParam("query") String query) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            List<Member> members = memberService.searchMembersByName(query);
+
+            response.put("status", "success");
+            response.put("data", members); // 검색된 사용자 목록 반환
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "사용자 검색 중 오류 발생: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     /**
