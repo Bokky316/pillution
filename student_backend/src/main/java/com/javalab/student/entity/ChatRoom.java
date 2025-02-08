@@ -1,49 +1,64 @@
 package com.javalab.student.entity;
 
+import com.javalab.student.dto.ChatRoomDto;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * 채팅방 엔티티
- * 여러 참가자들이 메시지를 주고받는 채팅방을 나타냅니다.
+ * 참가자들이 메시지를 주고받는 채팅방을 나타냅니다.
  */
 @Entity
-@Getter @Setter
-@Table(name = "chat_room")
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ChatRoom extends BaseEntity {
-
+@Table(name = "chat_rooms")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+public class ChatRoom {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "room_id")
     private Long id;
 
-    @Column(nullable = false)
     private String name;
+    private Long user1Id;
+    private Long user2Id;
+    private boolean user1Left;
+    private boolean user2Left;
+    private LocalDateTime createdAt;
 
-    @ManyToMany
-    @JoinTable(
-            name = "chat_room_member",
-            joinColumns = @JoinColumn(name = "room_id"),
-            inverseJoinColumns = @JoinColumn(name = "member_id")
-    )
-    private List<Member> participants = new ArrayList<>();
-
-    @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ChatMessage> messages = new ArrayList<>();
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
 
     /**
-     * 채팅방에 참가자를 추가합니다.
-     * @param participant 추가할 참가자
+     * DTO로부터 엔티티를 생성합니다.
+     *
+     * @param dto 변환할 ChatRoomDto 객체
+     * @return 생성된 ChatRoom 엔티티
      */
-    public void addParticipant(Member participant) {
-        if (!this.participants.contains(participant)) {
-            this.participants.add(participant);
-        }
+    public static ChatRoom fromDto(ChatRoomDto dto) {
+        return ChatRoom.builder()
+                .id(dto.getId())
+                .name(dto.getName())
+                .user1Id(dto.getUser1Id())
+                .user2Id(dto.getUser2Id())
+                .user1Left(dto.isUser1Left())
+                .user2Left(dto.isUser2Left())
+                .createdAt(dto.getCreatedAt())
+                .build();
+    }
+
+    /**
+     * DTO의 정보로 엔티티를 업데이트합니다.
+     *
+     * @param dto 업데이트할 정보가 담긴 ChatRoomDto 객체
+     */
+    public void updateFromDto(ChatRoomDto dto) {
+        this.name = dto.getName();
+        this.user1Left = dto.isUser1Left();
+        this.user2Left = dto.isUser2Left();
+        // 필요에 따라 다른 필드들도 업데이트
     }
 }

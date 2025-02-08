@@ -1,4 +1,4 @@
-package com.javalab.student.constant.constant;
+package com.javalab.student.constant;
 
 public enum ParticipantRole {
     OWNER,

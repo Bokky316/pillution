@@ -10,7 +10,7 @@ const ChatRoomIcon = () => {
     const messages = useSelector(state => state.chat.messages);
 
     useEffect(() => {
-        const count = messages.filter(msg => !msg.read).length;
+        const count = messages.filter(msg => !msg.isRead).length;
         setUnreadCount(count);
     }, [messages]);
 

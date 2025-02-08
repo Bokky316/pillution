@@ -127,8 +127,6 @@ public class SecurityConfig {
         );
 
 
-
-
         /*
          * 필터의 순서는 addFilterBefore 메서드를 사용하여 정의
          * RefreshTokenCheckFilter -> TokenAuthenticationFilter -> UsernamePasswordAuthenticationFilter 순서로 실행
