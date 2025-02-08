@@ -9,7 +9,7 @@ import { fetchWithAuth, fetchWithoutAuth } from "@features/auth/utils/fetchWithA
 import { Client } from "@stomp/stompjs";    // 🔹 stompjs 라이브러리에서 Client 객체를 가져옴, 여기서 Client는 WebSocket 클라이언트 즉, 웹소켓을 통해서 메시지를 주고받는 클라이언트
 import SockJS from "sockjs-client";         // 🔹 sockjs-client 라이브러리에서 SockJS 객체를 가져옴, SockJS는 WebSocket을 지원하지 않는 브라우저에서도 웹소켓을 사용할 수 있도록 지원하는 라이브러리, SockJS를 통해서 웹소켓을 사용할 수 있음
 import { markMessageAsRead } from "./redux/messageSlice";
-import { setUnreadCount } from "./redux/messageSlice";  // ✅ 읽지 않은 메시지 수를 Redux에 저장하는 액션 import
+import { setUnreadCount, setMessages } from "./redux/messageSlice";  // ✅ 읽지 않은 메시지 수를 Redux에 저장하는 액션 import
 import { API_URL } from "@/constant";
 import { SERVER_URL } from "@/constant";
 import Header from "@components/layout/Header";
@@ -28,29 +28,27 @@ import RegisterMember from "@features/auth/components/RegisterMember";
 import UnauthorizedPage from "@features/auth/components/UnAuthorizedPage";
 import OAuth2RedirectHandler from '@features/auth/components/OAuth2RedirectHandler';
 import MessageList from "@features/auth/components/MessageList";
+import Chat from "@features/auth/components/Chat";
 
+/**
+ * App 컴포넌트
+ * - 웹 애플리케이션의 전체 구조를 정의하고, 라우팅 및 전역 상태 관리를 담당합니다.
+ */
 function App() {
     const dispatch = useDispatch();
     const [isLoading, setIsLoading] = useState(true);
     const { isLoggedIn, user } = useSelector(state => state.auth);
-    const { open, message } = useSelector((state) => state.snackbar || { open: false, message: "" }); // ✅ Redux Snackbar 상태 사용
+    const { open, message } = useSelector((state) => state.snackbar || { open: false, message: "" });
 
-    const [delayedUnreadCount, setDelayedUnreadCount] = useState(0);
-    // ✅ 읽지 않은 메시지 개수를 Redux에서 가져오기
     const unreadCount = useSelector(state => state.messages.unreadCount || 0);
 
-    // 🔹 사용자 목록을 모달 창에서 사용하기 위해 상태 변수로 선언
     const [openModal, setOpenModal] = useState(false);
-    // 🔹 사용자 목록을 저장할 상태 변수
     const [selectedUser, setSelectedUser] = useState(null);
-    // 🔹 사용자 목록을 저장할 상태 변수
     const [users, setUsers] = useState([]);
-    // 🔹 메시지 전송 모달 창에서 사용할 상태 변수
-    const [openMessagesModal, setOpenMessagesModal] = useState(false); // ✅ 상태 추가
-    const [messageContent, setMessageContent] = useState(""); // 메시지 내용 상태 추가
+    const [openMessagesModal, setOpenMessagesModal] = useState(false);
+    const [messageContent, setMessageContent] = useState("");
 
-    // 🔹 전역 stompClient 선언 (WebSocket 클라이언트)
-    let stompClient = null;
+    const [stompClient, setStompClient] = useState(null);
 
     useEffect(() => {
         const checkLoginStatus = async () => {
@@ -58,7 +56,6 @@ function App() {
             try {
                 const response = await fetchWithoutAuth(`${API_URL}auth/userInfo`, {
                     method: 'GET',
-                    credentials: 'include',
                 });
                 const data = await response.json();
 
@@ -78,32 +75,38 @@ function App() {
         checkLoginStatus();
     }, [dispatch]);
 
-    //  사용자 정보 가져오기 (로그인은 했는데 리덕스에 사용자 정보가 없는 경우-새로고침 등으로 인한 변)
     useEffect(() => {
         if (!user && isLoggedIn) {
             dispatch(fetchUserInfo());
         }
     }, [user, isLoggedIn, dispatch]);
 
-    // 🔹 로그인 상태 변경 또는 사용자 정보 변경 시 실행 (📌 수정된 부분)
     useEffect(() => {
         if (isLoggedIn && user) {
             console.log("✅ App > useEffect > fetchUnreadMessagesCount user.id : ", user.id);
-            fetchUnreadMessagesCount(user.id, dispatch); // ✅ Redux에 저장하도록 변경
+            fetchUnreadMessagesCount(user.id, dispatch);
             connectWebSocket();
+            fetchMessages();
         }
     }, [isLoggedIn, user, dispatch]);
 
-    useEffect(() => {
-        // ✅ 읽지 않은 메시지 개수를 0.5초 뒤에 업데이트
-        const timeout = setTimeout(() => {
-            setDelayedUnreadCount(unreadCount);
-        }, 500);
+    const fetchMessages = async () => {
+        try {
+            const response = await fetchWithAuth(`${API_URL}messages/${user.id}`);
+            if (response.ok) {
+                const data = await response.json();
+                dispatch(setMessages(data));  // ✅ Redux 상태 업데이트
+            }
+        } catch (error) {
+            console.error("🚨 메시지 목록 조회 실패:", error.message);
+        }
+    };
 
-        return () => clearTimeout(timeout);  // 컴포넌트 언마운트 시 정리
-    }, [unreadCount]);
-
-    // 🔹 읽지 않은 메시지 개수 가져오는 함수
+    /**
+     * 읽지 않은 메시지 수를 가져오는 API 호출
+     * @param {number} userId 사용자 ID
+     * @param {function} dispatch Redux dispatch 함수
+     */
     const fetchUnreadMessagesCount = async (userId, dispatch) => {
         console.log("✅ App > fetchUnreadMessagesCount userId : ", userId);
         try {
@@ -111,8 +114,6 @@ function App() {
             if (response.ok) {
                 const data = await response.json();
                 console.log(`✅ App > fetchUnreadMessagesCount data : ${data}`);
-
-                // ✅ 개수만 업데이트하도록 변경
                 dispatch(setUnreadCount(data));
             }
         } catch (error) {
@@ -134,125 +135,65 @@ function App() {
      *    준비 단계입니다. t=1738630649103는 타임스탬프로, 요청이 고유한 타이밍에 의해 식별되는 데 사용됩니다.
      */
     const connectWebSocket = () => {
-        if (!user || stompClient) return; // ✅ 중복 연결 방지
+        if (!user || stompClient) return;
+            const socket = new SockJS(`${SERVER_URL}ws`);
+            const client = new Client({
+                webSocketFactory: () => socket,
+                onConnect: () => {
+                    console.log("📡 WebSocket 연결 완료");
+                    setStompClient(client); // stompClient 설정
 
-        const socket = new SockJS(`${SERVER_URL}ws`); // ✅ SockJS 객체 생성
-        stompClient = new Client({
-            webSocketFactory: () => socket,
-            onConnect: () => {
-                console.log("📡 WebSocket 연결 완료");
-
-                // ✅ 구독: /topic/chat/{user.id} → 사용자의 메시지 채널
-                stompClient.subscribe(`/topic/chat/${user.id}`, (message) => {
-                    console.log("📩 App > connectWebSocket > stompClient.subscribe 새로운 메시지가 도착했습니다. message : ", message);
-
-                    // ✅ Redux 스낵바 알림 표시
-                    dispatch(showSnackbar("📩 새로운 메시지가 도착했습니다!"));
-
-                    fetchUnreadMessagesCount(user.id, dispatch); // ✅ 읽지 않은 메시지 개수 갱신
-                });
-            },
-        });
-        stompClient.activate();
-    };
-
-    const fetchUsers = async () => {
-        try {
-            const response = await fetchWithAuth(`${API_URL}users`);
-            if (response.ok) {
-                const usersData = await response.json();
-                setUsers(usersData);
-            }
-        } catch (error) {
-            console.error("사용자 목록 조회 실패:", error.message);
-        }
-    };
-
-    const sendMessage = async () => {
-        if (!selectedUser || !message) return;
-        try {
-            await fetchWithAuth(`${API_URL}messages/send`, {
-                method: "POST",
-                body: JSON.stringify({ recipientId: selectedUser.id, content: message }),
+                    client.subscribe(`/topic/chat/${user.id}`, (message) => {
+                        console.log("📩 App > connectWebSocket > stompClient.subscribe 새로운 메시지 도착: ", message);
+                        fetchUnreadMessagesCount(user.id, dispatch);
+                        fetchMessages()
+                        dispatch(markMessageAsRead(message.id)); // 뱃지 제거
+                    });
+                },
+                onDisconnect: () => {
+                    console.log("🔌 WebSocket 연결 해제");
+                },
+                onStompError: (frame) => {
+                    console.error('🚨 STOMP 에러 발생:', frame);
+                },
             });
-            setOpenModal(false);
-            setMessage("");
-            setSelectedUser(null);
-        } catch (error) {
-            console.error("메시지 전송 실패:", error.message);
-        }
-    };
-
-    const handleLogout = async () => {
-        try {
-            await fetchWithAuth(`${API_URL}auth/logout`, { method: "POST" });
-            dispatch(clearUser());
-            await persistor.purge();
-            window.location.href = "/";
-        } catch (error) {
-            console.error("로그아웃 실패:", error.message);
-            alert("로그아웃 중 오류가 발생했습니다.");
-        }
-    };
-
-    // 🔹 배지를 클릭하면 메시지 모달 열기
-    const handleOpenMessageModal = () => {
-        setOpenMessagesModal(true);
-    };
-
-    // 🔹 메시지 전송 함수
-    const handleSendMessage = async () => {
-        if (!messageContent) return;
-        try {
-            await fetchWithAuth(`${API_URL}messages/send`, {
-                method: "POST",
-                body: JSON.stringify({ senderId: user.id, receiverId: user.id, content: messageContent }), // ✅ 현재 로그인한 사용자가 수신자
-            });
-            setOpenMessagesModal(false);
-            setMessageContent("");
-
-            dispatch(showSnackbar("메시지가 전송되었습니다!"));
-        } catch (error) {
-            console.error("메시지 전송 실패:", error.message);
-        }
-    };
-
-    // ✅ 메시지를 읽으면 Redux 상태를 업데이트하여 unreadMessages[] 에서 제거
-    const handleReadMessages = async (messageId) => {
-        try {
-            // 1. DB에 메시지를 읽음 처리
-            await fetchWithAuth(`${API_URL}messages/read/${messageId}`, { method: "POST" });
-            // 2. Redux 상태 업데이트, markMessageAsRead() : 메시지를 읽음 처리하는 액션
-            dispatch(markMessageAsRead(messageId)); // ✅ Redux 상태 업데이트, markMessageAsRead() : 메시지를 읽음 처리하는 액션
-            // 3. 읽지 않은 메시지 개수를 1 감소
-            dispatch(setUnreadCount(state => state.unreadCount - 1));  // ✅ 개수 줄이기
-        } catch (error) {
-            console.error("🚨 메시지 읽음 처리 실패:", error.message);
-        }
+            client.activate();
     };
 
     if (isLoading) {
-        return <CircularProgress />;
+        return (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+                <CircularProgress />
+            </div>
+        );
     }
 
     return (
-        <div className="App">
+        <>
             <Header />
             <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/registerMember" element={<RegisterMember />} />
-                <Route path="/mypage" element={isLoggedIn ? <MyPage /> : <Navigate to="/login" />} />
+                <Route path="/" element={<ProductListPage />} />
+                <Route path="/products" element={<ProductListPage />} />
+                <Route path="/product/:productId" element={<ProductDetailPage />} />
                 <Route path="/recommendation" element={<RecommendationPage />} />
                 <Route path="/survey" element={<SurveyPage />} />
-                <Route path="/products" element={<ProductListPage />} />
-                <Route path="/products/:productId" element={<ProductDetailPage />} />
                 <Route path="/cart" element={isLoggedIn ? <CartPage /> : <Navigate to="/login" />} />
-                <Route path="/unauthorized" element={<UnauthorizedPage />} />
-                <Route path="/messages" element={<MessageList />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/mypage" element={isLoggedIn ? <MyPage /> : <Navigate to="/login" />} />
+                <Route path="/registerMember" element={<RegisterMember />} />
                 <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
+                <Route path="/messages" element={isLoggedIn ? <MessageList /> : <Navigate to="/login" />} />
+                <Route path="/chat" element={<Chat />} />
+                <Route path="/unauthorized" element={<UnauthorizedPage />} />
             </Routes>
+            <Snackbar
+                open={open}
+                autoHideDuration={3000}
+                onClose={() => dispatch(hideSnackbar())}
+                message={message}
+            />
             <Footer />
-        </div>
+        </>
     );
 }
 

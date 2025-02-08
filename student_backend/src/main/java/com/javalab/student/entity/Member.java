@@ -12,9 +12,11 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * 회원 엔티티
@@ -141,6 +143,9 @@ public class Member extends BaseEntity{
         this.lastLoginAt = LocalDateTime.now();
         System.out.println("🔹 [Member] 마지막 로그인 시간 업데이트: " + this.lastLoginAt);
     }
+    @ManyToMany(mappedBy = "participants")
+    private List<ChatRoom> chatRooms = new ArrayList<>();
+
 
 }
 

@@ -8,6 +8,7 @@ import uiReducer from './uiSlice';
 import recommendationReducer from "./recommendationSlice";  // 추가된 부분
 import snackbarReducer from "./snackbarSlice";  // ✅ 스낵바 리듀서 추가, snackbarSlice에서 가져옴, 가져와서 root 리듀서에 추가, 추가하면 Redux Persist 대상이 됨. 그렇게 되면 스낵바 상태가 localStorage에 저장되고 복구됨.
 import messageReducer from "./messageSlice"; // ✅ messagesSlice 추가
+import chatReducer from './chatSlice';
 
 /**
  * Redux Persist 설정을 정의합니다.
@@ -27,7 +28,7 @@ import messageReducer from "./messageSlice"; // ✅ messagesSlice 추가
 const persistConfig = {
     key: "root",
     storage,
-    whitelist: ["auth", "survey", "ui", "recommendations", "snackbar"],  // recommendations 추가
+    whitelist: ["auth", "survey", "ui", "recommendations", "snackbar", "chat"],  // recommendations 추가
 };
 
 /**
@@ -42,6 +43,7 @@ const rootReducer = combineReducers({
     recommendations: recommendationReducer,  // 추가된 부분
     snackbar: snackbarReducer, // ✅ snackbar 상태 관리 추가, 추가하면 Redux Persist 대상이 됨. 그렇게 되면 스낵바 상태가 localStorage에 저장되고 복구됨.
     messages: messageReducer, // ✅ Redux 스토어에 등록
+    chat: chatReducer,
 });
 
 /**
