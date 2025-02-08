@@ -9,6 +9,18 @@ import { showSnackbar } from "@/redux/snackbarSlice";
 import useDebounce from "@hook/useDebounce";
 import SockJS from 'sockjs-client';
 import { Stomp } from '@stomp/stompjs';
+import { styled } from '@mui/system';
+
+// 메시지 스타일 컴포넌트
+const MessageItem = styled('div')(({ isCurrentUser }) => ({
+    maxWidth: '80%',
+    padding: '8px 12px',
+    borderRadius: '10px',
+    marginBottom: '8px',
+    backgroundColor: isCurrentUser ? '#DCF8C6' : '#FFFFFF',
+    alignSelf: isCurrentUser ? 'flex-end' : 'flex-start',
+    wordBreak: 'break-word', // 긴 텍스트 줄바꿈 처리
+}));
 
 const ChatRoom = ({ onClose }) => {
     const dispatch = useDispatch();
@@ -85,6 +97,26 @@ const ChatRoom = ({ onClose }) => {
                     }, 3000);
                 }
             });
+
+            // 채팅방 관련 메시지 구독 (퇴장 메시지 포함)
+            if (selectedRoom) {
+                client.subscribe(`/topic/chat/${selectedRoom}`, (message) => {
+                    const parsedMessage = JSON.parse(message.body);
+                    // 메시지 타입에 따라 처리 (퇴장 메시지인지 일반 메시지인지)
+                    if (parsedMessage.isSystemMessage) {
+                        // 시스템 메시지 처리 로직 (예: UI 업데이트)
+                        dispatch(fetchChatRooms()); // 채팅방 목록 갱신
+                        dispatch(selectChatRoom(selectedRoom)); // 메시지 목록 갱신
+                    } else {
+                        dispatch(addMessage(parsedMessage)); // 일반 메시지 처리
+                    }
+                });
+            }
+
+        }, (error) => {
+            console.error("WebSocket 연결 오류:", error);
+            dispatch(showSnackbar("❌ WebSocket 연결에 실패했습니다."));
+            // 필요한 경우 재연결 시도
         });
 
         // 알림 권한 요청
@@ -97,7 +129,7 @@ const ChatRoom = ({ onClose }) => {
                 client.disconnect();
             }
         };
-    }, [dispatch, user.id]);
+    }, [dispatch, user.id, selectedRoom]);
 
     const fetchUsers = async (query) => {
         if (!query) return;
@@ -126,6 +158,8 @@ const ChatRoom = ({ onClose }) => {
 
             stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(message));
             setNewMessage('');
+            // 메시지 전송 후 강제 리렌더링
+            dispatch(selectChatRoom(selectedRoom));
         } else {
             dispatch(showSnackbar("채팅방을 선택해주세요."));
         }
@@ -209,15 +243,27 @@ const ChatRoom = ({ onClose }) => {
                     {selectedRoom ? (
                         <>
                             <Box sx={{ flexGrow: 1, overflowY: 'auto', mb: 1 }}>
-                                {messages.map(message => (
-                                    <Box key={message.id} sx={{mb: 1}}>
-                                        <Typography variant="subtitle2">{message.senderName}</Typography>
-                                        <Typography>{message.content}</Typography>
-                                        <Typography variant="caption">
-                                            {new Date(message.timestamp).toLocaleTimeString()}
-                                        </Typography>
-                                    </Box>
-                                ))}
+                                {messages.map(message => {
+                                    const isCurrentUser = message.senderId === user.id;
+                                    return (
+                                        <Box
+                                            key={message.id}
+                                            sx={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: isCurrentUser ? 'flex-end' : 'flex-start',
+                                                mb: 1,
+                                            }}
+                                        >
+                                            <MessageItem isCurrentUser={isCurrentUser}>
+                                                <Typography variant="body2">{message.content}</Typography>
+                                            </MessageItem>
+                                            <Typography variant="caption" color="textSecondary">
+                                                {new Date(message.timestamp).toLocaleTimeString()}
+                                            </Typography>
+                                        </Box>
+                                    );
+                                })}
                                 <div ref={messagesEndRef} />
                             </Box>
                             {isTyping[selectedRoom] && (

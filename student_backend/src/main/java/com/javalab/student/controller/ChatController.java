@@ -95,7 +95,6 @@ public class ChatController {
                 chatMessageDto.getRoomId(), chatMessageDto.getSenderId(), chatMessageDto.getContent());
         return chatService.sendMessage(chatMessageDto.getRoomId(), chatMessageDto.getSenderId(), chatMessageDto.getContent());
     }
-
     /**
      * 채팅방에 새로운 참가자를 추가합니다.
      * @param roomId 채팅방 ID
@@ -155,7 +154,6 @@ public class ChatController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
 
     /**
      * 사용자의 입력 상태를 설정합니다.

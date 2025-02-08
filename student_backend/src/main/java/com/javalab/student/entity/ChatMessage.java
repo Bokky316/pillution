@@ -68,10 +68,10 @@ public class ChatMessage extends BaseEntity {
      * @return 생성된 시스템 메시지
      */
     public static ChatMessage createSystemMessage(ChatRoom chatRoom, String content) {
-        return ChatMessage.builder()
-                .chatRoom(chatRoom)
-                .content(content)
-                .isSystemMessage(true)
-                .build();
+        ChatMessage message = new ChatMessage();
+        message.setChatRoom(chatRoom);
+        message.setContent(content);
+        message.setSystemMessage(true); // 시스템 메시지 여부 설정
+        return message;
     }
 }

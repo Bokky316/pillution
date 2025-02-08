@@ -171,6 +171,7 @@ const chatSlice = createSlice({
                     state.messages = [];
                 }
             });
+
     }
 });
 
