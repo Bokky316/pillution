@@ -175,6 +175,19 @@ public class ChatService {
         }
     }
 
+    /**
+     * 채팅방의 참가자 ID 목록을 조회합니다.
+     * @param roomId 채팅방 ID
+     * @return 참가자 ID 목록
+     */
+    @Transactional(readOnly = true)
+    public List<Long> getChatRoomParticipants(Long roomId) {
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("채팅방을 찾을 수 없습니다."));
+        return chatRoom.getParticipants().stream()
+                .map(Member::getId)
+                .collect(Collectors.toList());
+    }
 
     /**
      * 사용자가 채팅방을 나갑니다.
@@ -190,21 +203,28 @@ public class ChatService {
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
         if (chatRoom.getParticipants().contains(member)) {
+            // 시스템 메시지 생성 및 저장
+            String content = member.getName() + "님이 채팅방을 나갔습니다.";
+            ChatMessage systemMessage = ChatMessage.createSystemMessage(chatRoom, content);
+            chatMessageRepository.save(systemMessage);
+
+            // WebSocket을 통해 시스템 메시지 전송
+            ChatMessageDto systemMessageDto = new ChatMessageDto(systemMessage);
+            messagingTemplate.convertAndSend("/topic/chat/" + roomId, systemMessageDto);
+
+            // 참가자 제거
             chatRoom.getParticipants().remove(member);
-            chatRoomRepository.save(chatRoom);
 
             if (chatRoom.getParticipants().isEmpty()) {
                 chatRoomRepository.delete(chatRoom);
             } else {
-                String content = member.getName() + "님이 채팅방을 나갔습니다.";
-                ChatMessage systemMessage = ChatMessage.createSystemMessage(chatRoom, content);
-                chatMessageRepository.save(systemMessage);
-                messagingTemplate.convertAndSend("/topic/chat/" + roomId, new ChatMessageDto(systemMessage));
+                chatRoomRepository.save(chatRoom);
             }
         } else {
             throw new RuntimeException("사용자가 해당 채팅방의 참가자가 아닙니다.");
         }
     }
+
 
     /**
      * 사용자의 입력 상태를 설정합니다.

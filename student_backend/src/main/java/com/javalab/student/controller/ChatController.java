@@ -100,7 +100,24 @@ public class ChatController {
     public ChatMessageDto sendMessage(@Payload ChatMessageDto chatMessageDto) {
         log.info("✅ 채팅 메시지 전송 요청: roomId={}, senderId={}, content={}",
                 chatMessageDto.getRoomId(), chatMessageDto.getSenderId(), chatMessageDto.getContent());
-        return chatService.sendMessage(chatMessageDto.getRoomId(), chatMessageDto.getSenderId(), chatMessageDto.getContent());
+
+        ChatMessageDto savedMessage = chatService.sendMessage(
+                chatMessageDto.getRoomId(),
+                chatMessageDto.getSenderId(),
+                chatMessageDto.getContent()
+        );
+
+        // 채팅방의 모든 참가자에게 메시지 전송
+        chatService.getChatRoomParticipants(chatMessageDto.getRoomId())
+                .forEach(participantId -> {
+                    messagingTemplate.convertAndSendToUser(
+                            participantId.toString(),
+                            "/queue/messages",
+                            savedMessage
+                    );
+                });
+
+        return savedMessage;
     }
     /**
      * 채팅방에 새로운 참가자를 추가합니다.
@@ -149,17 +166,21 @@ public class ChatController {
      * @return 처리 결과
      */
     @PostMapping("/rooms/{roomId}/leave")
-    public ResponseEntity<Void> leaveChatRoom(@PathVariable("roomId") Long roomId, @AuthenticationPrincipal MemberSecurityDto memberSecurityDto) {
-        Long userId = memberSecurityDto.getId();
-        log.info("✅ 채팅방 나가기 요청: roomId={}, userId={}", roomId, userId);
+    public ResponseEntity<String> leaveChatRoom(
+            @PathVariable Long roomId,
+            @AuthenticationPrincipal MemberSecurityDto memberSecurityDto) { // 수정
         try {
-            chatService.leaveChatRoom(roomId, userId);
-            return ResponseEntity.ok().build();
+            if (memberSecurityDto == null) {
+                return new ResponseEntity<>("인증되지 않은 사용자입니다.", HttpStatus.UNAUTHORIZED);
+            }
+            Long memberId = memberSecurityDto.getId();
+            chatService.leaveChatRoom(roomId, memberId);
+            return new ResponseEntity<>("채팅방 나가기 성공", HttpStatus.OK);
         } catch (Exception e) {
-            log.error("❌ 채팅방 나가기 처리 중 오류 발생", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return new ResponseEntity<>("채팅방 나가기 실패", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
     /**
      * 사용자의 입력 상태를 설정합니다.

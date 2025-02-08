@@ -153,18 +153,28 @@ const ChatRoom = ({ onClose }) => {
     const handleSendMessage = () => {
         if (newMessage.trim() && selectedRoom && stompClient) {
             const message = {
+                id: Date.now(), // 임시 ID 부여
                 roomId: selectedRoom,
                 senderId: user.id,
                 content: newMessage,
                 timestamp: new Date().toISOString()
             };
 
-            stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(message));
+            // 즉시 로컬 상태 업데이트
+            dispatch(addMessage(message));
             setNewMessage('');
+
+            // WebSocket을 통한 메시지 전송
+            stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(message));
+
+            // 서버로부터의 응답을 기다리지 않고 UI 업데이트
+            dispatch(updateLocalMessage(message));
         } else {
             dispatch(showSnackbar("채팅방을 선택해주세요."));
         }
     };
+
+
 
     const handleCreateNewChat = async () => {
         if (!selectedUser) {
