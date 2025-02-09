@@ -91,14 +91,35 @@ public class ChatService {
     }
 
     /**
-     * [기존 기능 5] 채팅방을 삭제합니다.
+     * [수정된 기능 5] 채팅방을 나갑니다.
      *
      * @param roomId 채팅방 ID
+     * @param userId 나가려는 사용자 ID
      */
     @Transactional
-    public void deleteChatRoom(Long roomId) {
-        chatRoomRepository.deleteById(roomId);
+    public void leaveChatRoom(Long roomId, Long userId) {
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("채팅방을 찾을 수 없습니다."));
+
+        chatRoom.setUserLeft(userId, true);
+
+        if (chatRoom.isBothUsersLeft()) {
+            chatRoomRepository.delete(chatRoom);
+        } else {
+            chatRoomRepository.save(chatRoom);
+        }
     }
+
+//
+//    /**
+//     * [기존 기능 5] 채팅방을 삭제합니다.
+//     *
+//     * @param roomId 채팅방 ID
+//     */
+//    @Transactional
+//    public void deleteChatRoom(Long roomId) {
+//        chatRoomRepository.deleteById(roomId);
+//    }
 
     /**
      * [기존 기능 6] 채팅 메시지를 전송합니다.

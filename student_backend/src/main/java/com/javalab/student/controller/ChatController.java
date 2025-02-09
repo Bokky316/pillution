@@ -75,16 +75,29 @@ public class ChatController {
     }
 
     /**
-     * [기존 기능 5] 채팅방 삭제
+     * [수정된 기능 5] 채팅방 나가기
      *
      * @param roomId 채팅방 ID
-     * @return 삭제 성공 여부
+     * @param userId 나가려는 사용자 ID
+     * @return 나가기 성공 여부
      */
-    @DeleteMapping("/rooms/{roomId}")
-    public ResponseEntity<Void> deleteChatRoom(@PathVariable Long roomId) {
-        chatService.deleteChatRoom(roomId);
-        return ResponseEntity.noContent().build();
+    @PostMapping("/rooms/{roomId}/leave")
+    public ResponseEntity<Void> leaveChatRoom(@PathVariable Long roomId, @RequestParam Long userId) {
+        chatService.leaveChatRoom(roomId, userId);
+        return ResponseEntity.ok().build();
     }
+
+//    /**
+//     * [기존 기능 5] 채팅방 삭제
+//     *
+//     * @param roomId 채팅방 ID
+//     * @return 삭제 성공 여부
+//     */
+//    @DeleteMapping("/rooms/{roomId}")
+//    public ResponseEntity<Void> deleteChatRoom(@PathVariable Long roomId) {
+//        chatService.deleteChatRoom(roomId);
+//        return ResponseEntity.noContent().build();
+//    }
 
     /**
      * [기존 기능 6] 채팅 메시지 전송

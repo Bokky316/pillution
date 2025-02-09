@@ -5,8 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 채팅방 엔티티
@@ -26,15 +24,17 @@ public class ChatRoom {
 
     private String name;
 
-    @Column(nullable = false) // [수정] null 값 허용 안함
+    @Column(nullable = false)
     private Long user1Id;
 
-    private boolean user1Left;
+    @Column(nullable = false)
+    private boolean user1Left = false;
 
-    @Column(nullable = false) // [수정] null 값 허용 안함
+    @Column(nullable = false)
     private Long user2Id;
 
-    private boolean user2Left;
+    @Column(nullable = false)
+    private boolean user2Left = false;
 
     private LocalDateTime createdAt;
 
@@ -90,5 +90,28 @@ public class ChatRoom {
         this.user1Left = dto.isUser1Left();
         this.user2Id = dto.getUser2Id();
         this.user2Left = dto.isUser2Left();
+    }
+
+    /**
+     * 사용자의 '나가기' 상태를 설정합니다.
+     *
+     * @param userId 상태를 변경할 사용자의 ID
+     * @param left 나가기 상태 (true: 나감, false: 들어옴)
+     */
+    public void setUserLeft(Long userId, boolean left) {
+        if (userId.equals(user1Id)) {
+            this.user1Left = left;
+        } else if (userId.equals(user2Id)) {
+            this.user2Left = left;
+        }
+    }
+
+    /**
+     * 양쪽 사용자 모두 채팅방을 나갔는지 확인합니다.
+     *
+     * @return 양쪽 모두 나갔으면 true, 그렇지 않으면 false
+     */
+    public boolean isBothUsersLeft() {
+        return user1Left && user2Left;
     }
 }
