@@ -8,7 +8,9 @@ import {
   Grid,
   Divider,
   CircularProgress,
+  IconButton,
 } from "@mui/material";
+import { Add as AddIcon, Remove as RemoveIcon } from '@mui/icons-material';
 import { fetchWithAuth } from "../../features/auth/utils/fetchWithAuth";
 import { API_URL } from "../../constant";
 
@@ -18,23 +20,22 @@ const ProductDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     const fetchProductDetails = async () => {
       setLoading(true);
       try {
         const response = await fetchWithAuth(`${API_URL}products/${productId}`);
-        // 1. API_URL이 올바른지 확인
         console.log('API_URL:', API_URL);
         console.log('전체 URL:', `${API_URL}products/${productId}`);
-
-        // 2. productId가 제대로 전달되는지 확인
         console.log('productId:', productId);
+
         if (!response.ok) {
           throw new Error("상품 정보를 불러올 수 없습니다.");
         }
         const data = await response.json();
-        console.log("📌 상품 상세 데이터:", data); // 디버깅용 로그
+        console.log("📌 상품 상세 데이터:", data);
         setProduct(data);
       } catch (error) {
         console.error("🚨 상품 상세 조회 오류:", error);
@@ -49,6 +50,18 @@ const ProductDetailPage = () => {
     }
   }, [productId]);
 
+  const handleQuantityChange = (change) => {
+    setQuantity(prev => {
+      const newQuantity = prev + change;
+      return newQuantity >= 1 ? newQuantity : 1;
+    });
+  };
+
+  const calculateTotalPrice = () => {
+    if (!product?.price) return 0;
+    return product.price * quantity;
+  };
+
   const addToCart = async () => {
     if (!product) return;
 
@@ -57,7 +70,7 @@ const ProductDetailPage = () => {
       const response = await fetchWithAuth(`${API_URL}cart/add`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, quantity: 1 }),
+        body: JSON.stringify({ productId, quantity }),
       });
 
       if (!response.ok) throw new Error("장바구니에 추가 실패!");
@@ -133,6 +146,30 @@ const ProductDetailPage = () => {
           </Typography>
           <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
             정기구독: 1만원 이상 무료배송
+          </Typography>
+
+          {/* 수량 선택 및 총 금액 */}
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <Typography variant="body1" sx={{ mr: 2 }}>수량:</Typography>
+            <IconButton
+              size="small"
+              onClick={() => handleQuantityChange(-1)}
+              sx={{ border: '1px solid #e0e0e0' }}
+            >
+              <RemoveIcon />
+            </IconButton>
+            <Typography sx={{ mx: 2 }}>{quantity}</Typography>
+            <IconButton
+              size="small"
+              onClick={() => handleQuantityChange(1)}
+              sx={{ border: '1px solid #e0e0e0' }}
+            >
+              <AddIcon />
+            </IconButton>
+          </Box>
+
+          <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
+            총 금액: {calculateTotalPrice().toLocaleString()}원
           </Typography>
 
           <Button
