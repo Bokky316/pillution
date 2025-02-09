@@ -20,6 +20,7 @@ export default function ProductListPage() {
 
   // ✅ Redux에서 카테고리 데이터 및 에러 상태 가져오기
   const { categories, error } = useSelector((state) => state.products);
+  const auth = useSelector((state) => state.auth);
 
   // ✅ 상태 변수 정의
   const [displayedProducts, setDisplayedProducts] = useState([]); // 현재 화면에 보이는 상품 목록
@@ -29,6 +30,11 @@ export default function ProductListPage() {
   const [selectedCategory, setSelectedCategory] = useState(null); // 선택된 카테고리
   const [allProducts, setAllProducts] = useState([]); // 전체 상품 목록 저장
   const observer = useRef(); // Intersection Observer (스크롤 감지)
+
+  // ✅ 현재 로그인한 사용자가 관리자(admin)인지 확인
+  const userRole = auth?.user?.authorities?.some((auth) => auth.authority === "ROLE_ADMIN")
+    ? "ADMIN"
+    : "USER";
 
   // ✅ 카테고리 데이터 가져오기 (한 번만 실행)
   useEffect(() => {
@@ -176,6 +182,42 @@ export default function ProductListPage() {
                 <Typography variant="body1" sx={{ fontWeight: "bold", color: "#ff5722" }}>
                   {product.price.toLocaleString()}원
                 </Typography>
+
+                {/* ✅ 주요 성분 태그 */}
+                {product.ingredients && product.ingredients.length > 0 && (
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: "5px", justifyContent: "center", marginTop: "10px" }}>
+                    {product.ingredients.map((ingredient, index) => (
+                      <Chip
+                        key={index}
+                        label={ingredient}
+                        sx={{
+                          fontSize: "12px",
+                          backgroundColor: "#f5f5f5",
+                          color: "#333",
+                          fontWeight: "bold",
+                        }}
+                      />
+                    ))}
+                  </Box>
+                )}
+
+                {/* ✅ 관리자 전용 정보 */}
+                {userRole === "ADMIN" && (
+                  <Box sx={{ marginTop: "10px" }}>
+                    <Typography variant="body2" color="textSecondary">
+                      재고: {product.stock}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: product.active ? "green" : "red",
+                        marginTop: "5px",
+                      }}
+                    >
+                      {product.active ? "활성화" : "비활성화"}
+                    </Typography>
+                  </Box>
+                )}
               </CardContent>
             </Card>
           </Grid>

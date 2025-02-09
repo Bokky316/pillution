@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { useSelector } from "react-redux";
 import {
   Box,
   Typography,
@@ -9,6 +10,7 @@ import {
   Divider,
   CircularProgress,
   IconButton,
+  Chip,
 } from "@mui/material";
 import { Add as AddIcon, Remove as RemoveIcon } from '@mui/icons-material';
 import { fetchWithAuth } from "../../features/auth/utils/fetchWithAuth";
@@ -21,6 +23,12 @@ const ProductDetailPage = () => {
   const [error, setError] = useState(null);
   const [addingToCart, setAddingToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const auth = useSelector((state) => state.auth);
+
+  // ✅ 현재 로그인한 사용자가 관리자(admin)인지 확인
+  const userRole = auth?.user?.authorities?.some((auth) => auth.authority === "ROLE_ADMIN")
+    ? "ADMIN"
+    : "USER";
 
   useEffect(() => {
     const fetchProductDetails = async () => {
@@ -116,8 +124,24 @@ const ProductDetailPage = () => {
 
         {/* 오른쪽 - 상세 정보 */}
         <Grid item xs={12} md={6}>
-          <Typography variant="h5" sx={{ fontWeight: "bold", marginBottom: 2 }}>
+          <Typography variant="h5" sx={{ fontWeight: "bold", marginBottom: 2, display: 'flex', alignItems: 'center' }}>
             {product?.name || "상품 이름 없음"}
+            {userRole === "ADMIN" && (
+              <>
+                <Chip
+                  label={product?.active ? "활성" : "비활성"}
+                  color={product?.active ? "success" : "default"}
+                  size="small"
+                  sx={{ ml: 2 }}
+                />
+                <Chip
+                  label={`재고: ${product?.stock ?? "없음"}개`}
+                  color={product?.stock > 0 ? "primary" : "error"}
+                  size="small"
+                  sx={{ ml: 1 }}
+                />
+              </>
+            )}
           </Typography>
           <Typography variant="body1" color="textSecondary" sx={{ marginBottom: 3 }}>
             {product?.description || "상품 설명이 없습니다."}
