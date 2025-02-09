@@ -36,8 +36,12 @@ import RegisterMember from "@features/auth/components/RegisterMember";
 import UnauthorizedPage from "@features/auth/components/UnAuthorizedPage";
 import OAuth2RedirectHandler from '@features/auth/components/OAuth2RedirectHandler';
 import MessageList from "@features/auth/components/MessageList";
-import ChatRoom from '@/pages/chat/ChatRoom';
-import ChatRoomIcon from '@components/layout/ChatRoomIcon';
+// import ChatRoom from '@/pages/chat/ChatRoom';
+// import ChatRoomIcon from '@components/layout/ChatRoomIcon';
+import ConsultationChatPage from '@/pages/consultation/ConsultationChatPage';
+import ConsultantDashboard from '@features/consultation/ConsultantDashboard';
+import ConsultationBadge from '@features/consultation/ConsultationBadge';
+
 
 /**
  * App 컴포넌트
@@ -289,11 +293,14 @@ function App() {
                 <Route path="/unauthorized" element={<UnauthorizedPage />} />
                 {/* MessageList 컴포넌트에 onMessageRead prop을 전달 */}
                 <Route path="/messages" element={<MessageList onMessageRead={handleReadMessages} />} />
-                <Route path="/ChatRoom" element={<ChatRoom />} />
+{/*                 <Route path="/ChatRoom" element={<ChatRoom />} /> */}
                 <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
+                <Route path="/consultation" element={<ConsultationChatPage />} />
+                <Route path="/consultant-dashboard" element={<ConsultantDashboard />} />
             </Routes>
             <Footer />
-            <ChatRoomIcon />
+{/*             <ChatRoomIcon /> */}
+            <ConsultationBadge />
         </div>
     );
 }
