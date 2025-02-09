@@ -1,17 +1,25 @@
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import { useDispatch } from "react-redux";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { API_URL, SERVER_URL } from "@/constant";
 import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
 import { setMessages, addMessage, setUnreadCount } from "@/redux/messageSlice";
-import { addMessage as addChatMessage } from "@/redux/chat/chatSlice";
+import { addMessage as addChatMessage, fetchChatRooms, setTypingStatus } from "@/redux/chat/chatSlice";
 
-let stompClient = null;
+/**
+ * WebSocket을 사용하는 커스텀 훅
+ * - WebSocket을 사용하여 실시간 채팅을 구현할 때 사용합니다.
+ * - 사용자가 로그인하면 WebSocket을 통해 새로운 메시지를 받아옵니다.
+ * - 새로운 메시지가 도착하면 스낵바로 알림을 표시합니다.
+ * - 새로운 메시지가 도착하면 메시지 목록을 즉시 갱신합니다.
+ *
+ * @type {null}
+ */
+let stompClient = null; // ✅ 전역 변수로 설정 (중복 연결 방지)
 
-const useWebSocket = (user, selectedRoom) => {
+const useWebSocket = (user) => {
     const dispatch = useDispatch();
-    const [isConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
         if (!user?.id || stompClient) return;
@@ -25,26 +33,33 @@ const useWebSocket = (user, selectedRoom) => {
             reconnectDelay: 5000,
 
             onConnect: async () => {
-               console.log("📡 WebSocket 연결 성공!");
-               setIsConnected(true);
+                console.log("📡 WebSocket 연결 성공!");
 
-               await fetchMessages(user.id, dispatch);
+                await fetchMessages(user.id, dispatch);
 
-               // 개인 메시지 및 채팅방 메시지 구독
-               stompClient.subscribe(`/topic/chat/${user.id}`, handleNewMessage);
-               stompClient.subscribe(`/topic/chatting/${user.id}`, handleNewChatMessage);
+                stompClient.subscribe(`/topic/chat/${user.id}`, async (message) => {
+                    console.log("📨 useWebSocket > stompClient.subscribe 새로운 메시지 도착! message.body : ", message.body);
 
-               // 알림 구독
-               stompClient.subscribe(`/topic/notifications/${user.id}`, handleNotification);
+                    const parsedMessage = JSON.parse(message.body);
+                    dispatch(addMessage(parsedMessage));
+                    await fetchMessages(user.id, dispatch);
+                    await fetchUnreadMessagesCount(user.id, dispatch);
+                });
 
-               // 채팅방 목록 업데이트 구독
-               stompClient.subscribe('/topic/chat.rooms.update', handleChatRoomsUpdate);
+                // 채팅 구독 추가
+                stompClient.subscribe(`/topic/chatting/${user.id}`, async (message) => {
+                    console.log("📨 useWebSocket > stompClient.subscribe 새로운 채팅 도착! message.body : ", message.body);
 
-               if (selectedRoom) {
-                   stompClient.subscribe(`/topic/chat/${selectedRoom}`, handleRoomMessage);
-                   stompClient.subscribe(`/topic/chat/${selectedRoom}/typing`, handleTypingStatus);
-               }
-           },
+                    const parsedMessage = JSON.parse(message.body);
+                    dispatch(addChatMessage(parsedMessage));
+                });
+
+                // 알림 구독 추가
+                stompClient.subscribe(`/topic/notifications/${user.id}`, handleNotification);
+
+                // 채팅방 목록 업데이트 구독 추가
+                stompClient.subscribe('/topic/chat.rooms.update', handleChatRoomsUpdate);
+            },
 
             onStompError: (frame) => {
                 console.error("❌ STOMP 오류 발생:", frame);
@@ -57,24 +72,9 @@ const useWebSocket = (user, selectedRoom) => {
             if (stompClient) {
                 stompClient.deactivate();
                 stompClient = null;
-                setIsConnected(false);
             }
         };
-     }, [user, dispatch, selectedRoom]);
-
-    const handleNewMessage = async (message) => {
-        console.log("📨 새로운 메시지 도착:", message.body);
-        const parsedMessage = JSON.parse(message.body);
-        dispatch(addMessage(parsedMessage));
-        await fetchMessages(user.id, dispatch);
-        await fetchUnreadMessagesCount(user.id, dispatch);
-    };
-
-    const handleNewChatMessage = (message) => {
-        console.log("📨 새로운 채팅 도착:", message.body);
-        const parsedMessage = JSON.parse(message.body);
-        dispatch(addChatMessage(parsedMessage));
-    };
+    }, [user, dispatch]);
 
     const handleNotification = (notification) => {
         console.log("🔔 새 메시지 알림:", notification.body);
@@ -83,23 +83,24 @@ const useWebSocket = (user, selectedRoom) => {
 
     const handleChatRoomsUpdate = () => {
         console.log("🔄 채팅방 목록 업데이트");
-        dispatch(fetchChatRooms()); // chatSlice에 fetchChatRooms 액션 추가 필요
+        dispatch(fetchChatRooms(user.id));
     };
 
-    const handleRoomMessage = (message) => {
-        const receivedMessage = JSON.parse(message.body);
-        dispatch(addChatMessage(receivedMessage));
+    const sendMessage = (destination, body) => {
+        if (stompClient && stompClient.connected) {
+            stompClient.publish({
+                destination: destination,
+                body: JSON.stringify(body)
+            });
+        } else {
+            console.error("WebSocket 연결이 닫혀있거나 초기화되지 않았습니다.");
+        }
     };
 
-    const handleTypingStatus = (status) => {
-            const typingStatus = JSON.parse(status.body);
-            dispatch(setTypingStatus(typingStatus));
-        };
-
-    const sendTypingStatus = (isTyping) => {
-        if (stompClient && isConnected) {
+    const sendTypingStatus = (roomId, isTyping) => {
+        if (stompClient && stompClient.connected) {
             const typingStatus = {
-                roomId: selectedRoom,
+                roomId: roomId,
                 senderId: user.id,
                 typing: isTyping
             };
