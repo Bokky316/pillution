@@ -52,6 +52,7 @@ const ChatRoom = ({ onClose }) => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [isTyping, setIsTyping] = useState({});
     const [stompClient, setStompClient] = useState(null);
+    const [localUnreadCounts, setLocalUnreadCounts] = useState({}); // 로컬 상태로 관리
 
     const messagesEndRef = useRef(null);
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -170,28 +171,28 @@ const ChatRoom = ({ onClose }) => {
         }
     };
 
-   const handleSendMessage = () => {
-       if (newMessage.trim() && selectedRoom && stompClient) {
-           const message = {
-               roomId: selectedRoom,
-               senderId: user.id,
-               content: newMessage
-           };
+    const handleSendMessage = () => {
+        if (newMessage.trim() && selectedRoom && stompClient) {
+            const message = {
+                roomId: selectedRoom,
+                senderId: user.id,
+                content: newMessage
+            };
 
-           dispatch(addMessage(message));
-           setNewMessage('');
+            dispatch(addMessage(message));
+            setNewMessage('');
 
-           try {
-               stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(message));
-               console.log("메시지 전송 성공:", message);
-           } catch (error) {
-               console.error("메시지 전송 실패:", error);
-               dispatch(showSnackbar("메시지 전송에 실패했습니다."));
-           }
-       } else {
-           dispatch(showSnackbar("채팅방을 선택해주세요."));
-       }
-   };
+            try {
+                stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(message));
+                console.log("메시지 전송 성공:", message);
+            } catch (error) {
+                console.error("메시지 전송 실패:", error);
+                dispatch(showSnackbar("메시지 전송에 실패했습니다."));
+            }
+        } else {
+            dispatch(showSnackbar("채팅방을 선택해주세요."));
+        }
+    };
 
 
     const handleCreateNewChat = async () => {
@@ -246,7 +247,7 @@ const ChatRoom = ({ onClose }) => {
             const response = await fetchWithAuth(`${API_URL}chat/unread-count?roomId=${roomId}`);
             if (response.ok) {
                 const count = await response.json();
-                setUnreadCounts(prev => ({ ...prev, [roomId]: count }));
+                setLocalUnreadCounts(prev => ({ ...prev, [roomId]: count })); // 로컬 상태 업데이트
             } else {
                 console.error("읽지 않은 메시지 수 조회 실패");
                 dispatch(showSnackbar("❌ 읽지 않은 메시지 수 조회에 실패했습니다."));
@@ -261,7 +262,7 @@ const ChatRoom = ({ onClose }) => {
         chatRooms.forEach(room => {
             fetchUnreadCount(room.id);
         });
-    }, [chatRooms]);
+    }, [chatRooms, fetchUnreadCount]);
 
     useEffect(() => {
         fetchUnreadCounts();
@@ -283,14 +284,14 @@ const ChatRoom = ({ onClose }) => {
                     </Button>
                     {chatRooms.map(room => (
                         <ListItemButton
-                            key={room.id}
+                            key={room.id} // key prop 추가
                             selected={selectedRoom === room.id}
                             onClick={() => dispatch(selectChatRoom(room.id))}
                         >
                             <ListItemText primary={room.name} />
-                            {unreadCounts[room.id] > 0 && (
-                                <Badge badgeContent={unreadCounts[room.id]} color="primary">
-                                    <Typography variant="caption" color="white">{unreadCounts[room.id]}</Typography>
+                            {localUnreadCounts[room.id] > 0 && ( // 로컬 상태 사용
+                                <Badge badgeContent={localUnreadCounts[room.id]} color="primary">
+                                    <Typography variant="caption" color="white">{localUnreadCounts[room.id]}</Typography>
                                 </Badge>
                             )}
                             {selectedRoom === room.id && (
@@ -308,12 +309,12 @@ const ChatRoom = ({ onClose }) => {
                     {selectedRoom ? (
                         <>
                             <Box sx={{ flexGrow: 1, overflowY: 'auto', mb: 1 }}>
-                                {Array.isArray(messages) && messages.map(message => {
+                                {Array.isArray(messages) && messages.map((message, index) => { // key prop 추가
                                     if (!message) return null;
                                     const isCurrentUser = message.senderId === user.id;
                                     return (
                                         <Box
-                                            key={message.id}
+                                            key={message.id || index}
                                             sx={{
                                                 display: 'flex',
                                                 flexDirection: 'column',
@@ -383,7 +384,10 @@ const ChatRoom = ({ onClose }) => {
                     {searchResults.length > 0 && (
                         <List>
                             {searchResults.map(user => (
-                                <ListItemButton key={user.id} onClick={() => setSelectedUser(user)}>
+                                <ListItemButton
+                                    key={user.id} // key prop 추가
+                                    onClick={() => setSelectedUser(user)}
+                                >
                                     <ListItemText primary={user.name} secondary={user.email} />
                                 </ListItemButton>
                             ))}
