@@ -31,6 +31,12 @@ public class ChatRoom {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    @Column
+    private LocalDateTime startedAt;
+
+    @Column
+    private LocalDateTime endedAt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ChatRoomStatus status = ChatRoomStatus.WAITING;
@@ -49,4 +55,3 @@ public class ChatRoom {
         createdAt = LocalDateTime.now();
     }
 }
-

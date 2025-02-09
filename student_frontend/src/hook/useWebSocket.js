@@ -6,6 +6,12 @@ import { API_URL, SERVER_URL } from "@/constant";
 import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
 import { setMessages, addMessage, setUnreadCount } from "@/redux/messageSlice";
 import { addMessage as addChatMessage, fetchChatRooms, setTypingStatus } from "@/redux/chat/chatSlice";
+import {
+  initializeChat,
+  acceptConsultationRequest,
+  sendMessage as sendConsultationMessage,
+  fetchMessages as fetchConsultationMessages
+} from "@/redux/consultationSlice";
 
 /**
  * WebSocket을 사용하는 커스텀 훅
@@ -111,8 +117,49 @@ const useWebSocket = (user) => {
         }
     };
 
-    return { sendMessage, sendTypingStatus };
-};
+    const joinChatRoom = (roomId) => {
+      if (stompClient && stompClient.connected) {
+        stompClient.subscribe(`/topic/chat.room.${roomId}`, (message) => {
+          const parsedMessage = JSON.parse(message.body);
+          dispatch(addChatMessage(parsedMessage));
+        });
+        sendMessage('/app/chat.join', { roomId, userId: user.id });
+      }
+    };
+
+    const leaveChatRoom = (roomId) => {
+      if (stompClient && stompClient.connected) {
+        stompClient.unsubscribe(`/topic/chat.room.${roomId}`);
+        sendMessage('/app/chat.leave', { roomId, userId: user.id });
+      }
+    };
+
+    const requestConsultation = (consultationType, userIssue) => {
+      if (stompClient && stompClient.connected) {
+        sendMessage('/app/consultation.request', {
+          userId: user.id,
+          consultationType,
+          userIssue
+        });
+      }
+    };
+
+    const acceptConsultation = (requestId) => {
+      if (stompClient && stompClient.connected) {
+        sendMessage('/app/consultation.accept', { requestId, consultantId: user.id });
+      }
+    };
+
+
+   return {
+         sendMessage,
+         sendTypingStatus,
+         joinChatRoom,
+         leaveChatRoom,
+         requestConsultation,
+         acceptConsultation
+       };
+   }; // useWebSocket 함수의 끝
 
 // ✅ 메시지 목록 가져오기 (dispatch 추가)
 const fetchMessages = async (userId, dispatch) => {

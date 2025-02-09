@@ -40,4 +40,14 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
      */
     @Query("SELECT c FROM ChatRoom c WHERE (c.user.id = :userId OR c.consultant.id = :userId) AND c.status = :status")
     List<ChatRoom> findByUserIdAndStatus(@Param("userId") Long userId, @Param("status") ChatRoomStatus status);
+
+    /**
+     * 특정 사용자가 사용자 또는 상담사로 참여하고 있는 모든 채팅방을 조회합니다.
+     *
+     * @param userId 사용자 ID
+     * @param consultantId 상담사 ID
+     * @return 사용자 또는 상담사로 참여하고 있는 채팅방 목록
+     */
+    @Query("SELECT c FROM ChatRoom c WHERE c.user.id = :userId OR c.consultant.id = :consultantId")
+    List<ChatRoom> findByUserIdOrConsultantId(@Param("userId") Long userId, @Param("consultantId") Long consultantId);
 }

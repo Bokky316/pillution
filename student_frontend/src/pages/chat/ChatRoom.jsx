@@ -1,3 +1,4 @@
+/*
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -386,7 +387,9 @@ const ChatRoom = ({ onClose }) => {
                 <Button onClick={onClose}>닫기</Button>
             </DialogActions>
 
-            {/* 새 채팅 시작 모달 */}
+            { */
+/* 새 채팅 시작 모달 *//*
+}
             <Dialog open={openNewChatModal} onClose={() => setOpenNewChatModal(false)} maxWidth="sm" fullWidth>
                 <DialogTitle>새 채팅 시작</DialogTitle>
                 <DialogContent>
@@ -423,3 +426,4 @@ const ChatRoom = ({ onClose }) => {
 };
 
 export default ChatRoom;
+ */

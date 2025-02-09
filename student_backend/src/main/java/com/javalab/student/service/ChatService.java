@@ -1,12 +1,14 @@
 package com.javalab.student.service;
 
-
+import com.javalab.student.constant.MessageType;
+import com.javalab.student.constant.Role;
 import com.javalab.student.dto.ChatMessageDto;
 import com.javalab.student.dto.ChatRoomDto;
 import com.javalab.student.entity.*;
 import com.javalab.student.repository.ChatMessageRepository;
 import com.javalab.student.repository.ChatRoomRepository;
 import com.javalab.student.repository.MemberRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ChatService {
 
     private final ChatRoomRepository chatRoomRepository;
@@ -29,51 +32,34 @@ public class ChatService {
     /**
      * 새로운 채팅방을 생성합니다.
      *
-     * @param userId 사용자 ID
+     * @param userId           사용자 ID
      * @param consultationType 상담 유형
-     * @param userIssue 사용자가 입력한 상담 주제
+     * @param userIssue        사용자 문제
      * @return 생성된 채팅방 정보
      */
-    @Transactional
     public ChatRoomDto createChatRoom(Long userId, ConsultationType consultationType, String userIssue) {
-        Member user = memberRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
         ChatRoom chatRoom = ChatRoom.builder()
-                .name("Consultation for " + user.getName())
-                .user(user)
-                .status(ChatRoomStatus.WAITING)
+                .name("Chat Room " + System.currentTimeMillis()) // name 필드에 값을 설정
+                .user(memberRepository.findById(userId).orElseThrow())
                 .consultationType(consultationType)
                 .userIssue(userIssue)
+                .status(ChatRoomStatus.WAITING)
                 .build();
-
         ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
         return ChatRoomDto.fromEntity(savedChatRoom);
     }
 
+
     /**
      * 상담사를 채팅방에 배정합니다.
      *
-     * @param roomId 채팅방 ID
+     * @param roomId       채팅방 ID
      * @param consultantId 상담사 ID
      * @return 업데이트된 채팅방 정보
      */
-    @Transactional
     public ChatRoomDto assignConsultant(Long roomId, Long consultantId) {
-        ChatRoom chatRoom = chatRoomRepository.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("Chat room not found"));
-        Member consultant = memberRepository.findById(consultantId)
-                .orElseThrow(() -> new RuntimeException("Consultant not found"));
-
-        chatRoom.setConsultant(consultant);
-        chatRoom.setStatus(ChatRoomStatus.ACTIVE);
-
-        Consultation consultation = Consultation.builder()
-                .chatRoom(chatRoom)
-                .startTime(LocalDateTime.now())
-                .build();
-        chatRoom.setConsultation(consultation);
-
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId).orElseThrow();
+        chatRoom.setConsultant(memberRepository.findById(consultantId).orElseThrow());
         ChatRoom updatedChatRoom = chatRoomRepository.save(chatRoom);
         return ChatRoomDto.fromEntity(updatedChatRoom);
     }
@@ -81,77 +67,31 @@ public class ChatService {
     /**
      * 상담을 종료합니다.
      *
-     * @param roomId 채팅방 ID
-     * @param result 상담 결과
+     * @param roomId         채팅방 ID
+     * @param result         상담 결과
      * @param consultantMemo 상담사 메모
      */
-    @Transactional
     public void endConsultation(Long roomId, ConsultationResult result, String consultantMemo) {
-        ChatRoom chatRoom = chatRoomRepository.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("Chat room not found"));
-
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId).orElseThrow(() -> new EntityNotFoundException("채팅방을 찾을 수 없습니다."));
         chatRoom.setStatus(ChatRoomStatus.CLOSED);
-        Consultation consultation = chatRoom.getConsultation();
-        consultation.setResult(result);
-        consultation.setConsultantMemo(consultantMemo);
-        consultation.setEndTime(LocalDateTime.now());
-
+        chatRoom.getConsultation().setResult(result);
+        chatRoom.getConsultation().setConsultantMemo(consultantMemo);
+        chatRoom.setEndedAt(LocalDateTime.now());  // 상담 종료 시간 기록
         chatRoomRepository.save(chatRoom);
-    }
-
-    /**
-     * 특정 채팅방 정보를 조회합니다.
-     *
-     * @param roomId 채팅방 ID
-     * @return 조회된 채팅방 정보
-     */
-    @Transactional(readOnly = true)
-    public ChatRoomDto getChatRoom(Long roomId) {
-        ChatRoom chatRoom = chatRoomRepository.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("Chat room not found"));
-        return ChatRoomDto.fromEntity(chatRoom);
-    }
-
-    /**
-     * 모든 채팅방 목록을 조회합니다.
-     *
-     * @return 채팅방 목록
-     */
-    @Transactional(readOnly = true)
-    public List<ChatRoomDto> getAllChatRooms() {
-        List<ChatRoom> chatRooms = chatRoomRepository.findAll();
-        return chatRooms.stream()
-                .map(ChatRoomDto::fromEntity)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * 채팅방 정보를 수정합니다.
-     *
-     * @param roomId 채팅방 ID
-     * @param chatRoomDto 수정할 채팅방 정보
-     * @return 수정된 채팅방 정보
-     */
-    @Transactional
-    public ChatRoomDto updateChatRoom(Long roomId, ChatRoomDto chatRoomDto) {
-        ChatRoom chatRoom = chatRoomRepository.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("Chat room not found"));
-        // 필요한 필드만 업데이트
-        chatRoom.setName(chatRoomDto.getName());
-        chatRoom.setStatus(chatRoomDto.getStatus());
-        ChatRoom updatedChatRoom = chatRoomRepository.save(chatRoom);
-        return ChatRoomDto.fromEntity(updatedChatRoom);
     }
 
     /**
      * 채팅 메시지를 전송합니다.
      *
-     * @param chatMessageDto 전송할 채팅 메시지 정보
+     * @param chatMessageDto 채팅 메시지 정보
      * @return 전송된 채팅 메시지 정보
      */
-    @Transactional
     public ChatMessageDto sendMessage(ChatMessageDto chatMessageDto) {
-        ChatMessage chatMessage = ChatMessage.fromDto(chatMessageDto);
+        ChatMessage chatMessage = ChatMessage.builder()
+                .roomId(chatMessageDto.getRoomId())
+                .senderId(chatMessageDto.getSenderId())
+                .content(chatMessageDto.getContent())
+                .build();
         ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
         return ChatMessageDto.fromEntity(savedMessage);
     }
@@ -162,7 +102,6 @@ public class ChatService {
      * @param roomId 채팅방 ID
      * @return 채팅 메시지 목록
      */
-    @Transactional(readOnly = true)
     public List<ChatMessageDto> getChatMessagesByRoomId(Long roomId) {
         List<ChatMessage> messages = chatMessageRepository.findByRoomIdOrderByTimestampAsc(roomId);
         return messages.stream()
@@ -171,71 +110,111 @@ public class ChatService {
     }
 
     /**
-     * 채팅 메시지를 수정합니다.
-     *
-     * @param messageId 메시지 ID
-     * @param chatMessageDto 수정할 메시지 정보
-     * @return 수정된 메시지 정보
-     */
-    @Transactional
-    public ChatMessageDto updateMessage(Long messageId, ChatMessageDto chatMessageDto) {
-        ChatMessage chatMessage = chatMessageRepository.findById(messageId)
-                .orElseThrow(() -> new RuntimeException("Chat message not found"));
-        chatMessage.updateFromDto(chatMessageDto);
-        ChatMessage updatedMessage = chatMessageRepository.save(chatMessage);
-        return ChatMessageDto.fromEntity(updatedMessage);
-    }
-
-    /**
-     * 채팅 메시지를 삭제합니다.
-     *
-     * @param messageId 메시지 ID
-     */
-    @Transactional
-    public void deleteMessage(Long messageId) {
-        chatMessageRepository.deleteById(messageId);
-    }
-
-    /**
-     * 특정 채팅방의 읽지 않은 메시지 수를 조회합니다.
-     *
-     * @param roomId 채팅방 ID
-     * @return 읽지 않은 메시지 수
-     */
-    @Transactional(readOnly = true)
-    public int getUnreadMessageCount(Long roomId) {
-        return chatMessageRepository.countByRoomIdAndIsReadFalse(roomId);
-    }
-
-    /**
      * 특정 사용자의 채팅방 목록을 조회합니다.
      *
      * @param userId 사용자 ID
      * @return 채팅방 목록
      */
-    @Transactional(readOnly = true)
     public List<ChatRoomDto> getChatRoomsByUserId(Long userId) {
-        List<ChatRoom> chatRooms = chatRoomRepository.findByUserId(userId);
+        List<ChatRoom> chatRooms = chatRoomRepository.findByUserIdOrConsultantId(userId, userId);
         return chatRooms.stream()
                 .map(ChatRoomDto::fromEntity)
                 .collect(Collectors.toList());
     }
 
     /**
-     * 채팅방의 다른 참가자 ID를 가져옵니다.
+     * 상담 요청 목록을 조회합니다.
      *
-     * @param roomId 채팅방 ID
-     * @param senderId 발신자 ID
-     * @return 수신자 ID
+     * @return 상담 요청 목록
+     */
+    public List<ChatRoomDto> getConsultationRequests() {
+        List<ChatRoom> requests = chatRoomRepository.findByStatus(ChatRoomStatus.WAITING);
+        return requests.stream()
+                .map(ChatRoomDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 상담 요청을 수락합니다.
+     *
+     * @param requestId 요청 ID
+     * @return 수락된 채팅방 정보
+     */
+    public ChatRoomDto acceptConsultationRequest(Long requestId) {
+        ChatRoom chatRoom = chatRoomRepository.findById(requestId).orElseThrow(() -> new EntityNotFoundException("채팅방을 찾을 수 없습니다."));
+        chatRoom.setStatus(ChatRoomStatus.ACTIVE);
+        chatRoom.setStartedAt(LocalDateTime.now());  // 상담 시작 시간 기록
+        ChatRoom updatedChatRoom = chatRoomRepository.save(chatRoom);
+        return ChatRoomDto.fromEntity(updatedChatRoom);
+    }
+
+    /**
+     * 채팅방의 다른 참가자 ID를 조회합니다.
+     *
+     * @param roomId   채팅방 ID
+     * @param senderId 메시지 발신자 ID
+     * @return 다른 참가자 ID
      */
     public Long getReceiverIdForRoom(Long roomId, Long senderId) {
-        ChatRoom chatRoom = chatRoomRepository.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("Chat room not found"));
-
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId).orElseThrow();
         if (chatRoom.getUser().getId().equals(senderId)) {
             return chatRoom.getConsultant().getId();
         } else {
             return chatRoom.getUser().getId();
         }
+    }
+
+    /**
+     * 사용자를 채팅방에 참여시킵니다.
+     *
+     * @param roomId 채팅방 ID
+     * @param userId 사용자 ID
+     */
+    public void joinChatRoom(Long roomId, Long userId) {
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId).orElseThrow(() -> new EntityNotFoundException("채팅방을 찾을 수 없습니다."));
+        Member member = memberRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+
+        // 채팅방 입장 로직 구현
+        if (chatRoom.getStatus() == ChatRoomStatus.WAITING) {
+            chatRoom.setStatus(ChatRoomStatus.ACTIVE);
+            chatRoom.setStartedAt(LocalDateTime.now());
+        }
+
+        // 필요한 경우 추가 로직 구현 (예: 참여자 목록에 추가 등)
+
+        chatRoomRepository.save(chatRoom);
+    }
+
+    /**
+     * 사용자를 채팅방에서 퇴장시킵니다.
+     *
+     * @param roomId 채팅방 ID
+     * @param userId 사용자 ID
+     */
+    public void leaveChatRoom(Long roomId, Long userId) {
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId).orElseThrow(() -> new EntityNotFoundException("채팅방을 찾을 수 없습니다."));
+        Member member = memberRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+
+        // 채팅방 퇴장 로직 구현
+        if (chatRoom.getStatus() == ChatRoomStatus.ACTIVE) {
+            chatRoom.setStatus(ChatRoomStatus.CLOSED);
+            chatRoom.setEndedAt(LocalDateTime.now());
+        }
+
+        // 필요한 경우 추가 로직 구현 (예: 참여자 목록에서 제거 등)
+
+        chatRoomRepository.save(chatRoom);
+    }
+
+    /**
+     * 모든 채팅방 목록을 조회합니다.
+     *
+     * @return 채팅방 목록
+     */
+    public List<ChatRoomDto> getAllChatRooms() {
+        List<ChatRoom> chatRooms = chatRoomRepository.findAll();
+        return chatRooms.stream()
+                .map(ChatRoomDto::fromEntity)
+                .collect(Collectors.toList());
     }
 }

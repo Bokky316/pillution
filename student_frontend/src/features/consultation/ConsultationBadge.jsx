@@ -23,12 +23,16 @@ const ConsultationButton = () => {
         ? consultation?.consultationRequests?.filter(req => req.status === 'WAITING').length ?? 0
         : 0;
 
-    const handleOpen = () => {
-        if (user?.role !== 'CONSULTANT') {
-            dispatch(initializeChat());
-        }
-        setOpen(true);
-    };
+    const handleOpen = async () => {
+       try {
+         await dispatch(initializeChat()).unwrap();
+         setOpen(true);  // 성공 시 채팅방 열기
+       } catch (error) {
+         console.error('Error initializing chat:', error);
+         // 에러 처리 (예: 사용자에게 알림)
+       }
+     };
+
     const handleClose = () => setOpen(false);
 
     return (

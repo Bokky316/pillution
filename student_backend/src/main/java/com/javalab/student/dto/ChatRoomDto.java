@@ -1,6 +1,5 @@
 package com.javalab.student.dto;
 
-
 import com.javalab.student.entity.ChatRoom;
 import com.javalab.student.entity.ChatRoomStatus;
 import com.javalab.student.entity.ConsultationType;
@@ -21,6 +20,8 @@ public class ChatRoomDto {
     private Long userId;
     private Long consultantId;
     private LocalDateTime createdAt;
+    private LocalDateTime startedAt;
+    private LocalDateTime endedAt;
     private ChatRoomStatus status;
     private ConsultationType consultationType;
     private String userIssue;
@@ -32,6 +33,8 @@ public class ChatRoomDto {
                 .userId(chatRoom.getUser() != null ? chatRoom.getUser().getId() : null)
                 .consultantId(chatRoom.getConsultant() != null ? chatRoom.getConsultant().getId() : null)
                 .createdAt(chatRoom.getCreatedAt())
+                .startedAt(chatRoom.getStartedAt())
+                .endedAt(chatRoom.getEndedAt())
                 .status(chatRoom.getStatus())
                 .consultationType(chatRoom.getConsultationType())
                 .userIssue(chatRoom.getUserIssue())

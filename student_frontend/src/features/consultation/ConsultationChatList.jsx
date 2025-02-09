@@ -1,4 +1,3 @@
-// @features/consultation/components/ConsultationChatList.jsx
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { List, ListItem, ListItemText, ListItemAvatar, Avatar, Typography, Button, Box } from '@mui/material';
@@ -38,7 +37,7 @@ const ConsultationChatList = () => {
         {chatRooms.map((room) => (
           <ListItem
             key={room.id}
-            button
+            button="true" // 또는 button={true}
             onClick={() => handleRoomClick(room)}
             sx={{
               mb: 1,
@@ -48,7 +47,7 @@ const ConsultationChatList = () => {
             }}
           >
             <ListItemAvatar>
-              <Avatar>{room.consultant ? room.consultant.name.charAt(0) : '?'}</Avatar>
+              <Avatar>{room.consultant ? (room.consultant.name ? room.consultant.name.charAt(0) : '?') : '?'}</Avatar>
             </ListItemAvatar>
             <ListItemText
               primary={room.name}

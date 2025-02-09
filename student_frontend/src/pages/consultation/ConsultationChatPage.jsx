@@ -1,36 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Box, Typography, CircularProgress, Button } from '@mui/material';
+import { Box, Typography, CircularProgress, Button, List, ListItem, ListItemText } from '@mui/material';
 import ConsultationChatRoom from '@features/consultation/ConsultationChatRoom';
-import ConsultationWelcomeMessage from '@features/consultation/ConsultationWelcomeMessage';
-import { initializeChat, fetchConsultationRequests, acceptConsultationRequest } from '@/redux/consultationSlice';
+import { fetchChatRooms, setCurrentRoom, initializeChat } from '@/redux/consultationSlice';
 
 const ConsultationChatPage = ({ onClose }) => {
   const dispatch = useDispatch();
   const { user } = useSelector(state => state.auth);
-  const { isInitialized, currentRoom, loading, error, consultationRequests } = useSelector(state => state.consultation || {});
-  const [showWelcome, setShowWelcome] = useState(true);
+  const { chatRooms, currentRoom, loading, error } = useSelector(state => state.consultation);
+  const [selectedRoom, setSelectedRoom] = useState(null);
 
   useEffect(() => {
-    if (user?.role === 'CONSULTANT') {
-      dispatch(fetchConsultationRequests());
-    } else {
-      dispatch(initializeChat());
-    }
-  }, [dispatch, user]);
+    dispatch(fetchChatRooms());
+  }, [dispatch]);
 
-  const handleStartChat = () => {
-    setShowWelcome(false);
+  const handleRoomSelect = (room) => {
+    setSelectedRoom(room);
+    dispatch(setCurrentRoom(room));
   };
 
-  const handleAcceptRequest = async (requestId) => {
-    try {
-      await dispatch(acceptConsultationRequest(requestId)).unwrap();
-      // 수락 후 채팅방으로 이동하는 로직
-      setShowWelcome(false);
-    } catch (error) {
-      console.error('상담 요청 수락 실패:', error);
-    }
+  const handleNewChat = () => {
+    dispatch(initializeChat());
   };
 
   if (loading) return <CircularProgress />;
@@ -38,29 +28,30 @@ const ConsultationChatPage = ({ onClose }) => {
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Typography variant="h4" sx={{ p: 2 }}>
-        {user?.role === 'CONSULTANT' ? '상담 요청 목록' : '상담 채팅'}
-      </Typography>
-      {user?.role === 'CONSULTANT' && !currentRoom ? (
-        consultationRequests?.length > 0 ? (
-          consultationRequests.map(request => (
-            <Box key={request.id} sx={{ p: 2, border: '1px solid #ddd', m: 2 }}>
-              <Typography>요청 ID: {request.id}</Typography>
-              <Button onClick={() => handleAcceptRequest(request.id)}>수락</Button>
-            </Box>
-          ))
-        ) : (
-          <Typography sx={{ p: 2 }}>대기 중인 상담 요청이 없습니다.</Typography>
-        )
-      ) : (
+      <Typography variant="h4" sx={{ p: 2 }}>상담 채팅</Typography>
+      {!selectedRoom ? (
         <>
-          {showWelcome && isInitialized ? (
-            <ConsultationWelcomeMessage onStartChat={handleStartChat} />
-          ) : (
-            <ConsultationChatRoom />
-          )}
+          <Button onClick={handleNewChat} sx={{ m: 2 }}>새 상담 시작</Button>
+          <List>
+            {chatRooms.map((room) => (
+              <ListItem button key={room.id} onClick={() => handleRoomSelect(room)}>
+                <ListItemText
+                  primary={room.name || `상담 ${room.id}`}
+                  secondary={`마지막 메시지: ${room.lastMessage || '없음'}`}
+                />
+              </ListItem>
+            ))}
+          </List>
         </>
+      ) : (
+        <ConsultationChatRoom room={selectedRoom} />
       )}
+      <Button onClick={() => {
+        setSelectedRoom(null);
+        dispatch(setCurrentRoom(null));
+      }} sx={{ mt: 2 }}>
+        목록으로 돌아가기
+      </Button>
       <Button onClick={onClose} sx={{ mt: 'auto', mb: 2 }}>닫기</Button>
     </Box>
   );

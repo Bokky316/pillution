@@ -11,8 +11,6 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Controller;
 
-import java.util.Map;
-
 /**
  * WebSocket을 통해 채팅 메시지를 처리하는 컨트롤러
  */
@@ -70,5 +68,55 @@ public class WebSocketChatController {
     public void typing(@Payload TypingStatus typingStatus) {
         // 타이핑 상태를 해당 채팅방의 구독자들에게 브로드캐스트
         messagingTemplate.convertAndSend("/topic/chat/" + typingStatus.getRoomId() + "/typing", typingStatus);
+    }
+
+    /**
+     * "/chat.join" 엔드포인트로 들어오는 채팅방 입장 메시지를 처리한다.
+     *
+     * @param chatMessageDto 수신된 채팅 메시지 정보
+     */
+    @MessageMapping("/chat.join")
+    public void joinChat(@Payload ChatMessageDto chatMessageDto) {
+        try {
+            // 채팅방 입장 처리
+            chatService.joinChatRoom(chatMessageDto.getRoomId(), chatMessageDto.getSenderId());
+
+            // 입장 메시지 생성 및 전송
+            ChatMessageDto joinMessage = ChatMessageDto.builder()
+                    .roomId(chatMessageDto.getRoomId())
+                    .senderId(chatMessageDto.getSenderId())
+                    .senderName(chatMessageDto.getSenderName())
+                    .content(chatMessageDto.getSenderName() + "님이 입장하셨습니다.")
+                    .build();
+
+            messagingTemplate.convertAndSend("/topic/chat/" + chatMessageDto.getRoomId(), joinMessage);
+        } catch (RuntimeException e) {
+            log.error("채팅방 입장 중 오류 발생", e);
+        }
+    }
+
+    /**
+     * "/chat.leave" 엔드포인트로 들어오는 채팅방 퇴장 메시지를 처리한다.
+     *
+     * @param chatMessageDto 수신된 채팅 메시지 정보
+     */
+    @MessageMapping("/chat.leave")
+    public void leaveChat(@Payload ChatMessageDto chatMessageDto) {
+        try {
+            // 채팅방 퇴장 처리
+            chatService.leaveChatRoom(chatMessageDto.getRoomId(), chatMessageDto.getSenderId());
+
+            // 퇴장 메시지 생성 및 전송
+            ChatMessageDto leaveMessage = ChatMessageDto.builder()
+                    .roomId(chatMessageDto.getRoomId())
+                    .senderId(chatMessageDto.getSenderId())
+                    .senderName(chatMessageDto.getSenderName())
+                    .content(chatMessageDto.getSenderName() + "님이 퇴장하셨습니다.")
+                    .build();
+
+            messagingTemplate.convertAndSend("/topic/chat/" + chatMessageDto.getRoomId(), leaveMessage);
+        } catch (RuntimeException e) {
+            log.error("채팅방 퇴장 중 오류 발생", e);
+        }
     }
 }
