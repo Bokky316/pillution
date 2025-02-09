@@ -25,36 +25,26 @@ const useWebSocket = (user, selectedRoom) => {
             reconnectDelay: 5000,
 
             onConnect: async () => {
-                console.log("📡 WebSocket 연결 성공!");
-                setIsConnected(true);
+               console.log("📡 WebSocket 연결 성공!");
+               setIsConnected(true);
 
-                await fetchMessages(user.id, dispatch);
+               await fetchMessages(user.id, dispatch);
 
-                stompClient.subscribe(`/topic/chat/${user.id}`, async (message) => {
-                    console.log("📨 useWebSocket > stompClient.subscribe 새로운 메시지 도착! message.body : ", message.body);
+               // 개인 메시지 및 채팅방 메시지 구독
+               stompClient.subscribe(`/topic/chat/${user.id}`, handleNewMessage);
+               stompClient.subscribe(`/topic/chatting/${user.id}`, handleNewChatMessage);
 
-                    const parsedMessage = JSON.parse(message.body);
-                    dispatch(addMessage(parsedMessage));
-                    await fetchMessages(user.id, dispatch);
-                    await fetchUnreadMessagesCount(user.id, dispatch);
-                });
+               // 알림 구독
+               stompClient.subscribe(`/topic/notifications/${user.id}`, handleNotification);
 
-                // 채팅 구독 추가
-                stompClient.subscribe(`/topic/chatting/${user.id}`, async (message) => {
-                    console.log("📨 useWebSocket > stompClient.subscribe 새로운 채팅 도착! message.body : ", message.body);
+               // 채팅방 목록 업데이트 구독
+               stompClient.subscribe('/topic/chat.rooms.update', handleChatRoomsUpdate);
 
-                    const parsedMessage = JSON.parse(message.body);
-                    dispatch(addChatMessage(parsedMessage));
-                });
-
-                // 채팅방 메시지 구독
-                if (selectedRoom) {
-                    stompClient.subscribe(`/topic/chat/${selectedRoom}`, onMessageReceived);
-
-                    // 타이핑 상태 구독
-                    stompClient.subscribe(`/topic/chat/${selectedRoom}/typing`, onTypingStatusReceived);
-                }
-            },
+               if (selectedRoom) {
+                   stompClient.subscribe(`/topic/chat/${selectedRoom}`, handleRoomMessage);
+                   stompClient.subscribe(`/topic/chat/${selectedRoom}/typing`, handleTypingStatus);
+               }
+           },
 
             onStompError: (frame) => {
                 console.error("❌ STOMP 오류 발생:", frame);
@@ -70,21 +60,41 @@ const useWebSocket = (user, selectedRoom) => {
                 setIsConnected(false);
             }
         };
-    }, [user, dispatch, selectedRoom]);
+     }, [user, dispatch, selectedRoom]);
 
-    const sendMessage = (newMessage) => {
-        if (stompClient && isConnected) {
-            const chatMessage = {
-                roomId: selectedRoom,
-                senderId: user.id,
-                content: newMessage
-            };
-            stompClient.publish({
-                destination: "/app/chat.sendMessage",
-                body: JSON.stringify(chatMessage)
-            });
-        }
+    const handleNewMessage = async (message) => {
+        console.log("📨 새로운 메시지 도착:", message.body);
+        const parsedMessage = JSON.parse(message.body);
+        dispatch(addMessage(parsedMessage));
+        await fetchMessages(user.id, dispatch);
+        await fetchUnreadMessagesCount(user.id, dispatch);
     };
+
+    const handleNewChatMessage = (message) => {
+        console.log("📨 새로운 채팅 도착:", message.body);
+        const parsedMessage = JSON.parse(message.body);
+        dispatch(addChatMessage(parsedMessage));
+    };
+
+    const handleNotification = (notification) => {
+        console.log("🔔 새 메시지 알림:", notification.body);
+        // 여기에 알림 처리 로직 추가 (예: 토스트 메시지)
+    };
+
+    const handleChatRoomsUpdate = () => {
+        console.log("🔄 채팅방 목록 업데이트");
+        dispatch(fetchChatRooms()); // chatSlice에 fetchChatRooms 액션 추가 필요
+    };
+
+    const handleRoomMessage = (message) => {
+        const receivedMessage = JSON.parse(message.body);
+        dispatch(addChatMessage(receivedMessage));
+    };
+
+    const handleTypingStatus = (status) => {
+            const typingStatus = JSON.parse(status.body);
+            dispatch(setTypingStatus(typingStatus));
+        };
 
     const sendTypingStatus = (isTyping) => {
         if (stompClient && isConnected) {

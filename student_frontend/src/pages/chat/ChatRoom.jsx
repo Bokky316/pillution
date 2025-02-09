@@ -246,137 +246,137 @@ const ChatRoom = ({ onClose }) => {
         fetchUnreadCounts();
     }, [chatRooms]);
 
-    return (
-        <Dialog onClose={onClose} open={true} maxWidth="md" fullWidth>
-            <DialogTitle>채팅</DialogTitle>
-            <DialogContent dividers sx={{ display: 'flex', height: 400, p: 0 }}>
-                <Box sx={{ width: '30%', borderRight: '1px solid #ccc', overflowY: 'auto' }}>
-                    <Button
-                        fullWidth
-                        variant="contained"
-                        color="primary"
-                        onClick={() => setOpenNewChatModal(true)}
-                        sx={{ mb: 1 }}
-                    >
-                        새 채팅 시작
-                    </Button>
-                    {chatRooms.map(room => (
-                        <ListItemButton
-                            key={room.id}
-                            selected={selectedRoom === room.id}
-                            onClick={() => dispatch(selectChatRoom(room.id))}
+     return (
+            <Dialog onClose={onClose} open={true} maxWidth="md" fullWidth>
+                <DialogTitle>채팅</DialogTitle>
+                <DialogContent dividers sx={{ display: 'flex', height: 400, p: 0 }}>
+                    <Box sx={{ width: '30%', borderRight: '1px solid #ccc', overflowY: 'auto' }}>
+                        <Button
+                            fullWidth
+                            variant="contained"
+                            color="primary"
+                            onClick={() => setOpenNewChatModal(true)}
+                            sx={{ mb: 1 }}
                         >
-                            <ListItemText primary={room.name} />
-                            {/* 읽지 않은 메시지 수 배지 */}
-                            {unreadCounts[room.id] > 0 && (
-                                <Badge badgeContent={unreadCounts[room.id]} color="primary">
-                                    <Typography variant="caption" color="white">{unreadCounts[room.id]}</Typography>
-                                </Badge>
-                            )}
-                            {selectedRoom === room.id && (
-                                <IconButton onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleLeaveChatRoom(room.id);
-                                }}>
-                                    <CloseIcon />
-                                </IconButton>
-                            )}
-                        </ListItemButton>
-                    ))}
-                </Box>
-                <Box sx={{ width: '70%', p: 2, display: 'flex', flexDirection: 'column' }}>
-                    {selectedRoom ? (
-                        <>
-                            <Box sx={{ flexGrow: 1, overflowY: 'auto', mb: 1 }}>
-                                {messages.map(message => {
-                                    const isCurrentUser = message.senderId === user.id;
-                                    return (
-                                        <Box
-                                            key={message.id}
-                                            sx={{
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                alignItems: isCurrentUser ? 'flex-end' : 'flex-start',
-                                                mb: 1,
-                                            }}
-                                        >
-                                            <MessageItem isCurrentUser={isCurrentUser}>
-                                                <Typography variant="body2">{message.content}</Typography>
-                                            </MessageItem>
-                                            <Typography variant="caption" color="textSecondary">
-                                                {new Date(message.timestamp).toLocaleTimeString()}
-                                            </Typography>
-                                        </Box>
-                                    );
-                                })}
-                                <div ref={messagesEndRef} />
-                            </Box>
-                            {isTyping[selectedRoom] && (
-                                <Typography variant="subtitle2" color="textSecondary">
-                                    {isTyping[selectedRoom]}님이 입력 중입니다...
-                                </Typography>
-                            )}
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <TextField
-                                    fullWidth
-                                    placeholder="메시지를 입력하세요."
-                                    variant="outlined"
-                                    size="small"
-                                    value={newMessage}
-                                    onChange={(e) => {
-                                        setNewMessage(e.target.value);
-                                        handleTyping(selectedRoom);
-                                    }}
-                                    onKeyPress={(e) => {
-                                        if (e.key === 'Enter') {
-                                            handleSendMessage();
-                                        }
-                                    }}
-                                />
-                                <Button variant="contained" color="primary" onClick={handleSendMessage} sx={{ ml: 1 }}>
-                                    보내기
-                                </Button>
-                            </Box>
-                        </>
-                    ) : (
-                        <Typography variant="subtitle1">채팅방을 선택해주세요.</Typography>
-                    )}
-                </Box>
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={onClose}>닫기</Button>
-            </DialogActions>
-            {/* New Chat Modal */}
-            <Dialog open={openNewChatModal} onClose={() => setOpenNewChatModal(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>새 채팅 시작</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        label="사용자 검색"
-                        variant="outlined"
-                        fullWidth
-                        margin="normal"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    {users.length > 0 && (
-                        <List>
-                            {users.map(user => (
-                                <ListItemButton key={user.id} onClick={() => setSelectedUser(user)}>
-                                    <ListItemText primary={user.name} />
-                                </ListItemButton>
-                            ))}
-                        </List>
-                    )}
+                            새 채팅 시작
+                        </Button>
+                        {chatRooms.map(room => (
+                            <ListItemButton
+                                key={room.id}
+                                selected={selectedRoom === room.id}
+                                onClick={() => dispatch(selectChatRoom(room.id))}
+                            >
+                                <ListItemText primary={room.name} />
+                                {unreadCounts[room.id] > 0 && (
+                                    <Badge badgeContent={unreadCounts[room.id]} color="primary">
+                                        <Typography variant="caption" color="white">{unreadCounts[room.id]}</Typography>
+                                    </Badge>
+                                )}
+                                {selectedRoom === room.id && (
+                                    <IconButton onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleLeaveChatRoom(room.id);
+                                    }}>
+                                        <CloseIcon />
+                                    </IconButton>
+                                )}
+                            </ListItemButton>
+                        ))}
+                    </Box>
+                    <Box sx={{ width: '70%', p: 2, display: 'flex', flexDirection: 'column' }}>
+                        {selectedRoom ? (
+                            <>
+                                <Box sx={{ flexGrow: 1, overflowY: 'auto', mb: 1 }}>
+                                    {Array.isArray(messages) && messages.map(message => {
+                                        if (!message) return null; // 메시지가 null이면 렌더링하지 않음
+                                        const isCurrentUser = message.senderId === user.id;
+                                        return (
+                                            <Box
+                                                key={message.id}
+                                                sx={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: isCurrentUser ? 'flex-end' : 'flex-start',
+                                                    mb: 1,
+                                                }}
+                                            >
+                                                <MessageItem isCurrentUser={isCurrentUser}>
+                                                    <Typography variant="body2">{message.content}</Typography>
+                                                </MessageItem>
+                                                <Typography variant="caption" color="textSecondary">
+                                                    {new Date(message.timestamp).toLocaleTimeString()}
+                                                </Typography>
+                                            </Box>
+                                        );
+                                    })}
+                                    <div ref={messagesEndRef} />
+                                </Box>
+                                {isTyping[selectedRoom] && (
+                                    <Typography variant="subtitle2" color="textSecondary">
+                                        {isTyping[selectedRoom]}님이 입력 중입니다...
+                                    </Typography>
+                                )}
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <TextField
+                                        fullWidth
+                                        placeholder="메시지를 입력하세요."
+                                        variant="outlined"
+                                        size="small"
+                                        value={newMessage}
+                                        onChange={(e) => {
+                                            setNewMessage(e.target.value);
+                                            handleTyping(selectedRoom);
+                                        }}
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter') {
+                                                handleSendMessage();
+                                            }
+                                        }}
+                                    />
+                                    <Button variant="contained" color="primary" onClick={handleSendMessage} sx={{ ml: 1 }}>
+                                        보내기
+                                    </Button>
+                                </Box>
+                            </>
+                        ) : (
+                            <Typography variant="subtitle1">채팅방을 선택해주세요.</Typography>
+                        )}
+                    </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpenNewChatModal(false)}>취소</Button>
-                    <Button variant="contained" color="primary" onClick={handleCreateNewChat}>
-                        채팅 시작
-                    </Button>
+                    <Button onClick={onClose}>닫기</Button>
                 </DialogActions>
+                {/* New Chat Modal */}
+                <Dialog open={openNewChatModal} onClose={() => setOpenNewChatModal(false)} maxWidth="sm" fullWidth>
+                    <DialogTitle>새 채팅 시작</DialogTitle>
+                    <DialogContent>
+                        <TextField
+                            label="사용자 검색"
+                            variant="outlined"
+                            fullWidth
+                            margin="normal"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                        {users.length > 0 && (
+                            <List>
+                                {users.map(user => (
+                                    <ListItemButton key={user.id} onClick={() => setSelectedUser(user)}>
+                                        <ListItemText primary={user.name} />
+                                    </ListItemButton>
+                                ))}
+                            </List>
+                        )}
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setOpenNewChatModal(false)}>취소</Button>
+                        <Button variant="contained" color="primary" onClick={handleCreateNewChat}>
+                            채팅 시작
+                        </Button>
+                    </DialogActions>
+                </Dialog>
             </Dialog>
-        </Dialog>
-    );
-};
+        );
+    };
 
-export default ChatRoom;
+    export default ChatRoom;

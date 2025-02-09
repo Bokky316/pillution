@@ -7,14 +7,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
+/**
+ * WebSocket을 통해 채팅 메시지를 처리하는 컨트롤러
+ */
 @Controller
 public class WebSocketChatController {
 
     @Autowired
-    private SimpMessagingTemplate messagingTemplate;
+    private SimpMessageSendingOperations messagingTemplate;
 
     @Autowired
     private ChatService chatService;
@@ -24,10 +28,25 @@ public class WebSocketChatController {
         // 메시지 저장 및 처리
         ChatMessageDto savedMessage = chatService.sendMessage(chatMessageDto);
 
-        // 메시지를 해당 채팅방의 구독자들에게 브로드캐스트
-        messagingTemplate.convertAndSend("/topic/chat/" + chatMessageDto.getRoomId(), savedMessage);
-    }
+        // 채팅방의 다른 참가자 ID 가져오기
+        Long receiverId = chatService.getReceiverIdForRoom(chatMessageDto.getRoomId(), chatMessageDto.getSenderId());
 
+        // 채팅방에 메시지 전송
+        messagingTemplate.convertAndSend("/topic/chat/" + chatMessageDto.getRoomId(), savedMessage);
+
+        // 수신자에게 알림 전송
+        if (receiverId != null) {
+            messagingTemplate.convertAndSend("/topic/notifications/" + receiverId, "새 메시지가 도착했습니다.");
+        }
+
+        // 채팅방 목록 업데이트를 위한 이벤트 발송
+        messagingTemplate.convertAndSend("/topic/chat.rooms.update", chatMessageDto.getRoomId());
+    }
+    /**
+     * "/chat.typing" 엔드포인트로 들어오는 타이핑 상태 메시지를 처리한다.
+     *
+     * @param typingStatus 수신된 타이핑 상태 정보
+     */
     @MessageMapping("/chat.typing")
     public void typing(@Payload TypingStatus typingStatus) {
         // 타이핑 상태를 해당 채팅방의 구독자들에게 브로드캐스트

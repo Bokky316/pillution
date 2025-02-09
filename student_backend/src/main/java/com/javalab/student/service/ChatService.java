@@ -165,4 +165,22 @@ public class ChatService {
                 .map(ChatRoomDto::fromEntity)
                 .collect(Collectors.toList());
     }
+
+    /**
+     * 채팅방의 다른 참가자 ID를 가져온다.
+     *
+     * @param roomId 채팅방 ID
+     * @param senderId 발신자 ID
+     * @return 수신자 ID
+     */
+    public Long getReceiverIdForRoom(Long roomId, Long senderId) {
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Chat room not found"));
+
+        if (chatRoom.getUser1Id().equals(senderId)) {
+            return chatRoom.getUser2Id();
+        } else {
+            return chatRoom.getUser1Id();
+        }
+    }
 }
