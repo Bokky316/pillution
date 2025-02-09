@@ -26,8 +26,6 @@ export default function ProductListPage() {
   const [remainingProducts, setRemainingProducts] = useState([]); // 아직 표시되지 않은 상품 목록
   const [hasMore, setHasMore] = useState(true); // 더 불러올 상품이 있는지 여부
   const [isFetching, setIsFetching] = useState(false); // 데이터 요청 중인지 여부
-  const [selectedCategory, setSelectedCategory] = useState(null); // 선택된 카테고리
-  const [allProducts, setAllProducts] = useState([]); // 전체 상품 목록 저장
   const observer = useRef(); // Intersection Observer (스크롤 감지)
 
   // ✅ 카테고리 데이터 가져오기 (한 번만 실행)
@@ -35,78 +33,49 @@ export default function ProductListPage() {
     dispatch(fetchCategories()); // 카테고리 목록 요청
   }, [dispatch]);
 
-  // ✅ 초기에 전체 상품 가져오기
+  // ✅ 초기에 6개 상품만 가져오기
   useEffect(() => {
-    const loadAllProducts = async () => {
-      try {
-        const initialProducts = await dispatch(fetchProducts({ page: 0, size: 100 })).unwrap();
-        setAllProducts(initialProducts);
-        setDisplayedProducts(initialProducts.slice(0, 6));
-        setRemainingProducts(initialProducts.slice(6));
-        setHasMore(initialProducts.length > 6);
-      } catch (error) {
-        console.error("🚨 상품 불러오기 실패:", error);
-      }
-    };
-
-    loadAllProducts();
+    dispatch(fetchProducts({ page: 0, size: 6 })) // 첫 6개만 가져옴
+      .unwrap()
+      .then((fetchedProducts) => {
+        setDisplayedProducts(fetchedProducts); // 6개 상품을 화면에 표시
+        loadRemainingProducts(); // 나머지 상품을 비동기적으로 로딩
+      })
+      .catch((error) => console.error("🚨 상품 불러오기 실패:", error));
   }, [dispatch]);
 
-  // ✅ 카테고리별 상품 필터링 및 표시
-  const filterAndDisplayProducts = (products, categoryName) => {
-    let filtered = products;
-    if (categoryName && categoryName !== "전체") {
-      filtered = products.filter(product =>
-        product.categories && product.categories.includes(categoryName)
-      );
+  // ✅ 나머지 상품을 백그라운드에서 미리 로딩
+  const loadRemainingProducts = async () => {
+    try {
+      const remaining = await dispatch(fetchProducts({ page: 1, size: 100 })).unwrap(); // 이후 데이터를 한 번에 가져옴
+      setRemainingProducts(remaining); // 나머지 상품 목록 저장
+    } catch (error) {
+      console.error("🚨 추가 상품 불러오기 실패:", error);
     }
-    return filtered;
-  };
-
-  // ✅ 카테고리 필터링 처리
-  const handleCategoryClick = (categoryName) => {
-    setIsFetching(true);
-
-    // 이전 선택과 같은 카테고리이거나 전체를 선택한 경우
-    if (categoryName === "전체" || selectedCategory === categoryName) {
-      setSelectedCategory(null);
-      setDisplayedProducts(allProducts.slice(0, 6));
-      setRemainingProducts(allProducts.slice(6));
-      setHasMore(allProducts.length > 6);
-    } else {
-      // 새로운 카테고리 선택
-      setSelectedCategory(categoryName);
-      const filteredProducts = filterAndDisplayProducts(allProducts, categoryName);
-      setDisplayedProducts(filteredProducts.slice(0, 6));
-      setRemainingProducts(filteredProducts.slice(6));
-      setHasMore(filteredProducts.length > 6);
-    }
-
-    setIsFetching(false);
   };
 
   // ✅ 스크롤 감지 후 3개씩 추가 로딩 (Intersection Observer 활용)
   const lastProductRef = useCallback(
     (node) => {
-      if (!hasMore || isFetching) return;
-      if (observer.current) observer.current.disconnect();
+      if (!hasMore || isFetching) return; // 더 불러올 데이터가 없거나, 로딩 중이면 실행 안 함
+      if (observer.current) observer.current.disconnect(); // 기존 감지기 제거
 
       observer.current = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && remainingProducts.length > 0) {
-          setIsFetching(true);
-
-          // 현재 카테고리에 맞는 추가 상품 로드
+          setIsFetching(true); // 🔥 로딩 시작
           setTimeout(() => {
-            const nextProducts = remainingProducts.slice(0, 3);
-            setDisplayedProducts(prev => [...prev, ...nextProducts]);
-            setRemainingProducts(prev => prev.slice(3));
-            setHasMore(remainingProducts.length > 3);
-            setIsFetching(false);
-          }, 1000);
+            setDisplayedProducts((prev) => [...prev, ...remainingProducts.slice(0, 3)]); // 3개 추가
+            setRemainingProducts((prev) => prev.slice(3)); // 추가한 데이터 제외
+
+            if (remainingProducts.length <= 3) {
+              setHasMore(false); // 모든 상품을 다 불러왔으면 스크롤 감지 중단
+            }
+            setIsFetching(false); // 🔥 로딩 완료
+          }, 1000); // 1초 딜레이 (UX 개선)
         }
       });
 
-      if (node) observer.current.observe(node);
+      if (node) observer.current.observe(node); // 마지막 요소를 감지하도록 설정
     },
     [remainingProducts, hasMore, isFetching]
   );
@@ -115,23 +84,8 @@ export default function ProductListPage() {
     <Container maxWidth="lg" sx={{ padding: "20px" }}>
       {/* ✅ 카테고리 필터 UI */}
       <Box sx={{ display: "flex", gap: "10px", marginBottom: "20px", overflowX: "auto", padding: "10px 0" }}>
-        <Chip
-          key="all"
-          label="전체"
-          clickable
-          onClick={() => handleCategoryClick("전체")}
-          color={!selectedCategory ? "primary" : "default"}
-          variant={!selectedCategory ? "filled" : "outlined"}
-        />
         {categories.map((category) => (
-          <Chip
-            key={category.name}
-            label={category.name}
-            clickable
-            onClick={() => handleCategoryClick(category.name)}
-            color={selectedCategory === category.name ? "primary" : "default"}
-            variant={selectedCategory === category.name ? "filled" : "outlined"}
-          />
+          <Chip key={category.id} label={category.name} clickable />
         ))}
       </Box>
 
@@ -144,7 +98,7 @@ export default function ProductListPage() {
             sm={6}
             md={4}
             key={product.id}
-            ref={index === displayedProducts.length - 1 ? lastProductRef : null}
+            ref={index === displayedProducts.length - 1 ? lastProductRef : null} // 마지막 상품을 감지
           >
             <Card
               onClick={() => navigate(`/Products/${product.id}`)}
@@ -166,7 +120,7 @@ export default function ProductListPage() {
               <CardMedia
                 component="img"
                 height="200"
-                image={product.image || "/placeholder.jpg"}
+                image={product.image || "/placeholder.jpg"} // 이미지 없을 경우 기본 이미지 표시
                 alt={product.name}
                 sx={{ objectFit: "cover" }}
               />
@@ -191,16 +145,9 @@ export default function ProductListPage() {
       )}
 
       {/* ✅ 모든 상품이 표시되었을 때 메시지 */}
-      {!hasMore && displayedProducts.length > 0 && (
+      {!hasMore && (
         <Box sx={{ textAlign: "center", padding: "20px", color: "gray" }}>
           <Typography>모든 상품을 불러왔습니다.</Typography>
-        </Box>
-      )}
-
-      {/* ✅ 상품이 없을 때 메시지 */}
-      {displayedProducts.length === 0 && !isFetching && (
-        <Box sx={{ textAlign: "center", padding: "20px", color: "gray" }}>
-          <Typography>해당 카테고리의 상품이 없습니다.</Typography>
         </Box>
       )}
 
