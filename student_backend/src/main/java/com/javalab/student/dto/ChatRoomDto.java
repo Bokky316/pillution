@@ -1,12 +1,12 @@
 package com.javalab.student.dto;
 
+
 import com.javalab.student.entity.ChatRoom;
-import com.javalab.student.entity.Member;
+import com.javalab.student.entity.ChatRoomStatus;
+import com.javalab.student.entity.ConsultationType;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 채팅방 DTO
@@ -18,21 +18,23 @@ import java.util.stream.Collectors;
 public class ChatRoomDto {
     private Long id;
     private String name;
-    private Long user1Id;
-    private Long user2Id;
-    private boolean user1Left;
-    private boolean user2Left;
+    private Long userId;
+    private Long consultantId;
     private LocalDateTime createdAt;
+    private ChatRoomStatus status;
+    private ConsultationType consultationType;
+    private String userIssue;
 
     public static ChatRoomDto fromEntity(ChatRoom chatRoom) {
         return ChatRoomDto.builder()
                 .id(chatRoom.getId())
                 .name(chatRoom.getName())
-                .user1Id(chatRoom.getUser1Id())
-                .user2Id(chatRoom.getUser2Id())
-                .user1Left(chatRoom.isUser1Left())
-                .user2Left(chatRoom.isUser2Left())
+                .userId(chatRoom.getUser() != null ? chatRoom.getUser().getId() : null)
+                .consultantId(chatRoom.getConsultant() != null ? chatRoom.getConsultant().getId() : null)
                 .createdAt(chatRoom.getCreatedAt())
+                .status(chatRoom.getStatus())
+                .consultationType(chatRoom.getConsultationType())
+                .userIssue(chatRoom.getUserIssue())
                 .build();
     }
 }
