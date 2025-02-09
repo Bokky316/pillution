@@ -2,11 +2,15 @@ package com.javalab.student.service;
 
 import com.javalab.student.dto.ChatMessageDto;
 import com.javalab.student.dto.ChatRoomDto;
+import com.javalab.student.dto.MemberDto;
 import com.javalab.student.entity.ChatMessage;
 import com.javalab.student.entity.ChatRoom;
+import com.javalab.student.entity.Member;
 import com.javalab.student.repository.ChatMessageRepository;
 import com.javalab.student.repository.ChatRoomRepository;
+import com.javalab.student.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +26,9 @@ public class ChatService {
 
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
+
+    @Autowired
+    private MemberRepository memberRepository;
 
     /**
      * [기존 기능 1] 새로운 채팅방을 생성합니다.
@@ -182,19 +189,21 @@ public class ChatService {
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Chat room not found"));
 
-        // user1Id 또는 user2Id가 null인 경우를 처리
-        if (chatRoom.getUser1Id() == null || chatRoom.getUser2Id() == null) {
-            // 예외를 던지거나, 로깅하거나, 기본값을 반환하는 등의 적절한 조치를 취하십시오.
-            // 예: 로깅 후 예외 던지기
-            System.err.println("ChatRoom의 user1Id 또는 user2Id가 null입니다. roomId: " + roomId);
-            throw new IllegalStateException("ChatRoom의 user1Id 또는 user2Id가 null입니다.");
-        }
-
-        if (chatRoom.getUser1Id().equals(senderId)) {
-            return chatRoom.getUser2Id();
-        } else {
-            return chatRoom.getUser1Id();
-        }
+        // 1:1 채팅이므로, senderId가 아닌 ID를 반환
+        return chatRoom.getUser1Id().equals(senderId) ? chatRoom.getUser2Id() : chatRoom.getUser1Id();
     }
 
+    /**
+     * [새로운 기능 3] 사용자 이름으로 사용자를 검색합니다.
+     *
+     * @param name 검색할 사용자 이름
+     * @return 검색된 사용자 목록
+     */
+    @Transactional(readOnly = true)
+    public List<MemberDto> searchMembersByName(String name) {
+        List<Member> members = memberRepository.findByNameContainingIgnoreCase(name);
+        return members.stream()
+                .map(MemberDto::fromEntity)
+                .collect(Collectors.toList());
+    }
 }

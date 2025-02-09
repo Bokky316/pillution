@@ -147,17 +147,17 @@ const ChatRoom = ({ onClose }) => {
         };
     }, [selectedRoom, user.id, dispatch]);
 
-    useEffect(() => {
-        if (debouncedSearchQuery) {
-            searchUsers(debouncedSearchQuery);
-        } else {
-            setSearchResults([]);
-        }
-    }, [debouncedSearchQuery]);
+   useEffect(() => {
+       if (debouncedSearchQuery) {
+           searchUsers(debouncedSearchQuery);
+       } else {
+           setSearchResults([]);
+       }
+   }, [debouncedSearchQuery]);
 
     const searchUsers = async (query) => {
         try {
-            const response = await fetchWithAuth(`${API_URL}members/search?query=${query}`);
+            const response = await fetchWithAuth(`${API_URL}chat/users/search?name=${query}`);
             if (response.ok) {
                 const data = await response.json();
                 setSearchResults(data);
@@ -196,24 +196,41 @@ const ChatRoom = ({ onClose }) => {
 
 
     const handleCreateNewChat = async () => {
-        if (!selectedUser) {
-            dispatch(showSnackbar("대화 상대를 선택해주세요."));
-            return;
-        }
-        try {
-            await dispatch(createChatRoom({
-                name: `${user.name}, ${selectedUser.name}`,
-                participantIds: [user.id, selectedUser.id]
-            })).unwrap();
+         if (!selectedUser) {
+             dispatch(showSnackbar("대화 상대를 선택해주세요."));
+             return;
+         }
+         try {
+             const chatRoomDto = {
+                 name: `${user.name}, ${selectedUser.name}`,
+                 user1Id: user.id,
+                 user2Id: selectedUser.id
+             };
 
-            setOpenNewChatModal(false);
-            setSelectedUser(null);
-            dispatch(showSnackbar("새로운 채팅방이 생성되었습니다."));
-        } catch (error) {
-            console.error("채팅방 생성 실패:", error.message);
-            dispatch(showSnackbar("채팅방 생성에 실패했습니다."));
-        }
-    };
+             const response = await fetchWithAuth(`${API_URL}chat/rooms`, {
+                 method: 'POST',
+                 headers: {
+                     'Content-Type': 'application/json',
+                 },
+                 body: JSON.stringify(chatRoomDto)
+             });
+
+             if (!response.ok) {
+                 throw new Error('채팅방 생성 실패');
+             }
+
+             const createdRoom = await response.json();
+             dispatch(createChatRoom(createdRoom));
+
+             setOpenNewChatModal(false);
+             setSelectedUser(null);
+             dispatch(showSnackbar("새로운 채팅방이 생성되었습니다."));
+         } catch (error) {
+             console.error("채팅방 생성 실패:", error.message);
+             dispatch(showSnackbar("채팅방 생성에 실패했습니다."));
+         }
+     };
+
 
     const handleLeaveChatRoom = async (roomId) => {
         try {
@@ -385,7 +402,7 @@ const ChatRoom = ({ onClose }) => {
                         <List>
                             {searchResults.map(user => (
                                 <ListItemButton
-                                    key={user.id} // key prop 추가
+                                    key={user.id}
                                     onClick={() => setSelectedUser(user)}
                                 >
                                     <ListItemText primary={user.name} secondary={user.email} />

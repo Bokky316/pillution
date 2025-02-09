@@ -2,6 +2,7 @@ package com.javalab.student.controller;
 
 import com.javalab.student.dto.ChatMessageDto;
 import com.javalab.student.dto.ChatRoomDto;
+import com.javalab.student.dto.MemberDto;
 import com.javalab.student.entity.ChatRoom;
 import com.javalab.student.service.ChatService;
 import lombok.RequiredArgsConstructor;
@@ -158,5 +159,34 @@ public class ChatController {
     public ResponseEntity<List<ChatRoomDto>> getUserChatRooms(@PathVariable Long userId) {
         List<ChatRoomDto> chatRooms = chatService.getChatRoomsByUserId(userId);
         return ResponseEntity.ok(chatRooms);
+    }
+
+    /**
+     * [새로운 기능 3] 사용자 이름으로 검색
+     *
+     * @param name 검색할 사용자 이름
+     * @return 검색된 사용자 목록
+     */
+    @GetMapping("/users/search")
+    public ResponseEntity<List<MemberDto>> searchUsers(@RequestParam String name) {
+        List<MemberDto> members = chatService.searchMembersByName(name);
+        return ResponseEntity.ok(members);
+    }
+
+    /**
+     * [새로운 기능 4] 새로운 1:1 채팅방 생성
+     *
+     * @param user1Id 첫 번째 사용자 ID
+     * @param user2Id 두 번째 사용자 ID
+     * @return 생성된 채팅방 정보
+     */
+    @PostMapping("/rooms/create")
+    public ResponseEntity<ChatRoomDto> createOneToOneChatRoom(@RequestParam Long user1Id, @RequestParam Long user2Id) {
+        ChatRoomDto chatRoomDto = new ChatRoomDto();
+        chatRoomDto.setUser1Id(user1Id);
+        chatRoomDto.setUser2Id(user2Id);
+        chatRoomDto.setName(user1Id + "," + user2Id);
+        ChatRoomDto createdRoom = chatService.createChatRoom(chatRoomDto);
+        return new ResponseEntity<>(createdRoom, HttpStatus.CREATED);
     }
 }
