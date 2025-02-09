@@ -65,6 +65,7 @@ const chatSlice = createSlice({
         status: 'idle',
         error: null,
         typingStatus: {},
+        typingStatus: {},
         unreadCount: {} // 채팅방별 읽지 않은 메시지 수 추가
     },
     reducers: {
@@ -74,6 +75,10 @@ const chatSlice = createSlice({
                 const roomId = action.payload.roomId;
                 state.unreadCount[roomId] = (state.unreadCount[roomId] || 0) + 1;
             },
+            setTypingStatus: (state, action) => {
+                  const { roomId, senderId, typing } = action.payload;
+                  state.typingStatus[roomId] = { senderId, typing };
+                },
             setTypingStatusDirect: (state, action) => {
                 const { roomId, senderId, typing } = action.payload;
                 state.typingStatus[roomId] = { senderId, typing };
@@ -132,6 +137,6 @@ const chatSlice = createSlice({
         }
     });
 
-    export const { addMessage, setTypingStatusDirect, markMessageAsRead } = chatSlice.actions;
+   export const { addMessage, setTypingStatusDirect, markMessageAsRead, setTypingStatus } = chatSlice.actions;
 
     export default chatSlice.reducer;

@@ -1,3 +1,4 @@
+// Header.jsx
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -17,13 +18,17 @@ import { hideSnackbar } from '@/redux/snackbarSlice'; // ✅ 스낵바 관련 �
 import MessageList from "@features/auth/components/MessageList";// ✅ MessageList 컴포넌트 import
 import "../../assets/styles/header.css";
 
-const Header = () => {
+/**
+ * @param {object} props
+ * @param {number} props.unreadCount - 읽지 않은 메시지 개수
+ * @returns {JSX.Element}
+ */
+const Header = ({ unreadCount }) => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { user, isLoggedIn } = useSelector(state => state.auth);
     const [anchorEl, setAnchorEl] = React.useState(null);
     const [openMessagesModal, setOpenMessagesModal] = React.useState(false);
-    const delayedUnreadCount = useSelector(state => state.messages.unreadCount || 0);
     const { open, message } = useSelector(state => state.snackbar); // ✅ 스낵바 상태 추가
 
     const handleMenuOpen = (event) => {
@@ -57,15 +62,6 @@ const Header = () => {
         }
     };
 
-    // ✅ 메시지 읽음 처리 함수 추가
-    const handleReadMessages = async (messageId) => {
-        try {
-            await fetchWithAuth(`${API_URL}messages/read/${messageId}`, { method: "POST" });
-            // Redux 상태 업데이트 로직 추가 (필요시)
-        } catch (error) {
-            console.error("메시지 읽음 처리 실패:", error.message);
-        }
-    };
     return (
         <>
             <AppBar position="static" className="nav-bar" sx={{
@@ -128,8 +124,9 @@ const Header = () => {
                         {isLoggedIn && user ? (
                             <>
                                 {/* 🔹 배지를 클릭하면 메시지 목록 모달이 열리도록 설정 */}
+                                 {/* ✅ unreadCount prop을 사용하여 Badge에 연결 */}
                                 <Badge
-                                    badgeContent={delayedUnreadCount > 0 ? delayedUnreadCount : null}
+                                    badgeContent={unreadCount > 0 ? unreadCount : null}
                                     color="error"
                                     onClick={() => setOpenMessagesModal(true)}
                                     style={{ cursor: "pointer" }}
@@ -158,7 +155,7 @@ const Header = () => {
             <Dialog open={openMessagesModal} onClose={() => setOpenMessagesModal(false)} fullWidth maxWidth="md">
                 <DialogTitle>메시지 목록</DialogTitle>
                 <DialogContent>
-                    <MessageList onMessageRead={handleReadMessages} /> {/* ✅ 메시지를 읽었을 때 처리 */}
+                    <MessageList /> {/* ✅ 메시지를 읽었을 때 처리 */}
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setOpenMessagesModal(false)}>닫기</Button>

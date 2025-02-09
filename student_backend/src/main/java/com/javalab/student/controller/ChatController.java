@@ -2,6 +2,7 @@ package com.javalab.student.controller;
 
 import com.javalab.student.dto.ChatMessageDto;
 import com.javalab.student.dto.ChatRoomDto;
+import com.javalab.student.entity.ChatRoom;
 import com.javalab.student.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -28,6 +29,10 @@ public class ChatController {
      */
     @PostMapping("/rooms")
     public ResponseEntity<ChatRoomDto> createChatRoom(@RequestBody ChatRoomDto chatRoomDto) {
+        // chatRoomDto의 user1Id와 user2Id가 null인지 확인
+        if (chatRoomDto.getUser1Id() == null || chatRoomDto.getUser2Id() == null) {
+            throw new IllegalArgumentException("user1Id와 user2Id는 null일 수 없습니다.");
+        }
         ChatRoomDto createdRoom = chatService.createChatRoom(chatRoomDto);
         return new ResponseEntity<>(createdRoom, HttpStatus.CREATED);
     }

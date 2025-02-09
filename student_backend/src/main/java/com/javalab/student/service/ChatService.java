@@ -31,6 +31,11 @@ public class ChatService {
      */
     @Transactional
     public ChatRoomDto createChatRoom(ChatRoomDto chatRoomDto) {
+        // ChatRoomDto의 user1Id와 user2Id가 null인지 확인
+        if (chatRoomDto.getUser1Id() == null || chatRoomDto.getUser2Id() == null) {
+            throw new IllegalArgumentException("user1Id와 user2Id는 null일 수 없습니다.");
+        }
+
         ChatRoom chatRoom = ChatRoom.fromDto(chatRoomDto);
         ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
         return ChatRoomDto.fromEntity(savedChatRoom);
