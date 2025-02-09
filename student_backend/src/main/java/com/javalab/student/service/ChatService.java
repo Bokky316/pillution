@@ -177,10 +177,19 @@ public class ChatService {
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Chat room not found"));
 
+        // user1Id 또는 user2Id가 null인 경우를 처리
+        if (chatRoom.getUser1Id() == null || chatRoom.getUser2Id() == null) {
+            // 예외를 던지거나, 로깅하거나, 기본값을 반환하는 등의 적절한 조치를 취하십시오.
+            // 예: 로깅 후 예외 던지기
+            System.err.println("ChatRoom의 user1Id 또는 user2Id가 null입니다. roomId: " + roomId);
+            throw new IllegalStateException("ChatRoom의 user1Id 또는 user2Id가 null입니다.");
+        }
+
         if (chatRoom.getUser1Id().equals(senderId)) {
             return chatRoom.getUser2Id();
         } else {
             return chatRoom.getUser1Id();
         }
     }
+
 }

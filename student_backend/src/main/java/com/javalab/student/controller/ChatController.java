@@ -137,10 +137,11 @@ public class ChatController {
      * @return 읽지 않은 메시지 수
      */
     @GetMapping("/unread-count")
-    public ResponseEntity<Integer> getUnreadCount(@RequestParam Long roomId) {
+    public ResponseEntity<Integer> getUnreadCount(@RequestParam("roomId") Long roomId) {
         int unreadCount = chatService.getUnreadMessageCount(roomId);
         return ResponseEntity.ok(unreadCount);
     }
+
 
     /**
      * [새로운 기능 2] 특정 사용자의 채팅방 목록을 조회합니다.
