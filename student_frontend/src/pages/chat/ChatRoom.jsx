@@ -151,19 +151,23 @@ const ChatRoom = ({ onClose }) => {
         }
     };
 
-    const handleSendMessage = () => {
-           if (newMessage.trim() && selectedRoom && stompClient) {
-                const message = {
-                    roomId: selectedRoom,
-                    senderId: user.id,
-                    content: newMessage
-                };
-                stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(message));
-                setNewMessage('');
-            } else {
-                dispatch(showSnackbar("채팅방을 선택해주세요."));
-            }
-        };
+ const handleSendMessage = () => {
+        if (newMessage.trim() && selectedRoom && stompClient) {
+            const message = {
+                roomId: selectedRoom,
+                senderId: user.id,
+                content: newMessage
+            };
+
+            // 즉시 로컬 상태 업데이트
+            dispatch(addMessage(message));
+            setNewMessage('');
+
+            stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(message));
+        } else {
+            dispatch(showSnackbar("채팅방을 선택해주세요."));
+        }
+    };
 
     const handleCreateNewChat = async () => {
         if (!selectedUser) {
@@ -216,19 +220,19 @@ const ChatRoom = ({ onClose }) => {
         }
     };
     // 읽지 않은 메시지 수를 가져오는 함수
-       const fetchUnreadCount = async (roomId) => {
-           try {
-               const response = await fetchWithAuth(`${API_URL}chat/unread-count?roomId=${roomId}`);
-               if (response.ok) {
-                   const count = await response.json();
-                   setUnreadCounts(prev => ({ ...prev, [roomId]: count }));
-               } else {
-                   console.error("읽지 않은 메시지 수 조회 실패");
-               }
-           } catch (error) {
-               console.error("읽지 않은 메시지 수 조회 실패:", error);
-           }
-       };
+    const fetchUnreadCount = async (roomId) => {
+        try {
+            const response = await fetchWithAuth(`${API_URL}chat/unread-count?roomId=${roomId}`);
+            if (response.ok) {
+                const count = await response.json();
+                setUnreadCounts(prev => ({ ...prev, [roomId]: count }));
+            } else {
+                console.error("읽지 않은 메시지 수 조회 실패");
+            }
+        } catch (error) {
+            console.error("읽지 않은 메시지 수 조회 실패:", error);
+        }
+    };
 
     // 모든 채팅방에 대해 읽지 않은 메시지 수를 가져오는 함수
     const fetchUnreadCounts = () => {
@@ -241,6 +245,7 @@ const ChatRoom = ({ onClose }) => {
         // 컴포넌트가 마운트될 때와 채팅방 목록이 변경될 때 읽지 않은 메시지 수를 가져옴
         fetchUnreadCounts();
     }, [chatRooms]);
+
     return (
         <Dialog onClose={onClose} open={true} maxWidth="md" fullWidth>
             <DialogTitle>채팅</DialogTitle>
@@ -262,7 +267,7 @@ const ChatRoom = ({ onClose }) => {
                             onClick={() => dispatch(selectChatRoom(room.id))}
                         >
                             <ListItemText primary={room.name} />
-                             {/* 읽지 않은 메시지 수 배지 */}
+                            {/* 읽지 않은 메시지 수 배지 */}
                             {unreadCounts[room.id] > 0 && (
                                 <Badge badgeContent={unreadCounts[room.id]} color="primary">
                                     <Typography variant="caption" color="white">{unreadCounts[room.id]}</Typography>

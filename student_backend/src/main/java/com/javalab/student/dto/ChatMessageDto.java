@@ -14,7 +14,7 @@ public class ChatMessageDto {
     private Long id;
     private Long roomId;
     private Long senderId;
-    private String senderName; // 추가된 필드
+    private String senderName;
     private String content;
     private LocalDateTime timestamp;
     private boolean isRead;
@@ -24,10 +24,12 @@ public class ChatMessageDto {
                 .id(chatMessage.getId())
                 .roomId(chatMessage.getRoomId())
                 .senderId(chatMessage.getSenderId())
-                .senderName(chatMessage.getSenderName()) // 추가된 필드 매핑
+                .senderName(chatMessage.getSenderName())
                 .content(chatMessage.getContent())
                 .timestamp(chatMessage.getTimestamp())
                 .isRead(chatMessage.isRead())
                 .build();
     }
 }
+
+

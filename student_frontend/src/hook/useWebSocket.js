@@ -1,25 +1,17 @@
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import { useDispatch } from "react-redux";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { API_URL, SERVER_URL } from "@/constant";
 import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
 import { setMessages, addMessage, setUnreadCount } from "@/redux/messageSlice";
-import { addMessage as addChatMessage  } from "@/redux/chat/chatSlice";
+import { addMessage as addChatMessage } from "@/redux/chat/chatSlice";
 
-/**
- * WebSocket을 사용하는 커스텀 훅
- * - WebSocket을 사용하여 실시간 채팅을 구현할 때 사용합니다.
- * - 사용자가 로그인하면 WebSocket을 통해 새로운 메시지를 받아옵니다.
- * - 새로운 메시지가 도착하면 스낵바로 알림을 표시합니다.
- * - 새로운 메시지가 도착하면 메시지 목록을 즉시 갱신합니다.
- *
- * @type {null}
- */
-let stompClient = null; // ✅ 전역 변수로 설정 (중복 연결 방지)
+let stompClient = null;
 
-const useWebSocket = (user) => {
+const useWebSocket = (user, selectedRoom) => {
     const dispatch = useDispatch();
+    const [isConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
         if (!user?.id || stompClient) return;
@@ -34,6 +26,7 @@ const useWebSocket = (user) => {
 
             onConnect: async () => {
                 console.log("📡 WebSocket 연결 성공!");
+                setIsConnected(true);
 
                 await fetchMessages(user.id, dispatch);
 
@@ -53,6 +46,14 @@ const useWebSocket = (user) => {
                     const parsedMessage = JSON.parse(message.body);
                     dispatch(addChatMessage(parsedMessage));
                 });
+
+                // 채팅방 메시지 구독
+                if (selectedRoom) {
+                    stompClient.subscribe(`/topic/chat/${selectedRoom}`, onMessageReceived);
+
+                    // 타이핑 상태 구독
+                    stompClient.subscribe(`/topic/chat/${selectedRoom}/typing`, onTypingStatusReceived);
+                }
             },
 
             onStompError: (frame) => {
@@ -66,9 +67,40 @@ const useWebSocket = (user) => {
             if (stompClient) {
                 stompClient.deactivate();
                 stompClient = null;
+                setIsConnected(false);
             }
         };
-    }, [user, dispatch]);
+    }, [user, dispatch, selectedRoom]);
+
+    const sendMessage = (newMessage) => {
+        if (stompClient && isConnected) {
+            const chatMessage = {
+                roomId: selectedRoom,
+                senderId: user.id,
+                content: newMessage
+            };
+            stompClient.publish({
+                destination: "/app/chat.sendMessage",
+                body: JSON.stringify(chatMessage)
+            });
+        }
+    };
+
+    const sendTypingStatus = (isTyping) => {
+        if (stompClient && isConnected) {
+            const typingStatus = {
+                roomId: selectedRoom,
+                senderId: user.id,
+                typing: isTyping
+            };
+            stompClient.publish({
+                destination: "/app/chat.typing",
+                body: JSON.stringify(typingStatus)
+            });
+        }
+    };
+
+    return { sendMessage, sendTypingStatus };
 };
 
 // ✅ 메시지 목록 가져오기 (dispatch 추가)
