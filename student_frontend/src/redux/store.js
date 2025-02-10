@@ -22,7 +22,7 @@ const persistConfig = {
     key: "root",
     storage,
     whitelist: ["auth", "survey", "ui", "products", "recommendations", "snackbar", "chat"], // ✅ chat 추가
-
+};
 
 /**
  * 루트 리듀서 생성

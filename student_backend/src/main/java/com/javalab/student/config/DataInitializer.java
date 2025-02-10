@@ -4,7 +4,15 @@
 package com.javalab.student.config;
 
 import com.javalab.student.entity.*;
+import com.javalab.student.entity.healthSurvey.QuestionOption;
+import com.javalab.student.entity.healthSurvey.SurveyCategory;
+import com.javalab.student.entity.healthSurvey.SurveyQuestion;
+import com.javalab.student.entity.healthSurvey.SurveySubCategory;
 import com.javalab.student.repository.*;
+import com.javalab.student.repository.healthSurvey.QuestionOptionRepository;
+import com.javalab.student.repository.healthSurvey.SurveyCategoryRepository;
+import com.javalab.student.repository.healthSurvey.SurveyQuestionRepository;
+import com.javalab.student.repository.healthSurvey.SurveySubCategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
