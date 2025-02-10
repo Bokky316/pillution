@@ -87,22 +87,32 @@ public class ChatMessageService {
         unreadMessages.forEach(msg -> msg.setRead(true));
         chatMessageRepository.saveAll(unreadMessages);
     }
+    /**
+     * 🔹 특정 상담 채팅방의 이전 메시지를 조회
+     *
+     * @param roomId 채팅방 ID
+     * @return 해당 채팅방의 모든 메시지 목록 DTO
+     */
+    @Transactional(readOnly = true)
+    public List<ChatMessageDto> getPreviousMessages(Long roomId) {
+        List<ChatMessage> messages = chatMessageRepository.findByChatRoomIdOrderBySentAtAsc(roomId);
+        return messages.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
 
     /**
-     * 상담 수락
-     * @param roomId
+     * 🔹 ChatMessage 엔티티를 ChatMessageDto로 변환
      */
-    @Transactional
-    public void updateConsultationStatus(Long roomId, ConsultationRequestStatus status) {
-        ChatRoom chatRoom = chatRoomRepository.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("채팅방을 찾을 수 없습니다."));
-
-        // 상태 업데이트
-        chatRoom.updateStatus(status);
-        chatRoomRepository.save(chatRoom);
-
-        // WebSocket으로 상태 변경 알림 전송
-        messagingTemplate.convertAndSend("/topic/chat/" + roomId,
-                new ChatMessageDto(null, status.name(), roomId, null, null, true, false));
+    private ChatMessageDto convertToDto(ChatMessage chatMessage) {
+        return ChatMessageDto.builder()
+                .id(chatMessage.getId())
+                .chatRoomId(chatMessage.getChatRoom().getId())
+                .senderId(chatMessage.getSender().getId())
+                .content(chatMessage.getContent())
+                .sentAt(chatMessage.getSentAt())
+                .isSystemMessage(chatMessage.isSystemMessage())
+                .isRead(chatMessage.isRead())
+                .build();
     }
 }

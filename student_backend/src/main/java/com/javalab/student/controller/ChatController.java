@@ -9,6 +9,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.List;
 
 /**
  * 상담 채팅 관련 컨트롤러
@@ -55,6 +56,18 @@ public class ChatController {
         Long memberId = Long.valueOf(principal.getName()); // 현재 로그인한 사용자 ID 가져오기
         long unreadCount = chatMessageService.countUnreadMessages(roomId, memberId);
         return ResponseEntity.ok(unreadCount);
+    }
+
+    /**
+     * 🔹 특정 상담 채팅방의 이전 메시지를 조회하는 API
+     *
+     * @param roomId 채팅방 ID
+     * @return 해당 채팅방의 모든 메시지 목록
+     */
+    @GetMapping("/rooms/{roomId}/messages")
+    public ResponseEntity<List<ChatMessageDto>> getPreviousMessages(@PathVariable("roomId") Long roomId) {
+        List<ChatMessageDto> messages = chatMessageService.getPreviousMessages(roomId);
+        return ResponseEntity.ok(messages);
     }
 
 }

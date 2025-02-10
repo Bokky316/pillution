@@ -32,4 +32,5 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
      * 🔹 특정 채팅방에서 특정 사용자가 읽지 않은 메시지 개수 조회
      */
     long countByChatRoomIdAndSenderIdNotAndIsReadFalse(Long chatRoomId, Long senderId);
+
 }
