@@ -33,7 +33,6 @@ public class ConsultationRequestService {
     public ConsultationRequestDto createConsultationRequest(Member customer, ConsultationRequestDto requestDto) {
         ConsultationRequest request = ConsultationRequest.builder()
                 .customer(customer)
-                .topic(requestDto.getTopic())
                 .orderId(requestDto.getOrderId())
                 .preMessage(requestDto.getPreMessage())
                 .status(ConsultationRequestStatus.PENDING)

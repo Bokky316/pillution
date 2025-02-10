@@ -56,4 +56,5 @@ public class ChatController {
         long unreadCount = chatMessageService.countUnreadMessages(roomId, memberId);
         return ResponseEntity.ok(unreadCount);
     }
+
 }

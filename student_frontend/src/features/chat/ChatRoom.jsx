@@ -1,128 +1,215 @@
-import React, { useState, useEffect } from "react";
-import { Box, Typography, TextField, Button, MenuItem } from "@mui/material";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { Box, Typography, TextField, Button, MenuItem, Paper, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
 import SockJS from "sockjs-client";
+import { useParams } from "react-router-dom";
 import { Client } from "@stomp/stompjs";
-import { API_URL } from "@/constant";
+import { API_URL, SERVER_URL } from "@/constant";
+import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
+import useAuth from "@hook/useAuth";
 
-const ChatRoom = ({ roomId }) => {
+const ChatRoom = () => {
     const [messages, setMessages] = useState([]);
     const [messageInput, setMessageInput] = useState("");
-    const [topic, setTopic] = useState(""); // 선택된 주제
-    const [stompClient, setStompClient] = useState(null);
-    const [isCounselorRequested, setIsCounselorRequested] = useState(false);
+    const [topic, setTopic] = useState("");
+    const [isCounselorConnected, setIsCounselorConnected] = useState(false);
+    const [isChatClosed, setIsChatClosed] = useState(false);
+    const [isCloseDialogOpen, setIsCloseDialogOpen] = useState(false);
+    const { roomId } = useParams();
+    const { user } = useAuth();
+    const stompClientRef = useRef(null);
 
-    useEffect(() => {
-        const socket = new SockJS(`${API_URL}ws`);
+    const topicOptions = {
+        "PRODUCT_INQUIRY": "상품 문의",
+        "ORDER_ISSUE": "주문 문제",
+        "DELIVERY_TRACKING": "배송 조회",
+        "OTHER": "기타"
+    };
+
+    const connectWebSocket = useCallback(() => {
+        if (!roomId) {
+            console.error("🚨 WebSocket 연결 실패: roomId가 없습니다.");
+            return;
+        }
+
+        const socket = new SockJS(`${SERVER_URL}ws`);
         const client = new Client({
             webSocketFactory: () => socket,
+            debug: (str) => console.log(`🔍 WebSocket Debug: ${str}`),
             reconnectDelay: 5000,
+            connectHeaders: {
+                userId: user?.id || "",
+            },
             onConnect: () => {
+                console.log("📡 WebSocket 연결 성공!");
                 client.subscribe(`/topic/chat/${roomId}`, (message) => {
-                    const newMessage = JSON.parse(message.body);
-                    setMessages((prevMessages) => [...prevMessages, newMessage]);
+                    const data = JSON.parse(message.body);
+                    handleNewMessage(data);
                 });
+            },
+            onStompError: (frame) => {
+                console.error("❌ STOMP 오류 발생:", frame.headers['message']);
+                console.error("Additional details:", frame.body);
             },
         });
 
         client.activate();
-        setStompClient(client);
+        stompClientRef.current = client;
 
-        return () => client.deactivate();
-    }, [roomId]);
+        return () => {
+            if (client.connected) {
+                client.deactivate();
+                console.log("WebSocket disconnected");
+            }
+        };
+    }, [roomId, user]);
 
-    const handleSendMessage = () => {
-        if (!messageInput.trim() || !stompClient) return;
+    const handleNewMessage = useCallback((data) => {
+        setMessages(prevMessages => [...prevMessages, data]);
+        if (data.status === "IN_PROGRESS") {
+            setIsCounselorConnected(true);
+            setIsChatClosed(false);
+        } else if (data.status === "CLOSED") {
+            setIsChatClosed(true);
+            setIsCounselorConnected(false);
+        }
+    }, []);
 
-        stompClient.send("/app/chat/send", {}, JSON.stringify({
-            chatRoomId: roomId,
-            content: messageInput,
-        }));
+    const handleSendMessage = useCallback(() => {
+        if (!messageInput.trim() || !stompClientRef.current || !roomId) {
+            console.error("🚨 메시지를 전송할 수 없습니다. roomId 또는 messageInput이 비어있습니다.");
+            return;
+        }
 
+        stompClientRef.current.publish({
+            destination: "/app/chat/send",
+            body: JSON.stringify({
+                chatRoomId: roomId,
+                content: messageInput,
+                senderId: user?.id || null,
+                sentAt: new Date().toISOString(),
+                isSystemMessage: false,
+                isRead: false,
+            }),
+        });
         setMessageInput("");
-    };
+    }, [roomId, user, messageInput]);
 
-    const handleTopicSelection = async (selectedTopic) => {
-        setTopic(selectedTopic);
+    const handleCloseChat = async () => {
+        if (!roomId) return;
 
-        // 자동 응답 메시지 출력
-        let autoResponse;
-        switch (selectedTopic) {
-            case "DELIVERY_TRACKING":
-                autoResponse = "배송 조회는 여기를 클릭하세요: [배송 조회 링크]";
-                break;
-            case "FAQ":
-                autoResponse = "자주 묻는 질문은 여기를 참고하세요: [FAQ 링크]";
-                break;
-            default:
-                autoResponse = "상담사를 연결하려면 '상담사 연결하기' 버튼을 눌러주세요.";
-        }
-
-        setMessages((prevMessages) => [...prevMessages, { sender: "system", content: autoResponse }]);
-    };
-
-    const handleRequestCounselor = async () => {
         try {
-            await fetchWithAuth(`${API_URL}chat/rooms/request-counselor`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ roomId }),
-            });
-            setIsCounselorRequested(true);
-            setMessages((prevMessages) => [
-                ...prevMessages,
-                { sender: "system", content: "상담사가 요청되었습니다. 잠시만 기다려주세요." },
-            ]);
+            const response = await fetchWithAuth(`${API_URL}chat/rooms/${roomId}/close`, { method: "POST" });
+            if (response.ok) {
+                setIsChatClosed(true);
+                setIsCounselorConnected(false);
+            } else {
+                console.error("🚨 상담 종료 실패:", response.statusText);
+                alert("상담 종료 실패. 다시 시도해주세요.");
+            }
         } catch (error) {
-            console.error("🚨 상담사 요청 실패:", error.message);
+            console.error("🚨 상담 종료 실패:", error.message);
         }
+    };
+
+    useEffect(() => {
+        const cleanup = connectWebSocket();
+        return () => {
+            if (cleanup) {
+                cleanup();
+            }
+        };
+    }, [roomId, user, connectWebSocket]);
+
+    const handleSelectTopic = (selectedTopic) => {
+        setTopic(selectedTopic);
+    };
+
+    const getStatusMessage = () => {
+        if (isChatClosed) return "상담이 종료되었습니다.";
+        if (isCounselorConnected) return "상담사가 연결되었습니다.";
+        return "상담사가 아직 연결되지 않았습니다.";
     };
 
     return (
-        <Box sx={{ padding: 4 }}>
-            <Typography variant="h4" gutterBottom>채팅방</Typography>
+        <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f5f5f5' }}>
+            <Paper elevation={3} sx={{ p: 2, bgcolor: '#4a4a4a', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="h6">
+                    {topic ? `1:1 채팅 상담 - ${topicOptions[topic]}` : "1:1 채팅 상담"}
+                </Typography>
+                {!isChatClosed && (
+                    <Button variant="contained" color="secondary" onClick={() => setIsCloseDialogOpen(true)}>
+                        종료하기
+                    </Button>
+                )}
+            </Paper>
 
-            {/* 주제 선택 */}
-            {!topic && (
-                <Box sx={{ mb: 2 }}>
-                    <Typography>상담 주제를 선택해주세요:</Typography>
-                    <TextField
-                        select
-                        fullWidth
-                        label="상담 주제"
-                        value={topic}
-                        onChange={(e) => handleTopicSelection(e.target.value)}
-                        margin="normal"
-                    >
-                        <MenuItem value="DELIVERY_TRACKING">배송 조회</MenuItem>
-                        <MenuItem value="FAQ">FAQ</MenuItem>
-                        <MenuItem value="ORDER_ISSUE">주문 문제</MenuItem>
-                        <MenuItem value="OTHER">기타</MenuItem>
-                    </TextField>
-                </Box>
-            )}
+            <Typography variant="body1" color={isChatClosed ? "error" : isCounselorConnected ? "primary" : "textSecondary"} sx={{ p: 2, textAlign: 'center' }}>
+                {getStatusMessage()}
+            </Typography>
 
-            {/* 메시지 목록 */}
-            <Box sx={{ height: 300, overflowY: "auto", mb: 2 }}>
+            <Box sx={{ flexGrow: 1, overflowY: "auto", p: 2 }}>
                 {messages.map((msg, index) => (
-                    <Typography key={index}>{msg.content}</Typography>
+                    <Box key={index} sx={{ display: 'flex', justifyContent: msg.senderId === user?.id ? 'flex-end' : 'flex-start', mb: 1 }}>
+                        <Paper elevation={1} sx={{
+                            p: 1,
+                            maxWidth: '70%',
+                            bgcolor: msg.senderId === user?.id ? '#dcf8c6' : '#ffffff',
+                            borderRadius: msg.senderId === user?.id ? '20px 20px 3px 20px' : '20px 20px 20px 3px'
+                        }}>
+                            <Typography variant="body2">{msg.content}</Typography>
+                        </Paper>
+                    </Box>
                 ))}
             </Box>
 
-            {/* 상담사 연결 버튼 */}
-            {!isCounselorRequested && topic && (
-                <Button variant="contained" color="secondary" onClick={handleRequestCounselor}>
-                    상담사 연결하기
-                </Button>
+            {!isChatClosed && (
+                <Paper elevation={3} sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
+                    <TextField
+                        fullWidth
+                        value={messageInput}
+                        onChange={(e) => setMessageInput(e.target.value)}
+                        onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                        placeholder="메시지를 입력하세요"
+                        variant="outlined"
+                        size="small"
+                        sx={{ mr: 1 }}
+                    />
+                    <Button
+                        onClick={handleSendMessage}
+                        variant="contained"
+                        color="primary"
+                        disabled={!messageInput.trim()}
+                    >
+                        전송
+                    </Button>
+                </Paper>
             )}
 
-            {/* 메시지 입력 */}
-            <TextField
-                fullWidth
-                value={messageInput}
-                onChange={(e) => setMessageInput(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                placeholder="메시지를 입력하세요"
-            />
+            <Dialog
+                open={isCloseDialogOpen}
+                onClose={() => setIsCloseDialogOpen(false)}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+            >
+                <DialogTitle id="alert-dialog-title">{"상담을 종료하시겠습니까?"}</DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        상담을 종료하면 채팅방에서 나가게 됩니다. 정말로 종료하시겠습니까?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setIsCloseDialogOpen(false)}>취소</Button>
+                    <Button
+                        onClick={() => {
+                            handleCloseChat();
+                            setIsCloseDialogOpen(false);
+                        }}
+                        autoFocus
+                    >
+                        종료
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };

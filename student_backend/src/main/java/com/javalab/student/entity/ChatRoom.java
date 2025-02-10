@@ -83,6 +83,17 @@ public class ChatRoom extends BaseEntity {
     }
 
     /**
+     * 🔹 새로운 참여자를 추가하는 메서드 (Member를 직접 추가 가능하게 확장)
+     *
+     * @param member 참여할 사용자 (고객 또는 상담사)
+     */
+    public void addParticipant(Member member) {
+        ChatParticipant participant = new ChatParticipant(this, member);
+        participants.add(participant);
+        participant.setChatRoom(this);
+    }
+
+    /**
      * 🔹 상담 상태 변경 메서드
      *
      * @param newStatus 새로운 상담 상태

@@ -56,6 +56,9 @@ public class ChatParticipant extends BaseEntity {
     @Column(name = "is_left", nullable = false)
     private boolean isLeft = false;
 
+    /**
+     * 🔹 생성자: 기본 생성 시 참가 시간 자동 설정
+     */
     public ChatParticipant(ChatRoom chatRoom, Member member) {
         super();
         this.chatRoom = chatRoom;

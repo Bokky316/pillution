@@ -122,6 +122,9 @@ public class SecurityConfig {
                 // 정적 리소스
                 .requestMatchers("/images/**", "/static-images/**", "/css/**", "/favicon.ico", "/error", "/img/**").permitAll()
 
+                // WebSocket 엔드포인트 허용
+                .requestMatchers("/ws/**").permitAll()
+
                 // 그 외 모든 요청은 인증 필요
                 .anyRequest().authenticated()
         );

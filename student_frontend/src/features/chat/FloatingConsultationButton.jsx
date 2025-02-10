@@ -4,9 +4,11 @@ import ChatIcon from "@mui/icons-material/Chat";
 import { useNavigate } from "react-router-dom";
 import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
 import { API_URL } from "@/constant";
+import useAuth from "@hook/useAuth";
 
 const FloatingConsultationButton = () => {
     const navigate = useNavigate();
+    const { user } = useAuth(); // 현재 로그인한 사용자 정보 가져오기
 
     const handleStartChat = async () => {
         try {
@@ -16,14 +18,19 @@ const FloatingConsultationButton = () => {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    topic: null, // 초기에는 주제 없이 생성
-                    preMessage: "", // 초기에는 사전 메시지 없이 생성
+                    customerId: user.id, // 로그인한 사용자 ID
                 }),
             });
 
             if (response.ok) {
                 const chatRoom = await response.json();
-                navigate(`/chatroom/${chatRoom.id}`); // 생성된 채팅방으로 이동
+
+                // 응답 데이터에 id가 있는지 확인
+                if (chatRoom && chatRoom.id) {
+                    navigate(`/chatroom/${chatRoom.id}`); // 생성된 채팅방으로 이동
+                } else {
+                    console.error("🚨 채팅방 생성 실패: 응답 데이터에 ID가 없습니다.");
+                }
             } else {
                 console.error("🚨 채팅방 생성 실패:", response.statusText);
             }

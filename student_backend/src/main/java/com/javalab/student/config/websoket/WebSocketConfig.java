@@ -48,7 +48,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
      * - setApplicationDestinationPrefixes("/app"): 클라이언트가 서버로 보내는 메시지가 /app으로 시작하는 경우
      *   컨트롤러에서 처리되도록 라우팅합니다.
      * @param registry 메시지 브로커 설정을 위한 레지스트리
-     */
+//     */
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         registry.enableSimpleBroker("/topic", "/queue");

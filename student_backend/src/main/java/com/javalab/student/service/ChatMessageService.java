@@ -1,5 +1,6 @@
 package com.javalab.student.service;
 
+import com.javalab.student.constant.ConsultationRequestStatus;
 import com.javalab.student.dto.ChatMessageDto;
 import com.javalab.student.entity.ChatMessage;
 import com.javalab.student.entity.ChatRoom;
@@ -85,5 +86,23 @@ public class ChatMessageService {
         List<ChatMessage> unreadMessages = chatMessageRepository.findByChatRoomIdAndSenderIdNotAndIsReadFalse(chatRoomId, memberId);
         unreadMessages.forEach(msg -> msg.setRead(true));
         chatMessageRepository.saveAll(unreadMessages);
+    }
+
+    /**
+     * 상담 수락
+     * @param roomId
+     */
+    @Transactional
+    public void updateConsultationStatus(Long roomId, ConsultationRequestStatus status) {
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("채팅방을 찾을 수 없습니다."));
+
+        // 상태 업데이트
+        chatRoom.updateStatus(status);
+        chatRoomRepository.save(chatRoom);
+
+        // WebSocket으로 상태 변경 알림 전송
+        messagingTemplate.convertAndSend("/topic/chat/" + roomId,
+                new ChatMessageDto(null, status.name(), roomId, null, null, true, false));
     }
 }

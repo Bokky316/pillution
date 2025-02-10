@@ -1,6 +1,7 @@
 package com.javalab.student.service;
 
 import com.javalab.student.constant.ConsultationRequestStatus;
+import com.javalab.student.dto.ChatMessageDto;
 import com.javalab.student.dto.ChatRoomResponseDto;
 import com.javalab.student.dto.ConsultationRequestDto;
 import com.javalab.student.entity.ChatParticipant;
@@ -10,6 +11,7 @@ import com.javalab.student.repository.ChatParticipantRepository;
 import com.javalab.student.repository.ChatRoomRepository;
 import com.javalab.student.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,31 +29,28 @@ public class ChatRoomService {
     private final ChatParticipantRepository chatParticipantRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final MemberRepository memberRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     /**
      * 상담 채팅방 생성
-     *
      * @param request 상담 요청 DTO (ConsultationRequestDto)
-     * @return 생성된 채팅방 엔티티 (ChatRoom)
+     * @return 생성된 채팅방 정보 (ChatRoomResponseDto)
      */
     @Transactional
-    public ChatRoom createChatRoom(ConsultationRequestDto request) {
+    public ChatRoomResponseDto createChatRoom(ConsultationRequestDto request) {
         Member customer = memberRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> new RuntimeException("고객을 찾을 수 없습니다."));
 
-        ChatRoom chatRoom = new ChatRoom();
-        chatRoom.setName(request.getTopic().name() + " 상담");
-        chatRoom.setOwner(customer);
+        ChatRoom chatRoom = new ChatRoom("상담 대기 중", customer);
         chatRoom.setStatus(ConsultationRequestStatus.PENDING);
+        chatRoom.addParticipant(customer);
 
-        chatParticipantRepository.save(new ChatParticipant(chatRoom, customer));
-
-        return chatRoomRepository.save(chatRoom);
+        ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
+        return convertToChatRoomResponseDto(savedChatRoom);
     }
 
     /**
      * 상담사 연결 요청
-     *
      * @param roomId 상담 채팅방 ID
      */
     @Transactional
@@ -65,7 +64,6 @@ public class ChatRoomService {
 
     /**
      * 특정 회원이 참여한 채팅방 목록 조회 (상세 정보 포함)
-     *
      * @param memberId 회원 ID
      * @return 해당 회원이 참여한 채팅방 목록 (List<ChatRoomResponseDto>)
      */
@@ -80,7 +78,6 @@ public class ChatRoomService {
 
     /**
      * 특정 채팅방 상세 정보 조회
-     *
      * @param roomId 채팅방 ID
      * @return 채팅방 상세 정보 (ChatRoomResponseDto)
      */
@@ -94,7 +91,6 @@ public class ChatRoomService {
 
     /**
      * 특정 채팅방 삭제
-     *
      * @param roomId 삭제할 채팅방 ID
      */
     @Transactional
@@ -111,40 +107,40 @@ public class ChatRoomService {
     }
 
     /**
-     * 특정 회원이 채팅방에서 나가기
-     *
+     * 채팅방 나가기 (상담 종료)
      * @param memberId 회원 ID
-     * @param roomId   나가려는 채팅방 ID
+     * @param roomId 채팅방 ID
      */
     @Transactional
     public void leaveChatRoom(Long memberId, Long roomId) {
-        if (!chatParticipantRepository.existsByChatRoomIdAndMemberId(roomId, memberId)) {
-            throw new RuntimeException("해당 채팅방에 참여하고 있지 않습니다.");
-        }
-
-        List<ChatParticipant> participants = chatParticipantRepository.findByMemberIdAndChatRoomId(memberId, roomId);
-        participants.forEach(ChatParticipant::leaveRoom);
-
-        chatParticipantRepository.saveAll(participants);
+        closeChatRoom(roomId);
     }
 
     /**
-     * 특정 채팅방 상담 종료 처리
-     *
+     * 채팅방 상담 종료 처리 (채팅방 나가기 포함)
      * @param roomId 종료할 채팅방 ID
      */
     @Transactional
-    public void closeChat(Long roomId) {
+    public void closeChatRoom(Long roomId) {
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("채팅방을 찾을 수 없습니다."));
 
+        // 채팅방 상태를 종료로 변경
         chatRoom.updateStatus(ConsultationRequestStatus.CLOSED);
         chatRoomRepository.save(chatRoom);
+
+        // 채팅방에 참여한 모든 사용자를 나가게 처리
+        List<ChatParticipant> participants = chatParticipantRepository.findByChatRoom(chatRoom);
+        participants.forEach(ChatParticipant::leaveRoom);
+        chatParticipantRepository.saveAll(participants);
+
+        // WebSocket을 통해 상담 종료 알림 전송
+        messagingTemplate.convertAndSend("/topic/chat/" + roomId,
+                new ChatMessageDto(null, "CLOSED", roomId, null, null, true, false));
     }
 
     /**
      * 대기 중인 상담 요청 목록 조회
-     *
      * @return 대기 중인 상담 요청 목록 (List<ChatRoomResponseDto>)
      */
     @Transactional(readOnly = true)
@@ -158,7 +154,6 @@ public class ChatRoomService {
 
     /**
      * 모든 상담 채팅방 조회
-     *
      * @return 모든 상담 채팅방 목록 (List<ChatRoomResponseDto>)
      */
     @Transactional(readOnly = true)
@@ -172,7 +167,6 @@ public class ChatRoomService {
 
     /**
      * 특정 상담사의 종료된 상담 목록 조회
-     *
      * @param counselorId 상담사 ID
      * @return 종료된 상담 목록 (List<ChatRoomResponseDto>)
      */
@@ -186,8 +180,31 @@ public class ChatRoomService {
     }
 
     /**
+     * 상담 상태 변경 (상담 종료 포함)
+     * @param roomId
+     * @param status
+     */
+    @Transactional
+    public void updateConsultationStatus(Long roomId, ConsultationRequestStatus status) {
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("채팅방을 찾을 수 없습니다."));
+
+        // 상태 업데이트
+        chatRoom.updateStatus(status);
+        chatRoomRepository.save(chatRoom);
+
+        // WebSocket으로 상태 변경 알림 전송
+        messagingTemplate.convertAndSend("/topic/chat/" + roomId,
+                new ChatMessageDto(null, status.name(), roomId, null, null, true, false));
+
+        // 상태가 CLOSED로 변경되는 경우, 채팅방 나가기 로직 실행
+        if (status == ConsultationRequestStatus.CLOSED) {
+            closeChatRoom(roomId);
+        }
+    }
+
+    /**
      * ChatRoom 엔티티를 ChatRoomResponseDto로 변환하는 메서드
-     *
      * @param chat 변환할 ChatRoom 엔티티
      * @return 변환된 ChatRoomResponseDto 객체
      */

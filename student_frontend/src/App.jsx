@@ -24,6 +24,7 @@ import OAuth2RedirectHandler from '@features/auth/components/OAuth2RedirectHandl
 import MessageList from "@features/auth/components/MessageList";
 import ConsultationRequestList from "@features/chat/ConsultationRequestList"; // ✅ ChatRoomList 컴포넌트 import
 import FloatingConsultationButton from "@features/chat/FloatingConsultationButton";
+import ChatRoom from "@features/chat/ChatRoom";
 
 import useAuth from "@/hook/useAuth";
 import useWebSocket from "@hook/useWebSocket";
@@ -56,6 +57,7 @@ function App() {
                     <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
                     <Route path="/messages" element={<MessageList />} />
                     <Route path="/consultation" element={<ConsultationRequestList />} />
+                    <Route path="/chatroom/:roomId" element={<ChatRoom />} />
                 </Routes>
             </Layout>
             <Footer />
