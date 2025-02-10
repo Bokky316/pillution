@@ -127,8 +127,14 @@ const handleAddProduct = async () => {
 
 
     // 상품 삭제
-    const handleDeleteItem = (productId) => {
+    const handleDeleteItem = (productId, productName) => {
         const subscriptionId = subscription?.id;
+
+        // ✅ productId가 없으면 products 배열에서 찾아서 추가
+        if (!productId) {
+            const matchedProduct = products.find(p => p.name === productName);
+            productId = matchedProduct ? matchedProduct.id : null;
+        }
 
         if (!subscriptionId || !productId) {
             console.error("❌ [ERROR] 구독 ID 또는 productId가 없음! 요청 취소", { subscriptionId, productId });
@@ -145,6 +151,7 @@ const handleAddProduct = async () => {
                 }
             });
     };
+
 
 
 
@@ -191,7 +198,20 @@ const handleAddProduct = async () => {
 
     // ✅ 기존 nextItems에서 productId 없는 경우 보완
     const handleUpdateNextItems = () => {
-        const validItems = nextItems.filter(item => item.productId && item.id); // productId와 id가 존재하는 항목만 전송
+        const validItems = nextItems.map(item => {
+            let productId = item.productId;
+
+            // ✅ productId가 null이면 products 배열에서 찾아서 매칭
+            if (!productId) {
+                const matchedProduct = products.find(p => p.name === item.productName);
+                productId = matchedProduct ? matchedProduct.id : null;
+            }
+
+            return {
+                ...item,
+                productId
+            };
+        }).filter(item => item.productId !== null); // productId가 있는 항목만 전송
 
         if (validItems.length === 0) {
             console.error("❌ [ERROR] 업데이트할 상품 목록이 비어 있음! 요청 취소");
@@ -200,6 +220,7 @@ const handleAddProduct = async () => {
 
         dispatch(updateNextSubscriptionItems({ subscriptionId, updatedItems: validItems }));
     };
+
 
 
     const handleProcessBilling = () => {

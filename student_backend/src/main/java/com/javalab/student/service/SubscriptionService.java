@@ -49,17 +49,18 @@ public class SubscriptionService {
                 .findFirstByMemberIdAndStatusOrderByCurrentCycleDesc(memberId, "ACTIVE")
                 .orElseThrow(() -> new RuntimeException("활성화된 구독 정보가 없습니다."));
 
-        // ✅ nextItems에서 productId 설정 (상품 정보가 있는 경우)
+        // ✅ nextItems에서 productId가 없는 경우 product에서 가져오기
         subscription.getNextItems().forEach(item -> {
-            if (item.getProduct() != null && item.getProduct().getId() != null) {
-                item.setProductId(item.getProduct().getId()); // ✅ productId 강제 설정
-            } else {
-                throw new RuntimeException("❌ [ERROR] product 정보가 없습니다: " + item.getId());
+            if (item.getProductId() == null && item.getProduct() != null) {
+                item.setProductId(item.getProduct().getId()); // ✅ productId 추가
             }
         });
 
         return new SubscriptionResponseDto(subscription);
     }
+
+
+
 
 
 

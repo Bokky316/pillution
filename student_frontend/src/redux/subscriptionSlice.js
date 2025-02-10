@@ -387,12 +387,22 @@ const subscriptionSlice = createSlice({
             state.loading = false;
             state.data = action.payload || { nextItems: [], items: [] };
 
-            // ✅ nextItems에서 productId 설정 (백엔드에서 보냈는지 확인 후, 없으면 product에서 가져오기)
+            // ✅ nextItems에서 productId 설정 (product 객체에서 가져오도록 수정)
             if (state.data.nextItems) {
-                state.data.nextItems = state.data.nextItems.map(item => ({
-                    ...item,
-                    productId: item.productId ?? (item.product ? item.product.id : null) // ✅ productId가 없으면 product에서 가져옴
-                }));
+                state.data.nextItems = state.data.nextItems.map(item => {
+                    let productId = item.productId ?? (item.product ? item.product.id : null);
+
+                    // ✅ productId가 여전히 null이면 Redux의 products에서 찾아서 추가
+                    if (!productId) {
+                        const matchedProduct = state.products.find(p => p.name === item.productName);
+                        productId = matchedProduct ? matchedProduct.id : null;
+                    }
+
+                    return {
+                        ...item,
+                        productId: productId // ✅ Redux에 저장할 때 productId 강제 추가
+                    };
+                });
             }
 
             state.error = null;

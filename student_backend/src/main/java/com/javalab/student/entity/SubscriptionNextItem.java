@@ -39,10 +39,8 @@ public class SubscriptionNextItem {
     private double nextMonthPrice; // 다음 회차 반영할 가격
 
 
-
-    /** ✅ @Transient 추가 -> DB에는 저장되지 않지만, DTO 변환 시 사용 */
-
+    // ✅ 자동으로 productId를 반환하도록 설정
     public Long getProductId() {
-        return (product != null) ? product.getId() : null;
+        return this.productId != null ? this.productId : (this.product != null ? this.product.getId() : null);
     }
 }
