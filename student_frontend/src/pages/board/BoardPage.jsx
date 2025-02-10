@@ -16,18 +16,15 @@ function BoardPage() {
         const isHeaderClick = sessionStorage.getItem('headerBoardClick') === 'true';
 
         if (isNewVisit || isHeaderClick) {
-            // 새로운 방문 또는 헤더를 통한 재접근
             dispatch(setCurrentBoard("news"));
             localStorage.setItem("currentBoard", "news");
             sessionStorage.setItem('boardPageVisited', 'true');
             sessionStorage.removeItem('headerBoardClick');
         } else {
-            // 새로고침
             const savedBoard = localStorage.getItem("currentBoard") || "news";
             dispatch(setCurrentBoard(savedBoard));
         }
 
-        // 컴포넌트가 언마운트될 때 세션 스토리지 클리어
         return () => {
             sessionStorage.removeItem('boardPageVisited');
         };
@@ -39,24 +36,48 @@ function BoardPage() {
     };
 
     return (
-        <Container maxWidth="lg">
-            {/* 상단 타이틀 */}
-            <Typography variant="h4" component="h1" gutterBottom align="left" sx={{ my: 4 }}>
+        <Container
+            maxWidth="lg"
+                sx={{
+                    overflowX: 'hidden',  // 가로 스크롤 방지
+                    px: { xs: 2, sm: 3 },  // 반응형 패딩
+                    maxWidth: '100vw',   // 뷰포트 너비 제한
+                    boxSizing: 'border-box' // 박스 크기 계산
+                }}
+       >
+            <Typography
+                variant="h4"
+                component="h1"
+                gutterBottom
+                align="left"
+                sx={{
+                    my: 4,
+                    fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' } // 반응형 폰트 크기
+                }}
+            >
                 필루션 소식
             </Typography>
 
-            {/* 탭 메뉴 */}
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+            <Box sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                mb: 4,
+                flexDirection: { xs: 'column', sm: 'row' }, // 모바일에서는 세로로 배치
+                width: '100%',
+                overflowX: 'hidden' // 가로 스크롤 방지
+            }}>
                 <Button
                     onClick={() => handleBoardChange("news")}
                     sx={{
                         borderRadius: 0,
                         backgroundColor: currentBoard === "news" ? "#999999" : "#f5f5f5",
                         color: currentBoard === "news" ? "#fff" : "#000",
-                        px: 6,
+                        px: { xs: 2, sm: 6 }, // 반응형 패딩
                         py: 1,
-                        fontSize: "1.1rem",
+                        fontSize: { xs: '1rem', sm: '1.1rem' }, // 반응형 폰트 크기
                         fontWeight: "bold",
+                        width: { xs: '100%', sm: 'auto' }, // 모바일에서는 전체 너비
+                        mb: { xs: 1, sm: 0 } // 모바일에서 버튼 사이 간격
                     }}
                 >
                     공지사항
@@ -67,18 +88,21 @@ function BoardPage() {
                         borderRadius: 0,
                         backgroundColor: currentBoard === "faq" ? "#999999" : "#f5f5f5",
                         color: currentBoard === "faq" ? "#fff" : "#000",
-                        px: 6,
+                        px: { xs: 2, sm: 6 }, // 반응형 패딩
                         py: 1,
-                        fontSize: "1.1rem",
+                        fontSize: { xs: '1rem', sm: '1.1rem' }, // 반응형 폰트 크기
                         fontWeight: "bold",
+                        width: { xs: '100%', sm: 'auto' } // 모바일에서는 전체 너비
                     }}
                 >
                     자주 묻는 질문
                 </Button>
             </Box>
 
-            {/* 선택된 게시판 표시 */}
-            {currentBoard === "news" ? <NewsBoardPage /> : <FAQBoardPage />}
+            {/* 현재 선택된 게시판에 따라 렌더링 */}
+            <Box sx={{ overflowX: 'hidden', width: '100%' }}> {/* 추가적인 가로 스크롤 방지 */}
+                {currentBoard === "news" ? <NewsBoardPage /> : <FAQBoardPage />}
+            </Box>
         </Container>
     );
 }
