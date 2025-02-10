@@ -27,6 +27,7 @@ import java.time.LocalDate;
 @Table(name = "member")
 @Getter @Setter
 @ToString
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Member extends BaseEntity{

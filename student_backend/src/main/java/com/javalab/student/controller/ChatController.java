@@ -1,41 +1,59 @@
 package com.javalab.student.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.javalab.student.dto.ChatMessageDto;
+import com.javalab.student.service.ChatMessageService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+
+import java.security.Principal;
 
 /**
- * WebSocket 기반 실시간 메시지 전송
- * - WebSocket 기반의 실시간 채팅을 처리하는 역할
+ * 상담 채팅 관련 컨트롤러
+ * - 메시지 전송, 읽음 처리, 읽지 않은 메시지 개수 조회 등을 처리합니다.
  */
-@Controller
+@RestController
+@RequestMapping("/api/chat")
+@RequiredArgsConstructor
+@Slf4j
 public class ChatController {
 
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
+    private final ChatMessageService chatMessageService;
 
     /**
-     *
-     * REST API → Redis Pub/Sub → WebSocket 전송 구조
-     * - WebSocket을 통해 받은 메시지를 /topic/chat을 구독하는 모든 클라이언트에게 전송하는 역할
+     * 🔹 특정 상담 채팅방으로 메시지를 전송하는 API
      */
-    @MessageMapping("/chat")
-    @SendTo("/topic/chat")  // 이 메시지를 "/topic/chat"으로 구독 중인 클라이언트들에게 보냄
-    public String sendMessage(String message) {
-        // 받은 메시지를 처리하고, "/topic/chat"으로 전송할 메시지 반환
-        System.out.println("받은 메시지: " + message);
-        return message;   // 반환된 메시지는 "/topic/chat" 구독자에게 전송됨
+    @MessageMapping("/chat/send")
+    public void sendMessage(@RequestBody ChatMessageDto messageDto) {
+        log.info("💬 메시지 수신 - 채팅방 ID: {}, 보낸이: {}, 내용: {}", messageDto.getChatRoomId(), messageDto.getSenderId(), messageDto.getContent());
+        chatMessageService.saveAndSendMessage(messageDto);
     }
 
     /**
-     * 특정 사용자의 메시지를 전송할 때 사용하는 메서드
-     * 예를 들어, 개인 메시지 전송을 위해 사용
+     * 🔹 특정 상담 채팅방의 모든 메시지를 읽음 처리하는 API
+     *
+     * @param roomId   채팅방 ID
+     * @param principal 현재 로그인한 사용자 정보 (Spring Security 사용)
      */
-    @MessageMapping("/private")
-    public void sendPrivateMessage(String message, String userId) {
-        // 특정 사용자에게 개인 메시지를 전송
-        messagingTemplate.convertAndSendToUser(userId, "/queue/private", message);
+    @PostMapping("/messages/{roomId}/read")
+    public ResponseEntity<?> markMessagesAsRead(@PathVariable Long roomId, Principal principal) {
+        Long memberId = Long.valueOf(principal.getName()); // 현재 로그인한 사용자 ID 가져오기
+        chatMessageService.markMessagesAsRead(roomId, memberId);
+        return ResponseEntity.ok("모든 메시지가 읽음 처리되었습니다.");
+    }
+
+    /**
+     * 🔹 특정 상담 채팅방에서 읽지 않은 메시지 개수를 반환하는 API
+     *
+     * @param roomId   채팅방 ID
+     * @param principal 현재 로그인한 사용자 정보 (Spring Security 사용)
+     */
+    @GetMapping("/messages/{roomId}/unread-count")
+    public ResponseEntity<Long> countUnreadMessages(@PathVariable Long roomId, Principal principal) {
+        Long memberId = Long.valueOf(principal.getName()); // 현재 로그인한 사용자 ID 가져오기
+        long unreadCount = chatMessageService.countUnreadMessages(roomId, memberId);
+        return ResponseEntity.ok(unreadCount);
     }
 }

@@ -71,7 +71,7 @@ public class RedisConfig {
 
     /**
      * 🔹 Redis Pub/Sub 메시지 리스너 컨테이너 설정
-     * - "chat_channel"을 구독하여 메시지를 수신할 수 있도록 설정
+     * - Redis Publisher에서 발행한 "chat_channel"을 MessageSubscriberService에서 구독 가능하도록 설정
      */
     @Bean
     public RedisMessageListenerContainer redisMessageListenerContainer(
