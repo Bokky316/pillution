@@ -27,7 +27,7 @@ import {
     setOpenEditDialog
 } from '../../redux/postEditSlice';
 
-const faqCategories = ["전체", "제품", "회원정보", "주문/결제", "교환/반품", "배송", "기타"];
+const faqCategories = ["제품", "회원정보", "주문/결제", "교환/반품", "배송", "기타"];
 
 function PostEditPage() {
     const { postId } = useParams();

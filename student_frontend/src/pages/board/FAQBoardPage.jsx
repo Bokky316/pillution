@@ -384,11 +384,11 @@ function FAQBoardPage() {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseDeleteDialog} color="primary">
-                        취소
-                    </Button>
                     <Button onClick={handleConfirmDelete} color="error">
                         삭제
+                    </Button>
+                    <Button onClick={handleCloseDeleteDialog} color="primary">
+                        취소
                     </Button>
                 </DialogActions>
             </Dialog>

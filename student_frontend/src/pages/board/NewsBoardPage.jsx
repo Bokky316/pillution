@@ -356,11 +356,11 @@ function NewsBoardPage() {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleDeleteCancel} color="primary">
-                        취소
-                    </Button>
                     <Button onClick={handleDeleteConfirm} color="error">
                         삭제
+                    </Button>
+                    <Button onClick={handleDeleteCancel} color="primary">
+                        취소
                     </Button>
                 </DialogActions>
             </Dialog>
