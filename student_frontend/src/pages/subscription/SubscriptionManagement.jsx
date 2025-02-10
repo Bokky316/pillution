@@ -12,6 +12,8 @@ import {
     setSelectedQuantity,
     addNextSubscriptionItem,
     deleteNextSubscriptionItem,
+    replaceNextSubscriptionItems,
+    updateBillingDate,
 } from "@/redux/subscriptionSlice";
 
 export default function SubscriptionManagement() {
@@ -31,6 +33,7 @@ export default function SubscriptionManagement() {
     // ✅ 초기값 설정 (nextItems가 없으면 빈 배열 반환)
     const nextItems = subscription?.nextItems || [];
 
+    // 정기구독 - 다음달 결제 예정 상품 수량 변경
     const handleQuantityChange = (productId, newQuantity) => {
         const subscriptionItems = subscription?.nextItems || []; // ✅ nextItems가 없으면 빈 배열 사용
 
@@ -112,29 +115,29 @@ export default function SubscriptionManagement() {
     }, [subscription.nextItems]);
 
 
+    // 정기구독 상품 추가하기
+    const handleAddProduct = async () => {
+        if (!selectedProduct || selectedQuantity <= 0) return;
 
-const handleAddProduct = async () => {
-    if (!selectedProduct || selectedQuantity <= 0) return;
+        const newItem = {
+            subscriptionId: subscription.id,
+            productId: selectedProduct.id,
+            nextMonthQuantity: selectedQuantity,
+            nextMonthPrice: selectedProduct.price,
+        };
 
-    const newItem = {
-        subscriptionId: subscription.id,
-        productId: selectedProduct.id,
-        nextMonthQuantity: selectedQuantity,
-        nextMonthPrice: selectedProduct.price,
+        console.log("🛠️ 추가할 상품 데이터:", newItem);
+        dispatch(addNextSubscriptionItem(newItem)).then((result) => {
+            if (addNextSubscriptionItem.fulfilled.match(result)) {
+                console.log("✅ 상품 추가 성공:", result.payload);
+
+                // ✅ Redux 상태를 직접 업데이트하여 화면에서 즉시 반영
+                dispatch(fetchSubscription()); // 구독 정보 다시 불러오기
+            } else {
+                console.error("❌ 상품 추가 실패:", result.error);
+            }
+        });
     };
-
-    console.log("🛠️ 추가할 상품 데이터:", newItem);
-    dispatch(addNextSubscriptionItem(newItem)).then((result) => {
-        if (addNextSubscriptionItem.fulfilled.match(result)) {
-            console.log("✅ 상품 추가 성공:", result.payload);
-
-            // ✅ Redux 상태를 직접 업데이트하여 화면에서 즉시 반영
-            dispatch(fetchSubscription()); // 구독 정보 다시 불러오기
-        } else {
-            console.error("❌ 상품 추가 실패:", result.error);
-        }
-    });
-};
 
 
     // ✅ 수정된 handleDeleteItem (삭제 기능 개선)
@@ -244,6 +247,29 @@ const handleAddProduct = async () => {
         dispatch(updateNextSubscriptionItems({ subscriptionId, updatedItems: validItems }));
     };
 
+    // 정기 구독 결제일 변경
+    const handleBillingDateChange = (event) => {
+        const subscriptionId = subscription?.id;
+        const newBillingDate = event.target.value; // ✅ 이벤트에서 값 가져오기
+
+        if (!subscriptionId || !newBillingDate) {
+            console.error("❌ [ERROR] 구독 ID 또는 새 결제일 없음! 요청 취소", { subscriptionId, newBillingDate });
+            return;
+        }
+
+        dispatch(updateBillingDate({ subscriptionId, newBillingDate }))
+            .then((result) => {
+                if (updateBillingDate.fulfilled.match(result)) {
+                    console.log("✅ 결제일 변경 성공:", result.payload);
+                    dispatch(fetchSubscription()); // ✅ 최신 상태 반영
+                } else {
+                    console.error("❌ 결제일 변경 실패:", result.error);
+                }
+            });
+    };
+
+
+
 
 
     const handleProcessBilling = () => {
@@ -315,10 +341,10 @@ const handleAddProduct = async () => {
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "10px" }}>
                 <h3>총 합계: {totalPrice} 원</h3>
                 <button onClick={() => dispatch(updateNextSubscriptionItems({ subscriptionId: subscription.id, updatedItems: subscription.nextItems }))}>
-                    다음 결제 상품 업데이트
+                    다음 결제 상품 업데이트(미사용)
                 </button>
                 <button onClick={handleReplaceNextItems}>
-                    다음 결제 상품 교체하기
+                    다음 결제 상품 교체하기(미사용)
                 </button>
             </div>
 
@@ -387,7 +413,7 @@ const handleAddProduct = async () => {
             <input
                 type="date"
                 value={subscription?.nextBillingDate || ""}
-                onChange={(e) => dispatch(updateSubscription({ ...subscription, nextBillingDate: e.target.value }))}
+                onChange={handleBillingDateChange}
             />
 
             <h3>결제수단</h3>

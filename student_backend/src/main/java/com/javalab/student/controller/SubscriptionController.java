@@ -63,10 +63,21 @@ public class SubscriptionController {
      * 결제일 업데이트 API
      */
     @PutMapping("/update-billing-date")
-    public ResponseEntity<Void> updateBillingDate(@RequestParam Long subscriptionId, @RequestParam String newDate) {
-        subscriptionService.updateBillingDate(subscriptionId, LocalDate.parse(newDate));
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> updateBillingDate(@RequestBody Map<String, String> request) {
+        Long subscriptionId = Long.parseLong(request.get("subscriptionId"));
+        String newBillingDate = request.get("newBillingDate");
+
+        boolean updated = subscriptionService.updateBillingDate(subscriptionId, LocalDate.parse(newBillingDate));
+
+        if (updated) {
+            return ResponseEntity.ok(Map.of("message", "success"));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("message", "failed"));
+        }
     }
+
+
+
 
     /**
      * 결제수단 변경 API
@@ -165,16 +176,16 @@ public class SubscriptionController {
         return ResponseEntity.ok(addedItem); // ✅ 추가된 상품 정보를 응답으로 반환
     }
 
-    @PostMapping("/replace-next-items")
-    public ResponseEntity<?> replaceNextItems(@RequestBody SubscriptionUpdateNextItemRequestDto requestDto) {
-        boolean success = subscriptionService.replaceNextSubscriptionItems(requestDto.getSubscriptionId(), requestDto.getUpdatedItems());
-
-        if (success) {
-            return ResponseEntity.ok("✅ 구독 아이템 업데이트 완료!");
-        } else {
-            return ResponseEntity.badRequest().body("❌ 구독 아이템 업데이트 실패");
-        }
-    }
+//    @PostMapping("/replace-next-items")
+//    public ResponseEntity<?> replaceNextItems(@RequestBody SubscriptionUpdateNextItemRequestDto requestDto) {
+//        boolean success = subscriptionService.replaceNextSubscriptionItems(requestDto.getSubscriptionId(), requestDto.getUpdatedItems());
+//
+//        if (success) {
+//            return ResponseEntity.ok("✅ 구독 아이템 업데이트 완료!");
+//        } else {
+//            return ResponseEntity.badRequest().body("❌ 구독 아이템 업데이트 실패");
+//        }
+//    }
 
     @DeleteMapping("/delete-next-item")
     public ResponseEntity<?> deleteNextSubscriptionItem(@RequestBody Map<String, Long> request) {

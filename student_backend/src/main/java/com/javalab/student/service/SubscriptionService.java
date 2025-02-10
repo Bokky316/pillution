@@ -95,14 +95,32 @@ public class SubscriptionService {
      * 결제일 업데이트
      */
     @Transactional
-    public void updateBillingDate(Long subscriptionId, LocalDate newBillingDate) {
+    public boolean updateBillingDate(Long subscriptionId, LocalDate newBillingDate) {
         Subscription subscription = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new RuntimeException("구독 정보를 찾을 수 없습니다."));
-        subscription.setLastBillingDate(newBillingDate);
-        subscription.setNextBillingDate(newBillingDate.plusMonths(1));
-        subscription.setCurrentCycle(subscription.getCurrentCycle() + 1);
+
+        // ✅ 기존 결제일 확인
+        LocalDate lastBillingDate = subscription.getLastBillingDate();
+
+        // ✅ 다음 결제일 (lastBillingDate 기준으로 한 달 후) 계산
+        LocalDate nextBillingDate = lastBillingDate.plusMonths(1);
+
+        // ✅ 결제일 변경 가능 여부 확인 (nextBillingDate 기준으로 -15일 ~ +15일)
+        LocalDate minDate = nextBillingDate.minusDays(15);
+        LocalDate maxDate = nextBillingDate.plusDays(15);
+
+        if (newBillingDate.isBefore(minDate) || newBillingDate.isAfter(maxDate)) {
+            throw new RuntimeException("❌ 변경 가능한 날짜 범위를 초과했습니다!");
+        }
+
+        // ✅ 결제일 업데이트
+        subscription.setNextBillingDate(newBillingDate);
         subscriptionRepository.save(subscription);
+        return true;
     }
+
+
+
 
     /**
      * 결제수단 변경

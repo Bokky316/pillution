@@ -351,6 +351,38 @@ export const deleteNextSubscriptionItem = createAsyncThunk(
 );
 
 
+export const updateBillingDate = createAsyncThunk(
+    "subscription/updateBillingDate",
+    async ({ subscriptionId, newBillingDate }, { rejectWithValue }) => {
+        try {
+            console.log("📡 [API 요청] 결제일 업데이트:", { subscriptionId, newBillingDate });
+
+            const response = await fetchWithAuth(`${API_URL}subscription/update-billing-date`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ subscriptionId, newBillingDate }) // ✅ JSON 형식으로 변환
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("❌ [ERROR] 결제일 업데이트 실패:", errorText);
+                return rejectWithValue(errorText);
+            }
+
+            const data = await response.json();
+            console.log("✅ [SUCCESS] 결제일 업데이트 성공:", data);
+            return data;
+        } catch (error) {
+            console.error("❌ [ERROR] 결제일 업데이트 실패:", error);
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
+
+
+
+
 
 const subscriptionSlice = createSlice({
     name: "subscription",
@@ -482,6 +514,13 @@ const subscriptionSlice = createSlice({
            state.data.nextItems = state.data.nextItems.filter(item => item.productId !== action.payload.productId);
        })
        .addCase(deleteNextSubscriptionItem.rejected, (state, action) => {
+           console.error("❌ [ERROR] Redux 상태 업데이트 실패:", action.payload);
+       })
+       .addCase(updateBillingDate.fulfilled, (state, action) => {
+           console.log("✅ [Redux] 결제일 변경 완료:", action.payload);
+           state.data.nextBillingDate = action.payload.newBillingDate;
+       })
+       .addCase(updateBillingDate.rejected, (state, action) => {
            console.error("❌ [ERROR] Redux 상태 업데이트 실패:", action.payload);
        })
     },
