@@ -47,13 +47,12 @@ const Header = () => {
         }}>
             <Toolbar sx={{
                 display: 'flex',
-                justifyContent: 'space-between',
+                justifyContent: 'space-between', // 왼쪽, 중앙, 오른쪽 정렬
                 alignItems: 'center',
-                maxWidth: '1280px',
+                maxWidth: '480px', // 모바일 중심 UI
                 width: '100%',
                 margin: '0 auto',
-                padding: isMobile ? '0 10px' : '0 20px', // 모바일에서는 패딩 축소
-                minHeight: isMobile ? '60px' : '80px', // 모바일에서는 높이 축소
+                padding: '0 16px', // 좌우 패딩 추가
             }}>
                 {/* 왼쪽 메뉴 */}
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -97,7 +96,7 @@ const Header = () => {
                 </Box>
 
                 {/* 오른쪽 사용자 정보 */}
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {isLoggedIn ? (
                         <>
                             {user.role === "CS_AGENT" && (
