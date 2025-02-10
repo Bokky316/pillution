@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
     AppBar, Toolbar, Button, IconButton, Menu, MenuItem, Box, Typography, Badge,
@@ -9,40 +9,32 @@ import { Link, useNavigate } from "react-router-dom";
 import { clearUser } from "@/redux/authSlice";
 import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
 import { API_URL } from "@/constant";
-import { SERVER_URL } from '@/constant';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import { persistor } from "@/redux/store";
-import { hideSnackbar } from '@/redux/snackbarSlice'; // ✅ 스낵바 관련 액션 추가
-import MessageList from "@features/auth/components/MessageList";// ✅ MessageList 컴포넌트 import
+import { hideSnackbar } from '@/redux/snackbarSlice';
+import MessageList from "@features/auth/components/MessageList";
+import { setInvitedRequestsCount } from '@/redux/chatSlice'; // 상담 요청 개수 액션 추가
 import "../../assets/styles/header.css";
 
 const Header = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { user, isLoggedIn } = useSelector(state => state.auth);
-    const [anchorEl, setAnchorEl] = React.useState(null);
-    const [openMessagesModal, setOpenMessagesModal] = React.useState(false);
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [openMessagesModal, setOpenMessagesModal] = useState(false);
     const delayedUnreadCount = useSelector(state => state.messages.unreadCount || 0);
-    const { open, message } = useSelector(state => state.snackbar); // ✅ 스낵바 상태 추가
+    const invitedRequestsCount = useSelector(state => state.chat.invitedRequestsCount || 0); // 상담 요청 개수 가져오기
+    const { open: snackbarOpen, message: snackbarMessage } = useSelector(state => state.snackbar);
 
-    const handleMenuOpen = (event) => {
-        setAnchorEl(event.currentTarget);
-    };
+    // WebSocket 연결 상태 관리
+    const [stompClient, setStompClient] = useState(null);
 
-    const handleMenuClose = () => {
-        setAnchorEl(null);
-    };
+    // 메뉴 열림/닫힘 처리
+    const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
+    const handleMenuClose = () => setAnchorEl(null);
 
-    const handleMenuItemClick = (path) => {
-        handleMenuClose();
-        if (path === "/cart" && !isLoggedIn) {
-            navigate("/login");
-        } else {
-            navigate(path);
-        }
-    };
-
+    // 로그아웃 처리
     const handleLogout = async () => {
         try {
             await fetchWithAuth(`${API_URL}auth/logout`, {
@@ -57,15 +49,51 @@ const Header = () => {
         }
     };
 
-    // ✅ 메시지 읽음 처리 함수 추가
-    const handleReadMessages = async (messageId) => {
+    // 초대된 상담 요청 개수 가져오기
+    const fetchInvitedRequestsCount = async () => {
         try {
-            await fetchWithAuth(`${API_URL}messages/read/${messageId}`, { method: "POST" });
-            // Redux 상태 업데이트 로직 추가 (필요시)
+            const response = await fetchWithAuth(`${API_URL}consultation/pending-requests`);
+            if (response.ok) {
+                const data = await response.json();
+                dispatch(setInvitedRequestsCount(data.length));
+            }
         } catch (error) {
-            console.error("메시지 읽음 처리 실패:", error.message);
+            console.error("초대된 상담 요청 개수 조회 실패:", error.message);
         }
     };
+
+    // WebSocket 연결 설정
+    const connectWebSocket = () => {
+        if (!isLoggedIn || !user) return;
+
+        const socket = new SockJS(`${API_URL}ws`);
+        const client = new Client({
+            webSocketFactory: () => socket,
+            reconnectDelay: 5000,
+            onConnect: () => {
+                console.log("📡 WebSocket 연결 성공");
+                client.subscribe(`/topic/consultation/${user.id}`, (message) => {
+                    console.log("📨 새로운 상담 요청 알림:", message.body);
+                    fetchInvitedRequestsCount(); // 새로운 요청이 있을 때 개수 업데이트
+                });
+            },
+            onStompError: (error) => console.error("❌ WebSocket 오류:", error),
+        });
+
+        client.activate();
+        setStompClient(client);
+
+        return () => client.deactivate();
+    };
+
+    // 초기 데이터 및 WebSocket 연결 설정
+    useEffect(() => {
+        if (isLoggedIn) {
+            fetchInvitedRequestsCount();
+            connectWebSocket();
+        }
+    }, [isLoggedIn]);
+
     return (
         <>
             <AppBar position="static" className="nav-bar" sx={{
@@ -76,7 +104,7 @@ const Header = () => {
                 right: '50%',
                 marginLeft: '-50vw',
                 marginRight: '-50vw',
-                backgroundColor: 'transparent',  // 배경색을 투명하게 설정
+                backgroundColor: 'transparent',
             }}>
                 <Toolbar sx={{
                     minHeight: '80px',
@@ -85,9 +113,10 @@ const Header = () => {
                     maxWidth: '1280px',
                     margin: '0 auto',
                     width: '100%',
-                    backgroundColor: '#f4f4f4',  // 툴바의 배경색을 흰색으로 설정
-                    color: '#000000',  // 텍스트 색상을 검정색으로 설정
+                    backgroundColor: '#f4f4f4',
+                    color: '#000000',
                 }}>
+                    {/* 메뉴 버튼 */}
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <IconButton
                             edge="start"
@@ -104,13 +133,14 @@ const Header = () => {
                             open={Boolean(anchorEl)}
                             onClose={handleMenuClose}
                         >
-                            <MenuItem onClick={() => handleMenuItemClick("/products")}>상품</MenuItem>
-                            <MenuItem onClick={() => handleMenuItemClick("/recommendation")}>추천</MenuItem>
-                            <MenuItem onClick={() => handleMenuItemClick("/cart")}>장바구니</MenuItem>
-                            <MenuItem onClick={() => handleMenuItemClick("/survey")}>설문조사</MenuItem>
+                            <MenuItem onClick={() => navigate("/products")}>상품</MenuItem>
+                            <MenuItem onClick={() => navigate("/recommendation")}>추천</MenuItem>
+                            <MenuItem onClick={() => navigate("/cart")}>장바구니</MenuItem>
+                            <MenuItem onClick={() => navigate("/survey")}>설문조사</MenuItem>
                         </Menu>
                     </Box>
 
+                    {/* 로고 */}
                     <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
                         <Link to="/" style={{ textDecoration: 'none' }}>
                             <img
@@ -121,19 +151,17 @@ const Header = () => {
                         </Link>
                     </Box>
 
+                    {/* 사용자 정보 및 알림 */}
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         {isLoggedIn && (
-                            <Button color="inherit" component={Link} to="/messages">메시지목록</Button>
-                        )}
-                        {isLoggedIn && user ? (
                             <>
-                                {/* 🔹 배지를 클릭하면 메시지 목록 모달이 열리도록 설정 */}
-                                <Badge
-                                    badgeContent={delayedUnreadCount > 0 ? delayedUnreadCount : null}
-                                    color="error"
-                                    onClick={() => setOpenMessagesModal(true)}
-                                    style={{ cursor: "pointer" }}
-                                >
+                                <Button color="inherit" component={Link} to="/messages">메시지목록</Button>
+                                <Badge badgeContent={invitedRequestsCount} color="secondary">
+                                    <Button color="inherit" component={Link} to="/consultation">
+                                        상담 요청
+                                    </Button>
+                                </Badge>
+                                <Badge badgeContent={delayedUnreadCount > 0 ? delayedUnreadCount : null} color="error">
                                     <Typography variant="body1" sx={{ mr: 2 }}>
                                         {user.name}
                                         {user.role === "ADMIN" ? " (관리자)" : " (사용자)"}
@@ -141,10 +169,11 @@ const Header = () => {
                                 </Badge>
                                 <Button color="inherit" onClick={() => navigate("/mypage")}>마이페이지</Button>
                                 <Button color="inherit" onClick={handleLogout}>
-                                    {user.social ? '소셜 로그아웃' : '로그아웃'}
+                                    로그아웃
                                 </Button>
                             </>
-                        ) : (
+                        )}
+                        {!isLoggedIn && (
                             <>
                                 <Button color="inherit" onClick={() => navigate("/login")} sx={{ mr: 1 }}>로그인</Button>
                                 <Button color="inherit" onClick={() => navigate("/registerMember")}>회원가입</Button>
@@ -154,23 +183,23 @@ const Header = () => {
                 </Toolbar>
             </AppBar>
 
-            {/* ✅ 이름 위의 읽지 않은 메시지 숫자의 배지 클릭시 메시지 목록 모달 */}
+            {/* 메시지 목록 모달 */}
             <Dialog open={openMessagesModal} onClose={() => setOpenMessagesModal(false)} fullWidth maxWidth="md">
                 <DialogTitle>메시지 목록</DialogTitle>
                 <DialogContent>
-                    <MessageList onMessageRead={handleReadMessages} /> {/* ✅ 메시지를 읽었을 때 처리 */}
+                    <MessageList /> {/* 메시지 목록 컴포넌트 */}
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setOpenMessagesModal(false)}>닫기</Button>
                 </DialogActions>
             </Dialog>
 
-            {/* ✅ 스낵바 알림 */}
+            {/* 스낵바 알림 */}
             <Snackbar
-                open={open}
+                open={snackbarOpen}
                 autoHideDuration={3000}
                 onClose={() => dispatch(hideSnackbar())}
-                message={message}
+                message={snackbarMessage}
             />
         </>
     );
