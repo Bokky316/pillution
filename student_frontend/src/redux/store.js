@@ -9,6 +9,7 @@ import recommendationReducer from "./recommendationSlice";
 import snackbarReducer from "./snackbarSlice";
 import messageReducer from "./messageSlice";
 import chatReducer from "./chatSlice"; // ✅ chatSlice 추가
+import productReducer from "./productSlice";
 
 /**
  * Redux Persist의 설정을 정의합니다.
@@ -20,8 +21,8 @@ import chatReducer from "./chatSlice"; // ✅ chatSlice 추가
 const persistConfig = {
     key: "root",
     storage,
-    whitelist: ["auth", "survey", "ui", "recommendations", "snackbar", "chat"], // ✅ chat 추가
-};
+    whitelist: ["auth", "survey", "ui", "products", "recommendations", "snackbar", "chat"], // ✅ chat 추가
+
 
 /**
  * 루트 리듀서 생성
@@ -36,6 +37,8 @@ const rootReducer = combineReducers({
     snackbar: snackbarReducer,
     messages: messageReducer,
     chat: chatReducer, // ✅ chat 리듀서 추가
+    products: productReducer,
+
 });
 
 /**

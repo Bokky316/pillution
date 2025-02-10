@@ -1,77 +1,257 @@
-import { useState, useEffect } from "react";
-import "./ProductListPage.css"; // CSS 파일 추가
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  CardMedia,
+  Chip,
+  Box,
+  Container,
+  CircularProgress,
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import { fetchProducts, fetchCategories } from "@features/product/productApi";
 
-const ProductListPage = () => {
-  const [products, setProducts] = useState([]);
+export default function ProductListPage() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
+  // ✅ Redux에서 카테고리 데이터 및 에러 상태 가져오기
+  const { categories, error } = useSelector((state) => state.products);
+  const auth = useSelector((state) => state.auth);
+
+  // ✅ 상태 변수 정의
+  const [displayedProducts, setDisplayedProducts] = useState([]); // 현재 화면에 보이는 상품 목록
+  const [remainingProducts, setRemainingProducts] = useState([]); // 아직 표시되지 않은 상품 목록
+  const [hasMore, setHasMore] = useState(true); // 더 불러올 상품이 있는지 여부
+  const [isFetching, setIsFetching] = useState(false); // 데이터 요청 중인지 여부
+  const [selectedCategory, setSelectedCategory] = useState(null); // 선택된 카테고리
+  const [allProducts, setAllProducts] = useState([]); // 전체 상품 목록 저장
+  const observer = useRef(); // Intersection Observer (스크롤 감지)
+
+  // ✅ 현재 로그인한 사용자가 관리자(admin)인지 확인
+  const userRole = auth?.user?.authorities?.some((auth) => auth.authority === "ROLE_ADMIN")
+    ? "ADMIN"
+    : "USER";
+
+  // ✅ 카테고리 데이터 가져오기 (한 번만 실행)
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        // 🔹 실제 API 대신 임의의 `mockData` 사용
-        const mockData = [
-          {
-            id: 1,
-            name: "GENMIX 젠믹스 산양유 단백질",
-            price: 44900,
-            image: "/images/vitamin-c.jpg",
-            category: { id: 1, name: "단백질" },
-          },
-          {
-            id: 2,
-            name: "필리 메가 프로폴리스 면역젤리",
-            price: 13500,
-            image: "/images/omega3.jpg",
-            category: { id: 3, name: "면역강화" },
-          },
-          {
-            id: 3,
-            name: "PHEW P 관절이약: 거침없이 이별 통보",
-            price: 29500,
-            image: "/images/probiotics.jpg",
-            category: { id: 4, name: "관절영양제" },
-          },
-          {
-            id: 4,
-            name: "PHEW P 속&프리: 그날의 극적 화해",
-            price: 32500,
-            image: "/images/probiotics.jpg",
-            category: { id: 5, name: "소화영양제" },
-          }
-        ];
+    dispatch(fetchCategories()); // 카테고리 목록 요청
+  }, [dispatch]);
 
-        setProducts(mockData);
+  // ✅ 초기에 전체 상품 가져오기
+  useEffect(() => {
+    const loadAllProducts = async () => {
+      try {
+        const initialProducts = await dispatch(fetchProducts({ page: 0, size: 100 })).unwrap();
+        setAllProducts(initialProducts);
+        setDisplayedProducts(initialProducts.slice(0, 6));
+        setRemainingProducts(initialProducts.slice(6));
+        setHasMore(initialProducts.length > 6);
       } catch (error) {
-        console.error("상품 데이터를 불러오는 중 오류 발생:", error);
+        console.error("🚨 상품 불러오기 실패:", error);
       }
     };
 
-    fetchProducts();
-  }, []);
+    loadAllProducts();
+  }, [dispatch]);
+
+  // ✅ 카테고리별 상품 필터링 및 표시
+  const filterAndDisplayProducts = (products, categoryName) => {
+    let filtered = products;
+    if (categoryName && categoryName !== "전체") {
+      filtered = products.filter(product =>
+        product.categories && product.categories.includes(categoryName)
+      );
+    }
+    return filtered;
+  };
+
+  // ✅ 카테고리 필터링 처리
+  const handleCategoryClick = (categoryName) => {
+    setIsFetching(true);
+
+    // 이전 선택과 같은 카테고리이거나 전체를 선택한 경우
+    if (categoryName === "전체" || selectedCategory === categoryName) {
+      setSelectedCategory(null);
+      setDisplayedProducts(allProducts.slice(0, 6));
+      setRemainingProducts(allProducts.slice(6));
+      setHasMore(allProducts.length > 6);
+    } else {
+      // 새로운 카테고리 선택
+      setSelectedCategory(categoryName);
+      const filteredProducts = filterAndDisplayProducts(allProducts, categoryName);
+      setDisplayedProducts(filteredProducts.slice(0, 6));
+      setRemainingProducts(filteredProducts.slice(6));
+      setHasMore(filteredProducts.length > 6);
+    }
+
+    setIsFetching(false);
+  };
+
+  // ✅ 스크롤 감지 후 3개씩 추가 로딩 (Intersection Observer 활용)
+  const lastProductRef = useCallback(
+    (node) => {
+      if (!hasMore || isFetching) return;
+      if (observer.current) observer.current.disconnect();
+
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && remainingProducts.length > 0) {
+          setIsFetching(true);
+
+          // 현재 카테고리에 맞는 추가 상품 로드
+          setTimeout(() => {
+            const nextProducts = remainingProducts.slice(0, 3);
+            setDisplayedProducts(prev => [...prev, ...nextProducts]);
+            setRemainingProducts(prev => prev.slice(3));
+            setHasMore(remainingProducts.length > 3);
+            setIsFetching(false);
+          }, 1000);
+        }
+      });
+
+      if (node) observer.current.observe(node);
+    },
+    [remainingProducts, hasMore, isFetching]
+  );
 
   return (
-    <div className="product-list-page">
-      <h1 className="page-title">전체 상품</h1>
-      <div className="product-grid">
-        {products.map((product) => (
-          <div className="product-card" key={product.id}>
-            <img src={product.image} alt={product.name} className="product-image" />
-            <div className="product-details">
-              <p className="product-name">{product.name}</p>
-              <span className="product-price">{product.price.toLocaleString()}원</span>
-
-              {/* 🔹 단일 카테고리만 표시 */}
-              <div className="product-category">
-                <span className="category-tag">
-                  {product.category ? product.category.name : "카테고리 없음"}
-                </span>
-              </div>
-
-            </div>
-          </div>
+    <Container maxWidth="lg" sx={{ padding: "20px" }}>
+      {/* ✅ 카테고리 필터 UI */}
+      <Box sx={{ display: "flex", gap: "10px", marginBottom: "20px", overflowX: "auto", padding: "10px 0" }}>
+        <Chip
+          key="all"
+          label="전체"
+          clickable
+          onClick={() => handleCategoryClick("전체")}
+          color={!selectedCategory ? "primary" : "default"}
+          variant={!selectedCategory ? "filled" : "outlined"}
+        />
+        {categories.map((category) => (
+          <Chip
+            key={category.name}
+            label={category.name}
+            clickable
+            onClick={() => handleCategoryClick(category.name)}
+            color={selectedCategory === category.name ? "primary" : "default"}
+            variant={selectedCategory === category.name ? "filled" : "outlined"}
+          />
         ))}
-      </div>
-    </div>
-  );
-};
+      </Box>
 
-export default ProductListPage;
+      {/* ✅ 상품 리스트 UI */}
+      <Grid container spacing={3}>
+        {displayedProducts.map((product, index) => (
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={4}
+            key={product.id}
+            ref={index === displayedProducts.length - 1 ? lastProductRef : null}
+          >
+            <Card
+              onClick={() => navigate(`/Products/${product.id}`)}
+              sx={{
+                cursor: "pointer",
+                boxShadow: 3,
+                borderRadius: 2,
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                ":hover": {
+                  boxShadow: 6,
+                  transform: "translateY(-4px)",
+                  transition: "transform 0.2s ease-in-out",
+                },
+              }}
+            >
+              {/* ✅ 상품 이미지 */}
+              <CardMedia
+                component="img"
+                height="200"
+                image={product.image || "/placeholder.jpg"}
+                alt={product.name}
+                sx={{ objectFit: "cover" }}
+              />
+              {/* ✅ 상품 정보 */}
+              <CardContent sx={{ textAlign: "center", flexGrow: 1 }}>
+                <Typography variant="h6">{product.name}</Typography>
+                <Typography variant="body1" sx={{ fontWeight: "bold", color: "#ff5722" }}>
+                  {product.price.toLocaleString()}원
+                </Typography>
+
+                {/* ✅ 주요 성분 태그 */}
+                {product.ingredients && product.ingredients.length > 0 && (
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: "5px", justifyContent: "center", marginTop: "10px" }}>
+                    {product.ingredients.map((ingredient, index) => (
+                      <Chip
+                        key={index}
+                        label={ingredient}
+                        sx={{
+                          fontSize: "12px",
+                          backgroundColor: "#f5f5f5",
+                          color: "#333",
+                          fontWeight: "bold",
+                        }}
+                      />
+                    ))}
+                  </Box>
+                )}
+
+                {/* ✅ 관리자 전용 정보 */}
+                {userRole === "ADMIN" && (
+                  <Box sx={{ marginTop: "10px" }}>
+                    <Typography variant="body2" color="textSecondary">
+                      재고: {product.stock}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: product.active ? "green" : "red",
+                        marginTop: "5px",
+                      }}
+                    >
+                      {product.active ? "활성화" : "비활성화"}
+                    </Typography>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      {/* ✅ 로딩 중 표시 (스크롤 후 데이터 로딩 중) */}
+      {isFetching && (
+        <Box sx={{ textAlign: "center", padding: "20px" }}>
+          <CircularProgress />
+          <Typography sx={{ marginTop: "10px" }}>로딩 중...</Typography>
+        </Box>
+      )}
+
+      {/* ✅ 모든 상품이 표시되었을 때 메시지 */}
+      {!hasMore && displayedProducts.length > 0 && (
+        <Box sx={{ textAlign: "center", padding: "20px", color: "gray" }}>
+          <Typography>모든 상품을 불러왔습니다.</Typography>
+        </Box>
+      )}
+
+      {/* ✅ 상품이 없을 때 메시지 */}
+      {displayedProducts.length === 0 && !isFetching && (
+        <Box sx={{ textAlign: "center", padding: "20px", color: "gray" }}>
+          <Typography>해당 카테고리의 상품이 없습니다.</Typography>
+        </Box>
+      )}
+
+      {/* ✅ 에러 메시지 */}
+      {error && (
+        <Box sx={{ textAlign: "center", padding: "20px", color: "error.main" }}>
+          <Typography>{error}</Typography>
+        </Box>
+      )}
+    </Container>
+  );
+}
