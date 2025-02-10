@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Box, Typography, TextField, Button, MenuItem, Paper, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Box, Typography, TextField, Button, Paper, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
 import SockJS from "sockjs-client";
 import { useParams } from "react-router-dom";
 import { Client } from "@stomp/stompjs";
@@ -10,7 +10,6 @@ import useAuth from "@hook/useAuth";
 const ChatRoom = () => {
     const [messages, setMessages] = useState([]);
     const [messageInput, setMessageInput] = useState("");
-    const [topic, setTopic] = useState("");
     const [isCounselorConnected, setIsCounselorConnected] = useState(false);
     const [isChatClosed, setIsChatClosed] = useState(false);
     const [isCloseDialogOpen, setIsCloseDialogOpen] = useState(false);
@@ -18,14 +17,8 @@ const ChatRoom = () => {
     const { user } = useAuth();
     const stompClientRef = useRef(null);
 
-    const topicOptions = {
-        "PRODUCT_INQUIRY": "상품 문의",
-        "ORDER_ISSUE": "주문 문제",
-        "DELIVERY_TRACKING": "배송 조회",
-        "OTHER": "기타"
-    };
-
-    const connectWebSocket = useCallback(() => {
+    // WebSocket 연결 설정
+    const connectWebSocket = () => {
         if (!roomId) {
             console.error("🚨 WebSocket 연결 실패: roomId가 없습니다.");
             return;
@@ -61,10 +54,11 @@ const ChatRoom = () => {
                 console.log("WebSocket disconnected");
             }
         };
-    }, [roomId, user]);
+    };
 
-    const handleNewMessage = useCallback((data) => {
-        setMessages(prevMessages => [...prevMessages, data]);
+    // WebSocket 메시지 처리
+    const handleNewMessage = (data) => {
+        setMessages((prevMessages) => [...prevMessages, data]);
         if (data.status === "IN_PROGRESS") {
             setIsCounselorConnected(true);
             setIsChatClosed(false);
@@ -72,9 +66,10 @@ const ChatRoom = () => {
             setIsChatClosed(true);
             setIsCounselorConnected(false);
         }
-    }, []);
+    };
 
-    const handleSendMessage = useCallback(() => {
+    // 메시지 전송
+    const handleSendMessage = () => {
         if (!messageInput.trim() || !stompClientRef.current || !roomId) {
             console.error("🚨 메시지를 전송할 수 없습니다. roomId 또는 messageInput이 비어있습니다.");
             return;
@@ -92,78 +87,79 @@ const ChatRoom = () => {
             }),
         });
         setMessageInput("");
-    }, [roomId, user, messageInput]);
-
-    const handleCloseChat = async () => {
-        if (!roomId) return;
-
-        try {
-            const response = await fetchWithAuth(`${API_URL}chat/rooms/${roomId}/close`, { method: "POST" });
-            if (response.ok) {
-                setIsChatClosed(true);
-                setIsCounselorConnected(false);
-            } else {
-                console.error("🚨 상담 종료 실패:", response.statusText);
-                alert("상담 종료 실패. 다시 시도해주세요.");
-            }
-        } catch (error) {
-            console.error("🚨 상담 종료 실패:", error.message);
-        }
     };
 
+    // 초기 데이터 로드 및 WebSocket 연결 설정
     useEffect(() => {
-        const cleanup = connectWebSocket();
-        return () => {
-            if (cleanup) {
-                cleanup();
+        const fetchChatRoomDetails = async () => {
+            try {
+                const response = await fetchWithAuth(`${API_URL}chat/rooms/details/${roomId}`);
+                if (response.ok) {
+                    const data = await response.json();
+
+                    // 초기 상담 상태 설정
+                    if (data.status === "IN_PROGRESS") {
+                        setIsCounselorConnected(true);
+                        setIsChatClosed(false);
+                    } else if (data.status === "CLOSED") {
+                        setIsChatClosed(true);
+                        setIsCounselorConnected(false);
+                    }
+                }
+            } catch (error) {
+                console.error("🚨 채팅방 정보 로드 실패:", error.message);
             }
         };
-    }, [roomId, user, connectWebSocket]);
 
-    const handleSelectTopic = (selectedTopic) => {
-        setTopic(selectedTopic);
-    };
+        fetchChatRoomDetails();
+        connectWebSocket();
 
+        return () => {
+            if (stompClientRef.current && stompClientRef.current.connected) {
+                stompClientRef.current.deactivate();
+                stompClientRef.current = null;
+                console.log("WebSocket 연결 해제");
+            }
+        };
+    }, [roomId]);
+
+    // 상담 상태 메시지 반환
     const getStatusMessage = () => {
         if (isChatClosed) return "상담이 종료되었습니다.";
         if (isCounselorConnected) return "상담사가 연결되었습니다.";
-        return "상담사가 아직 연결되지 않았습니다.";
+        return "상담사 연결 대기 중입니다...";
     };
 
     return (
-        <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f5f5f5' }}>
-            <Paper elevation={3} sx={{ p: 2, bgcolor: '#4a4a4a', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6">
-                    {topic ? `1:1 채팅 상담 - ${topicOptions[topic]}` : "1:1 채팅 상담"}
-                </Typography>
+        <Box sx={{ height: "100vh", display: "flex", flexDirection: "column", bgcolor: "#f5f5f5" }}>
+            <Paper elevation={3} sx={{ p: 2, bgcolor: "#4a4a4a", color: "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="h6">1:1 채팅 상담</Typography>
                 {!isChatClosed && (
-                    <Button variant="contained" color="secondary" onClick={() => setIsCloseDialogOpen(true)}>
+                    <Button variant="contained" color="secondary" onClick={() => alert("종료하기 버튼 클릭됨")}>
                         종료하기
                     </Button>
                 )}
             </Paper>
 
-            <Typography variant="body1" color={isChatClosed ? "error" : isCounselorConnected ? "primary" : "textSecondary"} sx={{ p: 2, textAlign: 'center' }}>
+            {/* 상담 상태 메시지 */}
+            <Typography variant="body1" color={isChatClosed ? "error" : isCounselorConnected ? "primary" : "textSecondary"} sx={{ p: 2 }}>
                 {getStatusMessage()}
             </Typography>
 
+            {/* 채팅 내용 */}
             <Box sx={{ flexGrow: 1, overflowY: "auto", p: 2 }}>
                 {messages.map((msg, index) => (
-                    <Box key={index} sx={{ display: 'flex', justifyContent: msg.senderId === user?.id ? 'flex-end' : 'flex-start', mb: 1 }}>
-                        <Paper elevation={1} sx={{
-                            p: 1,
-                            maxWidth: '70%',
-                            bgcolor: msg.senderId === user?.id ? '#dcf8c6' : '#ffffff',
-                            borderRadius: msg.senderId === user?.id ? '20px 20px 3px 20px' : '20px 20px 20px 3px'
-                        }}>
+                    <Box key={index} sx={{ display: "flex", justifyContent: msg.senderId === user?.id ? "flex-end" : "flex-start", mb: 1 }}>
+                        <Paper elevation={1} sx={{ p: 1, maxWidth: "70%", bgcolor: msg.senderId === user?.id ? "#dcf8c6" : "#ffffff" }}>
                             <Typography variant="body2">{msg.content}</Typography>
                         </Paper>
                     </Box>
                 ))}
             </Box>
 
+            {/* 메시지 입력 */}
             {!isChatClosed && (
-                <Paper elevation={3} sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
+                <Paper elevation={3} sx={{ p: 2, display: "flex", alignItems: "center" }}>
                     <TextField
                         fullWidth
                         value={messageInput}
@@ -174,42 +170,11 @@ const ChatRoom = () => {
                         size="small"
                         sx={{ mr: 1 }}
                     />
-                    <Button
-                        onClick={handleSendMessage}
-                        variant="contained"
-                        color="primary"
-                        disabled={!messageInput.trim()}
-                    >
+                    <Button onClick={handleSendMessage} variant="contained" color="primary" disabled={!messageInput.trim()}>
                         전송
                     </Button>
                 </Paper>
             )}
-
-            <Dialog
-                open={isCloseDialogOpen}
-                onClose={() => setIsCloseDialogOpen(false)}
-                aria-labelledby="alert-dialog-title"
-                aria-describedby="alert-dialog-description"
-            >
-                <DialogTitle id="alert-dialog-title">{"상담을 종료하시겠습니까?"}</DialogTitle>
-                <DialogContent>
-                    <DialogContentText id="alert-dialog-description">
-                        상담을 종료하면 채팅방에서 나가게 됩니다. 정말로 종료하시겠습니까?
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setIsCloseDialogOpen(false)}>취소</Button>
-                    <Button
-                        onClick={() => {
-                            handleCloseChat();
-                            setIsCloseDialogOpen(false);
-                        }}
-                        autoFocus
-                    >
-                        종료
-                    </Button>
-                </DialogActions>
-            </Dialog>
         </Box>
     );
 };
