@@ -38,7 +38,7 @@ import RegisterMember from "@features/auth/components/RegisterMember";
 import UnauthorizedPage from "@features/auth/components/UnAuthorizedPage";
 import OAuth2RedirectHandler from '@features/auth/components/OAuth2RedirectHandler';
 import MessageList from "@features/auth/components/MessageList";
-import ChatRoomList from "@features/chat/ChatRoomList"; // ✅ ChatRoomList 컴포넌트 import
+import ConsultationRequestList from "@features/chat/ConsultationRequestList"; // ✅ ChatRoomList 컴포넌트 import
 import FloatingConsultationButton from "@features/chat/FloatingConsultationButton";
 import useWebSocket from "@hook/useWebSocket";
 
@@ -177,7 +177,7 @@ function App() {
                 <Route path="/mypage" element={isLoggedIn ? <MyPage /> : <Navigate to="/login" />} />
                 <Route path="/mypage/:id" element={<MyPage />} />
                 <Route path="/messages" element={<MessageList />} />
-                <Route path="/chatrooms" element={<ChatRoomList />} /> {/* ✅ 채팅방 목록 라우트 추가 */}
+                <Route path="/chatrooms" element={<ConsultationRequestList />} /> {/* ✅ 채팅방 목록 라우트 추가 */}
                 <Route path="/unauthorized" element={<UnauthorizedPage />} />
                 <Route path="/recommendation" element={<RecommendationPage />} />
                 <Route path="/survey" element={<SurveyPage />} />

@@ -1,51 +1,46 @@
-import React, { useState } from 'react';
-import { Fab, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from '@mui/material';
-import ChatIcon from '@mui/icons-material/Chat';
-import { useDispatch } from 'react-redux';
+import React, { useState } from "react";
+import { Fab, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from "@mui/material";
+import ChatIcon from "@mui/icons-material/Chat";
+import { useNavigate } from "react-router-dom";
 import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
 import { API_URL } from "@/constant";
-import { showSnackbar } from "@/redux/snackbarSlice";
 
 const FloatingConsultationButton = () => {
     const [open, setOpen] = useState(false);
-    const [preMessage, setPreMessage] = useState("");
     const [topic, setTopic] = useState("OTHER");
-    const dispatch = useDispatch();
+    const [preMessage, setPreMessage] = useState("");
+    const navigate = useNavigate();
 
     const handleOpen = () => setOpen(true);
     const handleClose = () => setOpen(false);
 
-    const handleCreateConsultationRequest = async () => {
-            if (!preMessage.trim()) {
-                dispatch(showSnackbar("❌ 사전 메시지를 입력하세요."));
-                return;
+    const handleStartChat = async () => {
+        if (!topic) {
+            alert("주제를 선택해주세요.");
+            return;
+        }
+
+        try {
+            const response = await fetchWithAuth(`${API_URL}chat/rooms/create`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    topic,
+                    preMessage,
+                }),
+            });
+
+            if (response.ok) {
+                const chatRoom = await response.json();
+                handleClose();
+                navigate(`/chatroom/${chatRoom.id}`);
             }
-
-            try {
-                console.log("API 호출 시작: /api/consultation/request");
-                console.log("보내는 데이터:", { topic, preMessage });
-
-                const response = await fetchWithAuth(`${API_URL}consultation/request`, {
-                    method: "POST",
-                    body: JSON.stringify({
-                        topic,
-                        preMessage,
-                    }),
-                });
-
-                if (response.ok) {
-                    console.log("API 호출 성공");
-                    handleClose();
-                    setPreMessage("");
-                    setTopic("OTHER");
-                    dispatch(showSnackbar("✅ 새로운 상담 요청이 생성되었습니다."));
-                } else {
-                    console.error("🚨 API 호출 실패: ${response.status} ${response.statusText}");
-                }
-            } catch (error) {
-                console.error("🚨 네트워크 오류:", error.message);
-            }
-        };
+        } catch (error) {
+            console.error("🚨 채팅방 생성 실패:", error.message);
+        }
+    };
 
     return (
         <>
@@ -53,9 +48,9 @@ const FloatingConsultationButton = () => {
                 color="primary"
                 aria-label="chat"
                 style={{
-                    position: 'fixed',
-                    bottom: '20px',
-                    right: '20px',
+                    position: "fixed",
+                    bottom: "20px",
+                    right: "20px",
                 }}
                 onClick={handleOpen}
             >
@@ -63,27 +58,33 @@ const FloatingConsultationButton = () => {
             </Fab>
 
             <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-                <DialogTitle>새 상담 요청</DialogTitle>
+                <DialogTitle>새로운 상담 시작</DialogTitle>
                 <DialogContent>
                     <TextField
+                        select
                         fullWidth
-                        label="사전 메시지"
-                        value={preMessage}
-                        onChange={(e) => setPreMessage(e.target.value)}
-                        margin="normal"
-                    />
-                    <TextField
-                        fullWidth
-                        label="주제"
+                        label="상담 주제"
                         value={topic}
                         onChange={(e) => setTopic(e.target.value)}
+                        margin="normal"
+                    >
+                        <option value="ORDER_ISSUE">주문 문제</option>
+                        <option value="REFUND_REQUEST">환불 요청</option>
+                        <option value="PRODUCT_INQUIRY">상품 문의</option>
+                        <option value="OTHER">기타</option>
+                    </TextField>
+                    <TextField
+                        fullWidth
+                        label="사전 질문 (선택 사항)"
+                        value={preMessage}
+                        onChange={(e) => setPreMessage(e.target.value)}
                         margin="normal"
                     />
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleClose}>취소</Button>
-                    <Button onClick={handleCreateConsultationRequest} color="primary">
-                        상담 요청하기
+                    <Button onClick={handleStartChat} color="primary">
+                        시작하기
                     </Button>
                 </DialogActions>
             </Dialog>

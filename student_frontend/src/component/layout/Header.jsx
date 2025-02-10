@@ -5,6 +5,8 @@ import {
     Dialog, DialogTitle, DialogContent, DialogActions, Snackbar
 } from "@mui/material";
 import MenuIcon from '@mui/icons-material/Menu';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'; // 장바구니 아이콘 추가
+import PersonIcon from '@mui/icons-material/Person'; // 사용자 아이콘 추가
 import { Link, useNavigate } from "react-router-dom";
 import { clearUser } from "@/redux/authSlice";
 import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
@@ -29,10 +31,17 @@ const Header = () => {
 
     // WebSocket 연결 상태 관리
     const [stompClient, setStompClient] = useState(null);
+    // 사용자 아이콘 메뉴 상태 관리
+    const [userMenuAnchorEl, setUserMenuAnchorEl] = useState(null);
+    const isUserMenuOpen = Boolean(userMenuAnchorEl);
 
     // 메뉴 열림/닫힘 처리
     const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
     const handleMenuClose = () => setAnchorEl(null);
+
+    // 사용자 메뉴 열기/닫기
+    const handleUserMenuOpen = (event) => setUserMenuAnchorEl(event.currentTarget);
+    const handleUserMenuClose = () => setUserMenuAnchorEl(null);
 
     // 로그아웃 처리
     const handleLogout = async () => {
@@ -135,13 +144,16 @@ const Header = () => {
                         >
                             <MenuItem onClick={() => navigate("/products")}>상품</MenuItem>
                             <MenuItem onClick={() => navigate("/recommendation")}>추천</MenuItem>
-                            <MenuItem onClick={() => navigate("/cart")}>장바구니</MenuItem>
                             <MenuItem onClick={() => navigate("/survey")}>설문조사</MenuItem>
                         </Menu>
                     </Box>
 
-                    {/* 로고 */}
-                    <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
+                    {/* 로고 (중앙 배치) */}
+                    <Box sx={{
+                        flexGrow: 1,
+                        display: 'flex',
+                        justifyContent: 'center',
+                    }}>
                         <Link to="/" style={{ textDecoration: 'none' }}>
                             <img
                                 src="/src/assets/images/logo.png"
@@ -155,22 +167,58 @@ const Header = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         {isLoggedIn && (
                             <>
-                                <Button color="inherit" component={Link} to="/messages">메시지목록</Button>
-                                <Badge badgeContent={invitedRequestsCount} color="secondary">
-                                    <Button color="inherit" component={Link} to="/consultation">
-                                        상담 요청
-                                    </Button>
-                                </Badge>
-                                <Badge badgeContent={delayedUnreadCount > 0 ? delayedUnreadCount : null} color="error">
-                                    <Typography variant="body1" sx={{ mr: 2 }}>
-                                        {user.name}
-                                        {user.role === "ADMIN" ? " (관리자)" : " (사용자)"}
-                                    </Typography>
-                                </Badge>
-                                <Button color="inherit" onClick={() => navigate("/mypage")}>마이페이지</Button>
-                                <Button color="inherit" onClick={handleLogout}>
-                                    로그아웃
-                                </Button>
+                                {/* CS_AGENT에게만 상담 요청 버튼 보이기 */}
+                                {user.role === "CS_AGENT" && (
+                                    <Badge badgeContent={invitedRequestsCount} color="secondary">
+                                        <Button color="inherit" component={Link} to="/consultation">
+                                            상담 요청
+                                        </Button>
+                                    </Badge>
+                                )}
+
+                                {/* 사용자 (USER)인 경우 */}
+                                {user.role === "USER" && (
+                                    <>
+                                        <IconButton color="inherit" component={Link} to="/cart">
+                                            <ShoppingCartIcon />
+                                        </IconButton>
+                                        <IconButton
+                                            color={isLoggedIn ? "primary" : "inherit"} // 로그인 상태에 따라 색상 변경
+                                            onClick={handleUserMenuOpen}
+                                            aria-controls="user-menu"
+                                            aria-haspopup="true"
+                                        >
+                                            <PersonIcon />
+                                        </IconButton>
+                                        <Menu
+                                            id="user-menu"
+                                            anchorEl={userMenuAnchorEl}
+                                            open={isUserMenuOpen}
+                                            onClose={handleUserMenuClose}
+                                            MenuListProps={{
+                                                'aria-labelledby': 'basic-button',
+                                            }}
+                                        >
+                                            <MenuItem onClick={() => { handleUserMenuClose(); navigate("/messages"); }}>메시지 목록</MenuItem>
+                                            <MenuItem onClick={() => { handleUserMenuClose(); navigate("/mypage"); }}>마이페이지</MenuItem>
+                                            <MenuItem onClick={() => { handleUserMenuClose(); handleLogout(); }}>로그아웃</MenuItem>
+                                        </Menu>
+                                    </>
+                                )}
+
+                                {/* 관리자 (ADMIN)인 경우 */}
+                                {user.role === "ADMIN" && (
+                                    <>
+                                        <Badge badgeContent={delayedUnreadCount > 0 ? delayedUnreadCount : null} color="error">
+                                            <Typography variant="body1" sx={{ mr: 2 }}>
+                                                {user.name}
+                                                {user.role === "ADMIN" ? " (관리자)" : " (사용자)"}
+                                            </Typography>
+                                        </Badge>
+                                        <Button color="inherit" onClick={() => navigate("/mypage")}>마이페이지</Button>
+                                        <Button color="inherit" onClick={handleLogout}>로그아웃</Button>
+                                    </>
+                                )}
                             </>
                         )}
                         {!isLoggedIn && (
