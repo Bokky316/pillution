@@ -1,5 +1,6 @@
 package com.javalab.student.entity;
 
+import com.javalab.student.constant.ConsultationRequestStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -51,6 +52,13 @@ public class ChatRoom extends BaseEntity {
     private Member owner;
 
     /**
+     * 상담 상태 (PENDING, IN_PROGRESS, CLOSED)
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ConsultationRequestStatus status;
+
+    /**
      * 🔹 새로운 생성자 추가
      * - 채팅방 이름과 생성자를 초기화하는 생성자
      *
@@ -61,6 +69,7 @@ public class ChatRoom extends BaseEntity {
         super();
         this.name = name;
         this.owner = owner;
+        this.status = ConsultationRequestStatus.PENDING; // 기본 상태는 PENDING
     }
 
     /**
@@ -71,5 +80,14 @@ public class ChatRoom extends BaseEntity {
     public void addParticipant(ChatParticipant participant) {
         participants.add(participant);
         participant.setChatRoom(this);
+    }
+
+    /**
+     * 🔹 상담 상태 변경 메서드
+     *
+     * @param newStatus 새로운 상담 상태
+     */
+    public void updateStatus(ConsultationRequestStatus newStatus) {
+        this.status = newStatus;
     }
 }

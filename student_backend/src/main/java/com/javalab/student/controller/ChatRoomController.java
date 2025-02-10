@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 상담 채팅방 컨트롤러
@@ -37,7 +38,7 @@ public class ChatRoomController {
                 chatRoom.getRegTime(),
                 chatRoom.getOwner().getId(),
                 chatRoom.getOwner().getName(),
-                "CREATED",
+                chatRoom.getStatus().name(),
                 request.getTopic()
         );
         return ResponseEntity.ok(response);
@@ -93,4 +94,62 @@ public class ChatRoomController {
         return ResponseEntity.ok("채팅방을 나갔습니다.");
     }
 
+    /**
+     * 상담사 연결 요청 API
+     *
+     * @param payload 요청 본문 (roomId를 포함)
+     * @return 상담사 요청 결과 메시지
+     */
+    @PostMapping("/rooms/request-counselor")
+    public ResponseEntity<?> requestCounselor(@RequestBody Map<String, Long> payload) {
+        Long roomId = payload.get("roomId");
+        chatRoomService.requestCounselor(roomId);
+        return ResponseEntity.ok("상담사가 요청되었습니다.");
+    }
+
+    /**
+     * 모든 채팅방 조회 API
+     *
+     * @return 모든 채팅방 목록
+     */
+    @GetMapping("/rooms/all")
+    public ResponseEntity<List<ChatRoomResponseDto>> getAllChatRooms() {
+        List<ChatRoomResponseDto> allChatRooms = chatRoomService.getAllChatRooms();
+        return ResponseEntity.ok(allChatRooms);
+    }
+
+    /**
+     * 대기 중인 상담 요청 목록 조회 API
+     *
+     * @return 대기 중인 상담 요청 목록
+     */
+    @GetMapping("/rooms/pending")
+    public ResponseEntity<List<ChatRoomResponseDto>> getPendingChatRooms() {
+        List<ChatRoomResponseDto> pendingRooms = chatRoomService.getPendingChatRooms();
+        return ResponseEntity.ok(pendingRooms);
+    }
+
+    /**
+     * 상담 종료 API
+     *
+     * @param roomId 종료할 채팅방 ID
+     * @return 상담 종료 결과 메시지
+     */
+    @PostMapping("/rooms/{roomId}/close")
+    public ResponseEntity<String> closeChat(@PathVariable Long roomId) {
+        chatRoomService.closeChat(roomId);
+        return ResponseEntity.ok("상담이 종료되었습니다.");
+    }
+
+    /**
+     * 특정 상담사의 종료된 상담 목록 조회 API
+     *
+     * @param counselorId 상담사 ID
+     * @return 종료된 상담 목록
+     */
+    @GetMapping("/rooms/closed/{counselorId}")
+    public ResponseEntity<List<ChatRoomResponseDto>> getClosedChatsByCounselor(@PathVariable Long counselorId) {
+        List<ChatRoomResponseDto> closedChats = chatRoomService.getClosedChatsByCounselor(counselorId);
+        return ResponseEntity.ok(closedChats);
+    }
 }

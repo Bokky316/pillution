@@ -6,7 +6,6 @@ package com.javalab.student.constant;
  */
 public enum ConsultationRequestStatus {
     PENDING,  // 상담 대기
-    ACCEPTED, // 상담 수락
-    JOINED,    // 상담 진행중 (채팅중)
+    IN_PROGRESS, // 상담 진행중 (수락 및 채팅중)
     CLOSED     // 상담 종료
 }
