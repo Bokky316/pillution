@@ -96,67 +96,83 @@ const Header = () => {
                 </Box>
 
                 {/* 오른쪽 사용자 정보 */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {isLoggedIn ? (
-                        <>
-                            {user.role === "CS_AGENT" && (
-                                <Badge badgeContent={invitedRequestsCount} color="secondary">
-                                    {!isMobile && ( // 모바일에서는 텍스트 버튼 숨김
-                                        <Button color="inherit" component={Link} to="/consultation">
-                                            상담 요청
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {isLoggedIn ? (
+                            <>
+                                {user.role === "CS_AGENT" && (
+                                    <>
+                                        <Badge badgeContent={invitedRequestsCount} color="secondary">
+                                            <Button
+                                                color="inherit"
+                                                component={Link}
+                                                to="/consultation"
+                                                sx={{ display: isMobile ? 'none' : 'block' }}
+                                            >
+                                                상담 요청
+                                            </Button>
+                                        </Badge>
+                                        <Button
+                                            color="inherit"
+                                            component={Link}
+                                            to="/consultation-list"
+                                            sx={{ display: isMobile ? 'none' : 'block' }}
+                                        >
+                                            상담 목록
                                         </Button>
-                                    )}
-                                </Badge>
-                            )}
-                            {user.role === "USER" && (
-                                <IconButton color="inherit" component={Link} to="/cart">
-                                    <ShoppingCartIcon />
-                                </IconButton>
-                            )}
-                            <Box sx={{ position: 'relative' }}>
-                                {!isMobile && ( // 모바일에서는 My 텍스트 숨김
-                                    <Typography
-                                        variant="caption"
-                                        sx={{
-                                            position: 'absolute',
-                                            top: '-16px',
-                                            right: '0',
-                                            fontWeight: 'bold',
-                                            color: '#1976d2',
-                                        }}
-                                    >
-                                        My
-                                    </Typography>
+                                    </>
                                 )}
-                                <Badge badgeContent={unreadMessagesCount} color="error">
-                                    <IconButton
-                                        color="inherit"
-                                        onClick={handleUserMenuOpen}
-                                    >
-                                        <PersonIcon />
+                                {user.role === "USER" && (
+                                    <IconButton color="inherit" component={Link} to="/cart">
+                                        <ShoppingCartIcon />
                                     </IconButton>
-                                </Badge>
-                            </Box>
-                            <Menu
-                                anchorEl={userMenuAnchorEl}
-                                open={Boolean(userMenuAnchorEl)}
-                                onClose={handleUserMenuClose}
+                                )}
+                                <Box sx={{ position: 'relative' }}>
+                                    {!isMobile && (
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                position: 'absolute',
+                                                top: '-16px',
+                                                right: '0',
+                                                fontWeight: 'bold',
+                                                color: '#1976d2',
+                                            }}
+                                        >
+                                            My
+                                        </Typography>
+                                    )}
+                                    <Badge badgeContent={unreadMessagesCount} color="error">
+                                        <IconButton
+                                            color="inherit"
+                                            onClick={handleUserMenuOpen}
+                                        >
+                                            <PersonIcon />
+                                        </IconButton>
+                                    </Badge>
+                                </Box>
+                                <Menu
+                                    anchorEl={userMenuAnchorEl}
+                                    open={Boolean(userMenuAnchorEl)}
+                                    onClose={handleUserMenuClose}
+                                >
+                                    <MenuItem onClick={() => { handleUserMenuClose(); navigate("/messages"); }}>메시지 목록</MenuItem>
+                                    <MenuItem onClick={() => { handleUserMenuClose(); navigate("/mypage"); }}>마이페이지</MenuItem>
+                                    {user.role === "CS_AGENT" && (
+                                        <MenuItem onClick={() => { handleUserMenuClose(); navigate("/consultation-list"); }}>상담 목록</MenuItem>
+                                    )}
+                                    <MenuItem onClick={() => { handleUserMenuClose(); handleLogout(); }}>로그아웃</MenuItem>
+                                </Menu>
+                            </>
+                        ) : (
+                            <IconButton
+                                color="inherit"
+                                onClick={() => navigate("/login")}
                             >
-                                <MenuItem onClick={() => { handleUserMenuClose(); navigate("/messages"); }}>메시지 목록</MenuItem>
-                                <MenuItem onClick={() => { handleUserMenuClose(); navigate("/mypage"); }}>마이페이지</MenuItem>
-                                <MenuItem onClick={() => { handleUserMenuClose(); handleLogout(); }}>로그아웃</MenuItem>
-                            </Menu>
-                        </>
-                    ) : (
-                        <IconButton
-                            color="inherit"
-                            onClick={() => navigate("/login")}
-                        >
-                            <PersonIcon />
-                        </IconButton>
-                    )}
-                </Box>
-            </Toolbar>
+                                <PersonIcon />
+                            </IconButton>
+                        )}
+                    </Box>
+                </Toolbar>
         </AppBar>
     );
 };
