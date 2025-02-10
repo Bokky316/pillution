@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
@@ -16,4 +17,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("SELECT p.mainIngredient.name FROM Product p WHERE p.id = :productId")
     String findMainIngredientByProductId(@Param("productId") Long productId);
+
+    // ✅ 추가: 상품 이름으로 조회
+    Optional<Product> findByName(String name);
 }

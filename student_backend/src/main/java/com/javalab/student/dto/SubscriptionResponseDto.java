@@ -25,6 +25,7 @@ public class SubscriptionResponseDto {
     private LocalDate lastBillingDate;
     private int currentCycle;
 
+
     public SubscriptionResponseDto(Subscription subscription) {
         this.id = subscription.getId();
         this.memberEmail = subscription.getMember().getEmail();

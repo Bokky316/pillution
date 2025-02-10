@@ -43,8 +43,19 @@ public class ProductController {
     // [추가] 전체 상품 목록 가져오기 (GET /api/products)
     @GetMapping
     public ResponseEntity<List<Product>> getAllProducts() {
-        List<Product> products = productRepository.findAll();
-        return ResponseEntity.ok(products);
+        try {
+            List<Product> products = productRepository.findAll();
+            if (products.isEmpty()) {
+                return ResponseEntity.noContent().build();
+            }
+            return ResponseEntity.ok(products);
+        } catch (DataAccessException e) {
+            logger.error("Database error occurred while fetching all products", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        } catch (Exception e) {
+            logger.error("Unexpected error occurred while fetching all products", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
 }

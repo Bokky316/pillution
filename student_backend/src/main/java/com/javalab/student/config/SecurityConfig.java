@@ -111,6 +111,7 @@ public class SecurityConfig {
                 .requestMatchers("/members/login").permitAll()
                 .requestMatchers("/api/products").permitAll() // [추가] 모든 사용자에게 `/api/products` 접근 허용
                 .requestMatchers("/api/products/**").permitAll() // 개별 상품 조회도 허용
+                .requestMatchers("/api/subscription/**").permitAll()
 
 
                 // 관리자 전용 엔드포인트

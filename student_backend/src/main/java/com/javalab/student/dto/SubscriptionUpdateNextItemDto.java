@@ -9,7 +9,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class SubscriptionUpdateNextItemDto {
+    private Long id;  // 아이템 ID
     private Long productId;  // ✅ 기존 productName 대신 productId 사용
+    private Long subscriptionId;  // ✅ 구독 ID (필수)
     private int nextMonthQuantity;
     private double nextMonthPrice;
 }

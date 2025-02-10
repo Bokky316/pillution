@@ -1,9 +1,11 @@
 package com.javalab.student.repository;
 
+import com.javalab.student.entity.Product;
 import com.javalab.student.entity.SubscriptionNextItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * SubscriptionNextItem Repository
@@ -21,6 +23,7 @@ public interface SubscriptionNextItemRepository extends JpaRepository<Subscripti
      */
     void deleteBySubscriptionId(Long subscriptionId);
 
-
+    // ✅ 구독 ID와 상품 ID로 기존 항목 조회
+    Optional<SubscriptionNextItem> findBySubscriptionIdAndProduct(Long subscriptionId, Product product);
 
 }

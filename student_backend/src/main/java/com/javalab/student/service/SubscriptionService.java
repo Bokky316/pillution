@@ -3,6 +3,7 @@ package com.javalab.student.service;
 import com.javalab.student.dto.SubscriptionResponseDto;
 import com.javalab.student.dto.SubscriptionUpdateNextItemDto;
 import com.javalab.student.dto.SubscriptionUpdateNextItemRequestDto;
+import com.javalab.student.entity.Product;
 import com.javalab.student.entity.Subscription;
 import com.javalab.student.entity.SubscriptionItem;
 import com.javalab.student.entity.SubscriptionNextItem;
@@ -11,10 +12,13 @@ import com.javalab.student.repository.SubscriptionItemRepository;
 import com.javalab.student.repository.SubscriptionNextItemRepository;
 import com.javalab.student.repository.SubscriptionRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -31,6 +35,7 @@ public class SubscriptionService {
     private final SubscriptionItemRepository subscriptionItemRepository;
     private final SubscriptionNextItemRepository subscriptionNextItemRepository;
     private final ProductRepository productRepository;
+    private static final Logger log = LoggerFactory.getLogger(SubscriptionService.class);
 
     /**
      * 사용자의 최신 구독 정보 조회
@@ -44,8 +49,21 @@ public class SubscriptionService {
                 .findFirstByMemberIdAndStatusOrderByCurrentCycleDesc(memberId, "ACTIVE")
                 .orElseThrow(() -> new RuntimeException("활성화된 구독 정보가 없습니다."));
 
+        // ✅ nextItems에서 productId 설정 (상품 정보가 있는 경우)
+        subscription.getNextItems().forEach(item -> {
+            if (item.getProduct() != null && item.getProduct().getId() != null) {
+                item.setProductId(item.getProduct().getId()); // ✅ productId 강제 설정
+            } else {
+                throw new RuntimeException("❌ [ERROR] product 정보가 없습니다: " + item.getId());
+            }
+        });
+
         return new SubscriptionResponseDto(subscription);
     }
+
+
+
+
 
     /**
      * 새로운 구독 생성
@@ -146,30 +164,83 @@ public class SubscriptionService {
      * - 기존 SubscriptionNextItem을 삭제하고 새롭게 저장
      */
     @Transactional
-    public void updateNextSubscriptionItems(Long subscriptionId, List<SubscriptionUpdateNextItemDto> updatedItems) {
-        if (updatedItems == null || updatedItems.isEmpty()) {
-            throw new RuntimeException("업데이트할 상품 목록이 비어 있습니다.");
-        }
+    public boolean updateNextSubscriptionItems(Long subscriptionId, List<SubscriptionUpdateNextItemDto> updatedItems) {
+        try {
+            for (SubscriptionUpdateNextItemDto item : updatedItems) {
+                Product product = productRepository.findById(item.getProductId())
+                        .orElseThrow(() -> new RuntimeException("해당 productId의 제품을 찾을 수 없습니다: " + item.getProductId()));
 
+                Optional<SubscriptionNextItem> existingItem = Optional.empty();
+
+                // `id` 값이 존재하면 먼저 조회
+                if (item.getId() != null) {
+                    existingItem = subscriptionNextItemRepository.findById(item.getId());
+                }
+
+                // 기존 데이터가 없으면 `subscriptionId`와 `product`로 조회
+                if (existingItem.isEmpty()) {
+                    existingItem = subscriptionNextItemRepository.findBySubscriptionIdAndProduct(subscriptionId, product);
+                }
+
+                if (existingItem.isPresent()) {
+                    SubscriptionNextItem nextItem = existingItem.get();
+                    nextItem.setNextMonthQuantity(item.getNextMonthQuantity());
+                    nextItem.setNextMonthPrice(item.getNextMonthPrice());
+                    subscriptionNextItemRepository.save(nextItem);
+                } else {
+                    SubscriptionNextItem newItem = new SubscriptionNextItem();
+                    newItem.setSubscription(subscriptionRepository.findById(subscriptionId)
+                            .orElseThrow(() -> new RuntimeException("해당 구독 ID를 찾을 수 없습니다: " + subscriptionId)));
+                    newItem.setProduct(product);
+                    newItem.setNextMonthQuantity(item.getNextMonthQuantity());
+                    newItem.setNextMonthPrice(item.getNextMonthPrice());
+                    subscriptionNextItemRepository.save(newItem);
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            log.error("❌ [ERROR] 구독 상품 업데이트 실패", e);
+            return false;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+    /**
+     * 담달 정기결제 상품 추가
+     * - 이미 있는 상품이면 수량만 증가하도록 추가 구현 필요
+     * @param subscriptionId
+     * @param newItemDto
+     */
+    @Transactional
+    public SubscriptionNextItem addNextSubscriptionItem(Long subscriptionId, SubscriptionUpdateNextItemDto newItemDto) {
         Subscription subscription = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new RuntimeException("구독 정보를 찾을 수 없습니다."));
 
-        // 기존 예정 상품 삭제
-        subscriptionNextItemRepository.deleteBySubscriptionId(subscriptionId);
+        Product product = productRepository.findById(newItemDto.getProductId())
+                .orElseThrow(() -> new RuntimeException("상품 정보를 찾을 수 없습니다: " + newItemDto.getProductId()));
 
-        // 새로운 상품 추가
-        List<SubscriptionNextItem> nextItems = updatedItems.stream().map(dto -> {
-            SubscriptionNextItem item = new SubscriptionNextItem();
-            item.setSubscription(subscription);
-            item.setProduct(productRepository.findById(dto.getProductId())
-                    .orElseThrow(() -> new RuntimeException("상품 정보를 찾을 수 없습니다.")));
-            item.setNextMonthQuantity(dto.getNextMonthQuantity());
-            item.setNextMonthPrice(dto.getNextMonthPrice());
-            return item;
-        }).collect(Collectors.toList());
+        SubscriptionNextItem newItem = SubscriptionNextItem.builder()
+                .subscription(subscription)
+                .product(product)
+                .nextMonthQuantity(newItemDto.getNextMonthQuantity())
+                .nextMonthPrice(newItemDto.getNextMonthPrice())
+                .build();
 
-        subscriptionNextItemRepository.saveAll(nextItems);
+        // ✅ 새로운 아이템 저장 후 반환
+        return subscriptionNextItemRepository.save(newItem);
     }
+
+
 
 
 
@@ -212,6 +283,7 @@ public class SubscriptionService {
         subscriptionRepository.save(subscription);
     }
 
+
     /**
      * 다음 결제일이 가장 최근인 구독을 가져오는 메서드(추 후 결제로직에 사용가능성 있어서 만듬
      * 예를들어 구독아이템 즉시결제 등
@@ -223,6 +295,60 @@ public class SubscriptionService {
         return subscriptionRepository.findFirstByMemberIdAndStatusOrderByNextBillingDateDesc(memberId, "active")
                 .orElseThrow(() -> new RuntimeException("다음 결제일이 예정된 활성화된 구독이 없습니다."));
     }
+
+
+    @Transactional
+    public boolean replaceNextSubscriptionItems(Long subscriptionId, List<SubscriptionUpdateNextItemDto> updatedItems) {
+        try {
+            // 기존 구독 아이템 삭제
+            subscriptionNextItemRepository.deleteBySubscriptionId(subscriptionId);
+
+            // 📌 [수정] Subscription 객체 생성
+            Subscription subscription = new Subscription();
+            subscription.setId(subscriptionId);  // 객체에 ID만 설정 (DB에는 존재하는 값이므로 OK)
+
+            // 새 리스트 추가
+            for (SubscriptionUpdateNextItemDto item : updatedItems) {
+                SubscriptionNextItem newItem = new SubscriptionNextItem();
+                newItem.setSubscription(subscription);  // ✅ subscription 객체를 직접 설정
+                newItem.setProductId(item.getProductId());
+                newItem.setNextMonthQuantity(item.getNextMonthQuantity());
+                newItem.setNextMonthPrice(item.getNextMonthPrice());
+                subscriptionNextItemRepository.save(newItem);
+            }
+
+            return true;
+        } catch (Exception e) {
+            log.error("❌ [ERROR] 구독 상품 교체 실패", e);
+            return false;
+        }
+    }
+
+    @Transactional
+    public boolean deleteNextSubscriptionItem(Long subscriptionId, Long productId) {
+        try {
+            // ✅ productId를 기반으로 Product 객체 조회
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new RuntimeException("해당 productId의 제품을 찾을 수 없습니다: " + productId));
+
+            // ✅ SubscriptionNextItem에서 subscriptionId와 product 객체를 기반으로 조회
+            Optional<SubscriptionNextItem> existingItem = subscriptionNextItemRepository.findBySubscriptionIdAndProduct(subscriptionId, product);
+
+            if (existingItem.isPresent()) {
+                subscriptionNextItemRepository.delete(existingItem.get());
+                return true;
+            } else {
+                log.error("❌ [ERROR] 삭제 실패 - 해당 구독 상품 없음 (subscriptionId: {}, productId: {})", subscriptionId, productId);
+                return false;
+            }
+        } catch (Exception e) {
+            log.error("❌ [ERROR] 삭제 중 오류 발생", e);
+            return false;
+        }
+    }
+
+
+
 
 }
 
