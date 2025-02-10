@@ -1,133 +1,130 @@
 import React, { useState, useEffect } from "react";
-import { DataGrid } from "@mui/x-data-grid";
-import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Typography, Box } from "@mui/material";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import { useSelector, useDispatch } from "react-redux";
+import { Box, Typography, TextField, Button, MenuItem } from "@mui/material";
+import SockJS from "sockjs-client";
+import { Client } from "@stomp/stompjs";
 import { API_URL } from "@/constant";
-import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
-import { showSnackbar } from "@/redux/snackbarSlice";
 
-export default function ConsultationRequestList() {
-    const { user } = useSelector((state) => state.auth);
-    const dispatch = useDispatch();
+const ChatRoom = ({ roomId }) => {
+    const [messages, setMessages] = useState([]);
+    const [messageInput, setMessageInput] = useState("");
+    const [topic, setTopic] = useState(""); // 선택된 주제
+    const [stompClient, setStompClient] = useState(null);
+    const [isCounselorRequested, setIsCounselorRequested] = useState(false);
 
-    const [consultationRequests, setConsultationRequests] = useState([]); // 상담 요청 목록
-    const [openNewRequestModal, setOpenNewRequestModal] = useState(false); // 새 상담 요청 모달
-    const [preMessage, setPreMessage] = useState(""); // 사전 메시지
-    const [topic, setTopic] = useState("OTHER"); // 상담 주제
-
-    // 상담 요청 목록 가져오기
-    const fetchConsultationRequests = async () => {
-        try {
-            const response = await fetchWithAuth(`${API_URL}consultation/requests/${user.id}`);
-            if (response.ok) {
-                const data = await response.json();
-                setConsultationRequests(data);
-            }
-        } catch (error) {
-            console.error("🚨 상담 요청 목록 조회 실패:", error.message);
-        }
-    };
-
-    // 새로고침 함수
-    const refreshConsultationRequests = () => {
-        fetchConsultationRequests();
-        dispatch(showSnackbar("🔄 상담 요청 목록이 업데이트되었습니다."));
-    };
-
-    // 새 상담 요청 생성
-    const handleCreateConsultationRequest = async () => {
-        if (!preMessage.trim()) {
-            dispatch(showSnackbar("❌ 사전 메시지를 입력하세요."));
-            return;
-        }
-
-        try {
-            const response = await fetchWithAuth(`${API_URL}consultation/requests/create`, {
-                method: "POST",
-                body: JSON.stringify({
-                    customerId: user.id,
-                    topic,
-                    preMessage,
-                }),
-            });
-
-            if (response.ok) {
-                setOpenNewRequestModal(false);
-                setPreMessage("");
-                setTopic("OTHER");
-                fetchConsultationRequests();
-                dispatch(showSnackbar("✅ 새로운 상담 요청이 생성되었습니다."));
-            }
-        } catch (error) {
-            console.error("🚨 상담 요청 생성 실패:", error.message);
-        }
-    };
-
-    // 컴포넌트 로드 시 데이터 가져오기
     useEffect(() => {
-        if (user) {
-            fetchConsultationRequests();
-        }
-    }, [user]);
+        const socket = new SockJS(`${API_URL}ws`);
+        const client = new Client({
+            webSocketFactory: () => socket,
+            reconnectDelay: 5000,
+            onConnect: () => {
+                client.subscribe(`/topic/chat/${roomId}`, (message) => {
+                    const newMessage = JSON.parse(message.body);
+                    setMessages((prevMessages) => [...prevMessages, newMessage]);
+                });
+            },
+        });
 
-    // DataGrid 컬럼 정의
-    const columns = [
-        { field: "topic", headerName: "주제", flex: 2 },
-        { field: "preMessage", headerName: "사전 메시지", flex: 3 },
-        { field: "status", headerName: "상태", flex: 1 },
-        {
-            field: "actions",
-            headerName: "액션",
-            flex: 1,
-            renderCell: (params) => (
-                <Button color="primary">
-                    상세 보기
-                </Button>
-            ),
-        },
-    ];
+        client.activate();
+        setStompClient(client);
+
+        return () => client.deactivate();
+    }, [roomId]);
+
+    const handleSendMessage = () => {
+        if (!messageInput.trim() || !stompClient) return;
+
+        stompClient.send("/app/chat/send", {}, JSON.stringify({
+            chatRoomId: roomId,
+            content: messageInput,
+        }));
+
+        setMessageInput("");
+    };
+
+    const handleTopicSelection = async (selectedTopic) => {
+        setTopic(selectedTopic);
+
+        // 자동 응답 메시지 출력
+        let autoResponse;
+        switch (selectedTopic) {
+            case "DELIVERY_TRACKING":
+                autoResponse = "배송 조회는 여기를 클릭하세요: [배송 조회 링크]";
+                break;
+            case "FAQ":
+                autoResponse = "자주 묻는 질문은 여기를 참고하세요: [FAQ 링크]";
+                break;
+            default:
+                autoResponse = "상담사를 연결하려면 '상담사 연결하기' 버튼을 눌러주세요.";
+        }
+
+        setMessages((prevMessages) => [...prevMessages, { sender: "system", content: autoResponse }]);
+    };
+
+    const handleRequestCounselor = async () => {
+        try {
+            await fetchWithAuth(`${API_URL}chat/rooms/request-counselor`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ roomId }),
+            });
+            setIsCounselorRequested(true);
+            setMessages((prevMessages) => [
+                ...prevMessages,
+                { sender: "system", content: "상담사가 요청되었습니다. 잠시만 기다려주세요." },
+            ]);
+        } catch (error) {
+            console.error("🚨 상담사 요청 실패:", error.message);
+        }
+    };
 
     return (
-        <div className="data-grid-container">
-            <Box display="flex" justifyContent="space-between" width="100%" mb={2}>
-                <Typography variant="h4">상담 요청 목록</Typography>
-                <Button variant="contained" color="warning" onClick={refreshConsultationRequests} startIcon={<RefreshIcon />}>
-                    새로고침
-                </Button>
-                <Button variant="contained" color="primary" onClick={() => setOpenNewRequestModal(true)}>
-                    새 상담 요청
-                </Button>
+        <Box sx={{ padding: 4 }}>
+            <Typography variant="h4" gutterBottom>채팅방</Typography>
+
+            {/* 주제 선택 */}
+            {!topic && (
+                <Box sx={{ mb: 2 }}>
+                    <Typography>상담 주제를 선택해주세요:</Typography>
+                    <TextField
+                        select
+                        fullWidth
+                        label="상담 주제"
+                        value={topic}
+                        onChange={(e) => handleTopicSelection(e.target.value)}
+                        margin="normal"
+                    >
+                        <MenuItem value="DELIVERY_TRACKING">배송 조회</MenuItem>
+                        <MenuItem value="FAQ">FAQ</MenuItem>
+                        <MenuItem value="ORDER_ISSUE">주문 문제</MenuItem>
+                        <MenuItem value="OTHER">기타</MenuItem>
+                    </TextField>
+                </Box>
+            )}
+
+            {/* 메시지 목록 */}
+            <Box sx={{ height: 300, overflowY: "auto", mb: 2 }}>
+                {messages.map((msg, index) => (
+                    <Typography key={index}>{msg.content}</Typography>
+                ))}
             </Box>
 
-            <DataGrid rows={consultationRequests} columns={columns} pageSizeOptions={[5, 10, 20]} autoHeight disableRowSelectionOnClick getRowId={(row) => row.id} />
+            {/* 상담사 연결 버튼 */}
+            {!isCounselorRequested && topic && (
+                <Button variant="contained" color="secondary" onClick={handleRequestCounselor}>
+                    상담사 연결하기
+                </Button>
+            )}
 
-            {/* 새 상담 요청 생성 모달 */}
-            <Dialog open={openNewRequestModal} onClose={() => setOpenNewRequestModal(false)} fullWidth maxWidth="sm">
-                <DialogTitle>새 상담 요청</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        fullWidth
-                        label="사전 메시지"
-                        value={preMessage}
-                        onChange={(e) => setPreMessage(e.target.value)}
-                        margin="normal"
-                    />
-                    <TextField
-                        fullWidth
-                        label="주제"
-                        value={topic}
-                        onChange={(e) => setTopic(e.target.value)}
-                        margin="normal"
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setOpenNewRequestModal(false)}>취소</Button>
-                    <Button onClick={handleCreateConsultationRequest} color="primary">
-                        생성하기
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        </div>
+            {/* 메시지 입력 */}
+            <TextField
+                fullWidth
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                placeholder="메시지를 입력하세요"
+            />
+        </Box>
     );
-}
+};
+
+export default ChatRoom;
