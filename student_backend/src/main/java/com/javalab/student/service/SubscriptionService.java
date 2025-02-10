@@ -171,17 +171,7 @@ public class SubscriptionService {
                 Product product = productRepository.findById(item.getProductId())
                         .orElseThrow(() -> new RuntimeException("해당 productId의 제품을 찾을 수 없습니다: " + item.getProductId()));
 
-                Optional<SubscriptionNextItem> existingItem = Optional.empty();
-
-                // `id` 값이 존재하면 먼저 조회
-                if (item.getId() != null) {
-                    existingItem = subscriptionNextItemRepository.findById(item.getId());
-                }
-
-                // 기존 데이터가 없으면 `subscriptionId`와 `product`로 조회
-                if (existingItem.isEmpty()) {
-                    existingItem = subscriptionNextItemRepository.findBySubscriptionIdAndProduct(subscriptionId, product);
-                }
+                Optional<SubscriptionNextItem> existingItem = subscriptionNextItemRepository.findBySubscriptionIdAndProduct(subscriptionId, product);
 
                 if (existingItem.isPresent()) {
                     SubscriptionNextItem nextItem = existingItem.get();
@@ -189,12 +179,14 @@ public class SubscriptionService {
                     nextItem.setNextMonthPrice(item.getNextMonthPrice());
                     subscriptionNextItemRepository.save(nextItem);
                 } else {
-                    SubscriptionNextItem newItem = new SubscriptionNextItem();
-                    newItem.setSubscription(subscriptionRepository.findById(subscriptionId)
-                            .orElseThrow(() -> new RuntimeException("해당 구독 ID를 찾을 수 없습니다: " + subscriptionId)));
-                    newItem.setProduct(product);
-                    newItem.setNextMonthQuantity(item.getNextMonthQuantity());
-                    newItem.setNextMonthPrice(item.getNextMonthPrice());
+                    SubscriptionNextItem newItem = SubscriptionNextItem.builder()
+                            .subscription(subscriptionRepository.findById(subscriptionId)
+                                    .orElseThrow(() -> new RuntimeException("해당 구독 ID를 찾을 수 없습니다: " + subscriptionId)))
+                            .product(product)
+                            .productId(product.getId())  // ✅ productId 명시적으로 설정
+                            .nextMonthQuantity(item.getNextMonthQuantity())
+                            .nextMonthPrice(item.getNextMonthPrice())
+                            .build();
                     subscriptionNextItemRepository.save(newItem);
                 }
             }
@@ -204,6 +196,7 @@ public class SubscriptionService {
             return false;
         }
     }
+
 
 
 

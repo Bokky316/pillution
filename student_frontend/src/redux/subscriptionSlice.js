@@ -151,7 +151,7 @@ export const updateNextSubscriptionItems = createAsyncThunk(
 
             // ✅ 현재 Redux 스토어에서 nextItems 가져오기 (방어 코드 추가)
             const state = getState();
-            const currentItems = state.subscription.data?.nextItems || [];  // ✅ 기본값 설정
+            const currentItems = state.subscription.data?.nextItems || [];
 
             // ✅ 기존 아이템과 매칭하여 id 포함시키기
             const updatedItemsWithId = updatedItems.map(item => {
@@ -173,23 +173,28 @@ export const updateNextSubscriptionItems = createAsyncThunk(
             // ✅ API 요청
             const response = await fetchWithAuth(`${API_URL}subscription/update-next-items`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ subscriptionId, updatedItems: updatedItemsWithId }),
             });
 
+            // ✅ JSON 응답을 올바르게 파싱
+            const data = await response.json();
+
             if (!response.ok) {
-                throw new Error("수량 업데이트 실패: " + response.status);
+                throw new Error(data.message || "수량 업데이트 실패");
             }
 
-            return await response.json();
+            console.log("✅ [SUCCESS] 수량 업데이트 성공:", data);
+
+            // ✅ UI 상태를 즉시 업데이트하도록 Redux 상태를 수정
+            return { subscriptionId, updatedItems: updatedItemsWithId };
         } catch (error) {
             console.error("❌ [ERROR] 수량 업데이트 실패:", error);
             return rejectWithValue(error.message);
         }
     }
 );
+
 
 
 
@@ -306,9 +311,20 @@ export const processSubscriptionBilling = createAsyncThunk(
 
 export const deleteNextSubscriptionItem = createAsyncThunk(
     "subscription/deleteNextSubscriptionItem",
-    async ({ subscriptionId, productId }, { rejectWithValue }) => {
+    async ({ subscriptionId, productId }, { rejectWithValue, getState }) => {
         try {
             console.log("📡 [API 요청] 삭제할 상품:", { subscriptionId, productId });
+
+            // ✅ Redux에서 현재 nextItems 가져오기
+            const state = getState();
+            const currentItems = state.subscription.data?.nextItems || [];
+
+            // ✅ 삭제할 상품이 존재하는지 확인
+            const existingItem = currentItems.find(item => item.productId === productId);
+            if (!existingItem) {
+                console.error("❌ [ERROR] 삭제할 상품을 찾을 수 없음!", productId);
+                return rejectWithValue("❌ 삭제할 상품을 찾을 수 없습니다.");
+            }
 
             const response = await fetchWithAuth(`${API_URL}subscription/delete-next-item`, {
                 method: "DELETE",
@@ -316,13 +332,17 @@ export const deleteNextSubscriptionItem = createAsyncThunk(
                 body: JSON.stringify({ subscriptionId, productId }),
             });
 
+            // ✅ 백엔드에서 JSON 응답을 보내므로 `response.json()` 사용
+            const data = await response.json();
+
             if (!response.ok) {
-                throw new Error(`삭제 실패: ${response.status}`);
+                throw new Error(data.message || "삭제 실패");
             }
 
-            const data = await response.json();
-            console.log("✅ [SUCCESS] 삭제 응답:", data);
-            return data;
+            console.log("✅ [SUCCESS] 삭제 성공:", data);
+
+            // ✅ Redux 상태 즉시 업데이트
+            return { subscriptionId, productId }; // 삭제할 아이템 정보 반환
         } catch (error) {
             console.error("❌ [ERROR] 삭제 실패:", error);
             return rejectWithValue(error.message);
@@ -331,10 +351,10 @@ export const deleteNextSubscriptionItem = createAsyncThunk(
 );
 
 
+
 const subscriptionSlice = createSlice({
     name: "subscription",
     initialState: {
-//        data: { nextItems: [] },  // ✅ 기본값 설정
         data: { nextItems: [], items: [] }, // ✅ 기본값 설정
         loading: false,
         error: null,
@@ -348,6 +368,12 @@ const subscriptionSlice = createSlice({
         },
         setSelectedQuantity: (state, action) => {
           state.selectedQuantity = action.payload;
+        },
+        // ✅ UI 즉시 업데이트를 위한 리듀서 추가
+        updateNextItemsDirectly: (state, action) => {
+            if (state.data) {
+                state.data.nextItems = action.payload;
+            }
         },
     },
     extraReducers: (builder) => {
@@ -418,9 +444,12 @@ const subscriptionSlice = createSlice({
             state.data = action.payload;
         })
         .addCase(updateNextSubscriptionItems.fulfilled, (state, action) => {
-            state.loading = false;
-            console.log("✅ [Redux] 수량 업데이트 완료:", action.payload);
-            state.data.nextItems = action.payload;  // ✅ Redux 상태 업데이트
+            console.log("✅ [Redux] 수량 업데이트 성공:", action.payload);
+            const { subscriptionId, updatedItems } = action.payload;
+
+            if (state.data.id === subscriptionId) {
+                state.data.nextItems = updatedItems;
+            }
         })
         .addCase(updateNextSubscriptionItems.pending, (state) => {
             state.loading = true;
@@ -446,13 +475,15 @@ const subscriptionSlice = createSlice({
         .addCase(replaceNextSubscriptionItems.rejected, (state, action) => {
             console.error("❌ [ERROR] 구독 아이템 교체 실패:", action.payload);
         })
-        .addCase(deleteNextSubscriptionItem.fulfilled, (state, action) => {
-            console.log("✅ [Redux] 삭제 완료:", action.payload);
-            state.data.nextItems = state.data.nextItems.filter(item => item.productId !== action.meta.arg.productId);
-        })
-        .addCase(deleteNextSubscriptionItem.rejected, (state, action) => {
-            console.error("❌ [ERROR] Redux 상태 업데이트 실패:", action.payload);
-        })
+       .addCase(deleteNextSubscriptionItem.fulfilled, (state, action) => {
+           console.log("✅ [Redux] 삭제 완료:", action.payload);
+
+           // ✅ 삭제된 항목을 Redux 상태에서 제거
+           state.data.nextItems = state.data.nextItems.filter(item => item.productId !== action.payload.productId);
+       })
+       .addCase(deleteNextSubscriptionItem.rejected, (state, action) => {
+           console.error("❌ [ERROR] Redux 상태 업데이트 실패:", action.payload);
+       })
     },
 });
 export const { setSelectedProduct, setSelectedQuantity } = subscriptionSlice.actions;

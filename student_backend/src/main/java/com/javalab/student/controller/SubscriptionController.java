@@ -116,18 +116,27 @@ public class SubscriptionController {
      * - 기존 상품 수량 변경 또는 삭제 기능
      */
     @PostMapping("/update-next-items")
-    public ResponseEntity<?> updateNextSubscriptionItems(@RequestBody SubscriptionUpdateNextItemRequestDto requestDto) {
+    public ResponseEntity<Map<String, Object>> updateNextSubscriptionItems(
+            @RequestBody SubscriptionUpdateNextItemRequestDto requestDto) {
+
         Long subscriptionId = requestDto.getSubscriptionId();
         List<SubscriptionUpdateNextItemDto> updatedItems = requestDto.getUpdatedItems();
 
         boolean updateSuccess = subscriptionService.updateNextSubscriptionItems(subscriptionId, updatedItems);
 
         if (updateSuccess) {
-            return ResponseEntity.ok("✅ 구독 상품 업데이트 성공");
+            // ✅ JSON 형식 응답 + 프론트엔드에서 Redux 업데이트에 필요한 데이터 반환
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "success");
+            response.put("subscriptionId", subscriptionId);
+            response.put("updatedItems", updatedItems);  // ✅ 변경된 아이템을 포함하여 응답
+
+            return ResponseEntity.ok(response);
         } else {
-            return ResponseEntity.badRequest().body("❌ 구독 상품 업데이트 실패");
+            return ResponseEntity.badRequest().body(Map.of("message", "failed"));
         }
     }
+
 
     /**
      * 자동 결제 처리 API
@@ -179,9 +188,10 @@ public class SubscriptionController {
         boolean deleted = subscriptionService.deleteNextSubscriptionItem(subscriptionId, productId);
 
         if (deleted) {
-            return ResponseEntity.ok("✅ 삭제 성공");
+            // ✅ JSON 형태로 응답 변경
+            return ResponseEntity.ok(Map.of("message", "삭제성공"));
         } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("❌ 삭제 실패: 항목을 찾을 수 없음");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "❌ 삭제 실패: 항목을 찾을 수 없음"));
         }
     }
 

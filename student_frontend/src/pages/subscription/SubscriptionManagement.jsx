@@ -11,6 +11,7 @@ import {
     setSelectedProduct,
     setSelectedQuantity,
     addNextSubscriptionItem,
+    deleteNextSubscriptionItem,
 } from "@/redux/subscriptionSlice";
 
 export default function SubscriptionManagement() {
@@ -42,15 +43,25 @@ export default function SubscriptionManagement() {
             item.productId === productId ? { ...item, nextMonthQuantity: newQuantity } : item
         );
 
-        // ✅ productId가 있는지 체크 후 API 요청
-        const hasValidProductId = updatedItems.every(item => item.productId);
-        if (!hasValidProductId) {
-            console.error("❌ [ERROR] productId가 없는 항목이 있음! 업데이트 요청 취소");
-            return;
-        }
+        // ✅ Redux 상태를 먼저 업데이트 (서버 응답을 기다리지 않음)
+        dispatch({
+            type: "subscription/updateNextItemsDirectly",
+            payload: updatedItems,
+        });
 
-        dispatch(updateNextSubscriptionItems({ subscriptionId: subscription.id, updatedItems }));
+        // ✅ 서버로 업데이트 요청 보내기
+        dispatch(updateNextSubscriptionItems({ subscriptionId: subscription.id, updatedItems }))
+            .then((result) => {
+                if (updateNextSubscriptionItems.fulfilled.match(result)) {
+                    console.log("✅ [SUCCESS] 서버 업데이트 성공:", result.payload);
+                    // ✅ 최신 상태 다시 가져오기 (서버 동기화)
+                    dispatch(fetchSubscription());
+                } else {
+                    console.error("❌ [ERROR] 서버 업데이트 실패:", result.error);
+                }
+            });
     };
+
 
 
 
@@ -126,26 +137,38 @@ const handleAddProduct = async () => {
 };
 
 
-    // 상품 삭제
-    const handleDeleteItem = (productId, productName) => {
+    // ✅ 수정된 handleDeleteItem (삭제 기능 개선)
+    const handleDeleteItem = (productId) => {
         const subscriptionId = subscription?.id;
 
-        // ✅ productId가 없으면 products 배열에서 찾아서 추가
-        if (!productId) {
-            const matchedProduct = products.find(p => p.name === productName);
-            productId = matchedProduct ? matchedProduct.id : null;
-        }
-
+        // ✅ 방어 코드: productId와 subscriptionId가 있는지 확인
         if (!subscriptionId || !productId) {
             console.error("❌ [ERROR] 구독 ID 또는 productId가 없음! 요청 취소", { subscriptionId, productId });
             return;
         }
 
+        console.log("📡 [API 요청] 삭제할 상품:", { subscriptionId, productId });
+
+        // ✅ Redux 상태에서 nextItems 가져오기
+        const currentItems = subscription?.nextItems || [];
+        const existingItem = currentItems.find(item => item.productId === productId);
+
+        // ✅ 해당 productId가 존재하는지 체크
+        if (!existingItem) {
+            console.error("❌ [ERROR] 해당 productId를 찾을 수 없음:", productId);
+            return;
+        }
+
+         console.log("🛠️ 삭제할 상품 데이터:", existingItem);
+
+        // ✅ 삭제 API 요청
         dispatch(deleteNextSubscriptionItem({ subscriptionId, productId }))
             .then((result) => {
                 if (deleteNextSubscriptionItem.fulfilled.match(result)) {
                     console.log("✅ 삭제 성공:", result.payload);
-                    dispatch(fetchSubscription()); // ✅ 최신 상태 반영
+
+                    // ✅ Redux 상태 즉시 반영
+                    dispatch(fetchSubscription()); // 최신 상태 가져오기
                 } else {
                     console.error("❌ 삭제 실패:", result.error);
                 }
