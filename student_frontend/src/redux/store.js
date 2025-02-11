@@ -6,6 +6,12 @@ import authReducer from "./authSlice";
 import surveyReducer from "./surveySlice";
 import uiReducer from './uiSlice';
 import recommendationReducer from "./recommendationSlice";
+import boardReducer from "./boardSlice";
+import newsReducer from "./newsSlice";
+import postDetailReducer from "./postDetailSlice";
+import faqReducer from "./faqSlice";
+import postCreateReducer from "./postCreateSlice";
+import postEditReducer from "./postEditSlice";
 import snackbarReducer from "./snackbarSlice";
 import messageReducer from "./messageSlice";
 import chatReducer from "./chatSlice"; // ✅ chatSlice 추가
@@ -21,7 +27,7 @@ import productReducer from "./productSlice";
 const persistConfig = {
     key: "root",
     storage,
-    whitelist: ["auth", "survey", "ui", "products", "recommendations", "snackbar", "chat"], // ✅ chat 추가
+    whitelist: ["auth", "survey", "ui", "products", "recommendations", "board", "news", "postDetail", "faq", "postCreate", "postEdit", "snackbar", "chat"], // ✅ chat 추가
 };
 
 /**
@@ -34,6 +40,12 @@ const rootReducer = combineReducers({
     survey: surveyReducer,
     ui: uiReducer,
     recommendations: recommendationReducer,
+    board: boardReducer, // 게시판 추가 시작
+    news: newsReducer,
+    faq: faqReducer,
+    postDetail: postDetailReducer,
+    postCreate: postCreateReducer,
+    postEdit: postEditReducer, // 게시판 추가 끝
     snackbar: snackbarReducer,
     messages: messageReducer,
     chat: chatReducer, // ✅ chat 리듀서 추가

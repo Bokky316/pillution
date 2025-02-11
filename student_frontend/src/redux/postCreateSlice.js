@@ -7,7 +7,18 @@ export const createPost = createAsyncThunk(
     async (postData, { rejectWithValue }) => {
         try {
             const userData = JSON.parse(localStorage.getItem('loggedInUser'));
+
+            // 토큰 존재 여부 확인
+            if (!userData || !userData.token) {
+                throw new Error('인증 토큰이 없습니다.');
+            }
+
             const token = userData.token;
+
+            // 필수 데이터 검증
+            if (!postData.title || !postData.content) {
+                throw new Error('제목과 내용은 필수입니다.');
+            }
 
             const response = await axios.post(
                 "http://localhost:8080/api/posts",
@@ -21,10 +32,16 @@ export const createPost = createAsyncThunk(
             );
             return response.data;
         } catch (error) {
-            return rejectWithValue(error.response?.data || '게시글 생성 실패');
+            console.error('게시글 생성 에러:', error);
+            return rejectWithValue(
+                error.response?.data ||
+                error.message ||
+                '게시글 생성 실패'
+            );
         }
     }
 );
+
 
 const postCreateSlice = createSlice({
     name: 'postCreate',

@@ -36,6 +36,7 @@ function PostCreatePage() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
+    const { user, isLoggedIn, isLoading } = useSelector(state => state.auth);
 
     // Redux 상태 가져오기
     const {
@@ -62,28 +63,51 @@ function PostCreatePage() {
             boardId: defaultCategory === '공지사항' ? 1 : 2,
         }));
 
+
         // 컴포넌트 언마운트 시 폼 초기화
         return () => {
             dispatch(resetForm());
         };
     }, [location.state, dispatch]);
 
+
     // 사용자 권한 확인
     useEffect(() => {
-        const loggedInUser = localStorage.getItem("loggedInUser");
-        if (loggedInUser) {
-            try {
-                const userData = JSON.parse(loggedInUser);
-                dispatch(setIsAdmin(userData.authorities?.includes("ROLE_ADMIN") || false));
-                dispatch(setAuthorId(userData.id || 1));
-            } catch (e) {
-                console.error("사용자 데이터 파싱 오류:", e);
+        if (!isLoading) {
+            if (!isLoggedIn || !user) {
+                console.log("인증 상태 확인 - 로그인:", isLoggedIn, "유저:", user);
                 navigate("/login");
+                return;
             }
-        } else {
-            navigate("/login");
+
+            // user.authorities 확인
+            console.log("user.authorities:", user.authorities);
+
+            const userAuthorities = user.authorities || [];
+
+            // 배열이 단순한 문자열 배열인지, 객체 배열인지 확인 후 처리
+            const isAdminUser = Array.isArray(userAuthorities)
+                ? userAuthorities.some(auth => auth === "ROLE_ADMIN" || auth.authority === "ROLE_ADMIN")
+                : false;
+
+            console.log("권한 확인 - 권한:", userAuthorities, "관리자:", isAdminUser);
+
+            dispatch(setIsAdmin(isAdminUser));
+            dispatch(setAuthorId(user.id));
         }
-    }, [navigate, dispatch]);
+    }, [isLoading, isLoggedIn, user, navigate, dispatch]);
+
+
+    // 로딩 중일 때
+    if (isLoading) {
+        return (
+            <Box maxWidth="md" mx="auto" p={3}>
+                <Typography variant="h6" align="center">
+                    로딩 중...
+                </Typography>
+            </Box>
+        );
+    }
 
     // 폼 제출 처리
     const handleSubmit = async (e) => {
@@ -103,37 +127,55 @@ function PostCreatePage() {
     };
 
     // 게시글 등록 확인
+    // createPost 액션이 실행될 때의 실제 에러 내용을 확인
     const handleConfirmSubmit = async () => {
         try {
+            // 필수 필드 검증
+            if (!formData.title.trim()) {
+                alert('제목을 입력해주세요.');
+                return;
+            }
+            if (!formData.content.trim()) {
+                alert('내용을 입력해주세요.');
+                return;
+            }
+
             const finalCategory = formData.category === "자주 묻는 질문"
                 ? formData.subCategory
                 : formData.category;
 
             const postData = {
-                title: formData.title,
-                content: formData.content,
-                boardId: formData.boardId,
+                title: formData.title.trim(),
+                content: formData.content.trim(),
+                boardId: formData.boardId || (finalCategory === '공지사항' ? 1 : 2),
                 category: finalCategory,
-                authorId: formData.authorId,
+                authorId: formData.authorId || user.id,
             };
 
-            await dispatch(createPost(postData)).unwrap();
-            setSnackbarMessage("게시물이 등록되었습니다.");
-            setSnackbarOpen(true); // Snackbar 열기
+            console.log('전송 데이터:', postData);
 
-            // 3초 후 /board로 이동
+            const result = await dispatch(createPost(postData)).unwrap();
+
+            console.log('생성 결과:', result);
+
+            setSnackbarMessage("게시물이 등록되었습니다.");
+            setSnackbarOpen(true);
+
             setTimeout(() => {
-                setSnackbarOpen(false); // Snackbar 닫기
+                setSnackbarOpen(false);
                 navigate("/board");
             }, 1000);
 
-            dispatch(resetForm()); // 성공 후 폼 초기화
+            dispatch(resetForm());
         } catch (error) {
+            console.error('게시글 생성 중 에러:', error);
+
+            // 에러 타입에 따른 처리
             if (error.status === 401 || error.status === 403) {
-                alert("관리자 권한이 필요하거나 로그인이 필요합니다.");
+                alert("권한이 없습니다. 다시 로그인해주세요.");
                 navigate("/login");
             } else {
-                alert("게시물 등록에 실패했습니다.");
+                alert(error.message || "게시물 등록에 실패했습니다.");
             }
         } finally {
             dispatch(setOpenSubmitDialog(false));
@@ -182,7 +224,7 @@ function PostCreatePage() {
     };
 
     // 관리자가 아닌 경우 표시
-    if (!isAdmin) {
+    if (!isLoggedIn || !user?.authorities?.some(auth => auth === "ROLE_ADMIN" || auth.authority === "ROLE_ADMIN")) {
         return (
             <Box maxWidth="md" mx="auto" p={3}>
                 <Typography variant="h6" color="error" align="center">

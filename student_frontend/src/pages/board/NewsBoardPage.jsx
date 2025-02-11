@@ -98,7 +98,7 @@ function NewsBoardPage() {
         <Box
             maxWidth="lg"
             mx="auto"
-            p={{ xs: 1, sm: 2, md: 3 }}
+            p={{ xs: 2, sm: 3, md: 4 }}
             mb={18}
             sx={{ overflowX: 'hidden' }}
         >
@@ -122,19 +122,20 @@ function NewsBoardPage() {
                     </Button>
                 </Box>
             )}
-            <TableContainer sx={{ overflowX: 'auto' }}>
+            <TableContainer sx={{ width: '100%', overflowX: 'hidden' }}>
                 <Table sx={{
                     borderLeft: 'none',
                     borderRight: 'none',
-                    width: '100%', // 추가
-                    minWidth: { xs: '100%', sm: '650px' }
+                    width: '100%',
+                    tableLayout: 'fixed',
+                    minWidth: '100%',
                 }}>
                     <TableHead>
                         <TableRow sx={{ borderTop: '2px solid #888' }}>
                             <TableCell
                                 align="center"
                                 sx={{
-                                    width: { xs: '25%', sm: 'auto' },
+                                    width: '15%',
                                     fontWeight: 'bold',
                                     padding: { xs: 1, sm: 2 },
                                     fontSize: { xs: '0.8rem', sm: '0.875rem' }
@@ -148,9 +149,10 @@ function NewsBoardPage() {
                                     fontWeight: 'bold',
                                     padding: { xs: 1, sm: 2 },
                                     fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                                    whiteSpace: 'nowrap', // 텍스트가 줄바꿈되지 않도록 설정
-                                    overflow: 'hidden',      // 내용이 넘치면 숨김
-                                    textOverflow: 'ellipsis'  // 숨겨진 텍스트를 '...'으로 표시
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    width: '60%'
                                 }}
                             >
                                 제목
@@ -161,7 +163,8 @@ function NewsBoardPage() {
                                     fontWeight: 'bold',
                                     padding: { xs: 1, sm: 2 },
                                     fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                                    display: { xs: 'none', sm: 'table-cell' }
+                                    display: { xs: 'none', sm: 'table-cell' },
+                                    width: '15%'
                                 }}
                             >
                                 작성일
@@ -172,7 +175,8 @@ function NewsBoardPage() {
                                     sx={{
                                         fontWeight: 'bold',
                                         padding: { xs: 1, sm: 2 },
-                                        fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                                        width: '10%'
                                     }}
                                 >
                                     관리
@@ -187,7 +191,7 @@ function NewsBoardPage() {
                                     <TableCell
                                         align="center"
                                         sx={{
-                                            width: { xs: '25%', sm: 'auto' },
+                                            width: '15%',
                                             padding: { xs: '8px 4px', sm: 2 }
                                         }}
                                     >
@@ -211,23 +215,14 @@ function NewsBoardPage() {
                                         sx={{
                                             padding: { xs: 1, sm: 2 },
                                             fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                                            whiteSpace: 'nowrap', // 텍스트가 줄바꿈되지 않도록 설정
-                                            overflow: 'hidden',      // 내용이 넘치면 숨김
-                                            textOverflow: 'ellipsis'  // 숨겨진 텍스트를 '...'으로 표시
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis'
                                         }}
                                     >
                                         <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'black' }}>
                                             {post.title}
                                         </Link>
-                                        {isMobile && (
-                                            <Typography
-                                                variant="caption"
-                                                display="block"
-                                                sx={{ color: '#666', mt: 0.5 }}
-                                            >
-                                                {formatDate(post.createdAt)}
-                                            </Typography>
-                                        )}
                                     </TableCell>
                                     <TableCell
                                         align="center"
@@ -241,38 +236,17 @@ function NewsBoardPage() {
                                         {formatDate(post.createdAt)}
                                     </TableCell>
                                     {userRole === 'ADMIN' && (
-                                        <TableCell
-                                            align="center"
-                                            sx={{ padding: { xs: 1, sm: 2 } }}
-                                        >
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    flexDirection: { xs: 'column', sm: 'row' },
-                                                    gap: { xs: 1, sm: 1 },
-                                                    justifyContent: 'center'
-                                                }}
-                                            >
-                                                <Button
-                                                    variant="outlined"
-                                                    color="primary"
-                                                    onClick={() => handleEditPost(post.id)}
-                                                    sx={{
-                                                        fontSize: { xs: '0.7rem', sm: '0.8rem' },
-                                                        padding: { xs: '4px 8px', sm: '6px 16px' }
-                                                    }}
-                                                >
+                                        <TableCell align="center" sx={{ padding: { xs: 1, sm: 2 } }}>
+                                            <Box sx={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: 1,
+                                                alignItems: 'center'
+                                            }}>
+                                                <Button variant="outlined" color="primary" onClick={() => handleEditPost(post.id)}>
                                                     수정
                                                 </Button>
-                                                <Button
-                                                    variant="outlined"
-                                                    color="error"
-                                                    onClick={() => handleDeleteClick(post.id)}
-                                                    sx={{
-                                                        fontSize: { xs: '0.7rem', sm: '0.8rem' },
-                                                        padding: { xs: '4px 8px', sm: '6px 16px' }
-                                                    }}
-                                                >
+                                                <Button variant="outlined" color="error" onClick={() => handleDeleteClick(post.id)}>
                                                     삭제
                                                 </Button>
                                             </Box>
@@ -282,11 +256,7 @@ function NewsBoardPage() {
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell
-                                    colSpan={userRole === 'ADMIN' ? 4 : 3}
-                                    align="center"
-                                    sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
-                                >
+                                <TableCell colSpan={userRole === 'ADMIN' ? 4 : 3} align="center">
                                     게시글이 없습니다.
                                 </TableCell>
                             </TableRow>
@@ -294,78 +264,10 @@ function NewsBoardPage() {
                     </TableBody>
                 </Table>
             </TableContainer>
-            <Box
-                display="flex"
-                justifyContent="center"
-                gap={0.5}
-                mt={3}
-                sx={{
-                    flexWrap: 'wrap',
-                    '& > button': {
-                        margin: '2px'
-                    }
-                }}
-            >
-                {[...Array(totalPages)].map((_, index) => (
-                    <Button
-                        key={index}
-                        variant={currentPage === index ? "contained" : "outlined"}
-                        color="primary"
-                        size="small"
-                        sx={{
-                            minWidth: { xs: '24px', sm: '30px' },
-                            padding: { xs: '2px 6px', sm: '4px 8px' },
-                            fontSize: { xs: '0.7rem', sm: '0.8rem' }
-                        }}
-                        onClick={() => handlePageClick(index)}
-                    >
-                        {index + 1}
-                    </Button>
-                ))}
-            </Box>
-            <Snackbar
-                anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'left',
-                }}
-                open={snackbarOpen}
-                autoHideDuration={3000}
-                onClose={handleCloseSnackbar}
-                message={snackbarMessage}
-                action={
-                    <IconButton size="small" aria-label="close" color="inherit" onClick={handleCloseSnackbar}>
-                        <CloseIcon fontSize="small" />
-                    </IconButton>
-                }
-            />
-
-            <Dialog
-                open={deleteDialogOpen}
-                onClose={handleDeleteCancel}
-                sx={{
-                    '& .MuiDialog-paper': {
-                        margin: { xs: 2, sm: 4 },
-                        width: { xs: 'calc(100% - 32px)', sm: 'auto' }
-                    }
-                }}
-            >
-                <DialogTitle>게시글 삭제</DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        정말로 이 게시글을 삭제하시겠습니까?
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleDeleteConfirm} color="error">
-                        삭제
-                    </Button>
-                    <Button onClick={handleDeleteCancel} color="primary">
-                        취소
-                    </Button>
-                </DialogActions>
-            </Dialog>
         </Box>
     );
+
+
 }
 
 export default NewsBoardPage;
