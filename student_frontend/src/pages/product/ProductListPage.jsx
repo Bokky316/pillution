@@ -47,9 +47,9 @@ export default function ProductListPage() {
       try {
         const initialProducts = await dispatch(fetchProducts({ page: 0, size: 100 })).unwrap();
         setAllProducts(initialProducts);
-        setDisplayedProducts(initialProducts.slice(0, 6));
-        setRemainingProducts(initialProducts.slice(6));
-        setHasMore(initialProducts.length > 6);
+        setDisplayedProducts(initialProducts.slice(0, 4));
+        setRemainingProducts(initialProducts.slice(4));
+        setHasMore(initialProducts.length > 4);
       } catch (error) {
         console.error("🚨 상품 불러오기 실패:", error);
       }
@@ -103,10 +103,10 @@ export default function ProductListPage() {
 
           // 현재 카테고리에 맞는 추가 상품 로드
           setTimeout(() => {
-            const nextProducts = remainingProducts.slice(0, 3);
+            const nextProducts = remainingProducts.slice(0, 2);
             setDisplayedProducts(prev => [...prev, ...nextProducts]);
-            setRemainingProducts(prev => prev.slice(3));
-            setHasMore(remainingProducts.length > 3);
+            setRemainingProducts(prev => prev.slice(2));
+            setHasMore(remainingProducts.length > 2);
             setIsFetching(false);
           }, 1000);
         }
@@ -148,7 +148,7 @@ export default function ProductListPage() {
             item
             xs={12}
             sm={6}
-            md={4}
+            md={6}
             key={product.id}
             ref={index === displayedProducts.length - 1 ? lastProductRef : null}
           >

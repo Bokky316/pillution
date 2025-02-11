@@ -47,7 +47,7 @@ function App() {
                     {/* Routes */}
                     <Route path="/" element={<ProductListPage />} />
                     <Route path="/recommendation" element={<RecommendationPage />} />
-                    <Route path="/product/:productId" element={<ProductDetailPage />} />
+                    <Route path="/products/:productId" element={<ProductDetailPage />} />
                     <Route path="/cart" element={<CartPage />} />
                     <Route path="/survey" element={<SurveyPage />} />
                     <Route path="/login" element={<Login />} />
