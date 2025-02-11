@@ -23,8 +23,10 @@ public class ProductResponseDTO {
     private BigDecimal price;
     private Integer stock;
     private Boolean active;
+    private String mainImageUrl;
     private List<String> categories;  // 카테고리 이름 리스트
     private List<String> ingredients; // 영양 성분 리스트
+    private String description;
 
     /** Product 엔티티를 DTO로 변환 */
     public static ProductResponseDTO fromEntity(Product product) {
@@ -34,6 +36,7 @@ public class ProductResponseDTO {
                 .price(product.getPrice())
                 .stock(product.getStock())
                 .active(product.isActive())
+                .mainImageUrl(product.getMainImageUrl())
                 .categories(product.getCategories() != null
                         ? product.getCategories().stream()
                         .map(ProductCategory::getName)
@@ -44,6 +47,7 @@ public class ProductResponseDTO {
                         .map(ProductIngredient::getIngredientName)
                         .collect(Collectors.toList())
                         : List.of())  // Null 처리
+                .description(product.getDescription())
                 .build();
     }
 }

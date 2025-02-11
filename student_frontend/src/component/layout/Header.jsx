@@ -160,6 +160,9 @@ const Header = () => {
                                     {user.role === "CS_AGENT" && (
                                         <MenuItem onClick={() => { handleUserMenuClose(); navigate("/consultation-list"); }}>상담 목록</MenuItem>
                                     )}
+                                    {user.role === "ADMIN" && (
+                                        <MenuItem onClick={() => { handleUserMenuClose(); navigate("/adminpage"); }}>관리자페이지</MenuItem>
+                                    )}
                                     <MenuItem onClick={() => { handleUserMenuClose(); handleLogout(); }}>로그아웃</MenuItem>
                                 </Menu>
                             </>

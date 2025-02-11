@@ -16,6 +16,7 @@ import SurveyPage from "@/pages/survey/SurveyPage";
 import ProductDetailPage from "@/pages/product/ProductDetailPage";
 import ProductListPage from "@/pages/product/ProductListPage";
 import CartPage from "@/pages/cart/CartPage";
+import AdminPage from "@/pages/admin/AdminPage";
 import Login from "@features/auth/components/Login";
 import MyPage from "@features/auth/components/MyPage";
 import RegisterMember from "@features/auth/components/RegisterMember";
@@ -58,6 +59,7 @@ function App() {
                     <Route path="/messages" element={<MessageList />} />
                     <Route path="/consultation" element={<ConsultationRequestList />} />
                     <Route path="/chatroom/:roomId" element={<ChatRoom />} />
+                    <Route path="/adminpage/*" element={<AdminPage />} />
                 </Routes>
             </Layout>
             <Footer />

@@ -3,7 +3,10 @@ package com.javalab.student.repository;
 import com.javalab.student.constant.ConsultationTopic;
 import com.javalab.student.constant.Role;
 import com.javalab.student.entity.Member;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -11,7 +14,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface MemberRepository extends JpaRepository<Member, Long> {
+public interface MemberRepository extends JpaRepository<Member, Long>, JpaSpecificationExecutor<Member> {
 
     // 이메일로 회원을 조회
     Member findByEmail(String email);
@@ -43,4 +46,9 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
     // 이메일 존재 여부 확인
     boolean existsByEmail(String email);
+
+    // 회원 상태(activate)별 회원 조회
+    Page<Member> findByActivate(boolean activate, Pageable pageable);
+
+    // 검색 기능 (JpaSpecificationExecutor 사용)
 }

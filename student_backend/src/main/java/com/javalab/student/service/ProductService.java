@@ -1,6 +1,8 @@
 package com.javalab.student.service;
 
 import com.javalab.student.dto.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,4 +29,9 @@ public interface ProductService {
     List<ProductResponseDTO> getProductsSortedByIngredientAndCategory(Long ingredientId);
 
     List<ProductResponseDTO> getProductsByCategory(Long categoryId);
+
+    /** 검색 메서드 추가 */
+    Page<ProductResponseDTO> searchProducts(String field, String query, Pageable pageable);
+
+
 }
