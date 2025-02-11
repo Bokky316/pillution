@@ -39,7 +39,7 @@ public class SubscriptionNextItem {
     private double nextMonthPrice; // 다음 회차 반영할 가격
 
 
-    // ✅ 자동으로 productId를 반환하도록 설정
+    // ✅ 자동으로 productId를 반환하도록 설정 // 주석 하고 문제 생기면 주석다시 해제해야함
     public Long getProductId() {
         return this.productId != null ? this.productId : (this.product != null ? this.product.getId() : null);
     }

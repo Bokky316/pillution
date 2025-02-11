@@ -2,7 +2,9 @@ package com.javalab.student.repository;
 
 import com.javalab.student.entity.Subscription;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,4 +25,9 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
     Optional<Subscription> findFirstByMemberIdAndStatusOrderByNextBillingDateDesc(Long memberId, String status);
 
     List<Subscription> findByMemberIdAndStatus(Long memberId, String status);
+
+    List<Subscription> findByStatusAndNextBillingDate(String status, LocalDate nextBillingDate);
+
+    // ✅ 오늘이 nextBillingDate인 ACTIVE 구독 조회 (자동 갱신 대상)
+    List<Subscription> findByNextBillingDateAndStatus(LocalDate nextBillingDate, String status);
 }

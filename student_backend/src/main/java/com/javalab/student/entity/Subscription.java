@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -34,7 +35,6 @@ public class Subscription {
     private LocalDate nextBillingDate; // 다음 결제일
     private String status; // active, cancelled, expired, paused(구현안하기로)
     private String paymentMethod; // 현재 회차 결제수단
-    //private String deliveryAddress;
     private int currentCycle; // 현재 회차
 
     private String nextPaymentMethod;     // 다음 회차 결제수단 저장
@@ -51,4 +51,5 @@ public class Subscription {
     @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties("subscription")
     private List<SubscriptionNextItem> nextItems; // 다음 회차 결제 예정 상품
+
 }

@@ -183,24 +183,52 @@ export default function SubscriptionManagement() {
     const handleAddProduct = async () => {
         if (!selectedProduct || selectedQuantity <= 0) return;
 
-        const newItem = {
-            subscriptionId: subscription.id,
-            productId: selectedProduct.id,
-            nextMonthQuantity: selectedQuantity,
-            nextMonthPrice: selectedProduct.price,
-        };
+        const subscriptionItems = subscription?.nextItems || []; // 현재 구독의 다음 결제 상품 목록
 
-        console.log("🛠️ 추가할 상품 데이터:", newItem);
-        dispatch(addNextSubscriptionItem(newItem)).then((result) => {
-            if (addNextSubscriptionItem.fulfilled.match(result)) {
-                console.log("✅ 상품 추가 성공:", result.payload);
+        // ✅ 이미 추가된 상품인지 확인
+        const existingItem = subscriptionItems.find(item => item.productId === selectedProduct.id);
 
-                // ✅ Redux 상태를 직접 업데이트하여 화면에서 즉시 반영
-                dispatch(fetchSubscription()); // 구독 정보 다시 불러오기
-            } else {
-                console.error("❌ 상품 추가 실패:", result.error);
-            }
-        });
+        if (existingItem) {
+            // ✅ 이미 추가된 상품이면 수량 증가 요청
+            const updatedQuantity = existingItem.nextMonthQuantity + selectedQuantity;
+
+            dispatch(updateNextSubscriptionItems({
+                subscriptionId: subscription.id,
+                updatedItems: subscriptionItems.map(item =>
+                    item.productId === selectedProduct.id
+                        ? { ...item, nextMonthQuantity: updatedQuantity }
+                        : item
+                ),
+            })).then((result) => {
+                if (updateNextSubscriptionItems.fulfilled.match(result)) {
+                    console.log(`✅ 상품(${selectedProduct.name}) 수량 증가: ${updatedQuantity}개`);
+                    dispatch(fetchSubscription()); // 최신 데이터 반영
+                } else {
+                    console.error("❌ 상품 수량 변경 실패:", result.error);
+                }
+            });
+
+        } else {
+            // ✅ 새로운 상품 추가
+            const newItem = {
+                subscriptionId: subscription.id,
+                productId: selectedProduct.id,
+                nextMonthQuantity: selectedQuantity,
+                nextMonthPrice: selectedProduct.price,
+            };
+
+            console.log("🛠️ 추가할 상품 데이터:", newItem);
+            dispatch(addNextSubscriptionItem(newItem)).then((result) => {
+                if (addNextSubscriptionItem.fulfilled.match(result)) {
+                    console.log("✅ 상품 추가 성공:", result.payload);
+
+                    // ✅ Redux 상태를 직접 업데이트하여 화면에서 즉시 반영
+                    dispatch(fetchSubscription()); // 구독 정보 다시 불러오기
+                } else {
+                    console.error("❌ 상품 추가 실패:", result.error);
+                }
+            });
+        }
     };
 
 
