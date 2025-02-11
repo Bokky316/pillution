@@ -55,8 +55,10 @@ public class SubscriptionController {
     public ResponseEntity<Subscription> createSubscription(
             @RequestParam Long memberId,
             @RequestParam String paymentMethod,
-            @RequestParam String deliveryAddress) {
-        return ResponseEntity.ok(subscriptionService.createSubscription(memberId, paymentMethod, deliveryAddress));
+            @RequestParam String postalCode,
+            @RequestParam String roadAddress,
+            @RequestParam String detailAddress) {
+        return ResponseEntity.ok(subscriptionService.createSubscription(memberId, paymentMethod, postalCode, roadAddress, detailAddress));
     }
 
     /**
@@ -112,17 +114,30 @@ public class SubscriptionController {
      */
     @PutMapping("/update-delivery")
     public ResponseEntity<?> updateDeliveryAddress(@RequestBody Map<String, String> request) {
-        Long subscriptionId = Long.parseLong(request.get("subscriptionId"));
-        String newAddress = request.get("newAddress");
+        try {
+            Long subscriptionId = Long.parseLong(request.get("subscriptionId"));
+            String postalCode = request.get("postalCode");
+            String roadAddress = request.get("roadAddress");
+            String detailAddress = request.get("detailAddress");
 
-        boolean updated = subscriptionService.updateDeliveryAddress(subscriptionId, newAddress);
+            boolean updated = subscriptionService.updateDeliveryAddress(subscriptionId, postalCode, roadAddress, detailAddress);
 
-        if (updated) {
-            return ResponseEntity.ok(Map.of("message", "배송 주소가 업데이트되었습니다!", "newAddress", newAddress));
-        } else {
-            return ResponseEntity.badRequest().body(Map.of("message", "배송 주소 업데이트 실패"));
+            if (updated) {
+                return ResponseEntity.ok(Map.of(
+                        "message", "✅ 배송 주소가 성공적으로 업데이트되었습니다!",
+                        "postalCode", postalCode,
+                        "roadAddress", roadAddress,
+                        "detailAddress", detailAddress
+                ));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("message", "❌ 배송 주소 업데이트 실패"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "서버 오류 발생: " + e.getMessage()));
         }
     }
+
 
 
     /**
@@ -142,11 +157,17 @@ public class SubscriptionController {
             @RequestParam Long subscriptionId,
             @RequestParam(required = false) String newBillingDate,
             @RequestParam(required = false) String newPaymentMethod,
-            @RequestParam(required = false) String newDeliveryAddress) {
+            @RequestParam(required = false) String postalCode,
+            @RequestParam(required = false) String roadAddress,
+            @RequestParam(required = false) String detailAddress) {
+
         subscriptionService.updateSubscriptionInfo(subscriptionId,
                 newBillingDate != null ? LocalDate.parse(newBillingDate) : null,
                 newPaymentMethod,
-                newDeliveryAddress);
+                postalCode,
+                roadAddress,
+                detailAddress);
+
         return ResponseEntity.ok().build();
     }
 

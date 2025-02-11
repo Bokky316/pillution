@@ -413,23 +413,24 @@ export const updateNextPaymentMethod = createAsyncThunk(
  */
 export const updateDeliveryAddress = createAsyncThunk(
     "subscription/updateDeliveryAddress",
-    async ({ subscriptionId, newAddress }, { rejectWithValue }) => {
+    async ({ subscriptionId, postalCode, roadAddress, detailAddress }, { rejectWithValue }) => {
         try {
-            console.log("📡 [API 요청] 배송 주소 업데이트:", { subscriptionId, newAddress });
+            console.log("📡 [API 요청] 배송 주소 업데이트:", { subscriptionId, postalCode, roadAddress, detailAddress });
 
             const response = await fetchWithAuth(`${API_URL}subscription/update-delivery`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ subscriptionId, newAddress }),
+                body: JSON.stringify({ subscriptionId, postalCode, roadAddress, detailAddress }),
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                throw new Error("배송 주소 업데이트 실패");
+                throw new Error(data.message || "❌ 배송지 업데이트 실패");
             }
 
-            const data = await response.json();
             console.log("✅ [SUCCESS] 배송 주소 업데이트 성공:", data);
-            return data;
+            return data; // ✅ Redux 상태 업데이트를 위해 데이터 반환
         } catch (error) {
             console.error("❌ [ERROR] 배송 주소 업데이트 실패:", error);
             return rejectWithValue(error.message);
@@ -438,10 +439,11 @@ export const updateDeliveryAddress = createAsyncThunk(
 );
 
 
+
 const subscriptionSlice = createSlice({
     name: "subscription",
     initialState: {
-        data: { nextItems: [], items: [] }, // ✅ 기본값 설정
+        data: { nextItems: [], items: [], postalCode: "", roadAddress: "", detailAddress: ""  }, // ✅ 기본값 설정
         loading: false,
         error: null,
         products: [], // ✅ 상품 리스트
@@ -460,6 +462,9 @@ const subscriptionSlice = createSlice({
             if (state.data) {
                 state.data.nextItems = action.payload;
             }
+        },
+        updateDetailAddress: (state, action) => {
+            state.data.detailAddress = action.payload;
         },
     },
     extraReducers: (builder) => {
@@ -499,12 +504,11 @@ const subscriptionSlice = createSlice({
             state.loading = false;
             state.data = action.payload || { nextItems: [], items: [] };
 
-            // ✅ nextItems에서 productId 설정 (product 객체에서 가져오도록 수정)
+            // ✅ nextItems에서 productId 설정 유지
             if (state.data.nextItems) {
                 state.data.nextItems = state.data.nextItems.map(item => {
                     let productId = item.productId ?? (item.product ? item.product.id : null);
 
-                    // ✅ productId가 여전히 null이면 Redux의 products에서 찾아서 추가
                     if (!productId) {
                         const matchedProduct = state.products.find(p => p.name === item.productName);
                         productId = matchedProduct ? matchedProduct.id : null;
@@ -512,13 +516,17 @@ const subscriptionSlice = createSlice({
 
                     return {
                         ...item,
-                        productId: productId // ✅ Redux에 저장할 때 productId 강제 추가
+                        productId: productId
                     };
                 });
             }
 
-            // ✅ nextPaymentMethod 추가
-            state.data.nextPaymentMethod = action.payload.nextPaymentMethod || "";
+            // ✅ Redux 상태에 배송 주소 정보 저장 추가
+            state.data.postalCode = action.payload.postalCode || "";
+            state.data.roadAddress = action.payload.roadAddress || "";
+            state.data.detailAddress = action.payload.detailAddress || "";
+
+            console.log("🛠 Redux 업데이트된 배송정보:", state.data.postalCode, state.data.roadAddress, state.data.detailAddress);
 
             state.error = null;
         })
@@ -589,11 +597,25 @@ const subscriptionSlice = createSlice({
            console.error("❌ [ERROR] Redux 상태 업데이트 실패:", action.payload);
        })
        .addCase(updateDeliveryAddress.fulfilled, (state, action) => {
-           if (state.data) {
-               state.data.deliveryAddress = action.payload.newAddress;
+           console.log("🛠️ Redux 상태 업데이트: updateDeliveryAddress.fulfilled 실행됨", action.payload);
+
+           // ✅ 서버 응답에서 주소 데이터가 없으면 기존 값 유지
+           if (!action.payload.postalCode || !action.payload.roadAddress) {
+               console.error("❌ [ERROR] Redux 상태 업데이트 실패: 서버 응답에 주소 데이터 없음", action.payload);
+               return;
            }
+
+           // ✅ Redux 상태 업데이트 (기존 데이터 유지)
+           state.data = {
+               ...state.data,
+               postalCode: action.payload.postalCode,
+               roadAddress: action.payload.roadAddress,
+               detailAddress: action.payload.detailAddress || state.data.detailAddress // 기존 상세 주소 유지
+           };
+
+           console.log("✅ [Redux] 업데이트된 배송 정보:", state.data);
        })
     },
 });
-export const { setSelectedProduct, setSelectedQuantity } = subscriptionSlice.actions;
+export const { setSelectedProduct, setSelectedQuantity, updateDetailAddress } = subscriptionSlice.actions;
 export default subscriptionSlice.reducer;

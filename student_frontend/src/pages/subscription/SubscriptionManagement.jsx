@@ -17,6 +17,7 @@ import {
     updateBillingDate,
     updateNextPaymentMethod,
     updateDeliveryAddress,
+    updateDetailAddress,
 } from "@/redux/subscriptionSlice";
 
 export default function SubscriptionManagement() {
@@ -37,32 +38,64 @@ export default function SubscriptionManagement() {
     // ✅ 초기값 설정 (nextItems가 없으면 빈 배열 반환)
     const nextItems = subscription?.nextItems || [];
 
-    const [address, setAddress] = useState(subscription?.deliveryAddress || "");
-    const [detailAddress, setDetailAddress] = useState("");
-
-    // ✅ 카카오 주소 선택 후 업데이트
-    const handleAddressSelect = (newAddress) => {
-        setAddress(newAddress);
+//     const [address, setAddress] = useState(subscription?.deliveryAddress || "");
+//     const [detailAddress, setDetailAddress] = useState("");
+//
+    // ✅ 카카오 주소 선택 후 Redux 상태 업데이트
+    const handleAddressSelect = (data) => {
+        dispatch(updateDeliveryAddress({
+            subscriptionId: subscription.id,
+            postalCode: data.zonecode,  // 카카오 API에서 받은 우편번호
+            roadAddress: data.address, // 카카오 API에서 받은 도로명 주소
+            detailAddress: detailAddress // 기존 상세주소 유지
+        }));
     };
+
+    // ✅ Redux 상태에서 주소 데이터 가져오기
+    const postalCode = subscription?.postalCode || "";
+    const roadAddress = subscription?.roadAddress || "";
+    const detailAddress = subscription?.detailAddress || "";
+
+    useEffect(() => {
+        console.log("🔍 [DEBUG] Redux에서 가져온 구독 데이터:", subscription);
+    }, [subscription]); // ✅ Redux 상태가 변경될 때마다 로그 출력
+
+    useEffect(() => {
+        console.log("📌 Redux 업데이트 후 상태:", {
+            postalCode: subscription?.postalCode,
+            roadAddress: subscription?.roadAddress,
+            detailAddress: subscription?.detailAddress
+        });
+    }, [subscription]); // ✅ Redux 상태가 변경될 때마다 로그 출력
 
     // ✅ 배송지 업데이트
     const handleAddressUpdate = () => {
-        if (!subscription?.id || !address || !detailAddress) {
-            alert("❌ 주소 정보를 모두 입력해주세요!");
+        if (!subscription?.id || !roadAddress || !postalCode) {
+            alert("❌ 우편번호와 도로명 주소는 필수 입력값입니다!");
             return;
         }
 
-        const fullAddress = `${address} ${detailAddress}`;
+        dispatch(updateDeliveryAddress({
+            subscriptionId: subscription.id,
+            postalCode,
+            roadAddress,
+            detailAddress,
+        })).then((result) => {
+            if (updateDeliveryAddress.fulfilled.match(result)) {
+                alert("✅ 배송 주소가 업데이트되었습니다!");
 
-        dispatch(updateDeliveryAddress({ subscriptionId: subscription.id, newAddress: fullAddress }))
-            .then((result) => {
-                if (updateDeliveryAddress.fulfilled.match(result)) {
-                    alert("✅ 배송 주소가 업데이트되었습니다!");
-                } else {
-                    alert("❌ 배송 주소 변경 실패!");
-                }
-            });
+                // ✅ Redux 상태가 정상적으로 업데이트되었는지 확인
+                console.log("📌 Redux 업데이트 후 상태:", subscription);
+
+                // ✅ 최신 데이터 다시 불러오기
+                dispatch(fetchSubscription());
+            } else {
+                alert(result.payload || "❌ 배송 주소 변경 실패!");
+            }
+        });
     };
+
+
 
     // 정기구독 - 다음달 결제 예정 상품 수량 변경
     const handleQuantityChange = (productId, newQuantity) => {
@@ -479,7 +512,6 @@ export default function SubscriptionManagement() {
             />
 
             <h3>다음 회차 결제수단 변경</h3>
-            <h3>다음 회차 결제수단</h3>
             <select
                 value={subscription?.nextPaymentMethod || ""} // ✅ Redux에서 불러온 nextPaymentMethod 반영
                 onChange={(e) =>
@@ -495,20 +527,30 @@ export default function SubscriptionManagement() {
                 <option value="card">카드결제</option>
             </select>
 
-
-            <h3>배송정보</h3>
-            <input type="text" value={address} readOnly placeholder="주소를 검색해주세요" />
-            <KakaoAddressSearch onAddressSelect={handleAddressSelect} /> {/* ✅ 공통 컴포넌트 사용 */}
-
-            {/* 상세 주소 입력 */}
-            <input
-                type="text"
-                value={detailAddress}
-                onChange={(e) => setDetailAddress(e.target.value)}
-                placeholder="상세 주소를 입력해주세요"
-            />
-
-            <button onClick={handleAddressUpdate}>배송지 변경</button>
+            <div>
+                <h3>배송정보</h3>
+                <div>
+                    <label>우편번호</label>
+                    <input type="text" value={postalCode} readOnly placeholder="우편번호를 입력해주세요" />
+                </div>
+                <div>
+                    <label>도로명 주소</label>
+                    <input type="text" value={roadAddress} readOnly placeholder="도로명 주소를 검색해주세요" />
+                    {/* ✅ 카카오 주소 검색 버튼 */}
+                    <KakaoAddressSearch onAddressSelect={handleAddressSelect} />
+                </div>
+                <div>
+                    {/* 상세 주소 입력 */}
+                    <label>상세 주소</label>
+                    <input
+                        type="text"
+                        value={detailAddress}
+                        onChange={(e) => dispatch(updateDetailAddress(e.target.value))}
+                        placeholder="상세 주소를 입력해주세요"
+                    />
+                    <button onClick={handleAddressUpdate}>배송지 변경</button>
+                </div>
+            </div>
 
             <button onClick={handleUpdateSubscription}>변경사항 저장</button>
             <button onClick={handleCancelSubscription}>구독 취소</button>

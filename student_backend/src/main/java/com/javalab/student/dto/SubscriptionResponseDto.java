@@ -20,7 +20,10 @@ public class SubscriptionResponseDto {
     private String status;
     private String paymentMethod;
     private String nextPaymentMethod; // ✅ 추가
-    private String deliveryAddress;
+//    private String deliveryAddress;
+    private String roadAddress; // ✅ 추가
+    private String postalCode;  // ✅ 추가
+    private String detailAddress; // ✅ 추가
     private List<SubscriptionItemDto> items;
     private List<SubscriptionNextItemDto> nextItems; // 다음 회차 결제 예정 상품들
     private LocalDate lastBillingDate;
@@ -36,7 +39,9 @@ public class SubscriptionResponseDto {
         this.status = subscription.getStatus();
         this.paymentMethod = subscription.getPaymentMethod();
         this.nextPaymentMethod = subscription.getNextPaymentMethod(); // ✅ 추가
-        this.deliveryAddress = subscription.getDeliveryAddress();
+        this.roadAddress = subscription.getRoadAddress();
+        this.postalCode = subscription.getPostalCode();
+        this.detailAddress = subscription.getDetailAddress();
         this.lastBillingDate = subscription.getLastBillingDate();
         this.currentCycle = subscription.getCurrentCycle();
 

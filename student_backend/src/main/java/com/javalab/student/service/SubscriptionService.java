@@ -70,7 +70,7 @@ public class SubscriptionService {
      * 새로운 구독 생성
      */
     @Transactional
-    public Subscription createSubscription(Long memberId, String paymentMethod, String deliveryAddress) {
+    public Subscription createSubscription(Long memberId, String paymentMethod, String postalCode, String roadAddress, String deliverydetailAddressddress) {
         Optional<Subscription> latestActiveSubscription = subscriptionRepository
                 .findFirstByMemberIdAndStatusOrderByCurrentCycleDesc(memberId, "active");
 
@@ -84,7 +84,9 @@ public class SubscriptionService {
                 .nextBillingDate(LocalDate.now().plusMonths(1))
                 .status("active")
                 .paymentMethod(paymentMethod)
-                .deliveryAddress(deliveryAddress)
+                .postalCode(postalCode)
+                .roadAddress(roadAddress)
+                .detailAddress(deliverydetailAddressddress)
                 .currentCycle(1)
                 .build();
 
@@ -138,11 +140,15 @@ public class SubscriptionService {
      * 배송정보 변경
      */
     @Transactional
-    public boolean updateDeliveryAddress(Long subscriptionId, String newAddress) {
+    public boolean updateDeliveryAddress(Long subscriptionId, String postalCode, String roadAddress, String detailAddress) {
         Subscription subscription = subscriptionRepository.findById(subscriptionId)
-                .orElseThrow(() -> new RuntimeException("구독 정보를 찾을 수 없습니다."));
+                .orElseThrow(() -> new RuntimeException("❌ 구독 정보를 찾을 수 없습니다."));
 
-        subscription.setDeliveryAddress(newAddress);
+        // ✅ 새로운 주소값을 업데이트
+        subscription.setPostalCode(postalCode);
+        subscription.setRoadAddress(roadAddress);
+        subscription.setDetailAddress(detailAddress);
+
         subscriptionRepository.save(subscription);
         return true;
     }
@@ -164,7 +170,8 @@ public class SubscriptionService {
      * 구독 정보 업데이트 (결제일, 결제수단, 배송정보)
      */
     @Transactional
-    public void updateSubscriptionInfo(Long subscriptionId, LocalDate newBillingDate, String newPaymentMethod, String newDeliveryAddress) {
+    public void updateSubscriptionInfo(Long subscriptionId, LocalDate newBillingDate, String newPaymentMethod,
+                                       String postalCode, String roadAddress, String detailAddress) {
         Subscription subscription = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new RuntimeException("구독 정보를 찾을 수 없습니다."));
 
@@ -172,10 +179,16 @@ public class SubscriptionService {
             subscription.setNextBillingDate(newBillingDate);
         }
         if (newPaymentMethod != null) {
-            subscription.setPaymentMethod(newPaymentMethod);
+            subscription.setNextPaymentMethod(newPaymentMethod);
         }
-        if (newDeliveryAddress != null) {
-            subscription.setDeliveryAddress(newDeliveryAddress);
+        if (postalCode != null) {
+            subscription.setPostalCode(postalCode);
+        }
+        if (roadAddress != null) {
+            subscription.setRoadAddress(roadAddress);
+        }
+        if (detailAddress != null) {
+            subscription.setDetailAddress(detailAddress);
         }
 
         subscriptionRepository.save(subscription);

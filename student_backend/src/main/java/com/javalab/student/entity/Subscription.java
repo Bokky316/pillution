@@ -34,10 +34,15 @@ public class Subscription {
     private LocalDate nextBillingDate; // 다음 결제일
     private String status; // active, paused, cancelled
     private String paymentMethod; // 현재 회차 결제수단
-    private String deliveryAddress;
+    //private String deliveryAddress;
     private int currentCycle; // 현재 회차
 
     private String nextPaymentMethod;     // 다음 회차 결제수단 저장
+
+    // 기존 deliveryAddress → roadAddress로 변경
+    private String roadAddress;  // 도로명 주소
+    private String postalCode;   // 우편번호
+    private String detailAddress; // 상세주소 (사용자가 입력)
 
     @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties("subscription")
