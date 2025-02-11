@@ -32,7 +32,7 @@ public class Subscription {
     private LocalDate endDate;  // 구독 종료일 (해지 시 설정)
     private LocalDate lastBillingDate; // 최근 결제일
     private LocalDate nextBillingDate; // 다음 결제일
-    private String status; // active, paused, cancelled
+    private String status; // active, cancelled, expired, paused(구현안하기로)
     private String paymentMethod; // 현재 회차 결제수단
     //private String deliveryAddress;
     private int currentCycle; // 현재 회차

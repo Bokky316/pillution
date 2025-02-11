@@ -242,11 +242,6 @@ export default function SubscriptionManagement() {
             });
     };
 
-
-
-
-
-
     // 변경사항 저장
     const handleUpdateSubscription = () => {
         const updatedData = {
@@ -259,9 +254,25 @@ export default function SubscriptionManagement() {
     };
 
     // 구독 취소
-    const handleCancelSubscription = () => {
-        dispatch(cancelSubscription(subscription.id));
-    };
+const handleCancelSubscription = () => {
+    if (!subscription?.id) {
+        console.error("❌ [ERROR] 구독 ID 없음! 취소 불가.");
+        return;
+    }
+
+    if (window.confirm("⚠️ 정말로 구독을 취소하시겠습니까?")) {
+        dispatch(cancelSubscription({ subscriptionId: subscription.id }))
+            .then((result) => {
+                if (cancelSubscription.fulfilled.match(result)) {
+                    alert("✅ 구독이 취소되었습니다!");
+                    dispatch(fetchSubscription()); // ✅ 최신 상태 반영
+                } else {
+                    alert(result.payload || "❌ 구독 취소 실패!");
+                }
+            });
+    }
+};
+
 
 //     const handleUpdateNextItems = () => {
 //         const updatedItems = subscription.nextItems.map(item => {
@@ -553,7 +564,13 @@ export default function SubscriptionManagement() {
             </div>
 
             <button onClick={handleUpdateSubscription}>변경사항 저장</button>
-            <button onClick={handleCancelSubscription}>구독 취소</button>
+            <button
+                onClick={handleCancelSubscription}
+                disabled={subscription.status === "CANCELLED"} // 취소된 경우 버튼 비활성화
+            >
+                {subscription.status === "CANCELLED" ? "구독 취소됨" : "구독 취소"}
+            </button>
+{/*             <button onClick={handleCancelSubscription}>구독 취소</button> */}
             <button onClick={handleProcessBilling}>자동 결제 실행</button>
         </div>
     );

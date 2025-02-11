@@ -158,12 +158,32 @@ public class SubscriptionService {
      * 구독 취소
      */
     @Transactional
-    public void cancelSubscription(Long subscriptionId) {
+    public boolean cancelSubscription(Long subscriptionId) {
         Subscription subscription = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new RuntimeException("구독 정보를 찾을 수 없습니다."));
-        subscription.setStatus("cancelled");
-        subscription.setEndDate(LocalDate.now());
+
+        if (!subscription.getStatus().equals("ACTIVE")) {
+            throw new RuntimeException("진행 중인 구독만 취소할 수 있습니다.");
+        }
+
+        subscription.setStatus("CANCELLED"); // ✅ 상태 변경
+        subscription.setEndDate(LocalDate.now()); // ✅ 현재 날짜를 종료일로 설정
         subscriptionRepository.save(subscription);
+        return true;
+    }
+
+    /**
+     * 구독 갱신 시 과거 구독 expired 처리
+     * @param memberId
+     */
+    @Transactional
+    public void expirePastSubscriptions(Long memberId) {
+        List<Subscription> pastSubscriptions = subscriptionRepository.findByMemberIdAndStatus(memberId, "ACTIVE");
+
+        for (Subscription sub : pastSubscriptions) {
+            sub.setStatus("EXPIRED");
+            subscriptionRepository.save(sub);
+        }
     }
 
     /**

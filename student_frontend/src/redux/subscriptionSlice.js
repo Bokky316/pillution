@@ -100,14 +100,30 @@ export const updateSubscription = createAsyncThunk(
  * 구독 취소
  */
 export const cancelSubscription = createAsyncThunk(
-  "subscription/cancelSubscription",
-  async (immediately) => {
-    const response = await fetchWithAuth(`${API_URL}subscription/cancel`, {
-      method: "DELETE",
-      body: JSON.stringify({ immediately }),
-    });
-    return response.json();
-  }
+    "subscription/cancelSubscription",
+    async ({ subscriptionId }, { rejectWithValue }) => {
+        try {
+            console.log("📡 [API 요청] 구독 취소:", { subscriptionId });
+
+            const response = await fetchWithAuth(`${API_URL}subscription/cancel`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ subscriptionId }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || "❌ 구독 취소 실패");
+            }
+
+            console.log("✅ [SUCCESS] 구독 취소 성공:", data);
+            return data;
+        } catch (error) {
+            console.error("❌ [ERROR] 구독 취소 실패:", error);
+            return rejectWithValue(error.message);
+        }
+    }
 );
 
 //const subscriptionSlice = createSlice({
@@ -537,9 +553,6 @@ const subscriptionSlice = createSlice({
         .addCase(updateSubscription.fulfilled, (state, action) => {
             state.data = action.payload;
         })
-        .addCase(cancelSubscription.fulfilled, (state, action) => {
-            state.data = action.payload;
-        })
         .addCase(updateNextSubscriptionItems.fulfilled, (state, action) => {
             console.log("✅ [Redux] 수량 업데이트 성공:", action.payload);
             const { subscriptionId, updatedItems } = action.payload;
@@ -614,6 +627,15 @@ const subscriptionSlice = createSlice({
            };
 
            console.log("✅ [Redux] 업데이트된 배송 정보:", state.data);
+       })
+       .addCase(cancelSubscription.fulfilled, (state, action) => {
+           console.log("✅ [Redux] 구독 취소 완료:", action.payload);
+
+           // ✅ 상태 변경 (status를 "CANCELLED"로 업데이트)
+           if (state.data.id === action.payload.subscriptionId) {
+               state.data.status = "CANCELLED";
+               state.data.endDate = new Date().toISOString().split("T")[0]; // ✅ endDate를 현재 날짜로 설정
+           }
        })
     },
 });

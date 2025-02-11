@@ -143,10 +143,25 @@ public class SubscriptionController {
     /**
      * 구독 취소 API
      */
-    @DeleteMapping("/cancel")
-    public ResponseEntity<Void> cancelSubscription(@RequestParam Long subscriptionId) {
-        subscriptionService.cancelSubscription(subscriptionId);
-        return ResponseEntity.ok().build();
+    @PutMapping("/cancel")
+    public ResponseEntity<?> cancelSubscription(@RequestBody Map<String, String> request) {
+        try {
+            Long subscriptionId = Long.parseLong(request.get("subscriptionId"));
+
+            boolean canceled = subscriptionService.cancelSubscription(subscriptionId);
+
+            if (canceled) {
+                return ResponseEntity.ok(Map.of(
+                        "message", "✅ 구독이 성공적으로 취소되었습니다.",
+                        "subscriptionId", subscriptionId
+                ));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("message", "❌ 구독 취소 실패"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "서버 오류 발생: " + e.getMessage()));
+        }
     }
 
     /**

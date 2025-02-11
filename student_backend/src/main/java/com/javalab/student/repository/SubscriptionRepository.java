@@ -21,4 +21,6 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
 
     // 사용자의 구독 중 특정상태 구독중 다음 결제일이 가장 최근인 구독을 조회(1개만 조회됨)
     Optional<Subscription> findFirstByMemberIdAndStatusOrderByNextBillingDateDesc(Long memberId, String status);
+
+    List<Subscription> findByMemberIdAndStatus(Long memberId, String status);
 }
