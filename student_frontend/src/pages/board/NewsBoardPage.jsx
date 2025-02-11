@@ -2,10 +2,26 @@ import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-    Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, Button, Typography, Box,
-    Snackbar, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
-    IconButton, useTheme, useMediaQuery
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Button,
+    Typography,
+    Box,
+    Snackbar,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    IconButton,
+    useTheme,
+    useMediaQuery,
+    Paper,
+    Pagination
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import {
@@ -30,24 +46,30 @@ function NewsBoardPage() {
         loading,
         error,
         currentPage,
-        totalPages
+        totalPages,
+        deleteError
     } = useSelector(state => state.news);
 
     const auth = useSelector((state) => state.auth);
-    const userRole = auth?.user?.authorities?.some(auth => auth.authority === "ROLE_ADMIN") ? "ADMIN" : "USER";
+    const userRole = auth?.user?.authorities?.some(auth =>
+        typeof auth === 'string' ? auth === 'ROLE_ADMIN' : auth.authority === 'ROLE_ADMIN'
+    ) ? 'ADMIN' : 'USER';
+
+    useEffect(() => {
+        console.log("Auth state:", auth);
+        console.log("User authorities:", auth?.user?.authorities);
+        const isAdmin = auth?.user?.authorities?.some(auth =>
+            typeof auth === 'string' ? auth === 'ROLE_ADMIN' : auth.authority === 'ROLE_ADMIN'
+        );
+        console.log("Is admin:", isAdmin);
+    }, [auth]);
 
     useEffect(() => {
         dispatch(fetchNewsPosts({ page: currentPage }));
     }, [dispatch, currentPage]);
 
-    useEffect(() => {
-        if (auth?.user) {
-            localStorage.setItem("auth", JSON.stringify(auth));
-        }
-    }, [auth]);
-
-    const handlePageClick = (page) => {
-        dispatch(setCurrentPage(page));
+    const handlePageChange = (event, value) => {
+        dispatch(setCurrentPage(value - 1));
     };
 
     const handleEditPost = (postId) => {
@@ -55,23 +77,23 @@ function NewsBoardPage() {
     };
 
     const handleDeleteClick = (postId) => {
+        console.log("Delete button clicked for post:", postId);
+        console.log("Current dialog state:", deleteDialogOpen);
         setPostToDelete(postId);
         setDeleteDialogOpen(true);
+        console.log("Dialog state after set:", deleteDialogOpen);
     };
 
-    const handleDeleteConfirm = () => {
+    const handleDeleteConfirm = async () => {
         if (postToDelete) {
-            dispatch(deleteNewsPost(postToDelete))
-                .unwrap()
-                .then(() => {
-                    setSnackbarMessage("게시글이 성공적으로 삭제되었습니다.");
-                    setSnackbarOpen(true);
-                    dispatch(fetchNewsPosts({ page: currentPage }));
-                })
-                .catch(() => {
-                    setSnackbarMessage("게시글 삭제 중 오류가 발생했습니다.");
-                    setSnackbarOpen(true);
-                });
+            try {
+                await dispatch(deleteNewsPost(postToDelete)).unwrap();
+                setSnackbarMessage("게시글이 성공적으로 삭제되었습니다.");
+                setSnackbarOpen(true);
+            } catch (error) {
+                setSnackbarMessage(error.message || "게시글 삭제 중 오류가 발생했습니다.");
+                setSnackbarOpen(true);
+            }
         }
         setDeleteDialogOpen(false);
         setPostToDelete(null);
@@ -82,17 +104,34 @@ function NewsBoardPage() {
         setPostToDelete(null);
     };
 
-    const handleCloseSnackbar = () => {
+    const handleCloseSnackbar = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
         setSnackbarOpen(false);
     };
 
     const formatDate = (dateString) => {
+        if (!dateString) return '';
         const date = new Date(dateString);
-        return `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`;
+        return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
     };
 
-    if (loading) return <Typography align="center" variant="h6">로딩 중...</Typography>;
-    if (error) return <Typography variant="h6">{error}</Typography>;
+    if (loading) {
+        return (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+                <Typography>로딩 중...</Typography>
+            </Box>
+        );
+    }
+
+    if (error) {
+        return (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+                <Typography color="error">{error}</Typography>
+            </Box>
+        );
+    }
 
     return (
         <Box
@@ -264,6 +303,42 @@ function NewsBoardPage() {
                     </TableBody>
                 </Table>
             </TableContainer>
+            <Snackbar
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                }}
+                open={snackbarOpen}
+                autoHideDuration={3000}
+                onClose={handleCloseSnackbar}
+                message={snackbarMessage}
+                action={
+                    <IconButton size="small" aria-label="close" color="inherit" onClick={handleCloseSnackbar}>
+                        <CloseIcon fontSize="small" />
+                    </IconButton>
+                }
+            />
+            <Dialog
+                open={deleteDialogOpen}
+                onClose={handleDeleteCancel}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+            >
+                <DialogTitle id="alert-dialog-title">
+                    게시글 삭제
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        이 게시글을 삭제하시겠습니까?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+                        삭제
+                    </Button>
+                    <Button onClick={handleDeleteCancel}>취소</Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 

@@ -1,64 +1,53 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import { fetchWithAuth } from '@features/auth/utils/fetchWithAuth';
+import { API_URL } from '@/constant';
 
-// 게시글 생성 비동기 액션
+// createPost 액션 생성
 export const createPost = createAsyncThunk(
     'postCreate/createPost',
     async (postData, { rejectWithValue }) => {
         try {
-            const userData = JSON.parse(localStorage.getItem('loggedInUser'));
+            const response = await fetchWithAuth(`${API_URL}posts`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(postData),
+            });
 
-            // 토큰 존재 여부 확인
-            if (!userData || !userData.token) {
-                throw new Error('인증 토큰이 없습니다.');
+            if (!response.ok) {
+                const errorData = await response.json();
+                return rejectWithValue(errorData);
             }
 
-            const token = userData.token;
-
-            // 필수 데이터 검증
-            if (!postData.title || !postData.content) {
-                throw new Error('제목과 내용은 필수입니다.');
-            }
-
-            const response = await axios.post(
-                "http://localhost:8080/api/posts",
-                postData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
-            return response.data;
+            const data = await response.json();
+            return data;
         } catch (error) {
-            console.error('게시글 생성 에러:', error);
-            return rejectWithValue(
-                error.response?.data ||
-                error.message ||
-                '게시글 생성 실패'
-            );
+            return rejectWithValue({
+                message: error.message || '게시물 등록에 실패했습니다.',
+                status: error.status
+            });
         }
     }
 );
-
 
 const postCreateSlice = createSlice({
     name: 'postCreate',
     initialState: {
         formData: {
-            title: "",
-            content: "",
-            category: "공지사항",
+            title: '',
+            content: '',
+            category: '공지사항',
+            subCategory: '',
             boardId: 1,
-            subCategory: "",
             authorId: null,
         },
-        loading: false,
-        error: null,
         isAdmin: false,
+        authorId: null,
         openCancelDialog: false,
         openSubmitDialog: false,
+        loading: false,
+        error: null,
     },
     reducers: {
         setFormData: (state, action) => {
@@ -68,6 +57,7 @@ const postCreateSlice = createSlice({
             state.isAdmin = action.payload;
         },
         setAuthorId: (state, action) => {
+            state.authorId = action.payload;
             state.formData.authorId = action.payload;
         },
         setOpenCancelDialog: (state, action) => {
@@ -78,13 +68,16 @@ const postCreateSlice = createSlice({
         },
         resetForm: (state) => {
             state.formData = {
-                title: "",
-                content: "",
-                category: "공지사항",
+                title: '',
+                content: '',
+                category: '공지사항',
+                subCategory: '',
                 boardId: 1,
-                subCategory: "",
-                authorId: state.formData.authorId,
+                authorId: state.authorId,
             };
+            state.openCancelDialog = false;
+            state.openSubmitDialog = false;
+            state.error = null;
         },
     },
     extraReducers: (builder) => {
