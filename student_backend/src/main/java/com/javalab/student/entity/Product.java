@@ -1,5 +1,6 @@
 package com.javalab.student.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -64,6 +65,7 @@ public class Product {
             joinColumns = @JoinColumn(name = "product_id"),
             inverseJoinColumns = @JoinColumn(name = "id")
     )
+    @JsonIgnore // 순환 참조 방지
     private List<ProductIngredient> ingredients;
 
     /**
@@ -76,6 +78,7 @@ public class Product {
             joinColumns = @JoinColumn(name = "product_id"),
             inverseJoinColumns = @JoinColumn(name = "category_id")
     )
+    @JsonIgnore // 순환 참조 방지
     private List<ProductCategory> categories;
 
     /**

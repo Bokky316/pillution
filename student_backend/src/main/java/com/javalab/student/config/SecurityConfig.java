@@ -109,13 +109,14 @@ public class SecurityConfig {
                 .requestMatchers("/api/survey/**").permitAll()
                 .requestMatchers("/api/recommendations/**").authenticated()
                 .requestMatchers("/members/login").permitAll()
-                .requestMatchers("/api/posts/**", "/api/faq/**").permitAll()    // 게시물 조회: 모든 사용자 허용
+                .requestMatchers("/api/products/**").permitAll()
+                .requestMatchers("/api/categories").permitAll()
+                .requestMatchers("/api/auth/userInfo").permitAll()
+
+
 
                 // 관리자 전용 엔드포인트
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/posts/create").hasRole("ADMIN")  // 게시물 작성: 관리자만 허용
-                .requestMatchers("/api/posts/*/update").hasRole("ADMIN")  // 게시물 수정: 관리자만 허용
-                .requestMatchers("/api/posts/*/delete").hasRole("ADMIN")  // 게시물 삭제: 관리자만 허용
 
                 // 사용자 및 관리자 접근 가능한 엔드포인트
                 .requestMatchers("/api/members/**").hasAnyRole("USER", "ADMIN")
@@ -125,6 +126,9 @@ public class SecurityConfig {
 
                 // 정적 리소스
                 .requestMatchers("/images/**", "/static-images/**", "/css/**", "/favicon.ico", "/error", "/img/**").permitAll()
+
+                // WebSocket 엔드포인트 허용
+                .requestMatchers("/ws/**").permitAll()
 
                 // 그 외 모든 요청은 인증 필요
                 .anyRequest().authenticated()

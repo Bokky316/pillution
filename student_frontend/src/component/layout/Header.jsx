@@ -1,81 +1,66 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { AppBar, Toolbar, Button, IconButton, Menu, MenuItem, Box, Typography } from "@mui/material";
+import {
+    AppBar, Toolbar, Button, IconButton, Menu, MenuItem, Box, Typography, Badge, useMediaQuery
+} from "@mui/material";
 import MenuIcon from '@mui/icons-material/Menu';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import PersonIcon from '@mui/icons-material/Person';
 import { Link, useNavigate } from "react-router-dom";
 import { clearUser } from "@/redux/authSlice";
 import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
 import { API_URL } from "@/constant";
-import { persistor } from "@/redux/store";
-import "../../assets/styles/header.css";
 
 const Header = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { user, isLoggedIn } = useSelector(state => state.auth);
-    const [anchorEl, setAnchorEl] = React.useState(null);
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [userMenuAnchorEl, setUserMenuAnchorEl] = useState(null);
+    const unreadMessagesCount = useSelector(state => state.messages.unreadCount || 0);
+    const invitedRequestsCount = useSelector(state => state.chat.invitedRequestsCount || 0);
 
-    const handleMenuOpen = (event) => {
-        setAnchorEl(event.currentTarget);
-    };
+    // 화면 크기 확인
+    const isMobile = useMediaQuery('(max-width:600px)');
 
-    const handleMenuClose = () => {
-        setAnchorEl(null);
-    };
-
-    const handleMenuItemClick = (path) => {
-        handleMenuClose();
-        if (path === "/cart" && !isLoggedIn) {
-            navigate("/login");
-        }
-        else {
-            navigate(path);
-        }
-    };
+    const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
+    const handleMenuClose = () => setAnchorEl(null);
+    const handleUserMenuOpen = (event) => setUserMenuAnchorEl(event.currentTarget);
+    const handleUserMenuClose = () => setUserMenuAnchorEl(null);
 
     const handleLogout = async () => {
         try {
-            await fetchWithAuth(`${API_URL}auth/logout`, {
-                method: "POST",
-            });
+            await fetchWithAuth(`${API_URL}auth/logout`, { method: "POST" });
             dispatch(clearUser());
-            await persistor.purge();
-            window.location.href = "/";
+            navigate('/');
         } catch (error) {
             console.error("로그아웃 실패:", error.message);
-            alert("로그아웃 중 오류가 발생했습니다.");
         }
     };
 
     return (
-        <AppBar position="static" className="nav-bar" sx={{
-            width: '100vw',
+        <AppBar position="fixed" sx={{
+            backgroundColor: '#f4f4f4',
             boxShadow: 'none',
-            position: 'relative',
-            left: '50%',
-            right: '50%',
-            marginLeft: '-50vw',
-            marginRight: '-50vw',
-            backgroundColor: 'transparent',  // 배경색을 투명하게 설정
+            color: '#000000',
+            zIndex: 1100,
         }}>
             <Toolbar sx={{
-                minHeight: '80px',
                 display: 'flex',
-                justifyContent: 'space-between',
-                maxWidth: '1280px',
-                margin: '0 auto',
+                justifyContent: 'space-between', // 왼쪽, 중앙, 오른쪽 정렬
+                alignItems: 'center',
+                maxWidth: '480px', // 모바일 중심 UI
                 width: '100%',
-                backgroundColor: '#f4f4f4',  // 툴바의 배경색을 흰색으로 설정
-                color: '#000000',  // 텍스트 색상을 검정색으로 설정
+                margin: '0 auto',
+                padding: '0 16px', // 좌우 패딩 추가
             }}>
+                {/* 왼쪽 메뉴 */}
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <IconButton
                         edge="start"
                         color="inherit"
                         aria-label="menu"
                         onClick={handleMenuOpen}
-                        sx={{ mr: 2 }}
-                        id="menu-button"
                     >
                         <MenuIcon />
                     </IconButton>
@@ -84,44 +69,110 @@ const Header = () => {
                         open={Boolean(anchorEl)}
                         onClose={handleMenuClose}
                     >
-                        <MenuItem onClick={() => handleMenuItemClick("/products")}>상품</MenuItem>
-                        <MenuItem onClick={() => handleMenuItemClick("/recommendation")}>추천</MenuItem>
-                        <MenuItem onClick={() => handleMenuItemClick("/cart")}>장바구니</MenuItem>
-                        <MenuItem onClick={() => handleMenuItemClick("/survey")}>설문조사</MenuItem>
-                        <MenuItem onClick={() => handleMenuItemClick("/board")}>필루션소식</MenuItem>
+                        <MenuItem onClick={() => { handleMenuClose(); navigate("/products"); }}>상품</MenuItem>
+                        <MenuItem onClick={() => { handleMenuClose(); navigate("/recommendation"); }}>추천</MenuItem>
+                        <MenuItem onClick={() => { handleMenuClose(); navigate("/cart"); }}>장바구니</MenuItem>
+                        <MenuItem onClick={() => { handleMenuClose(); navigate("/survey"); }}>설문조사</MenuItem>
                     </Menu>
                 </Box>
 
-                <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
+                {/* 중앙 로고 */}
+                <Box sx={{
+                    flexGrow: 1,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                }}>
                     <Link to="/" style={{ textDecoration: 'none' }}>
                         <img
                             src="/src/assets/images/logo.png"
                             alt="Pillution Logo"
-                            style={{ height: '50px', verticalAlign: 'middle' }}
+                            style={{
+                                height: isMobile ? '40px' : '50px', // 모바일에서는 로고 크기 축소
+                                verticalAlign: 'middle'
+                            }}
                         />
                     </Link>
                 </Box>
 
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                   {isLoggedIn && user ? (
-                      <>
-                        <Typography variant="body1" sx={{ mr: 2 }}>
-                          {user.name}
-                          {user.role === "ADMIN" ? " (관리자)" : " (사용자)"}
-                        </Typography>
-                        <Button color="inherit" onClick={() => navigate("/mypage")}>마이페이지</Button>
-                        <Button color="inherit" onClick={handleLogout}>
-                          {user.social ? '소셜 로그아웃' : '로그아웃'}
-                        </Button>
-                      </>
-                    ) : (
-                        <>
-                            <Button color="inherit" onClick={() => navigate("/login")} sx={{ mr: 1 }}>로그인</Button>
-                            <Button color="inherit" onClick={() => navigate("/registerMember")}>회원가입</Button>
-                        </>
-                    )}
-                </Box>
-            </Toolbar>
+                {/* 오른쪽 사용자 정보 */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {isLoggedIn ? (
+                            <>
+                                {user.role === "CS_AGENT" && (
+                                    <>
+                                        <Badge badgeContent={invitedRequestsCount} color="secondary">
+                                            <Button
+                                                color="inherit"
+                                                component={Link}
+                                                to="/consultation"
+                                                sx={{ display: isMobile ? 'none' : 'block' }}
+                                            >
+                                                상담 요청
+                                            </Button>
+                                        </Badge>
+                                        <Button
+                                            color="inherit"
+                                            component={Link}
+                                            to="/consultation-list"
+                                            sx={{ display: isMobile ? 'none' : 'block' }}
+                                        >
+                                            상담 목록
+                                        </Button>
+                                    </>
+                                )}
+                                {user.role === "USER" && (
+                                    <IconButton color="inherit" component={Link} to="/cart">
+                                        <ShoppingCartIcon />
+                                    </IconButton>
+                                )}
+                                <Box sx={{ position: 'relative' }}>
+                                    {!isMobile && (
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                position: 'absolute',
+                                                top: '-16px',
+                                                right: '0',
+                                                fontWeight: 'bold',
+                                                color: '#1976d2',
+                                            }}
+                                        >
+                                            My
+                                        </Typography>
+                                    )}
+                                    <Badge badgeContent={unreadMessagesCount} color="error">
+                                        <IconButton
+                                            color="inherit"
+                                            onClick={handleUserMenuOpen}
+                                        >
+                                            <PersonIcon />
+                                        </IconButton>
+                                    </Badge>
+                                </Box>
+                                <Menu
+                                    anchorEl={userMenuAnchorEl}
+                                    open={Boolean(userMenuAnchorEl)}
+                                    onClose={handleUserMenuClose}
+                                >
+                                    <MenuItem onClick={() => { handleUserMenuClose(); navigate("/messages"); }}>메시지 목록</MenuItem>
+                                    <MenuItem onClick={() => { handleUserMenuClose(); navigate("/mypage"); }}>마이페이지</MenuItem>
+                                    {user.role === "CS_AGENT" && (
+                                        <MenuItem onClick={() => { handleUserMenuClose(); navigate("/consultation-list"); }}>상담 목록</MenuItem>
+                                    )}
+                                    <MenuItem onClick={() => { handleUserMenuClose(); handleLogout(); }}>로그아웃</MenuItem>
+                                </Menu>
+                            </>
+                        ) : (
+                            <IconButton
+                                color="inherit"
+                                onClick={() => navigate("/login")}
+                            >
+                                <PersonIcon />
+                            </IconButton>
+                        )}
+                    </Box>
+                </Toolbar>
         </AppBar>
     );
 };

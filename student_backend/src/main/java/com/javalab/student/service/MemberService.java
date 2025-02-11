@@ -9,6 +9,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class MemberService {
@@ -116,6 +118,16 @@ public class MemberService {
         }
         member.deactivateMember(); //  비활성화 및 탈퇴일 저장
         memberRepository.save(member);
+    }
+
+    /**
+     * 이름으로 사용자 검색 (검색어가 포함된 사용자 목록 반환)
+     * @param name - 검색할 사용자 이름
+     * @return 검색된 사용자 목록
+     */
+    @Transactional(readOnly = true)
+    public List<Member> searchMembersByName(String name) {
+        return memberRepository.findByNameContainingIgnoreCase(name);
     }
 
 }

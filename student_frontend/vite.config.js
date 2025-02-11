@@ -19,8 +19,12 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
       '@components': path.resolve(__dirname, 'src/component'),
       '@features': path.resolve(__dirname, 'src/features'),
+      '@hook': path.resolve(__dirname, 'src/hook'),
       '@assets': path.resolve(__dirname, 'src/assets'),
       '@styles': path.resolve(__dirname, 'src/assets/styles'),
     },
   },
+  define: {
+    global: 'window',  // 👈 global 변수를 window로 매핑하여 Vite에서 인식할 수 있도록 설정
+  }
 })
