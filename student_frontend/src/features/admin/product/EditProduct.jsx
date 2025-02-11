@@ -13,7 +13,6 @@ import {
     ListItemText
 } from '@mui/material';
 import { API_URL } from "../../../constant";
-import './EditProduct.css';
 import axios from "axios";
 
 const EditProduct = () => {
