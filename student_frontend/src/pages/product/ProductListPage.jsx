@@ -120,7 +120,26 @@ export default function ProductListPage() {
   return (
     <Container maxWidth="lg" sx={{ padding: "20px" }}>
       {/* ✅ 카테고리 필터 UI */}
-      <Box sx={{ display: "flex", gap: "10px", marginBottom: "20px", overflowX: "auto", padding: "10px 0" }}>
+      <Box sx={{
+          display: "flex",
+          gap: "10px",
+          marginBottom: "20px",
+          overflowX: "auto",
+          padding: "10px 0" ,
+          "&::-webkit-scrollbar": {
+            height: "8px",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: "#888",
+            borderRadius: "5px",
+          },
+          "&::-webkit-scrollbar-thumb:hover": {
+            backgroundColor: "#555",
+          },
+          "&::-webkit-scrollbar-track": {
+            backgroundColor: "#f0f0f0",
+          },
+      }}>
         <Chip
           key="all"
           label="전체"
