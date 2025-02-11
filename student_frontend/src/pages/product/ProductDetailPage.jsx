@@ -72,11 +72,45 @@ const ProductDetailPage = () => {
   return (
     <Box sx={{ overflowX: "hidden", padding: "40px", maxWidth: "1024px", margin: "0 auto" }}>
       <Grid container spacing={4} direction="column">
-        <Grid item xs={12}>
-          <CardMedia component="img" image={product?.mainImageUrl || product?.imageUrl || "/images/logo.png"} alt={product?.name || "상품 이미지"} sx={{ borderRadius: "8px", boxShadow: 3, width: "100%", maxWidth: "600px", margin: "0 auto" }} />
+        {/* ✅ 활성/비활성 상태 및 재고 표시 (가운데 정렬 & 색상 변경) */}
+        {userRole === "ADMIN" && (
+          <Box sx={{ display: "flex", justifyContent: "center", mb: 1 }}>
+            <Box
+              sx={{
+                backgroundColor: product?.active ? "#2E7D32" : "#9E9E9E", // ✅ 초록색(활성) / 회색(비활성)
+                color: "white", // ✅ 텍스트 색상 (항상 흰색)
+                borderRadius: "5px", // ✅ 둥근 모서리
+                paddingX: 4, // ✅ 좌우 패딩 (너무 길지 않게)
+                paddingY: 1, // ✅ 상하 패딩
+                textAlign: "center", // ✅ 텍스트 중앙 정렬
+                minWidth: "400px", // ✅ 최소 너비 설정 (길이 자동 조정)
+                boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)", // ✅ 약간의 그림자 효과
+              }}
+            >
+              {product?.active ? "활성" : "비활성"}
+            </Box>
+          </Box>
+        )}
+
+        <Grid item xs={12} sx={{ paddingLeft: "0px !important" }}>
+          <CardMedia component="img" image={product?.mainImageUrl || product?.imageUrl || "/images/logo.png"} alt={product?.name || "상품 이미지"} sx={{ borderRadius: "8px", boxShadow: 3, width: "100%", maxWidth: "600px", margin: "0 auto"}} />
         </Grid>
-        <Grid item xs={12}>
-          <Typography variant="h5" sx={{ fontWeight: "bold", marginBottom: 2 }}>{product?.name || "상품 이름 없음"}</Typography>
+        <Grid item xs={12} sx={{ paddingLeft: "0px !important" }}>
+          <Typography variant="h5" sx={{ fontWeight: "bold", marginBottom: 2 }}>
+              {product?.name || "상품 이름 없음"}
+              {userRole === "ADMIN" && (
+                  <Chip
+                    label={`재고: ${product?.stock ?? "없음"}개`}
+                    color={product?.stock > 0 ? "primary" : "error"}
+                    size="small"
+                    sx={{
+                         paddingX: 1,
+                         borderRadius: "5px",
+                         m:1,
+                    }}
+                  />
+              )}
+          </Typography>
           <Typography variant="h6" sx={{ fontWeight: "bold", color: "primary.main", marginBottom: 2 }}>{product?.price ? `${product.price.toLocaleString()}원` : "가격 정보 없음"}</Typography>
           <Divider sx={{ marginBottom: 3 }} />
           <Typography variant="body1" color="textSecondary" sx={{ marginBottom: 3 }}>{product?.description || "상품 설명이 없습니다."}</Typography>
@@ -107,38 +141,38 @@ const ProductDetailPage = () => {
         </Button>
       </Box>
 
-       {/* ✅ 구매 모달 - 사진과 동일한 스타일 적용 */}
-            <Dialog open={openModal} onClose={() => setOpenModal(false)} fullWidth maxWidth="xs" sx={{ '& .MuiPaper-root': { width: "100%", maxWidth: "400px",borderRadius: "16px", padding: "20px",position: "fixed", bottom: 0,left: "50%",transform: "translateX(-50%)",boxShadow: "0px -2px 10px rgba(0, 0, 0, 0.1)",overflowX: "hidden" } }}>
-              <DialogTitle sx={{ display: "flex", alignItems: "center", fontWeight: "bold", fontSize: "20px" }}>
-                <IconButton onClick={() => setOpenModal(false)} sx={{ marginLeft: "auto" }}><CloseIcon /></IconButton>
-              </DialogTitle>
-              <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: "bold", fontSize: "20px" }}>
-                {product?.name || "상품 정보"}
-              </DialogTitle>
-              <DialogContent>
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 1 }}>
-                  <Typography variant="body1" sx={{ fontWeight: "bold", fontSize: "16px" }}>수량</Typography>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                    <IconButton size="large" onClick={() => handleQuantityChange(-1)} sx={{ border: "1px solid #ddd", borderRadius: "50%", width: "30px", height: "30px" }}><RemoveIcon /></IconButton>
-                    <Typography sx={{ fontSize: "20px", fontWeight: "bold", margin:3 }}>{quantity}</Typography>
-                    <IconButton size="large" onClick={() => handleQuantityChange(1)} sx={{ border: "1px solid #ddd", borderRadius: "50%", width: "30px", height: "30px" }}><AddIcon /></IconButton>
-                  </Box>
-                </Box>
-                <Divider sx={{ mb: 4, mt: 2 }} />
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
-                  <Typography sx={{ fontWeight: "bold", fontSize: "16px" }}>제품 금액</Typography>
-                  <Typography variant="h6" sx={{ fontWeight: "bold", fontSize: "18px" }}>{calculateTotalPrice().toLocaleString()}원</Typography>
-                </Box>
-                <Typography variant="body2" sx={{ color: "gray", textAlign: "right", fontSize: "12px", mt: 1 }}>
-                  ※ 장바구니에서 할인 혜택을 적용할 수 있습니다.
-                </Typography>
-              </DialogContent>
-              <DialogActions sx={{ padding: "16px", justifyContent: "center" }}>
-                <Button variant="contained" color="primary" sx={{ textTransform: "none", width: "100%", paddingY: "14px", backgroundColor: "#FF5722", "&:hover": { backgroundColor: "#E64A19" }, borderRadius: "10px", fontSize: "18px" }}>
-                  장바구니 담기
-                </Button>
-              </DialogActions>
-            </Dialog>
+      {/* ✅ 구매 모달 - 사진과 동일한 스타일 적용 */}
+      <Dialog open={openModal} onClose={() => setOpenModal(false)} fullWidth maxWidth="xs" sx={{ '& .MuiPaper-root': { width: "100%", maxWidth: "400px",borderRadius: "16px", padding: "20px",position: "fixed", bottom: 0,left: "50%",transform: "translateX(-50%)",boxShadow: "0px -2px 10px rgba(0, 0, 0, 0.1)",overflowX: "hidden" } }}>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", fontWeight: "bold", fontSize: "20px" }}>
+          <IconButton onClick={() => setOpenModal(false)} sx={{ marginLeft: "auto" }}><CloseIcon /></IconButton>
+        </DialogTitle>
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: "bold", fontSize: "20px" }}>
+          {product?.name || "상품 정보"}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 1 }}>
+            <Typography variant="body1" sx={{ fontWeight: "bold", fontSize: "16px" }}>수량</Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              <IconButton size="large" onClick={() => handleQuantityChange(-1)} sx={{ border: "1px solid #ddd", borderRadius: "50%", width: "30px", height: "30px" }}><RemoveIcon /></IconButton>
+              <Typography sx={{ fontSize: "20px", fontWeight: "bold", margin:3 }}>{quantity}</Typography>
+              <IconButton size="large" onClick={() => handleQuantityChange(1)} sx={{ border: "1px solid #ddd", borderRadius: "50%", width: "30px", height: "30px" }}><AddIcon /></IconButton>
+            </Box>
+          </Box>
+          <Divider sx={{ mb: 4, mt: 2 }} />
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
+            <Typography sx={{ fontWeight: "bold", fontSize: "16px" }}>제품 금액</Typography>
+            <Typography variant="h6" sx={{ fontWeight: "bold", fontSize: "18px" }}>{calculateTotalPrice().toLocaleString()}원</Typography>
+          </Box>
+          <Typography variant="body2" sx={{ color: "gray", textAlign: "right", fontSize: "12px", mt: 1 }}>
+            ※ 장바구니에서 할인 혜택을 적용할 수 있습니다.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ padding: "16px", justifyContent: "center" }}>
+          <Button variant="contained" color="primary" sx={{ textTransform: "none", width: "100%", paddingY: "14px", backgroundColor: "#FF5722", "&:hover": { backgroundColor: "#E64A19" }, borderRadius: "10px", fontSize: "18px" }}>
+            장바구니 담기
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
