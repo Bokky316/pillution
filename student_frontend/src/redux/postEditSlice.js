@@ -1,15 +1,24 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import { fetchWithAuth } from '@features/auth/utils/fetchWithAuth';
+import { API_URL } from '@/constant';
 
 // 게시글 조회 비동기 액션
 export const fetchPost = createAsyncThunk(
     'postEdit/fetchPost',
     async (postId, { rejectWithValue }) => {
         try {
-            const response = await axios.get(`http://localhost:8080/api/posts/${postId}`);
-            return response.data;
+            const response = await fetchWithAuth(`${API_URL}posts/${postId}`, {
+                method: 'GET',
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                return rejectWithValue(errorData);
+            }
+
+            return await response.json();
         } catch (error) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(error.message || '게시글 조회 실패');
         }
     }
 );
@@ -19,22 +28,22 @@ export const updatePost = createAsyncThunk(
     'postEdit/updatePost',
     async ({ postId, updateData }, { rejectWithValue }) => {
         try {
-            const userData = JSON.parse(localStorage.getItem('loggedInUser'));
-            const token = userData.token;
+            const response = await fetchWithAuth(`${API_URL}posts/${postId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(updateData),
+            });
 
-            const response = await axios.put(
-                `http://localhost:8080/api/posts/${postId}`,
-                updateData,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-            return response.data;
+            if (!response.ok) {
+                const errorData = await response.json();
+                return rejectWithValue(errorData);
+            }
+
+            return await response.json();
         } catch (error) {
-            return rejectWithValue(error.response?.data || '수정 실패');
+            return rejectWithValue(error.message || '게시글 수정 실패');
         }
     }
 );
