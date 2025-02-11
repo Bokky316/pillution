@@ -33,9 +33,11 @@ public class Subscription {
     private LocalDate lastBillingDate; // 최근 결제일
     private LocalDate nextBillingDate; // 다음 결제일
     private String status; // active, paused, cancelled
-    private String paymentMethod;
+    private String paymentMethod; // 현재 회차 결제수단
     private String deliveryAddress;
     private int currentCycle; // 현재 회차
+
+    private String nextPaymentMethod;     // 다음 회차 결제수단 저장
 
     @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties("subscription")

@@ -120,29 +120,33 @@ public class SubscriptionService {
     }
 
 
-
-
     /**
      * 결제수단 변경
      */
     @Transactional
-    public void updatePaymentMethod(Long subscriptionId, String newMethod) {
+    public boolean updateNextPaymentMethod(Long subscriptionId, String nextPaymentMethod) {
         Subscription subscription = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new RuntimeException("구독 정보를 찾을 수 없습니다."));
-        subscription.setPaymentMethod(newMethod);
+
+        subscription.setNextPaymentMethod(nextPaymentMethod);
         subscriptionRepository.save(subscription);
+        return true;
     }
+
 
     /**
      * 배송정보 변경
      */
     @Transactional
-    public void updateDeliveryAddress(Long subscriptionId, String newAddress) {
+    public boolean updateDeliveryAddress(Long subscriptionId, String newAddress) {
         Subscription subscription = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new RuntimeException("구독 정보를 찾을 수 없습니다."));
+
         subscription.setDeliveryAddress(newAddress);
         subscriptionRepository.save(subscription);
+        return true;
     }
+
 
     /**
      * 구독 취소

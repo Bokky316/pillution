@@ -380,8 +380,62 @@ export const updateBillingDate = createAsyncThunk(
 );
 
 
+export const updateNextPaymentMethod = createAsyncThunk(
+    "subscription/updateNextPaymentMethod",
+    async ({ subscriptionId, nextPaymentMethod }, { rejectWithValue }) => {
+        try {
+            console.log("📡 [API 요청] 다음 회차 결제수단 업데이트:", { subscriptionId, nextPaymentMethod });
+
+            const response = await fetchWithAuth(`${API_URL}subscription/update-next-payment-method`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ subscriptionId, nextPaymentMethod }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || "결제수단 업데이트 실패");
+            }
+
+            console.log("✅ [SUCCESS] 다음 회차 결제수단 업데이트 성공:", data);
+            return data; // ✅ Redux 상태 업데이트를 위해 반환
+        } catch (error) {
+            console.error("❌ [ERROR] 결제수단 업데이트 실패:", error);
+            return rejectWithValue(error.message);
+        }
+    }
+);
 
 
+/**
+ * ✅ 배송 주소 업데이트
+ */
+export const updateDeliveryAddress = createAsyncThunk(
+    "subscription/updateDeliveryAddress",
+    async ({ subscriptionId, newAddress }, { rejectWithValue }) => {
+        try {
+            console.log("📡 [API 요청] 배송 주소 업데이트:", { subscriptionId, newAddress });
+
+            const response = await fetchWithAuth(`${API_URL}subscription/update-delivery`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ subscriptionId, newAddress }),
+            });
+
+            if (!response.ok) {
+                throw new Error("배송 주소 업데이트 실패");
+            }
+
+            const data = await response.json();
+            console.log("✅ [SUCCESS] 배송 주소 업데이트 성공:", data);
+            return data;
+        } catch (error) {
+            console.error("❌ [ERROR] 배송 주소 업데이트 실패:", error);
+            return rejectWithValue(error.message);
+        }
+    }
+);
 
 
 const subscriptionSlice = createSlice({
@@ -463,6 +517,9 @@ const subscriptionSlice = createSlice({
                 });
             }
 
+            // ✅ nextPaymentMethod 추가
+            state.data.nextPaymentMethod = action.payload.nextPaymentMethod || "";
+
             state.error = null;
         })
         .addCase(fetchSubscription.rejected, (state, action) => {
@@ -522,6 +579,19 @@ const subscriptionSlice = createSlice({
        })
        .addCase(updateBillingDate.rejected, (state, action) => {
            console.error("❌ [ERROR] Redux 상태 업데이트 실패:", action.payload);
+       })
+        // 다음 회차 결제수단 업데이트
+       .addCase(updateNextPaymentMethod.fulfilled, (state, action) => {
+           console.log("✅ [Redux] 다음 회차 결제수단 업데이트 완료:", action.payload);
+           state.data.nextPaymentMethod = action.payload.nextPaymentMethod;
+       })
+       .addCase(updateNextPaymentMethod.rejected, (state, action) => {
+           console.error("❌ [ERROR] Redux 상태 업데이트 실패:", action.payload);
+       })
+       .addCase(updateDeliveryAddress.fulfilled, (state, action) => {
+           if (state.data) {
+               state.data.deliveryAddress = action.payload.newAddress;
+           }
        })
     },
 });

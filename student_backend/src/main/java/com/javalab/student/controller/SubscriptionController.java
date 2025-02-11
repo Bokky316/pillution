@@ -64,17 +64,22 @@ public class SubscriptionController {
      */
     @PutMapping("/update-billing-date")
     public ResponseEntity<?> updateBillingDate(@RequestBody Map<String, String> request) {
-        Long subscriptionId = Long.parseLong(request.get("subscriptionId"));
-        String newBillingDate = request.get("newBillingDate");
+        try {
+            Long subscriptionId = Long.parseLong(request.get("subscriptionId"));
+            String newBillingDate = request.get("newBillingDate");
 
-        boolean updated = subscriptionService.updateBillingDate(subscriptionId, LocalDate.parse(newBillingDate));
+            boolean updated = subscriptionService.updateBillingDate(subscriptionId, LocalDate.parse(newBillingDate));
 
-        if (updated) {
-            return ResponseEntity.ok(Map.of("message", "success"));
-        } else {
-            return ResponseEntity.badRequest().body(Map.of("message", "failed"));
+            if (updated) {
+                return ResponseEntity.ok(Map.of("message", "success"));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("message", "failed"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", e.getMessage()));
         }
     }
+
 
 
 
@@ -82,20 +87,43 @@ public class SubscriptionController {
     /**
      * 결제수단 변경 API
      */
-    @PutMapping("/update-payment")
-    public ResponseEntity<Void> updatePaymentMethod(@RequestParam Long subscriptionId, @RequestParam String method) {
-        subscriptionService.updatePaymentMethod(subscriptionId, method);
-        return ResponseEntity.ok().build();
+    @PutMapping("/update-next-payment-method")
+    public ResponseEntity<?> updateNextPaymentMethod(@RequestBody Map<String, Object> request) {
+        Long subscriptionId = ((Number) request.get("subscriptionId")).longValue();
+        String nextPaymentMethod = (String) request.get("nextPaymentMethod");
+
+        if (subscriptionId == null || nextPaymentMethod == null) {
+            return ResponseEntity.badRequest().body("❌ [ERROR] subscriptionId 또는 nextPaymentMethod가 없습니다!");
+        }
+
+        boolean updated = subscriptionService.updateNextPaymentMethod(subscriptionId, nextPaymentMethod);
+
+        if (updated) {
+            return ResponseEntity.ok(Map.of("nextPaymentMethod", nextPaymentMethod));
+        } else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("❌ 결제수단 업데이트 실패");
+        }
     }
+
+
 
     /**
      * 배송정보 변경 API
      */
     @PutMapping("/update-delivery")
-    public ResponseEntity<Void> updateDeliveryAddress(@RequestParam Long subscriptionId, @RequestParam String address) {
-        subscriptionService.updateDeliveryAddress(subscriptionId, address);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> updateDeliveryAddress(@RequestBody Map<String, String> request) {
+        Long subscriptionId = Long.parseLong(request.get("subscriptionId"));
+        String newAddress = request.get("newAddress");
+
+        boolean updated = subscriptionService.updateDeliveryAddress(subscriptionId, newAddress);
+
+        if (updated) {
+            return ResponseEntity.ok(Map.of("message", "배송 주소가 업데이트되었습니다!", "newAddress", newAddress));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("message", "배송 주소 업데이트 실패"));
+        }
     }
+
 
     /**
      * 구독 취소 API

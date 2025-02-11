@@ -18,7 +18,7 @@ import RegisterMember from "@features/auth/components/RegisterMember";
 import UnauthorizedPage from "@features/auth/components/UnAuthorizedPage";
 import OAuth2RedirectHandler from '@features/auth/components/OAuth2RedirectHandler';
 import SubscriptionPage from "@/pages/subscription/SubscriptionManagement";
-
+import KakaoAddressSearch from "@/features/auth/components/KakaoAddressSearch";
 
 function App() {
     const dispatch = useDispatch();
@@ -65,6 +65,7 @@ function App() {
                 <Route path="/recommendation" element={<RecommendationPage />} />
                 <Route path="/survey" element={<SurveyPage />} />
                 <Route path="/subscription" element={<SubscriptionPage />} />
+                <Route path="/update-delivery" element={<KakaoAddressSearch />} />
                 <Route path="/products" element={<ProductListPage />} />
                 <Route path="/products/:productId" element={<ProductDetailPage />} />
                 <Route path="/cart" element={isLoggedIn ? <CartPage /> : <Navigate to="/login" />} />

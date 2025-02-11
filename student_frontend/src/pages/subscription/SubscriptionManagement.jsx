@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import KakaoAddressSearch from "@/features/auth/components/KakaoAddressSearch"; // 공통 컴포넌트 추가
 
 import {
     fetchSubscription,
@@ -14,6 +15,8 @@ import {
     deleteNextSubscriptionItem,
     replaceNextSubscriptionItems,
     updateBillingDate,
+    updateNextPaymentMethod,
+    updateDeliveryAddress,
 } from "@/redux/subscriptionSlice";
 
 export default function SubscriptionManagement() {
@@ -27,11 +30,39 @@ export default function SubscriptionManagement() {
         selectedQuantity,
     } = useSelector((state) => state.subscription);
 
+
 // console.log("🔍 Redux에서 가져온 products:", products);
     // ✅ Redux 상태에서 `subscriptionId` 가져오기 (컴포넌트 최상단에서 호출해야 함!)
     const subscriptionItems = useSelector(state => state.subscription.nextItems);
     // ✅ 초기값 설정 (nextItems가 없으면 빈 배열 반환)
     const nextItems = subscription?.nextItems || [];
+
+    const [address, setAddress] = useState(subscription?.deliveryAddress || "");
+    const [detailAddress, setDetailAddress] = useState("");
+
+    // ✅ 카카오 주소 선택 후 업데이트
+    const handleAddressSelect = (newAddress) => {
+        setAddress(newAddress);
+    };
+
+    // ✅ 배송지 업데이트
+    const handleAddressUpdate = () => {
+        if (!subscription?.id || !address || !detailAddress) {
+            alert("❌ 주소 정보를 모두 입력해주세요!");
+            return;
+        }
+
+        const fullAddress = `${address} ${detailAddress}`;
+
+        dispatch(updateDeliveryAddress({ subscriptionId: subscription.id, newAddress: fullAddress }))
+            .then((result) => {
+                if (updateDeliveryAddress.fulfilled.match(result)) {
+                    alert("✅ 배송 주소가 업데이트되었습니다!");
+                } else {
+                    alert("❌ 배송 주소 변경 실패!");
+                }
+            });
+    };
 
     // 정기구독 - 다음달 결제 예정 상품 수량 변경
     const handleQuantityChange = (productId, newQuantity) => {
@@ -250,10 +281,10 @@ export default function SubscriptionManagement() {
     // 정기 구독 결제일 변경
     const handleBillingDateChange = (event) => {
         const subscriptionId = subscription?.id;
-        const newBillingDate = event.target.value; // ✅ 이벤트에서 값 가져오기
+        const newBillingDate = event.target.value; // ✅ 날짜 값 가져오기
 
         if (!subscriptionId || !newBillingDate) {
-            console.error("❌ [ERROR] 구독 ID 또는 새 결제일 없음! 요청 취소", { subscriptionId, newBillingDate });
+            console.error("❌ [ERROR] 구독 ID 또는 새 결제일 없음!", { subscriptionId, newBillingDate });
             return;
         }
 
@@ -264,7 +295,38 @@ export default function SubscriptionManagement() {
                     dispatch(fetchSubscription()); // ✅ 최신 상태 반영
                 } else {
                     console.error("❌ 결제일 변경 실패:", result.error);
+                    alert(result.payload || "결제일 변경에 실패했습니다."); // ✅ payload에서 메시지 가져오기
                 }
+            })
+            .catch((error) => {
+                console.error("❌ [ERROR] 결제일 변경 중 오류 발생:", error);
+                alert(error.message || "결제일 변경에 실패했습니다.");
+            });
+    };
+
+
+    const handlePaymentMethodChange = (event) => {
+        const subscriptionId = subscription?.id;
+        const newMethod = event.target.value;
+
+        if (!subscriptionId || !newMethod) {
+            console.error("❌ [ERROR] 구독 ID 또는 결제수단 없음!", { subscriptionId, newMethod });
+            return;
+        }
+
+        dispatch(updatePaymentMethod({ subscriptionId, newMethod }))
+            .then((result) => {
+                if (updatePaymentMethod.fulfilled.match(result)) {
+                    console.log("✅ 결제수단 변경 성공:", result.payload);
+                    dispatch(fetchSubscription()); // ✅ 최신 상태 반영
+                } else {
+                    console.error("❌ 결제수단 변경 실패:", result.error);
+                    alert(result.payload || "결제수단 변경에 실패했습니다.");
+                }
+            })
+            .catch((error) => {
+                console.error("❌ [ERROR] 결제수단 변경 중 오류 발생:", error);
+                alert(error.message || "결제수단 변경에 실패했습니다.");
             });
     };
 
@@ -416,22 +478,37 @@ export default function SubscriptionManagement() {
                 onChange={handleBillingDateChange}
             />
 
-            <h3>결제수단</h3>
+            <h3>다음 회차 결제수단 변경</h3>
+            <h3>다음 회차 결제수단</h3>
             <select
-                value={subscription?.paymentMethod || ""}
-                onChange={(e) => dispatch(updateSubscription({ ...subscription, paymentMethod: e.target.value }))}
+                value={subscription?.nextPaymentMethod || ""} // ✅ Redux에서 불러온 nextPaymentMethod 반영
+                onChange={(e) =>
+                    dispatch(updateNextPaymentMethod({
+                        subscriptionId: subscription.id,
+                        nextPaymentMethod: e.target.value
+                    }))
+                }
             >
                 <option value="naverpay">네이버페이</option>
+                <option value="kakaopay">카카오페이</option>
                 <option value="bank">계좌입금</option>
                 <option value="card">카드결제</option>
             </select>
 
+
             <h3>배송정보</h3>
+            <input type="text" value={address} readOnly placeholder="주소를 검색해주세요" />
+            <KakaoAddressSearch onAddressSelect={handleAddressSelect} /> {/* ✅ 공통 컴포넌트 사용 */}
+
+            {/* 상세 주소 입력 */}
             <input
                 type="text"
-                value={subscription?.deliveryAddress || ""}
-                onChange={(e) => dispatch(updateSubscription({ ...subscription, deliveryAddress: e.target.value }))}
+                value={detailAddress}
+                onChange={(e) => setDetailAddress(e.target.value)}
+                placeholder="상세 주소를 입력해주세요"
             />
+
+            <button onClick={handleAddressUpdate}>배송지 변경</button>
 
             <button onClick={handleUpdateSubscription}>변경사항 저장</button>
             <button onClick={handleCancelSubscription}>구독 취소</button>
