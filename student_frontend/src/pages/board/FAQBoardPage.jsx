@@ -110,7 +110,7 @@ function FAQBoardPage() {
         <Box
             sx={{
                 width: '100%',
-                maxWidth: { xs: '100%', sm: '100%', md: '1200px' },
+                maxWidth: { xs: '100%', sm: '100%' },
                 margin: '0 auto',
                 padding: { xs: '0 8px', sm: '0 16px', md: '0 24px' },
                 mb: { xs: 20, sm: 18 },
@@ -179,53 +179,56 @@ function FAQBoardPage() {
                 </Box>
             )}
             <TableContainer
-                    sx={{
-                        overflowX: 'auto',
+                sx={{
+                    overflowX: 'auto',
+                    width: '100%',
+                    '& .MuiTable-root': {
                         width: '100%',
-                        '& .MuiTable-root': {
-                            minWidth: { xs: '100%', sm: '600px' }  // 최소 너비 설정
-                        }
-                    }}
-                >
-                    <Table>
-                        <TableHead>
-                            <TableRow sx={{ borderTop: '2px solid #888' }}>
+                        tableLayout: 'fixed'
+                    }
+                }}
+            >
+                <Table>
+                    <TableHead>
+                        <TableRow sx={{ borderTop: '2px solid #888' }}>
+                            <TableCell
+                                align="center"
+                                sx={{
+                                    width: { xs: '25%', sm: '20%' },
+                                    maxWidth: { xs: '80px', sm: '100px' },
+                                    fontWeight: 'bold',
+                                    padding: { xs: 1, sm: 2 },
+                                    fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                                }}
+                            >
+                                분류
+                            </TableCell>
+                            <TableCell
+                                align="left"
+                                sx={{
+                                    width: userRole === 'ADMIN' ? { xs: '75%', sm: '60%' } : '75%',
+                                    fontWeight: 'bold',
+                                    padding: { xs: 1, sm: 2 },
+                                    fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                                }}
+                            >
+                                제목
+                            </TableCell>
+                            {!isMobile && userRole === 'ADMIN' && (
                                 <TableCell
                                     align="center"
                                     sx={{
-                                        width: { xs: '80px', sm: '100px' },  // 고정 픽셀 값으로 변경
+                                        width: { sm: '20%' },
+                                        maxWidth: { sm: '160px' },
                                         fontWeight: 'bold',
-                                        padding: { xs: 1, sm: 2 },
                                         fontSize: { xs: '0.8rem', sm: '0.875rem' }
                                     }}
                                 >
-                                    분류
+                                    관리
                                 </TableCell>
-                                <TableCell
-                                    align="left"
-                                    sx={{
-                                        // 명시적인 width 제거하여 자동으로 남은 공간 차지
-                                        fontWeight: 'bold',
-                                        padding: { xs: 1, sm: 2 },
-                                        fontSize: { xs: '0.8rem', sm: '0.875rem' }
-                                    }}
-                                >
-                                    제목
-                                </TableCell>
-                                {!isMobile && userRole === 'ADMIN' && (
-                                    <TableCell
-                                        align="center"
-                                        sx={{
-                                            width: { sm: '160px' },  // 고정 픽셀 값으로 변경
-                                            fontWeight: 'bold',
-                                            fontSize: { xs: '0.8rem', sm: '0.875rem' }
-                                        }}
-                                    >
-                                        관리
-                                    </TableCell>
-                                )}
-                            </TableRow>
-                        </TableHead>
+                            )}
+                        </TableRow>
+                    </TableHead>
                     <TableBody>
                         {Array.isArray(filteredPosts) && filteredPosts.length > 0 ? (
                             [...filteredPosts].reverse().map(post => (
@@ -257,10 +260,10 @@ function FAQBoardPage() {
                                                     sx={{
                                                         cursor: "pointer",
                                                         fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                                                        whiteSpace: 'nowrap', // 텍스트 줄바꿈 방지
-                                                        overflow: 'hidden', // 넘치는 텍스트 숨김
-                                                        textOverflow: 'ellipsis', // 넘치는 텍스트를 ...으로 표시
-                                                        maxWidth: isMobile ? 'calc(100% - 60px)' : 'none' // 모바일에서 최대 너비 설정
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        maxWidth: isMobile ? 'calc(100% - 60px)' : 'none'
                                                     }}
                                                 >
                                                     {post.title}
@@ -268,8 +271,8 @@ function FAQBoardPage() {
                                                 {isMobile && userRole === 'ADMIN' && (
                                                     <Box sx={{
                                                         display: 'flex',
-                                                        flexDirection: 'column', // 수정 및 삭제 버튼 세로 정렬
-                                                        gap: 0.5, // 버튼 간 간격 조정
+                                                        flexDirection: 'column',
+                                                        gap: 0.5,
                                                         flexShrink: 0
                                                     }}>
                                                         <Button
@@ -310,12 +313,21 @@ function FAQBoardPage() {
                                         </TableCell>
                                         {!isMobile && userRole === 'ADMIN' && (
                                             <TableCell align="center">
-                                                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                                                <Box sx={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    gap: 1
+                                                }}>
                                                     <Button
                                                         variant="outlined"
                                                         color="primary"
                                                         onClick={() => handleEditPost(post.id)}
-                                                        sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+                                                        sx={{
+                                                            fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                                                            width: '100%',
+                                                            maxWidth: '120px'
+                                                        }}
                                                     >
                                                         수정
                                                     </Button>
@@ -323,7 +335,11 @@ function FAQBoardPage() {
                                                         variant="outlined"
                                                         color="error"
                                                         onClick={() => handleDeletePost(post.id)}
-                                                        sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+                                                        sx={{
+                                                            fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                                                            width: '100%',
+                                                            maxWidth: '120px'
+                                                        }}
                                                     >
                                                         삭제
                                                     </Button>
@@ -394,6 +410,7 @@ function FAQBoardPage() {
             </Dialog>
         </Box>
     );
+
 }
 
 export default FAQBoardPage;

@@ -37,10 +37,9 @@ function BoardPage() {
 
     return (
         <Container
-            maxWidth="lg"
+            disableGutters
                 sx={{
                     overflowX: 'hidden',  // 가로 스크롤 방지
-                    px: { xs: 2, sm: 3 },  // 반응형 패딩
                     maxWidth: '100vw',   // 뷰포트 너비 제한
                     boxSizing: 'border-box' // 박스 크기 계산
                 }}
@@ -52,7 +51,8 @@ function BoardPage() {
                 align="left"
                 sx={{
                     my: 4,
-                    fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' } // 반응형 폰트 크기
+                    fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' }, // 반응형 폰트 크기
+                    px: { xs: 2, sm: 3 },
                 }}
             >
                 필루션 소식
@@ -100,7 +100,7 @@ function BoardPage() {
             </Box>
 
             {/* 현재 선택된 게시판에 따라 렌더링 */}
-            <Box sx={{ overflowX: 'hidden', width: '100%' }}> {/* 추가적인 가로 스크롤 방지 */}
+            <Box sx={{ overflowX: 'hidden', width: '100%',padding: "0px !important" }}> {/* 추가적인 가로 스크롤 방지 */}
                 {currentBoard === "news" ? <NewsBoardPage /> : <FAQBoardPage />}
             </Box>
         </Container>
