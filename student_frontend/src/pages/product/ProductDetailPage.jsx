@@ -70,7 +70,7 @@ const ProductDetailPage = () => {
   if (error) return <Box display="flex" justifyContent="center" alignItems="center" height="100vh"><Typography variant="h6" color="error">{error}</Typography></Box>;
 
   return (
-    <Box sx={{ padding: "40px", maxWidth: "1024px", margin: "0 auto" }}>
+    <Box sx={{ overflowX: "hidden", padding: "40px", maxWidth: "1024px", margin: "0 auto" }}>
       <Grid container spacing={4} direction="column">
         <Grid item xs={12}>
           <CardMedia component="img" image={product?.mainImageUrl || product?.imageUrl || "/images/logo.png"} alt={product?.name || "상품 이미지"} sx={{ borderRadius: "8px", boxShadow: 3, width: "100%", maxWidth: "600px", margin: "0 auto" }} />
@@ -102,13 +102,13 @@ const ProductDetailPage = () => {
 
       {/* ✅ 구매하기 버튼 (모달 트리거) */}
       <Box sx={{ position: "fixed", bottom: 0, left: 0, width: "100%", padding: "10px 0", display: "flex", justifyContent: "center" }}>
-        <Button variant="contained" color="primary" sx={{ textTransform: "none", borderRadius: "25px", paddingX: "40px", paddingY: "15px", fontSize: "18px", width: "90%", maxWidth: "400px", backgroundColor: "#FF5722", "&:hover": { backgroundColor: "#E64A19" } }} onClick={handleOpenModal}>
+        <Button variant="contained" color="primary" sx={{ textTransform: "none", width: "480px", paddingY: "14px", backgroundColor: "#FF5722", "&:hover": { backgroundColor: "#E64A19" }, borderRadius: "10px", fontSize: "18px" }} onClick={handleOpenModal}>
           구매하기
         </Button>
       </Box>
 
        {/* ✅ 구매 모달 - 사진과 동일한 스타일 적용 */}
-            <Dialog open={openModal} onClose={() => setOpenModal(false)} fullWidth maxWidth="xs" sx={{ '& .MuiPaper-root': { width:"480px",borderRadius: "16px", padding: "20px",position: "fixed", bottom: 0,left: "50%",transform: "translateX(-50%)",boxShadow: "0px -2px 10px rgba(0, 0, 0, 0.1)"} }}>
+            <Dialog open={openModal} onClose={() => setOpenModal(false)} fullWidth maxWidth="xs" sx={{ '& .MuiPaper-root': { width: "100%", maxWidth: "400px",borderRadius: "16px", padding: "20px",position: "fixed", bottom: 0,left: "50%",transform: "translateX(-50%)",boxShadow: "0px -2px 10px rgba(0, 0, 0, 0.1)",overflowX: "hidden" } }}>
               <DialogTitle sx={{ display: "flex", alignItems: "center", fontWeight: "bold", fontSize: "20px" }}>
                 <IconButton onClick={() => setOpenModal(false)} sx={{ marginLeft: "auto" }}><CloseIcon /></IconButton>
               </DialogTitle>
