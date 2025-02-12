@@ -96,7 +96,7 @@ const ProductDetailPage = () => {
       sx={{
         position: "relative",
         overflowX: "hidden",
-        padding: "40px",
+        padding: "30px",
         paddingBottom: "80px",
         maxWidth: "1024px",
         margin: "0 auto",
@@ -104,26 +104,7 @@ const ProductDetailPage = () => {
       }}
     >
       <Grid container spacing={4} direction="column">
-        {userRole === "ADMIN" && (
-          <Box sx={{ display: "flex", justifyContent: "center", mb: 1 }}>
-            <Box
-              sx={{
-                backgroundColor: product?.active ? "#2E7D32" : "#9E9E9E",
-                color: "white",
-                borderRadius: "5px",
-                paddingX: 4,
-                paddingY: 1,
-                textAlign: "center",
-                minWidth: "400px",
-                boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
-              }}
-            >
-              {product?.active ? "활성" : "비활성"}
-            </Box>
-          </Box>
-        )}
-
-        <Grid item xs={12} sx={{ paddingLeft: "0px !important" }}>
+        <Grid item xs={12}>
           <CardMedia
             component="img"
             image={product?.mainImageUrl || product?.imageUrl || "/images/logo.png"}
@@ -139,21 +120,9 @@ const ProductDetailPage = () => {
         </Grid>
 
         {/* 나머지 상품 정보 컨텐츠 */}
-        <Grid item xs={12} sx={{ paddingLeft: "0px !important" }}>
+        <Grid item xs={12}>
           <Typography variant="h5" sx={{ fontWeight: "bold", marginBottom: 2 }}>
             {product?.name || "상품 이름 없음"}
-            {userRole === "ADMIN" && (
-              <Chip
-                label={`재고: ${product?.stock ?? "없음"}개`}
-                color={product?.stock > 0 ? "primary" : "error"}
-                size="small"
-                sx={{
-                  paddingX: 1,
-                  borderRadius: "5px",
-                  m: 1,
-                }}
-              />
-            )}
           </Typography>
           <Typography variant="h6" sx={{ fontWeight: "bold", color: "primary.main", marginBottom: 2 }}>
             {product?.price ? `${product.price.toLocaleString()}원` : "가격 정보 없음"}
@@ -237,12 +206,12 @@ const ProductDetailPage = () => {
         }}
       >
         {/* 모달 내용은 동일하게 유지 */}
-        <DialogTitle sx={{ display: "flex", alignItems: "center", fontWeight: "bold", fontSize: "20px"}}>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", fontWeight: "bold", fontSize: "20px",padding:"0px !important"}}>
           <IconButton onClick={handleCloseModal} sx={{ marginLeft: "auto" }}>
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: "bold", fontSize: "20px" }}>
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: "bold", fontSize: "20px",paddingY:"0px !important" }}>
           {product?.name || "상품 정보"}
         </DialogTitle>
         <DialogContent>
@@ -278,7 +247,7 @@ const ProductDetailPage = () => {
               </IconButton>
             </Box>
           </Box>
-          <Divider sx={{ mb: 4, mt: 2 }} />
+          <Divider sx={{ mb: 3 }} />
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
             <Typography sx={{ fontWeight: "bold", fontSize: "16px" }}>제품 금액</Typography>
             <Typography variant="h6" sx={{ fontWeight: "bold", fontSize: "18px" }}>

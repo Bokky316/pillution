@@ -15,41 +15,52 @@ import { useNavigate } from "react-router-dom";
 import { fetchProducts, fetchCategories } from "@features/product/productApi";
 
 export default function ProductListPage() {
+  // Redux 관련
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
-  // ✅ Redux에서 카테고리 데이터 및 에러 상태 가져오기
   const { categories, error } = useSelector((state) => state.products);
   const auth = useSelector((state) => state.auth);
 
-  // ✅ 상태 변수 정의
-  const [displayedProducts, setDisplayedProducts] = useState([]); // 현재 화면에 보이는 상품 목록
-  const [remainingProducts, setRemainingProducts] = useState([]); // 아직 표시되지 않은 상품 목록
-  const [hasMore, setHasMore] = useState(true); // 더 불러올 상품이 있는지 여부
-  const [isFetching, setIsFetching] = useState(false); // 데이터 요청 중인지 여부
-  const [selectedCategory, setSelectedCategory] = useState(null); // 선택된 카테고리
-  const [allProducts, setAllProducts] = useState([]); // 전체 상품 목록 저장
-  const observer = useRef(); // Intersection Observer (스크롤 감지)
-
-  // ✅ 현재 로그인한 사용자가 관리자(admin)인지 확인
+  // 화면에 표시할 상품 목록 상태
+  const [displayedProducts, setDisplayedProducts] = useState([]);
+  // 아직 화면에 표시하지 않은 상품 목록 상태
+  const [remainingProducts, setRemainingProducts] = useState([]);
+  // 더 가져올 상품이 있는지 여부를 나타내는 상태
+  const [hasMore, setHasMore] = useState(true);
+  // 상품을 가져오는 중인지 여부를 나타내는 상태
+  const [isFetching, setIsFetching] = useState(false);
+  // 선택된 카테고리 상태
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  // 모든 상품 목록 상태
+  const [allProducts, setAllProducts] = useState([]);
+  // Intersection Observer를 위한 ref
+  const observer = useRef();
+  // 사용자 역할을 확인 (ADMIN 또는 USER)
   const userRole = auth?.user?.authorities?.some((auth) => auth.authority === "ROLE_ADMIN")
     ? "ADMIN"
     : "USER";
 
-  // ✅ 카테고리 데이터 가져오기 (한 번만 실행)
+  // 컴포넌트 마운트 시 카테고리 목록을 가져옴
   useEffect(() => {
-    dispatch(fetchCategories()); // 카테고리 목록 요청
+    dispatch(fetchCategories());
   }, [dispatch]);
 
-  // ✅ 초기에 전체 상품 가져오기
+  // 컴포넌트 마운트 시 모든 상품을 가져옴
   useEffect(() => {
     const loadAllProducts = async () => {
       try {
+        // 상품 목록을 가져옴 (초기 페이지: 0, 사이즈: 100)
         const initialProducts = await dispatch(fetchProducts({ page: 0, size: 100 })).unwrap();
-        setAllProducts(initialProducts);
-        setDisplayedProducts(initialProducts.slice(0, 4));
-        setRemainingProducts(initialProducts.slice(4));
-        setHasMore(initialProducts.length > 4);
+        // 비활성화된 상품을 필터링
+        const activeProducts = initialProducts.filter(product => product.active);
+        // 모든 상품 목록 상태를 설정
+        setAllProducts(activeProducts);
+        // 처음 4개 상품을 화면에 표시
+        setDisplayedProducts(activeProducts.slice(0, 4));
+        // 나머지 상품을 남은 상품 목록에 저장
+        setRemainingProducts(activeProducts.slice(4));
+        // 더 가져올 상품이 있는지 여부 설정
+        setHasMore(activeProducts.length > 4);
       } catch (error) {
         console.error("🚨 상품 불러오기 실패:", error);
       }
@@ -58,9 +69,10 @@ export default function ProductListPage() {
     loadAllProducts();
   }, [dispatch]);
 
-  // ✅ 카테고리별 상품 필터링 및 표시
+  // 카테고리에 따라 상품을 필터링하고 화면에 표시
   const filterAndDisplayProducts = (products, categoryName) => {
     let filtered = products;
+    // "전체" 카테고리가 아니면 해당 카테고리의 상품만 필터링
     if (categoryName && categoryName !== "전체") {
       filtered = products.filter(product =>
         product.categories && product.categories.includes(categoryName)
@@ -69,18 +81,18 @@ export default function ProductListPage() {
     return filtered;
   };
 
-  // ✅ 카테고리 필터링 처리
+  // 카테고리 클릭 시 호출되는 함수
   const handleCategoryClick = (categoryName) => {
     setIsFetching(true);
 
-    // 이전 선택과 같은 카테고리이거나 전체를 선택한 경우
+    // "전체" 카테고리 또는 이미 선택된 카테고리를 다시 클릭한 경우
     if (categoryName === "전체" || selectedCategory === categoryName) {
       setSelectedCategory(null);
       setDisplayedProducts(allProducts.slice(0, 6));
       setRemainingProducts(allProducts.slice(6));
       setHasMore(allProducts.length > 6);
     } else {
-      // 새로운 카테고리 선택
+      // 새로운 카테고리를 선택한 경우
       setSelectedCategory(categoryName);
       const filteredProducts = filterAndDisplayProducts(allProducts, categoryName);
       setDisplayedProducts(filteredProducts.slice(0, 6));
@@ -91,7 +103,7 @@ export default function ProductListPage() {
     setIsFetching(false);
   };
 
-  // ✅ 스크롤 감지 후 3개씩 추가 로딩 (Intersection Observer 활용)
+  // Intersection Observer를 사용하여 마지막 상품이 화면에 나타나면 추가 상품을 로드
   const lastProductRef = useCallback(
     (node) => {
       if (!hasMore || isFetching) return;
@@ -101,7 +113,7 @@ export default function ProductListPage() {
         if (entries[0].isIntersecting && remainingProducts.length > 0) {
           setIsFetching(true);
 
-          // 현재 카테고리에 맞는 추가 상품 로드
+          // 1초 후 추가 상품을 로드
           setTimeout(() => {
             const nextProducts = remainingProducts.slice(0, 2);
             setDisplayedProducts(prev => [...prev, ...nextProducts]);
@@ -119,8 +131,27 @@ export default function ProductListPage() {
 
   return (
     <Container maxWidth="lg" sx={{ padding: "20px" }}>
-      {/* ✅ 카테고리 필터 UI */}
-      <Box sx={{ display: "flex", gap: "10px", marginBottom: "20px", overflowX: "auto", padding: "10px 0" }}>
+      {/* 카테고리 선택 Chip */}
+      <Box sx={{
+          display: "flex",
+          gap: "10px",
+          marginBottom: "20px",
+          overflowX: "auto",
+          padding: "10px 0" ,
+          "&::-webkit-scrollbar": {
+            height: "8px",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: "#888",
+            borderRadius: "5px",
+          },
+          "&::-webkit-scrollbar-thumb:hover": {
+            backgroundColor: "#555",
+          },
+          "&::-webkit-scrollbar-track": {
+            backgroundColor: "#f0f0f0",
+          },
+      }}>
         <Chip
           key="all"
           label="전체"
@@ -140,8 +171,7 @@ export default function ProductListPage() {
           />
         ))}
       </Box>
-
-      {/* ✅ 상품 리스트 UI */}
+      {/* 상품 목록 Grid */}
       <Grid container spacing={3}>
         {displayedProducts.map((product, index) => (
           <Grid
@@ -168,7 +198,6 @@ export default function ProductListPage() {
                 },
               }}
             >
-              {/* ✅ 상품 이미지 */}
               <CardMedia
                 component="img"
                 height="200"
@@ -176,55 +205,42 @@ export default function ProductListPage() {
                 alt={product.name}
                 sx={{ objectFit: "cover" }}
               />
-              {/* ✅ 상품 정보 */}
-              <CardContent sx={{ textAlign: "center", flexGrow: 1 }}>
-                <Typography variant="h6">{product.name}</Typography>
+              {/* 상품 정보 */}
+              <CardContent sx={{ flexGrow: 1,position:"relative" }}>
+               <Typography variant="h6" sx={{ fontSize:"13.5px" }} >{product.name}</Typography>
                 <Typography variant="body1" sx={{ fontWeight: "bold", color: "#ff5722" }}>
                   {product.price.toLocaleString()}원
                 </Typography>
 
-                {/* ✅ 주요 성분 태그 */}
                 {product.ingredients && product.ingredients.length > 0 && (
-                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: "5px", justifyContent: "center", marginTop: "10px" }}>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: "3px", marginTop: "3px" }}>
                     {product.ingredients.map((ingredient, index) => (
                       <Chip
                         key={index}
                         label={ingredient}
+                        size="small" // 🔥 태그 크기 작게 설정
                         sx={{
-                          fontSize: "12px",
-                          backgroundColor: "#f5f5f5",
-                          color: "#333",
+                          fontSize: "9px", // 🔥 글자 크기 줄임
+                          backgroundColor: "#eee", // 🔥 더 연한 배경색
+                          color: "#555", // 🔥 글자 색 더 연하게
                           fontWeight: "bold",
+                          borderRadius: "12px", // 🔥 태그 모양 더 둥글게
+                          paddingX: "6px", // 🔥 좌우 여백 줄이기
+                          height: "20px" // 🔥 태그 높이 조절
                         }}
                       />
                     ))}
                   </Box>
                 )}
 
-                {/* ✅ 관리자 전용 정보 */}
-                {userRole === "ADMIN" && (
-                  <Box sx={{ marginTop: "10px" }}>
-                    <Typography variant="body2" color="textSecondary">
-                      재고: {product.stock}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: product.active ? "green" : "red",
-                        marginTop: "5px",
-                      }}
-                    >
-                      {product.active ? "활성화" : "비활성화"}
-                    </Typography>
-                  </Box>
-                )}
+
               </CardContent>
             </Card>
           </Grid>
         ))}
       </Grid>
 
-      {/* ✅ 로딩 중 표시 (스크롤 후 데이터 로딩 중) */}
+      {/* 로딩 중 표시 (스크롤 후 데이터 로딩 중) */}
       {isFetching && (
         <Box sx={{ textAlign: "center", padding: "20px" }}>
           <CircularProgress />
@@ -232,21 +248,21 @@ export default function ProductListPage() {
         </Box>
       )}
 
-      {/* ✅ 모든 상품이 표시되었을 때 메시지 */}
+      {/* 모든 상품이 표시되었을 때 메시지 */}
       {!hasMore && displayedProducts.length > 0 && (
         <Box sx={{ textAlign: "center", padding: "20px", color: "gray" }}>
           <Typography>모든 상품을 불러왔습니다.</Typography>
         </Box>
       )}
 
-      {/* ✅ 상품이 없을 때 메시지 */}
+      {/* 상품이 없을 때 메시지 */}
       {displayedProducts.length === 0 && !isFetching && (
         <Box sx={{ textAlign: "center", padding: "20px", color: "gray" }}>
           <Typography>해당 카테고리의 상품이 없습니다.</Typography>
         </Box>
       )}
 
-      {/* ✅ 에러 메시지 */}
+      {/* 에러 메시지 */}
       {error && (
         <Box sx={{ textAlign: "center", padding: "20px", color: "error.main" }}>
           <Typography>{error}</Typography>
