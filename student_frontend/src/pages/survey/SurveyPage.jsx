@@ -4,7 +4,7 @@ import SurveyContent from '@/features/survey/SurveyContent';
 import CategoryNavigation from '@/features/survey/CategoryNavigation';
 import useSurveyData from '@hook/useSurveyData';
 import useNavigation from '@hook/useNavigation';
-
+import ProgressIndicator from '@/features/survey/ProgressIndicator';
 const SurveyPage = () => {
   const {
     categories,
@@ -63,6 +63,28 @@ const SurveyPage = () => {
       maxWidth: '800px',
       margin: '0 auto'
     }}>
+      {/* 진행도 표시 컴포넌트 추가 */}
+      <Box sx={{ mb: 4 }}>
+        <ProgressIndicator
+          categories={categoriesToUse}
+          currentCategoryIndex={currentCategoryIndex}
+        />
+        <Typography variant="h6" sx={{
+          fontWeight: 'bold',
+          fontSize: '1.1rem',
+          color: '#333'
+        }}>
+          {currentCategory?.name}
+        </Typography>
+        <Typography sx={{
+          color: '#666',
+          fontSize: '0.9rem',
+          mt: 1
+        }}>
+          {currentSubCategory?.name}
+        </Typography>
+      </Box>
+
       <Box sx={{ flexGrow: 1 }}>
         <SurveyContent
           currentCategory={currentCategory}
@@ -72,6 +94,7 @@ const SurveyPage = () => {
           onResponseChange={handleResponseChange}
         />
       </Box>
+
       <Box sx={{
         marginTop: '20px',
         borderTop: '1px solid #ccc',
