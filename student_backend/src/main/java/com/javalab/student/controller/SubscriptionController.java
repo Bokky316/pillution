@@ -240,16 +240,6 @@ public class SubscriptionController {
         return ResponseEntity.ok(addedItem); // ✅ 추가된 상품 정보를 응답으로 반환
     }
 
-//    @PostMapping("/replace-next-items")
-//    public ResponseEntity<?> replaceNextItems(@RequestBody SubscriptionUpdateNextItemRequestDto requestDto) {
-//        boolean success = subscriptionService.replaceNextSubscriptionItems(requestDto.getSubscriptionId(), requestDto.getUpdatedItems());
-//
-//        if (success) {
-//            return ResponseEntity.ok("✅ 구독 아이템 업데이트 완료!");
-//        } else {
-//            return ResponseEntity.badRequest().body("❌ 구독 아이템 업데이트 실패");
-//        }
-//    }
 
     @DeleteMapping("/delete-next-item")
     public ResponseEntity<?> deleteNextSubscriptionItem(@RequestBody Map<String, Long> request) {

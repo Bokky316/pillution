@@ -31,6 +31,11 @@ export default function Login({ onLogin }) {
                 credentials: "include",
             });
 
+            if (!response.ok) {  // 🔥 HTTP 상태 코드 체크 (401 에러 시 실행됨)
+                setErrorMessage("로그인 실패: 아이디 또는 비밀번호가 틀립니다.");
+                return;
+            }
+
             const data = await response.json();
 
             if (data.status === "failed") {

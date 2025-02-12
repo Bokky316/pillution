@@ -4,16 +4,16 @@ import KakaoAddressSearch from "@/features/auth/components/KakaoAddressSearch"; 
 
 import {
     fetchSubscription,
-    updateSubscription,
+//     updateSubscription,
     cancelSubscription,
     updateNextSubscriptionItems,
-    processSubscriptionBilling,
+//     processSubscriptionBilling,
     fetchProducts,
     setSelectedProduct,
     setSelectedQuantity,
     addNextSubscriptionItem,
     deleteNextSubscriptionItem,
-    replaceNextSubscriptionItems,
+//     replaceNextSubscriptionItems,
     updateBillingDate,
     updateNextPaymentMethod,
     updateDeliveryAddress,
@@ -38,9 +38,7 @@ export default function SubscriptionManagement() {
     // ✅ 초기값 설정 (nextItems가 없으면 빈 배열 반환)
     const nextItems = subscription?.nextItems || [];
 
-//     const [address, setAddress] = useState(subscription?.deliveryAddress || "");
-//     const [detailAddress, setDetailAddress] = useState("");
-//
+
     // ✅ 카카오 주소 선택 후 Redux 상태 업데이트
     const handleAddressSelect = (data) => {
         dispatch(updateDeliveryAddress({
@@ -270,16 +268,16 @@ export default function SubscriptionManagement() {
             });
     };
 
-    // 변경사항 저장
-    const handleUpdateSubscription = () => {
-        const updatedData = {
-            subscriptionId: subscription.id,
-            paymentMethod: subscription.paymentMethod,
-            nextBillingDate: subscription.nextBillingDate,
-            deliveryAddress: subscription.deliveryAddress
-        };
-        dispatch(updateSubscription(updatedData));
-    };
+//     // 변경사항 저장
+//     const handleUpdateSubscription = () => {
+//         const updatedData = {
+//             subscriptionId: subscription.id,
+//             paymentMethod: subscription.paymentMethod,
+//             nextBillingDate: subscription.nextBillingDate,
+//             deliveryAddress: subscription.deliveryAddress
+//         };
+//         dispatch(updateSubscription(updatedData));
+//     };
 
     // 구독 취소
 const handleCancelSubscription = () => {
@@ -301,29 +299,6 @@ const handleCancelSubscription = () => {
     }
 };
 
-
-//     const handleUpdateNextItems = () => {
-//         const updatedItems = subscription.nextItems.map(item => {
-//             let productId = item.productId;
-//
-//             // 기존 nextItems에서 productId가 없을 경우 products에서 찾아서 추가
-//             if (!productId) {
-//                 const product = products.find(p => p.name === item.productName);
-//                 productId = product ? product.id : null;
-//             }
-//
-//             return {
-//                 productId,  // ✅ productId 반드시 포함
-//                 nextMonthQuantity: item.nextMonthQuantity,
-//                 nextMonthPrice: item.nextMonthPrice
-//             };
-//         }).filter(item => item.productId !== null); // productId가 없는 항목 제거
-//
-//         dispatch(updateNextSubscriptionItems({
-//             subscriptionId: subscription.id,
-//             updatedItems
-//         }));
-//     };
 
     // ✅ 기존 nextItems에서 productId 없는 경우 보완
     const handleUpdateNextItems = () => {
@@ -406,30 +381,30 @@ const handleCancelSubscription = () => {
 
 
 
-    const handleProcessBilling = () => {
-        if (!subscription?.id) {
-            console.error("❌ 구독 정보가 없음: processSubscriptionBilling 실행 불가");
-            return;
-        }
-        dispatch(processSubscriptionBilling(subscription.id));
-    };
-
-    const handleReplaceNextItems = () => {
-        if (!subscription?.id || !subscription.nextItems.length) {
-            console.error("❌ [ERROR] 구독 ID 또는 nextItems 없음! 요청 취소");
-            return;
-        }
-
-        const updatedItems = subscription.nextItems.map(item => ({
-            productId: item.productId,
-            nextMonthQuantity: item.nextMonthQuantity,
-            nextMonthPrice: item.nextMonthPrice
-        }));
-
-        console.log("📡 [API 요청] 새로운 정기구독 상품 교체 요청:", updatedItems);
-
-        dispatch(replaceNextSubscriptionItems({ subscriptionId: subscription.id, updatedItems }));
-    };
+//     const handleProcessBilling = () => {
+//         if (!subscription?.id) {
+//             console.error("❌ 구독 정보가 없음: processSubscriptionBilling 실행 불가");
+//             return;
+//         }
+//         dispatch(processSubscriptionBilling(subscription.id));
+//     };
+//
+//     const handleReplaceNextItems = () => {
+//         if (!subscription?.id || !subscription.nextItems.length) {
+//             console.error("❌ [ERROR] 구독 ID 또는 nextItems 없음! 요청 취소");
+//             return;
+//         }
+//
+//         const updatedItems = subscription.nextItems.map(item => ({
+//             productId: item.productId,
+//             nextMonthQuantity: item.nextMonthQuantity,
+//             nextMonthPrice: item.nextMonthPrice
+//         }));
+//
+//         console.log("📡 [API 요청] 새로운 정기구독 상품 교체 요청:", updatedItems);
+//
+//         dispatch(replaceNextSubscriptionItems({ subscriptionId: subscription.id, updatedItems }));
+//     };
 
 
     if (loading) return <div>로딩 중...</div>;
@@ -474,12 +449,12 @@ const handleCancelSubscription = () => {
             {/* ✅ 총 가격 + 버튼을 한 줄에 정렬 */}
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "10px" }}>
                 <h3>총 합계: {totalPrice} 원</h3>
-                <button onClick={() => dispatch(updateNextSubscriptionItems({ subscriptionId: subscription.id, updatedItems: subscription.nextItems }))}>
-                    다음 결제 상품 업데이트(미사용)
-                </button>
-                <button onClick={handleReplaceNextItems}>
-                    다음 결제 상품 교체하기(미사용)
-                </button>
+{/*                 <button onClick={() => dispatch(updateNextSubscriptionItems({ subscriptionId: subscription.id, updatedItems: subscription.nextItems }))}> */}
+{/*                     다음 결제 상품 업데이트(미사용) */}
+{/*                 </button> */}
+{/*                 <button onClick={handleReplaceNextItems}> */}
+{/*                     다음 결제 상품 교체하기(미사용) */}
+{/*                 </button> */}
             </div>
 
             <h2>상품 추가</h2>
@@ -500,7 +475,6 @@ const handleCancelSubscription = () => {
                         <option>상품 목록이 없습니다.</option>
                     )}
                 </select>
-{/*             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "10px" }}> */}
                 {selectedProduct && (
                     <div>
                         <h4>상품 상세 정보</h4>
@@ -517,31 +491,6 @@ const handleCancelSubscription = () => {
                     onChange={(e) => dispatch(setSelectedQuantity(Number(e.target.value)))}
                 />
                 <button onClick={handleAddProduct}>다음 정기결제에 상품 추가</button>
-{/*             </div> */}
-
-{/*             <h3>상품 추가</h3> */}
-{/*             <select value={selectedProduct?.id || ""} onChange={(e) => { */}
-{/*                 const product = products.find(p => p.id === Number(e.target.value)); */}
-{/*                 dispatch(setSelectedProduct(product)); */}
-{/*             }}> */}
-{/*                 <option value="">상품 선택</option> */}
-{/*                 {products?.map((product) => ( */}
-{/*                     <option key={product.id} value={product.id}> */}
-{/*                         {product.name} - {product.price}원 */}
-{/*                     </option> */}
-{/*                 ))} */}
-{/*             </select> */}
-{/*             <input */}
-{/*                 type="number" */}
-{/*                 min="1" */}
-{/*                 value={selectedQuantity} */}
-{/*                 onChange={(e) => dispatch(setSelectedQuantity(Number(e.target.value)))} */}
-{/*             /> */}
-{/*             <button onClick={handleAddProduct}>상품 추가</button> */}
-
-{/*             <button onClick={handleUpdateNextItems}> */}
-{/*                 다음 결제 상품 업데이트 */}
-{/*             </button> */}
 
             <h3>결제일 관리</h3>
             <input
@@ -591,15 +540,14 @@ const handleCancelSubscription = () => {
                 </div>
             </div>
 
-            <button onClick={handleUpdateSubscription}>변경사항 저장</button>
+{/*             <button onClick={handleUpdateSubscription}>변경사항 저장미사용</button> */}
             <button
                 onClick={handleCancelSubscription}
                 disabled={subscription.status === "CANCELLED"} // 취소된 경우 버튼 비활성화
             >
                 {subscription.status === "CANCELLED" ? "구독 취소됨" : "구독 취소"}
             </button>
-{/*             <button onClick={handleCancelSubscription}>구독 취소</button> */}
-            <button onClick={handleProcessBilling}>자동 결제 실행</button>
+{/*             <button onClick={handleProcessBilling}>자동 결제 실행</button> */}
         </div>
     );
 }
