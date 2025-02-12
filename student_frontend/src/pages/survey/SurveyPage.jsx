@@ -55,15 +55,32 @@ const SurveyPage = () => {
                          currentSubCategoryIndex === subCategoriesToDisplay.length - 1;
 
   return (
-    <Box sx={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-      <SurveyContent
-        currentCategory={currentCategory}
-        currentSubCategory={currentSubCategory}
-        questions={questions}
-        responses={responses}
-        onResponseChange={handleResponseChange}
-      />
-      <Box sx={{ marginTop: '20px', borderTop: '1px solid #ccc', paddingTop: '20px' }}>
+    <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: '100vh',
+      padding: '20px',
+      maxWidth: '800px',
+      margin: '0 auto'
+    }}>
+      <Box sx={{ flexGrow: 1 }}>
+        <SurveyContent
+          currentCategory={currentCategory}
+          currentSubCategory={currentSubCategory}
+          questions={questions}
+          responses={responses}
+          onResponseChange={handleResponseChange}
+        />
+      </Box>
+      <Box sx={{
+        marginTop: '20px',
+        borderTop: '1px solid #ccc',
+        paddingTop: '20px',
+        position: 'sticky',
+        bottom: '20px',
+        backgroundColor: 'white',
+        zIndex: 1
+      }}>
         <CategoryNavigation
           handlePrevious={handlePrevious}
           handleNext={handleNext}
