@@ -2,7 +2,7 @@ import React from 'react';
 import { Button, Box } from '@mui/material';
 
 /**
- * 카테고리 탐색 컴포넌트
+ * @카테고리 탐색 컴포넌트
  * @param {Object} props - 컴포넌트 props
  * @param {Function} props.handlePrevious - 이전 버튼 클릭 핸들러
  * @param {Function} props.handleNext - 다음 버튼 클릭 핸들러
@@ -12,8 +12,13 @@ import { Button, Box } from '@mui/material';
  * @returns {JSX.Element} CategoryNavigation 컴포넌트
  */
 const CategoryNavigation = ({ handlePrevious, handleNext, isNextButtonDisabled, isFirstCategory, isLastCategory }) => {
+  console.log("CategoryNavigation 렌더링"); // 이 로그가 출력되는지 확인
+  console.log("isFirstCategory:", isFirstCategory);
+  console.log("isLastCategory:", isLastCategory);
+  console.log("isNextButtonDisabled:", isNextButtonDisabled);
+
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
       <Button
         variant="contained"
         onClick={handlePrevious}
