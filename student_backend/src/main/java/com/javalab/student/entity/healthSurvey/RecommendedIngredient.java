@@ -9,7 +9,6 @@ import lombok.*;
 @Entity
 @Table(name = "recommended_ingredient")
 @Getter @Setter
-@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 public class RecommendedIngredient {
@@ -18,18 +17,15 @@ public class RecommendedIngredient {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "recommendation_id")
-    private Long recommendationId;
+    @Column(name = "recommendation_id", nullable = false)
+    private Long recommendationId; // 이 필드를 확인하거나 추가
 
-    @Column(name = "ingredient_name")
+    @Column(name = "ingredient_name", nullable = false)
     private String ingredientName;
 
-//    @Column(columnDefinition = "TEXT")
-//    private String reason;
-
-    @Column(name = "category")
+    @Column(name = "category", nullable = false)
     private String category;
 
-    @Column(name = "score")
-    private Integer score;
+    @Column(name = "score", nullable = false)
+    private double score;
 }

@@ -69,6 +69,10 @@ public class RecommendationService {
             throw new IllegalStateException("회원 정보를 찾을 수 없습니다: " + email);
         }
 
+        // 사용자 이름, 성별, 나이 응답 조회
+        String name = member.getName();
+        String gender = member.getGender();
+
         // 사용자의 나이, 키, 몸무게 응답 조회
         List<MemberResponse> ageHeightWeightResponses = memberResponseRepository.findAgeHeightAndWeightResponses(member.getId());
 
@@ -105,31 +109,39 @@ public class RecommendationService {
 
         // 건강 분석 수행
         HealthAnalysisDTO healthAnalysis = analyzeHealth(member.getId(), age, bmi, ageHeightWeightResponses);
+        healthAnalysis.setName(member.getName()); // 이름 설정
+        healthAnalysis.setGender(member.getGender()); // 성별 설정
+        healthAnalysis.setAge(age);       // 나이 설정
         log.debug("HealthAnalysisDTO: {}", healthAnalysis);
         result.put("healthAnalysis", healthAnalysis);
 
-        // 제품 추천
+        // 영양 성분 점수 계산
         Map<String, Integer> ingredientScores = nutrientScoreService.calculateIngredientScores(ageHeightWeightResponses, age, bmi);
-        Map<String, List<String>> recommendedIngredientsMap = nutrientScoreService.getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
 
-        List<String> recommendedIngredients = new ArrayList<>();
-        recommendedIngredients.addAll(recommendedIngredientsMap.getOrDefault("essential", Collections.emptyList()));
-        recommendedIngredients.addAll(recommendedIngredientsMap.getOrDefault("additional", Collections.emptyList()));
+        // 추천 영양 성분 목록 가져오기 (최대 5개)
+        List<String> recommendedIngredients = nutrientScoreService.getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
 
-        Map<String, List<ProductRecommendationDTO>> recommendations =
+        // 제품 추천
+        List<ProductRecommendationDTO> recommendations =
                 productRecommendationService.recommendProductsByIngredients(recommendedIngredients, ingredientScores);
+
+        // 추천 결과 저장
         result.put("recommendations", recommendations);
 
-        // 영양 성분 추천
-        result.put("recommendedIngredients", recommendedIngredientsMap);
+        // 영양 성분 추천 결과 저장
+        result.put("recommendedIngredients", recommendedIngredients);
+
+        // 추천된 영양 성분 저장 (DB에 저장)
+        nutrientScoreService.saveRecommendedIngredients(member.getId(), ingredientScores, healthAnalysis, age, bmi);
 
         // 건강 기록 저장
-        List<ProductRecommendationDTO> essentialProducts = recommendations.getOrDefault("essential", Collections.emptyList());
+        List<ProductRecommendationDTO> essentialProducts = recommendations.stream()
+                .limit(5) // 최대 5개 제품만 선택
+                .collect(Collectors.toList());
         saveHealthRecord(member, healthAnalysis, recommendedIngredients, essentialProducts);
 
         return result;
     }
-
 
     /**
      * 사용자의 건강 상태를 분석합니다.
@@ -147,8 +159,40 @@ public class RecommendationService {
         // 전반적인 건강 평가 생성
         String overallAssessment = generateOverallAssessment(bmi, riskLevels);
 
-        return new HealthAnalysisDTO(bmi, riskLevels, overallAssessment, responses);
+        // 성별 추출
+        String gender = getGender(responses);
+
+        // HealthAnalysisDTO 생성 및 반환
+        HealthAnalysisDTO healthAnalysisDTO = new HealthAnalysisDTO();
+        healthAnalysisDTO.setBmi(bmi);
+        healthAnalysisDTO.setRiskLevels(riskLevels);
+        healthAnalysisDTO.setOverallAssessment(overallAssessment);
+        healthAnalysisDTO.setResponses(responses);
+        healthAnalysisDTO.setGender(gender); // 성별 설정
+        return healthAnalysisDTO;
     }
+
+    /**
+     * 사용자 응답에서 성별을 추출하는 메서드
+     * @param responses 사용자 응답 목록
+     * @return 성별 ("여성" 또는 "남성")
+     */
+    private String getGender(List<MemberResponse> responses) {
+        return responses.stream()
+                .filter(response -> response.getQuestion().getId() == 2L) // 질문 ID가 2번인 응답 찾기
+                .findFirst()
+                .map(response -> {
+                    if ("1".equals(response.getResponseText())) {
+                        return "여성";
+                    } else if ("2".equals(response.getResponseText())) {
+                        return "남성";
+                    } else {
+                        return "알 수 없음"; // 예외적인 경우 처리
+                    }
+                })
+                .orElse("알 수 없음"); // 성별 응답이 없는 경우 기본값 설정
+    }
+
 
     /**
      * 회원 응답에서 나이를 추출합니다.
@@ -214,8 +258,6 @@ public class RecommendationService {
         return bmi;
     }
 
-
-
     /**
      * BMI와 위험 수준을 기반으로 전반적인 건강 평가를 생성합니다.
      *
@@ -250,7 +292,6 @@ public class RecommendationService {
 
         return assessment.toString();
     }
-
 
     /**
      * 건강 분석 결과를 저장합니다.
@@ -298,7 +339,6 @@ public class RecommendationService {
             throw new RuntimeException("건강 기록 저장 중 오류 발생", e);
         }
     }
-
 
     /**
      * 현재 로그인한 사용자의 건강 기록 히스토리를 조회합니다.

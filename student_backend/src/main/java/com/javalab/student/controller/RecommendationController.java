@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -73,7 +74,7 @@ public class RecommendationController {
 
     /**
      * 추천 영양 성분에 따른 제품 추천 API.
-     * @param data 나이, BMI, 응답, 추천 영양 성분 정보를 포함한 Map
+     * @param data 나이, BMI, 응답 정보를 포함한 Map
      * @return 추천된 제품 목록을 포함한 ResponseEntity
      */
     @PostMapping("/recommend-products-by-ingredients")
@@ -85,21 +86,21 @@ public class RecommendationController {
         // 1. 영양 성분 점수 계산
         Map<String, Integer> ingredientScores = nutrientScoreService.calculateIngredientScores(responses, age, bmi);
 
-        // 2. HealthAnalysisDTO 생성 (필요한 정보만 포함)
-        HealthAnalysisDTO healthAnalysis = new HealthAnalysisDTO(); // 기본 생성자 사용
+        // 2. HealthAnalysisDTO 생성 (최소한의 정보만 설정)
+        HealthAnalysisDTO healthAnalysis = new HealthAnalysisDTO();
 
-        // 3. 추천 영양 성분 목록 가져오기
-        Map<String, List<String>> recommendedIngredientsMap = nutrientScoreService.getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
+        // 3. 추천 영양 성분 목록 가져오기 (essential 과 additional 구분 없이)
+        List<String> recommendedIngredients = nutrientScoreService.getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
 
-        // 4. essential 과 additional 리스트를 합치기
-        List<String> recommendedIngredients = new ArrayList<>();
-        recommendedIngredientsMap.values().forEach(recommendedIngredients::addAll);
-
-        // 5. 제품 추천
-        Map<String, List<ProductRecommendationDTO>> recommendations =
+        // 4. 제품 추천
+        List<ProductRecommendationDTO> recommendations =
                 productRecommendationService.recommendProductsByIngredients(recommendedIngredients, ingredientScores);
 
-        return ResponseEntity.ok(recommendations);
+        // 5. 결과를 Map에 담아서 반환
+        Map<String, List<ProductRecommendationDTO>> resultMap = new HashMap<>();
+        resultMap.put("recommendations", recommendations);
+
+        return ResponseEntity.ok(resultMap);
     }
 
 

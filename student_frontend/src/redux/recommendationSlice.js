@@ -82,9 +82,14 @@ export const addRecommendationsToCart = createAsyncThunk(
 const recommendationSlice = createSlice({
   name: 'recommendations',
   initialState: {
+    user: {
+      name: '',
+      gender: '',
+      age: 0,
+    },
     healthAnalysis: null,
-    recommendations: {}, // 백엔드 응답 구조에 맞게 빈 객체로 초기화
-    recommendedIngredients: { essential: [], additional: [] },
+    recommendations: [], // 백엔드 응답 구조에 맞게 빈 배열로 초기화
+    recommendedIngredients: [],
     healthHistory: [],
     loading: false,
     error: null,
@@ -103,7 +108,23 @@ const recommendationSlice = createSlice({
         state.loading = false;
         state.healthAnalysis = action.payload.healthAnalysis;
         state.recommendations = action.payload.recommendations;
-        state.recommendedIngredients = action.payload.recommendedIngredients || { essential: [], additional: [] };
+
+        // action.payload.recommendedIngredients가 배열인지 확인
+        if (Array.isArray(action.payload.recommendedIngredients)) {
+          state.recommendedIngredients = action.payload.recommendedIngredients;
+        } else {
+          console.error("recommendedIngredients is not an array:", action.payload.recommendedIngredients);
+          state.recommendedIngredients = []; // 안전하게 빈 배열로 설정
+        }
+
+        // action.payload에서 사용자 정보 추출 및 상태 업데이트
+        if (action.payload.healthAnalysis) {
+          state.user = {
+            name: action.payload.healthAnalysis.name || '',
+            gender: action.payload.healthAnalysis.gender || '',
+            age: action.payload.healthAnalysis.age || 0,
+          };
+        }
       })
       // 건강 기록 히스토리 요청 성공
       .addCase(fetchHealthHistory.fulfilled, (state, action) => {
