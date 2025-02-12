@@ -117,6 +117,8 @@ const surveySlice = createSlice({
 
       if (!question) return;
 
+      let isValid = true; // 기본적으로 유효하다고 가정
+
        switch (question.questionType) {
           case 'MULTIPLE_CHOICE':
             state.responses[questionId] = state.responses[questionId] || [];
@@ -162,7 +164,6 @@ const surveySlice = createSlice({
           state.selectedSymptoms = state.responses[questionId];
         }
     },
-
     setCurrentCategoryIndex: (state, action) => {
       state.currentCategoryIndex = action.payload;
       state.currentSubCategoryIndex = 0;
@@ -187,7 +188,7 @@ const surveySlice = createSlice({
 
     setFilteredCategories: (state, action) => {
       state.filteredCategories = action.payload;
-    },
+    }
   },
 
   extraReducers: (builder) => {

@@ -32,6 +32,9 @@ import MessageList from "@features/auth/components/MessageList";
 import ConsultationRequestList from "@features/chat/ConsultationRequestList"; // ✅ ChatRoomList 컴포넌트 import
 import FloatingConsultationButton from "@features/chat/FloatingConsultationButton";
 import ChatRoom from "@features/chat/ChatRoom";
+import SubscriptionPage from "@/pages/subscription/SubscriptionManagement";
+import KakaoAddressSearch from "@/features/auth/components/KakaoAddressSearch";
+
 
 import useAuth from "@/hook/useAuth";
 import useWebSocket from "@hook/useWebSocket";
@@ -74,6 +77,8 @@ function App() {
                     <Route path="/consultation" element={<ConsultationRequestList />} />
                     <Route path="/chatroom/:roomId" element={<ChatRoom />} />
                     <Route path="/adminpage/*" element={<AdminPage />} />
+                    <Route path="/subscription" element={<SubscriptionPage />} />
+                    <Route path="/update-delivery" element={<KakaoAddressSearch />} />
                 </Routes>
             </Layout>
             <Footer />
