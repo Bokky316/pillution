@@ -35,6 +35,7 @@ import ChatRoom from "@features/chat/ChatRoom";
 import useAuth from "@/hook/useAuth";
 import useWebSocket from "@hook/useWebSocket";
 import useMessage from "@hook/useMessage";
+import "@/App.css";
 
 function App() {
     const { isLoading, isLoggedIn, user } = useAuth();
