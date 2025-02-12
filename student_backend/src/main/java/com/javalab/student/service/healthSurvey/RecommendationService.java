@@ -80,45 +80,45 @@ public class RecommendationService {
             Recommendation recommendation = new Recommendation();
             recommendation.setMemberId(member.getId());
             recommendation.setCreatedAt(LocalDateTime.now());
-            recommendationRepository.save(recommendation);
+            recommendation = recommendationRepository.saveAndFlush(recommendation); // saveAndFlush 사용
             log.info("5. 추천 엔티티 저장 완료. ID: {}", recommendation.getId());
 
             // 6. 추천 영양 성분 저장
             log.info("6. 추천 영양 성분 저장 시작");
-            nutrientScoreService.saveRecommendedIngredients(recommendation, ingredientScores, healthAnalysis, age, bmi);
-            log.info("6. 추천 영양 성분 저장 완료");
+            List<RecommendedIngredient> recommendedIngredients = new ArrayList<>();
+            for (Map.Entry<String, Integer> entry : ingredientScores.entrySet()) {
+                RecommendedIngredient ingredient = new RecommendedIngredient();
+                ingredient.setRecommendation(recommendation);
+                ingredient.setIngredientName(entry.getKey());
+                ingredient.setScore(entry.getValue());
+                recommendedIngredients.add(ingredient);
+            }
+            recommendedIngredients = recommendedIngredientRepository.saveAll(recommendedIngredients);
+            recommendedIngredientRepository.flush();
+            log.info("6. 추천 영양 성분 저장 완료. 저장된 개수: {}", recommendedIngredients.size());
 
             // 7. 추천 제품 생성 및 저장
             log.info("7. 추천 제품 생성 시작");
-            List<ProductRecommendationDTO> recommendations = productRecommendationService.recommendProductsByIngredients(
+            List<ProductRecommendationDTO> productRecommendations = productRecommendationService.recommendProductsByIngredients(
                     new ArrayList<>(ingredientScores.keySet()), ingredientScores);
-            log.info("7. 추천 제품 생성 완료. 추천 제품 수: {}", recommendations.size());
-
-            for (ProductRecommendationDTO product : recommendations) {
+            List<RecommendedProduct> recommendedProducts = new ArrayList<>();
+            for (ProductRecommendationDTO product : productRecommendations) {
                 RecommendedProduct recommendedProduct = new RecommendedProduct();
                 recommendedProduct.setRecommendation(recommendation);
                 recommendedProduct.setProductId(product.getId());
                 recommendedProduct.setReason(product.getDescription());
-
-                recommendedProductRepository.save(recommendedProduct);
-                recommendation.getRecommendedProducts().add(recommendedProduct);
+                recommendedProducts.add(recommendedProduct);
             }
-            log.info("7. 추천 제품 저장 완료");
+            recommendedProducts = recommendedProductRepository.saveAll(recommendedProducts);
+            recommendedProductRepository.flush();
+            log.info("7. 추천 제품 저장 완료. 저장된 개수: {}", recommendedProducts.size());
 
-            // 8. 추천 영양 성분 및 상품 데이터 조회
-            log.info("8. 저장된 추천 데이터 조회 시작");
-            List<RecommendedIngredient> recommendedIngredients = recommendedIngredientRepository.findByRecommendationId(recommendation.getId());
-            List<RecommendedProduct> recommendedProducts = recommendedProductRepository.findByRecommendationId(recommendation.getId());
-            log.info("8. 저장된 추천 데이터 조회 완료. 영양 성분 수: {}, 제품 수: {}",
-                    recommendedIngredients.size(), recommendedProducts.size());
-
-            // 9. 결과 반환 데이터 구성
-            log.info("9. 결과 데이터 구성 시작");
+            // 8. 결과 반환 데이터 구성
             Map<String, Object> result = new HashMap<>();
             result.put("healthAnalysis", healthAnalysis);
             result.put("recommendedIngredients", recommendedIngredients);
             result.put("recommendations", recommendedProducts);
-            log.info("9. 결과 데이터 구성 완료");
+            log.info("8. 결과 데이터 구성 완료");
 
             log.info("getHealthAnalysisAndRecommendations 메서드 정상 종료");
             return result;

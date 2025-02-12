@@ -91,17 +91,16 @@ public class SubscriptionDataInitializer implements CommandLineRunner {
         createSubscriptionNextItem(pastSubscription2, productC, 2, 34000);
         createSubscriptionNextItem(pastSubscription2, productD, 1, 21000);
     }
-
-    */
-/**
-     * ✅ 구독 생성 메서드
-     * @param member       구독 사용자
-     * @param cycle        현재 회차
-     * @param status       구독 상태 (ACTIVE / EXPIRED)
-     * @param startDate    최초 구독 시작일
-     * @param lastBillingDate 최근 결제일 (lastBillingDate)
-     * @return 생성된 Subscription 객체
-     *//*
+//
+//*
+//     * ✅ 구독 생성 메서드
+//     * @param member       구독 사용자
+//     * @param cycle        현재 회차
+//     * @param status       구독 상태 (ACTIVE / EXPIRED)
+//     * @param startDate    최초 구독 시작일
+//     * @param lastBillingDate 최근 결제일 (lastBillingDate)
+//     * @return 생성된 Subscription 객체
+//
 
     private Subscription createSubscription(Member member, int cycle, String status, LocalDate startDate, LocalDate lastBillingDate, String prevNextPaymentMethod) {
         return Subscription.builder()
@@ -137,4 +136,5 @@ public class SubscriptionDataInitializer implements CommandLineRunner {
                 .build();
         subscriptionNextItemRepository.save(nextItem);
     }
-}*/
+}
+*/

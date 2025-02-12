@@ -1,6 +1,8 @@
 package com.javalab.student.controller;
 
 import com.javalab.student.dto.healthSurvey.RecommendationDTO;
+import com.javalab.student.dto.healthSurvey.RecommendedIngredientDTO;
+import com.javalab.student.dto.healthSurvey.RecommendedProductDTO;
 import com.javalab.student.entity.Member;
 import com.javalab.student.entity.healthSurvey.Recommendation;
 import com.javalab.student.entity.healthSurvey.RecommendedIngredient;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/recommendation")
@@ -67,47 +70,64 @@ public class RecommendationController {
     }
 
     @GetMapping("/ingredients")
-    public ResponseEntity<List<RecommendedIngredient>> getRecommendedIngredients() {
+    public ResponseEntity<List<RecommendedIngredientDTO>> getRecommendedIngredients() {
         try {
             Member member = authenticationService.getAuthenticatedMember();
 
-            // 가장 최근 Recommendation ID 가져오기
             Recommendation latestRecommendation = recommendationRepository
                     .findTopByMemberIdOrderByCreatedAtDesc(member.getId())
                     .orElseThrow(() -> new RuntimeException("추천 데이터가 없습니다."));
 
-            // RecommendedIngredient 데이터 가져오기
             List<RecommendedIngredient> ingredients = recommendedIngredientRepository.findByRecommendationId(latestRecommendation.getId());
-            log.info("Recommended Ingredients: {}", ingredients);
 
-            return ResponseEntity.ok(ingredients);
+            List<RecommendedIngredientDTO> ingredientDTOs = ingredients.stream()
+                    .map(ingredient -> {
+                        RecommendedIngredientDTO dto = new RecommendedIngredientDTO();
+                        dto.setId(ingredient.getId());
+                        dto.setIngredientName(ingredient.getIngredientName());
+                        dto.setScore(ingredient.getScore());
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+
+            log.info("Recommended Ingredients: {}", ingredientDTOs);
+
+            return ResponseEntity.ok(ingredientDTOs);
         } catch (Exception e) {
             log.error("추천 영양 성분 조회 중 오류 발생", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
     @GetMapping("/products")
-    public ResponseEntity<List<RecommendedProduct>> getRecommendedProducts() {
+    public ResponseEntity<List<RecommendedProductDTO>> getRecommendedProducts() {
         try {
             Member member = authenticationService.getAuthenticatedMember();
 
-            // 가장 최근 Recommendation ID 가져오기
             Recommendation latestRecommendation = recommendationRepository
                     .findTopByMemberIdOrderByCreatedAtDesc(member.getId())
                     .orElseThrow(() -> new RuntimeException("추천 데이터가 없습니다."));
 
-            // RecommendedProduct 데이터 가져오기
             List<RecommendedProduct> products = recommendedProductRepository.findByRecommendationId(latestRecommendation.getId());
-            log.info("Recommended Products: {}", products);
 
-            return ResponseEntity.ok(products);
+            List<RecommendedProductDTO> productDTOs = products.stream()
+                    .map(product -> {
+                        RecommendedProductDTO dto = new RecommendedProductDTO();
+                        dto.setId(product.getId());
+                        dto.setProductId(product.getProductId());
+                        dto.setReason(product.getReason());
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+
+            log.info("Recommended Products: {}", productDTOs);
+
+            return ResponseEntity.ok(productDTOs);
         } catch (Exception e) {
             log.error("추천 상품 조회 중 오류 발생", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
-
 }
+
+

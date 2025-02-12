@@ -152,4 +152,5 @@ public class BoardDataInitializer implements CommandLineRunner {
                 .updatedAt(LocalDateTime.now())
                 .build();
     }
-}*/
+}
+*/

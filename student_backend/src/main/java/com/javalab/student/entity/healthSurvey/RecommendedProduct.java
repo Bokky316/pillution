@@ -1,5 +1,6 @@
 package com.javalab.student.entity.healthSurvey;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,6 +19,7 @@ public class RecommendedProduct {
     private Long id;
 
     // Recommendation과 N:1 관계 설정
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recommendation_id", nullable = false)
     private Recommendation recommendation;
