@@ -3,11 +3,14 @@ package com.javalab.student.controller;
 import com.javalab.student.config.jwt.TokenProvider;
 import com.javalab.student.dto.LoginFormDto;
 import com.javalab.student.dto.MemberFormDto;
+import com.javalab.student.dto.MemberUpdateDto;
 import com.javalab.student.entity.Member;
 import com.javalab.student.repository.VerificationCodeRepository;
 import com.javalab.student.service.EmailVerificationService;
 import com.javalab.student.service.MemberService;
 import com.javalab.student.service.RefreshTokenService;
+import com.javalab.student.dto.PageRequestDTO;
+import com.javalab.student.dto.PageResponseDTO;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -100,17 +103,17 @@ public class MemberController {
     /**
      * 사용자 정보 수정
      * @param id - 사용자 ID
-     * @param memberFormDto - 수정할 사용자 정보
+     * @param memberUpdateDto - 수정할 사용자 정보 (MemberUpdateDto 사용)
      * @return 성공 또는 실패 메시지를 포함한 JSON 응답
      */
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> updateMember(@PathVariable("id") Long id,
-                                                            @Valid @RequestBody MemberFormDto memberFormDto,
+                                                            @Valid @RequestBody MemberUpdateDto memberUpdateDto, // MemberUpdateDto 사용
                                                             HttpServletResponse response) {
         Map<String, Object> responseBody = new HashMap<>();
         try {
             // 1. 사용자 정보 DB 업데이트
-            memberService.updateMember(id, memberFormDto);
+            memberService.updateMember(id, memberUpdateDto); // MemberUpdateDto 사용
 
             // 2. 업데이트된 사용자 정보 조회
             Member updatedMember = memberService.findById(id);
@@ -261,6 +264,43 @@ public class MemberController {
     @ResponseBody
     void disableFavicon() {
         // 아무 작업도 하지 않음
+    }
+
+    /**
+     * [추가] 회원 목록 조회 (페이징, 검색 기능 포함)
+     * @param pageRequestDTO - 페이징 및 검색 조건
+     * @return 페이징된 회원 목록 및 페이징 정보
+     */
+    @GetMapping
+    public ResponseEntity<PageResponseDTO<Member>> getMemberList(PageRequestDTO pageRequestDTO) {
+        PageResponseDTO<Member> responseDTO = memberService.getMemberList(pageRequestDTO);
+        return ResponseEntity.ok(responseDTO);
+    }
+
+    /**
+     * [추가] 회원 상태 변경 (활성/탈퇴) API
+     * @param memberId - 회원 ID
+     * @param status - 변경할 상태 (ACTIVE: 활성, DELETED: 탈퇴)
+     * @return 성공 메시지
+     */
+    @PatchMapping("/{memberId}/status")
+    public ResponseEntity<Map<String, Object>> changeMemberStatus(@PathVariable("memberId") Long memberId,
+                                                                  @RequestParam("status") String status) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            memberService.changeMemberStatus(memberId, status);
+            response.put("status", "success");
+            response.put("message", "회원 상태가 변경되었습니다.");
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            response.put("status", "error");
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "서버 오류 발생");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
 }

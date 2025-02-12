@@ -73,6 +73,7 @@ const Header = () => {
                         <MenuItem onClick={() => { handleMenuClose(); navigate("/recommendation"); }}>추천</MenuItem>
                         <MenuItem onClick={() => { handleMenuClose(); navigate("/cart"); }}>장바구니</MenuItem>
                         <MenuItem onClick={() => { handleMenuClose(); navigate("/survey"); }}>설문조사</MenuItem>
+                        <MenuItem onClick={() => { handleMenuClose(); navigate("/board"); }}>필루션소식</MenuItem>
                     </Menu>
                 </Box>
 
@@ -159,6 +160,9 @@ const Header = () => {
                                     <MenuItem onClick={() => { handleUserMenuClose(); navigate("/mypage"); }}>마이페이지</MenuItem>
                                     {user.role === "CS_AGENT" && (
                                         <MenuItem onClick={() => { handleUserMenuClose(); navigate("/consultation-list"); }}>상담 목록</MenuItem>
+                                    )}
+                                    {user.role === "ADMIN" && (
+                                        <MenuItem onClick={() => { handleUserMenuClose(); navigate("/adminpage"); }}>관리자페이지</MenuItem>
                                     )}
                                     <MenuItem onClick={() => { handleUserMenuClose(); handleLogout(); }}>로그아웃</MenuItem>
                                 </Menu>

@@ -1,6 +1,8 @@
 package com.javalab.student.repository;
 
 import com.javalab.student.entity.Product;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -51,5 +53,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findProductsByIngredientAndCategory(@Param("ingredientId") Long ingredientId);
 
     List<Product> findByCategories_Id(Long categoryId);
+
+    // 추가된 메서드 (페이징 O) - @Query 어노테이션 추가
+    @Query("SELECT p FROM Product p JOIN p.categories c WHERE c.id = :categoryId")
+    Page<Product> findByCategories_Id(@Param("categoryId") Long categoryId, Pageable pageable);
+
+    // 검색을 위한 메서드 추가
+    Page<Product> findByNameContaining(String name, Pageable pageable);
+    Page<Product> findByCategories_NameContaining(String categoryName, Pageable pageable);
+    Page<Product> findByIngredients_IngredientNameContaining(String ingredientName, Pageable pageable);
 
 }
