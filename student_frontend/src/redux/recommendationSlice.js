@@ -14,6 +14,7 @@ export const fetchHealthAnalysisAndRecommendations = createAsyncThunk(
         credentials: 'include',
       });
       const data = await response.json();
+
       if (response.ok) {
         return data;
       } else {
@@ -37,6 +38,7 @@ export const fetchHealthHistory = createAsyncThunk(
         credentials: 'include',
       });
       const data = await response.json();
+
       if (response.ok) {
         return data;
       } else {
@@ -61,11 +63,11 @@ export const addRecommendationsToCart = createAsyncThunk(
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ products }), // 상품 데이터를 서버로 전송
+        body: JSON.stringify({ products }),
       });
 
       if (response.ok) {
-        return await response.json(); // 성공 시 서버 응답 데이터 반환
+        return await response.json();
       } else {
         const errorData = await response.json();
         return rejectWithValue(errorData.error || '추천 상품을 장바구니에 추가하는데 실패했습니다.');
@@ -82,13 +84,8 @@ export const addRecommendationsToCart = createAsyncThunk(
 const recommendationSlice = createSlice({
   name: 'recommendations',
   initialState: {
-    user: {
-      name: '',
-      gender: '',
-      age: 0,
-    },
     healthAnalysis: null,
-    recommendations: [], // 백엔드 응답 구조에 맞게 빈 배열로 초기화
+    recommendations: [],
     recommendedIngredients: [],
     healthHistory: [],
     loading: false,
@@ -96,66 +93,39 @@ const recommendationSlice = createSlice({
   },
 
   reducers: {},
+
   extraReducers: (builder) => {
     builder
-      // 건강 분석 및 추천 정보 요청 시작
       .addCase(fetchHealthAnalysisAndRecommendations.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      // 건강 분석 및 추천 정보 요청 성공
       .addCase(fetchHealthAnalysisAndRecommendations.fulfilled, (state, action) => {
-        state.loading = false;
-        state.healthAnalysis = action.payload.healthAnalysis;
-        state.recommendations = action.payload.recommendations;
-
-        // action.payload.recommendedIngredients가 배열인지 확인
-        if (Array.isArray(action.payload.recommendedIngredients)) {
-          state.recommendedIngredients = action.payload.recommendedIngredients;
-        } else {
-          console.error("recommendedIngredients is not an array:", action.payload.recommendedIngredients);
-          state.recommendedIngredients = []; // 안전하게 빈 배열로 설정
-        }
-
-        // action.payload에서 사용자 정보 추출 및 상태 업데이트
-        if (action.payload.healthAnalysis) {
-          state.user = {
-            name: action.payload.healthAnalysis.name || '',
-            gender: action.payload.healthAnalysis.gender || '',
-            age: action.payload.healthAnalysis.age || 0,
-          };
-        }
+          state.loading = false;
+          state.healthAnalysis = action.payload.healthAnalysis || null;
+          state.recommendations = action.payload.recommendations || [];
+          state.recommendedIngredients = action.payload.recommendedIngredients || [];
       })
-      // 건강 기록 히스토리 요청 성공
-      .addCase(fetchHealthHistory.fulfilled, (state, action) => {
-        state.healthHistory = action.payload;
-      })
-      // 건강 분석 및 추천 정보 요청 실패
       .addCase(fetchHealthAnalysisAndRecommendations.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-      // 건강 기록 히스토리 요청 실패
+      .addCase(fetchHealthHistory.fulfilled, (state, action) => {
+        state.healthHistory = action.payload || [];
+      })
       .addCase(fetchHealthHistory.rejected, (state, action) => {
         state.error = action.payload;
       })
-
-      // 추천 상품 장바구니 추가 시작
       .addCase(addRecommendationsToCart.pending, (state) => {
-        state.loading = true; // 로딩 상태 활성화
-        state.error = null;   // 이전 에러 초기화
+        state.loading = true;
+        state.error = null;
       })
-
-      // 추천 상품 장바구니 추가 성공
       .addCase(addRecommendationsToCart.fulfilled, (state) => {
-        state.loading = false; // 로딩 상태 비활성화
-        // 성공 시 별도 상태 변경은 필요하지 않음
+        state.loading = false;
       })
-
-      // 추천 상품 장바구니 추가 실패
       .addCase(addRecommendationsToCart.rejected, (state, action) => {
-        state.loading = false; // 로딩 상태 비활성화
-        state.error = action.payload; // 에러 메시지 저장
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
