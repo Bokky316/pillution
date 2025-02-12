@@ -4,7 +4,11 @@ import com.javalab.student.dto.*;
 import com.javalab.student.entity.Product;
 import com.javalab.student.repository.ProductRepository;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,6 +37,7 @@ public class ProductServiceImpl implements ProductService {
 
     /** 상품 정보 수정 */
     @Override
+    @Transactional
     public ProductDto updateProduct(Long id, ProductFormDto productFormDto) {
         Product existingProduct = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
@@ -84,4 +89,31 @@ public class ProductServiceImpl implements ProductService {
                 .map(ProductResponseDTO::fromEntity)
                 .collect(Collectors.toList());
     }
+
+    // 검색 기능 구현
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductResponseDTO> searchProducts(String field, String query, Pageable pageable) {
+        Page<Product> productPage;
+
+        if ("상품명".equals(field)) {
+            productPage = productRepository.findByNameContaining(query, pageable);
+        } else if ("카테고리".equals(field)) {
+            productPage = productRepository.findByCategories_NameContaining(query, pageable);
+        } else if ("영양성분".equals(field)) {
+            productPage = productRepository.findByIngredients_IngredientNameContaining(query, pageable);
+        }  else {
+            // 기본값: 전체 상품 조회
+            productPage = productRepository.findAll(pageable);
+        }
+        //Product list 를 DtoList로
+        List<ProductResponseDTO> dtoList = productPage.getContent().stream()
+                .map(ProductResponseDTO::fromEntity)
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(dtoList, pageable, productPage.getTotalElements());
+    }
+
+
+
 }

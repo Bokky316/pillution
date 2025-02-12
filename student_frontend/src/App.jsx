@@ -22,6 +22,7 @@ import FAQBoardPage from "@/pages/board/FAQBoardPage";
 import PostDetailPage from "@/pages/board/PostDetailPage";
 import PostCreatePage from "@/pages/board/PostCreatePage";
 import PostEditPage from "@/pages/board/PostEditPage";
+import AdminPage from "@/pages/admin/AdminPage";
 import Login from "@features/auth/components/Login";
 import MyPage from "@features/auth/components/MyPage";
 import RegisterMember from "@features/auth/components/RegisterMember";
@@ -72,6 +73,7 @@ function App() {
                     <Route path="/messages" element={<MessageList />} />
                     <Route path="/consultation" element={<ConsultationRequestList />} />
                     <Route path="/chatroom/:roomId" element={<ChatRoom />} />
+                    <Route path="/adminpage/*" element={<AdminPage />} />
                 </Routes>
             </Layout>
             <Footer />
