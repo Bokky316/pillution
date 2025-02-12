@@ -10,20 +10,24 @@ import {
 
 const RecommendationPage = () => {
   const dispatch = useDispatch();
-  const { healthAnalysis, recommendations, recommendedIngredients, loading, error } =
-    useSelector((state) => state.recommendations);
+  const {
+    healthAnalysis,
+    recommendedIngredients,
+    recommendedProducts,
+    loading,
+    error,
+    cartAddingStatus
+  } = useSelector((state) => state.recommendations);
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
-  // 데이터 불러오기
   useEffect(() => {
     dispatch(fetchHealthAnalysis());
     dispatch(fetchRecommendedIngredients());
     dispatch(fetchRecommendedProducts());
   }, [dispatch]);
 
-  // 에러 처리
   useEffect(() => {
     if (error) {
       setSnackbarMessage(error);
@@ -31,7 +35,16 @@ const RecommendationPage = () => {
     }
   }, [error]);
 
-  // 로딩 상태 표시
+  useEffect(() => {
+    if (cartAddingStatus === 'succeeded') {
+      setSnackbarMessage('모든 추천 상품이 장바구니에 담겼습니다.');
+      setSnackbarOpen(true);
+    } else if (cartAddingStatus === 'failed') {
+      setSnackbarMessage('장바구니 담기에 실패했습니다.');
+      setSnackbarOpen(true);
+    }
+  }, [cartAddingStatus]);
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
@@ -40,27 +53,17 @@ const RecommendationPage = () => {
     );
   }
 
-  // 장바구니 담기 핸들러
   const handleAddAllToCart = () => {
-    dispatch(addRecommendationsToCart(recommendations))
-      .unwrap()
-      .then(() => {
-        setSnackbarMessage('모든 추천 상품이 장바구니에 담겼습니다.');
-        setSnackbarOpen(true);
-      })
-      .catch((err) => {
-        setSnackbarMessage(`장바구니 담기에 실패했습니다. 오류: ${err}`);
-        setSnackbarOpen(true);
-      });
+    dispatch(addRecommendationsToCart(recommendedProducts));
   };
 
   return (
     <Container maxWidth="xl">
       <Box my={4}>
-        {/* 건강 분석 결과 */}
         <Typography variant="h4" gutterBottom align="center" fontWeight="bold">
           {healthAnalysis?.name || '사용자'} 님의 건강검문결과표
         </Typography>
+
         {healthAnalysis && (
           <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
             <Typography variant="h6">
@@ -75,7 +78,6 @@ const RecommendationPage = () => {
           </Paper>
         )}
 
-        {/* 추천 영양 성분 */}
         {recommendedIngredients && recommendedIngredients.length > 0 && (
           <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
             <Typography variant="h5" gutterBottom fontWeight="bold" color="primary">
@@ -89,14 +91,13 @@ const RecommendationPage = () => {
           </Paper>
         )}
 
-        {/* 추천 상품 */}
-        {recommendations && recommendations.length > 0 && (
+        {recommendedProducts && recommendedProducts.length > 0 && (
           <Box mb={6}>
             <Typography variant="h5" gutterBottom fontWeight="bold" color="primary">
               추천 상품
             </Typography>
             <Box display="flex" flexWrap="wrap" gap={2}>
-              {recommendations.map((product) => (
+              {recommendedProducts.map((product) => (
                 <Paper key={product.id} elevation={2} sx={{ p: 2 }}>
                   <Typography variant="subtitle1">{product.name}</Typography>
                   <Typography variant="body2">{product.reason}</Typography>
@@ -107,13 +108,12 @@ const RecommendationPage = () => {
           </Box>
         )}
 
-        {/* "추천 상품 장바구니에 담기" 버튼 */}
         <Box display="flex" justifyContent="center" mb={4}>
           <Button
             variant="contained"
             color="primary"
             onClick={handleAddAllToCart}
-            disabled={!recommendations || recommendations.length === 0}
+            disabled={!recommendedProducts || recommendedProducts.length === 0 || cartAddingStatus === 'loading'}
             sx={{
               padding: '10px 20px',
               fontSize: '16px',
@@ -125,7 +125,6 @@ const RecommendationPage = () => {
           </Button>
         </Box>
 
-        {/* 에러 메시지 스낵바 */}
         <Snackbar
           open={snackbarOpen}
           autoHideDuration={6000}

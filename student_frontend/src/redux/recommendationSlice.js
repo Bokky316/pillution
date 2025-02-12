@@ -40,13 +40,11 @@ export const fetchRecommendedIngredients = createAsyncThunk(
       const data = await response.json();
 
       if (response.ok) {
-        console.log('Fetched Ingredients:', data); // 디버깅 로그 추가
         return data;
       } else {
         return rejectWithValue(data.error || '추천 영양 성분을 가져오는데 실패했습니다.');
       }
     } catch (error) {
-      console.error('Error fetching ingredients:', error); // 디버깅 로그 추가
       return rejectWithValue(error.message);
     }
   }
@@ -66,17 +64,16 @@ export const fetchRecommendedProducts = createAsyncThunk(
       const data = await response.json();
 
       if (response.ok) {
-        console.log('Fetched Products:', data); // 디버깅 로그 추가
         return data;
       } else {
         return rejectWithValue(data.error || '추천 상품을 가져오는데 실패했습니다.');
       }
     } catch (error) {
-      console.error('Error fetching products:', error); // 디버깅 로그 추가
       return rejectWithValue(error.message);
     }
   }
 );
+
 /**
  * 추천 상품을 장바구니에 추가하는 비동기 액션 생성자
  */
@@ -105,7 +102,6 @@ export const addRecommendationsToCart = createAsyncThunk(
   }
 );
 
-
 /**
  * 추천 관련 상태를 관리하는 Redux 슬라이스
  */
@@ -114,10 +110,10 @@ const recommendationSlice = createSlice({
   initialState: {
     healthAnalysis: null,
     recommendedIngredients: [],
-    recommendations: [],
+    recommendedProducts: [],
     loading: false,
     error: null,
-    cartAddingStatus: 'idle',
+    cartAddingStatus: 'idle', // 장바구니 상태 추가
   },
 
   reducers: {},
@@ -140,30 +136,33 @@ const recommendationSlice = createSlice({
 
       // 추천 영양 성분
       .addCase(fetchRecommendedIngredients.pending, (state) => {
-          state.loading = true;
-        })
-        .addCase(fetchRecommendedIngredients.fulfilled, (state, action) => {
-          state.loading = false;
-          state.recommendedIngredients = action.payload || [];
-        })
-        .addCase(fetchRecommendedIngredients.rejected, (state, action) => {
-          state.loading = false;
-          state.error = action.payload;
-        })
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchRecommendedIngredients.fulfilled, (state, action) => {
+        state.loading = false;
+        state.recommendedIngredients = action.payload || [];
+      })
+      .addCase(fetchRecommendedIngredients.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
 
       // 추천 상품
       .addCase(fetchRecommendedProducts.pending, (state) => {
-          state.loading = true;
-        })
-        .addCase(fetchRecommendedProducts.fulfilled, (state, action) => {
-          state.loading = false;
-          state.recommendations = action.payload || [];
-        })
-        .addCase(fetchRecommendedProducts.rejected, (state, action) => {
-          state.loading = false;
-          state.error = action.payload;
-        })
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchRecommendedProducts.fulfilled, (state, action) => {
+        state.loading = false;
+        state.recommendedProducts = action.payload || [];
+      })
+      .addCase(fetchRecommendedProducts.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
 
+      // 장바구니 추가
       .addCase(addRecommendationsToCart.pending, (state) => {
         state.cartAddingStatus = 'loading';
         state.error = null;
