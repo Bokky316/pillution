@@ -131,7 +131,7 @@ const handleUpdate = () => {
                     className="edit-member-field"
                     InputLabelProps={{ shrink: true }}
                 />
-               <FormControl className="edit-member-field">
+                <FormControl className="edit-member-field">
                     <InputLabel>성별</InputLabel>
                     <Select
                         value={member.gender || ""}
@@ -156,8 +156,8 @@ const handleUpdate = () => {
                 <FormControl className="edit-member-field">
                     <InputLabel>계정 상태</InputLabel>
                     <Select
-                        value={member.activate ? "활성" : "탈퇴"}
-                         onChange={(e) => setMember({ ...member, activate: e.target.value === "활성" })}
+                       value={member.activate ? "활성" : "탈퇴"}
+                       onChange={(e) => setMember({ ...member, activate: e.target.value === "활성" })}
                     >
                         <MenuItem value="활성">활성회원</MenuItem>
                         <MenuItem value="탈퇴">탈퇴회원</MenuItem>

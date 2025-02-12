@@ -18,8 +18,7 @@ const MemberList = () => {
 
     useEffect(() => {
         fetchMembersData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [statusFilter, paginationModel]); // 의존성 배열에서 searchType, searchInput 제거
+    }, [statusFilter, paginationModel]); //
 
 
     const fetchMembersData = () => {
@@ -136,59 +135,59 @@ const MemberList = () => {
 
 
     return (
-            <div className="member-list-container">
-                <div className="member-list-header">
-                    <h3>회원 관리</h3>
-                    <span className="total-members">총 회원수 : {totalRows}</span>
-                </div>
-
-                <div className="search-container">
-                    <select
-                        className="status-filter"
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        value={statusFilter}
-                    >
-                        <option value="">전체</option>
-                        <option value="ACTIVE">활성회원</option>
-                        <option value="DELETED">탈퇴회원</option>
-                    </select>
-
-                    <select className="search-type" onChange={(e) => setSearchType(e.target.value)} value={searchType}>
-                        <option value="name">이름</option>
-                        <option value="email">이메일</option>
-                    </select>
-                    <input
-                        className="search-input"
-                        type="text"
-                        placeholder="검색어를 입력하세요"
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        onKeyDown={handleKeyDown} // 엔터키 이벤트 핸들러
-                    />
-                    {/* 검색 버튼 부활 */}
-                    <button className="search-button" onClick={handleSearch}>
-                        검색
-                    </button>
-                </div>
-
-                <DataGrid
-                    autoHeight
-                    rows={members}
-                    columns={columns}
-                    rowCount={totalRows}
-                    paginationMode="server"
-                    pageSizeOptions={[5, 10, 20]}
-                    paginationModel={paginationModel}
-                    onPaginationModelChange={(newModel) => setPaginationModel(newModel)}
-                    sx={{ minHeight: '400px' }}
-                />
-                <Snackbar
-                    open={snackbarOpen}
-                    autoHideDuration={3000}
-                    onClose={() => setSnackbarOpen(false)}
-                    message={snackbarMessage}
-                />
+        <div className="member-list-container">
+            <div className="member-list-header">
+                <h3>회원 관리</h3>
+                <span className="total-members">총 회원수 : {totalRows}</span>
             </div>
+
+            <div className="search-container">
+                <select
+                    className="status-filter"
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    value={statusFilter}
+                >
+                    <option value="">전체</option>
+                    <option value="ACTIVE">활성회원</option>
+                    <option value="DELETED">탈퇴회원</option>
+                </select>
+
+                <select className="search-type" onChange={(e) => setSearchType(e.target.value)} value={searchType}>
+                    <option value="name">이름</option>
+                    <option value="email">이메일</option>
+                </select>
+                <input
+                    className="search-input"
+                    type="text"
+                    placeholder="검색어를 입력하세요"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyDown={handleKeyDown} // 엔터키 이벤트 핸들러
+                />
+                {/* 검색 버튼 부활 */}
+                <button className="search-button" onClick={handleSearch}>
+                    검색
+                </button>
+            </div>
+
+            <DataGrid
+                autoHeight
+                rows={members}
+                columns={columns}
+                rowCount={totalRows}
+                paginationMode="server"
+                pageSizeOptions={[5, 10, 20]}
+                paginationModel={paginationModel}
+                onPaginationModelChange={(newModel) => setPaginationModel(newModel)}
+                sx={{ minHeight: '400px' }}
+            />
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={3000}
+                onClose={() => setSnackbarOpen(false)}
+                message={snackbarMessage}
+            />
+        </div>
     );
 };
 
