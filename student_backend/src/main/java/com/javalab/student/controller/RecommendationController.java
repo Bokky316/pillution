@@ -13,14 +13,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 건강 추천 관련 API를 처리하는 컨트롤러 클래스입니다.
- * 이 클래스는 건강 분석, 제품 추천, 위험도 계산, 영양 점수 계산 등의 기능을 제공합니다.
- */
 @RestController
 @RequestMapping("/api/recommendation")
-@Slf4j
 @RequiredArgsConstructor
+@Slf4j
 public class RecommendationController {
 
     private final RecommendationService recommendationService;
@@ -51,8 +47,8 @@ public class RecommendationController {
     @PostMapping("/calculate-risks")
     public ResponseEntity<Map<String, String>> calculateRisks(@RequestBody Map<String, Object> data) {
         try {
-            int age = (int) data.get("age");
-            double bmi = (double) data.get("bmi");
+            int age = ((Number) data.get("age")).intValue();
+            double bmi = ((Number) data.get("bmi")).doubleValue();
             List<MemberResponse> responses = (List<MemberResponse>) data.get("responses");
 
             Map<String, String> risks = recommendationService.calculateRisks(age, bmi, responses);
@@ -77,34 +73,12 @@ public class RecommendationController {
             double bmi = ((Number) data.get("bmi")).doubleValue();
             List<MemberResponse> responses = (List<MemberResponse>) data.get("responses");
 
-            Map<String, List<ProductRecommendationDTO>> resultMap = recommendationService.recommendProductsByIngredients(age, bmi, responses);
-            return ResponseEntity.ok(resultMap);
+            List<ProductRecommendationDTO> recommendations = recommendationService.recommendProductsByIngredients(age, bmi, responses);
+            return ResponseEntity.ok(Map.of("recommendations", recommendations));
         } catch (Exception e) {
             log.error("추천 제품 목록 조회 중 오류 발생", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "추천 제품 목록 조회 중 오류가 발생했습니다."));
-        }
-    }
-
-    /**
-     * 사용자의 응답, 나이, BMI를 기반으로 영양 점수를 계산합니다.
-     *
-     * @param data 응답, 나이, BMI 정보를 포함한 Map
-     * @return 계산된 영양 점수를 포함한 ResponseEntity
-     */
-    @PostMapping("/calculate-nutrient-scores")
-    public ResponseEntity<?> calculateNutrientScores(@RequestBody Map<String, Object> data) {
-        try {
-            List<MemberResponse> responses = (List<MemberResponse>) data.get("responses");
-            int age = ((Number) data.get("age")).intValue();
-            double bmi = ((Number) data.get("bmi")).doubleValue();
-
-            Map<String, Integer> scores = recommendationService.calculateNutrientScores(responses, age, bmi);
-            return ResponseEntity.ok(scores);
-        } catch (Exception e) {
-            log.error("영양 점수 계산 중 오류 발생", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "영양 점수 계산 중 오류가 발생했습니다."));
         }
     }
 

@@ -506,8 +506,11 @@ public class NutrientScoreService {
         for (MemberResponse response : responses) {
             String subCategory = response.getQuestion().getSubCategory().getName();
             switch (subCategory) {
-                case "운동 및 야외활동":
-                    calculateExerciseScores(response, ingredientScores);
+                case "운동 빈도":
+                    calculateExerciseFrequencyScores(response, ingredientScores);
+                    break;
+                case "야외활동 시간":
+                    calculateOutdoorActivityScores(response, ingredientScores);
                     break;
                 case "식습관":
                     calculateDietScores(response, ingredientScores);
@@ -532,22 +535,41 @@ public class NutrientScoreService {
     }
 
     /**
-     * 운동 및 야외활동에 대한 점수를 계산합니다.
+     * 운동 빈도에 대한 점수를 계산합니다.
      *
      * @param response 회원의 응답
      * @param ingredientScores 영양 성분 점수 Map
      */
-    private void calculateExerciseScores(MemberResponse response, Map<String, Integer> ingredientScores) {
+    private void calculateExerciseFrequencyScores(MemberResponse response, Map<String, Integer> ingredientScores) {
         switch (response.getResponseText()) {
             case "주 1회 이하":
                 ingredientScores.compute("비타민D", (k, v) -> (v == null) ? 5 : v + 5);
                 ingredientScores.compute("칼슘", (k, v) -> (v == null) ? 4 : v + 4);
                 break;
-            case "1시간 이하":
-                ingredientScores.compute("비타민D", (k, v) -> (v == null) ? 4 : v + 4);
+            case "주 2~3회":
+                ingredientScores.compute("비타민D", (k, v) -> (v == null) ? 2 : v + 2);
+                ingredientScores.compute("칼슘", (k, v) -> (v == null) ? 1 : v + 1);
                 break;
         }
     }
+
+    /**
+     * 야외활동 시간에 대한 점수를 계산합니다.
+     *
+     * @param response 회원의 응답
+     * @param ingredientScores 영양 성분 점수 Map
+     */
+    private void calculateOutdoorActivityScores(MemberResponse response, Map<String, Integer> ingredientScores) {
+        switch (response.getResponseText()) {
+            case "1시간 이하":
+                ingredientScores.compute("비타민D", (k, v) -> (v == null) ? 4 : v + 4);
+                break;
+            case "1~4시간":
+                ingredientScores.compute("비타민D", (k, v) -> (v == null) ? 2 : v + 2);
+                break;
+        }
+    }
+
 
     /**
      * 식습관에 대한 점수를 계산합니다.
