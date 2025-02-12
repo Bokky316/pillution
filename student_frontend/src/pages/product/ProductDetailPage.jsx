@@ -96,7 +96,7 @@ const ProductDetailPage = () => {
       sx={{
         position: "relative",
         overflowX: "hidden",
-        padding: "40px",
+        padding: "30px",
         paddingBottom: "80px",
         maxWidth: "1024px",
         margin: "0 auto",
@@ -104,7 +104,7 @@ const ProductDetailPage = () => {
       }}
     >
       <Grid container spacing={4} direction="column">
-        <Grid item xs={12} sx={{ paddingLeft: "0px !important" }}>
+        <Grid item xs={12}>
           <CardMedia
             component="img"
             image={product?.mainImageUrl || product?.imageUrl || "/images/logo.png"}
@@ -120,7 +120,7 @@ const ProductDetailPage = () => {
         </Grid>
 
         {/* 나머지 상품 정보 컨텐츠 */}
-        <Grid item xs={12} sx={{ paddingLeft: "0px !important" }}>
+        <Grid item xs={12}>
           <Typography variant="h5" sx={{ fontWeight: "bold", marginBottom: 2 }}>
             {product?.name || "상품 이름 없음"}
           </Typography>
