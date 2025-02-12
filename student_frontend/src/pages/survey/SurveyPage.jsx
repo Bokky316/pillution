@@ -1,11 +1,15 @@
 import React from 'react';
 import { Box, Typography, CircularProgress } from "@mui/material";
+import { useNavigate } from 'react-router-dom';
 import SurveyContent from '@/features/survey/SurveyContent';
 import CategoryNavigation from '@/features/survey/CategoryNavigation';
 import useSurveyData from '@hook/useSurveyData';
 import useNavigation from '@hook/useNavigation';
 import ProgressIndicator from '@/features/survey/ProgressIndicator';
+
 const SurveyPage = () => {
+  const navigate = useNavigate();
+
   const {
     categories,
     currentCategoryIndex,
@@ -26,6 +30,11 @@ const SurveyPage = () => {
     handleNext,
     isNextButtonDisabled
   } = useNavigation();
+
+  // 닫기 버튼 클릭 시 메인 페이지로 이동
+  const handleClose = () => {
+    navigate('/'); // 메인 페이지 경로로 수정 필요
+  };
 
   console.log("SurveyPage 렌더링");
 
@@ -55,35 +64,39 @@ const SurveyPage = () => {
                          currentSubCategoryIndex === subCategoriesToDisplay.length - 1;
 
   return (
-    <Box sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      minHeight: '100vh',
-      padding: '20px',
-      maxWidth: '800px',
-      margin: '0 auto'
-    }}>
-      {/* 진행도 표시 컴포넌트 추가 */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        maxWidth: '800px',
+        margin: '0 auto'
+      }}>
+        {/* ProgressIndicator는 한 번만 렌더링 */}
         <ProgressIndicator
           categories={categoriesToUse}
           currentCategoryIndex={currentCategoryIndex}
+          currentSubCategoryIndex={currentSubCategoryIndex}
+          onPrevious={handlePrevious}
+          onClose={handleClose}
         />
-        <Typography variant="h6" sx={{
-          fontWeight: 'bold',
-          fontSize: '1.1rem',
-          color: '#333'
-        }}>
-          {currentCategory?.name}
-        </Typography>
-        <Typography sx={{
-          color: '#666',
-          fontSize: '0.9rem',
-          mt: 1
-        }}>
-          {currentSubCategory?.name}
-        </Typography>
-      </Box>
+
+{/*          */}{/* 카테고리 및 서브카테고리 이름 표시 */}
+{/*         <Box sx={{ mb: 4, px: 2 }}> */}
+{/*           <Typography variant="h6" sx={{ */}
+{/*             fontWeight: 'bold', */}
+{/*             fontSize: '1.1rem', */}
+{/*             color: '#333' */}
+{/*           }}> */}
+{/*             {currentCategory?.name} */}
+{/*           </Typography> */}
+{/*           <Typography sx={{ */}
+{/*             color: '#666', */}
+{/*             fontSize: '0.9rem', */}
+{/*             mt: 1 */}
+{/*           }}> */}
+{/*             {currentSubCategory?.name} */}
+{/*           </Typography> */}
+{/*         </Box> */}
 
       <Box sx={{ flexGrow: 1 }}>
         <SurveyContent

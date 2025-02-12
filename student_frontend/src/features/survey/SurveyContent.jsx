@@ -5,9 +5,8 @@ import QuestionComponent from '@/features/survey/QuestionComponent';
 
 const SurveyContent = ({ currentCategory, currentSubCategory, questions, responses, onResponseChange }) => {
   return (
-    <>
-      <Typography variant="h5" sx={{ mb: 3 }}>{currentCategory?.name}</Typography>
-      <Typography variant="h6" sx={{ mb: 2 }}>{currentSubCategory?.name}</Typography>
+    <Box sx={{ textAlign: 'center', mb: 4 }}> {/* 질문을 가운데 정렬 */}
+      {/* 질문 리스트 */}
       {questions && questions.map((question) => (
         <QuestionComponent
           key={question.id}
@@ -16,7 +15,7 @@ const SurveyContent = ({ currentCategory, currentSubCategory, questions, respons
           onResponseChange={(value) => onResponseChange(question.id, value)}
         />
       ))}
-    </>
+    </Box>
   );
 };
 

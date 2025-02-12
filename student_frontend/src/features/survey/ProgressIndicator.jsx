@@ -1,65 +1,98 @@
 /**
  * @component ProgressIndicator
- * @description 설문 카테고리별 진행도를 표시하는 컴포넌트.
- * 상단에 가로로 늘어선 진행도 바를 표시하며, 현재 카테고리까지는 주황색, 나머지는 회색으로 표시합니다.
- *
- * @param {Object} props
- * @param {Array} props.categories - 전체 카테고리 배열
- * @param {number} props.currentCategoryIndex - 현재 선택된 카테고리 인덱스
- * @returns {JSX.Element}
+ * @description 설문 진행도를 표시하는 컴포넌트. 카테고리별 진행바와 현재 카테고리의 세부 진행도를 함께 표시
  */
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, IconButton, Typography } from '@mui/material';
+import { ChevronLeft, Close } from '@mui/icons-material';
 import styled from '@emotion/styled';
 
-// 진행도 바 컨테이너
+const HeaderContainer = styled(Box)`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #EEEEEE;
+`;
+
 const ProgressContainer = styled(Box)`
   margin-top: 16px;
   margin-bottom: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 `;
 
-// 진행도 바
 const ProgressBar = styled(Box)`
-  width: 100%;
   display: flex;
-  gap: 2px;
+  gap: 4px;
+  width: 100%;
+  margin-top: 8px;
 `;
 
-// 진행도 세그먼트
-const ProgressSegment = styled(Box)`
+const CategorySegment = styled(Box)`
   flex: 1;
-  height: 2px;
-  background-color: ${props => props.isActive ? '#FF5733' : '#E0E0E0'};
-  transition: background-color 0.3s ease;
+  height: 4px;
+  background-color: #EEEEEE;
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
 `;
 
-const ProgressIndicator = ({ categories, currentCategoryIndex }) => {
-  return (
-    <ProgressContainer>
-      {/* 현재 카테고리 위치 텍스트 */}
-      <Typography
-        sx={{
-          fontSize: '14px',
-          color: '#666',
-          mb: 1
-        }}
-      >
-        {`${categories.length}개 중 ${currentCategoryIndex + 1}번째 카테고리`}
-      </Typography>
+const ProgressFill = styled(Box)`
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background-color: #FF5733;
+  transition: width 0.3s ease;
+`;
 
-      {/* 진행도 바 */}
-      <ProgressBar>
-        {categories.map((_, index) => (
-          <ProgressSegment
-            key={index}
-            isActive={index <= currentCategoryIndex}
-          />
-        ))}
-      </ProgressBar>
-    </ProgressContainer>
+const ProgressIndicator = ({
+  categories,
+  currentCategoryIndex,
+  currentSubCategoryIndex,
+  onPrevious,
+  onClose
+}) => {
+  // 현재 카테고리의 진행률 계산
+  const calculateSubProgress = (categoryIndex) => {
+    if (categoryIndex < currentCategoryIndex) return 100;
+    if (categoryIndex > currentCategoryIndex) return 0;
+
+    const currentCategory = categories[currentCategoryIndex];
+    if (!currentCategory?.subCategories) return 0;
+
+    const subCategoriesCount = currentCategory.subCategories.length;
+    return ((currentSubCategoryIndex + 1) / subCategoriesCount) * 100;
+  };
+
+  return (
+    <>
+      <HeaderContainer>
+        <IconButton onClick={onPrevious} size="large">
+          <ChevronLeft />
+        </IconButton>
+        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+          {categories[currentCategoryIndex]?.name || ''}
+        </Typography>
+        <IconButton onClick={onClose} size="large">
+          <Close />
+        </IconButton>
+      </HeaderContainer>
+
+      <ProgressContainer>
+        <ProgressBar>
+          {categories.map((_, index) => (
+            <CategorySegment key={index}>
+              <ProgressFill
+                sx={{
+                  width: `${calculateSubProgress(index)}%`,
+                  backgroundColor: index <= currentCategoryIndex ? '#FF5733' : '#EEEEEE'
+                }}
+              />
+            </CategorySegment>
+          ))}
+        </ProgressBar>
+      </ProgressContainer>
+    </>
   );
 };
 

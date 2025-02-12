@@ -1,38 +1,52 @@
+/**
+ * @component CategoryNavigation
+ * @description 다음/제출 버튼을 포함한 하단 네비게이션 컴포넌트
+ */
 import React from 'react';
 import { Button, Box } from '@mui/material';
+import styled from '@emotion/styled';
 
-/**
- * @카테고리 탐색 컴포넌트
- * @param {Object} props - 컴포넌트 props
- * @param {Function} props.handlePrevious - 이전 버튼 클릭 핸들러
- * @param {Function} props.handleNext - 다음 버튼 클릭 핸들러
- * @param {boolean} props.isNextButtonDisabled - 다음 버튼 활성화 여부
- * @param {boolean} props.isFirstCategory - 첫 번째 카테고리 여부
- * @param {boolean} props.isLastCategory - 마지막 카테고리 여부
- * @returns {JSX.Element} CategoryNavigation 컴포넌트
- */
-const CategoryNavigation = ({ handlePrevious, handleNext, isNextButtonDisabled, isFirstCategory, isLastCategory }) => {
-  console.log("CategoryNavigation 렌더링"); // 이 로그가 출력되는지 확인
-  console.log("isFirstCategory:", isFirstCategory);
-  console.log("isLastCategory:", isLastCategory);
-  console.log("isNextButtonDisabled:", isNextButtonDisabled);
+const NavigationButton = styled(Button)`
+  width: 17%; // 버튼 너비를 80%로 줄임
+  height: 38px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 24px;
+  background-color: #333333; // 배경색을 검정색으로 변경
+  color: #FFFFFF;
 
+  &:hover {
+    background-color: #707070; // hover 색상도 어두운 회색으로 변경
+  }
+
+  &:disabled {
+    background-color: #CCCCCC;
+    color: #FFFFFF;
+  }
+`;
+
+const CategoryNavigation = ({
+  handleNext,
+  isNextButtonDisabled,
+  isLastCategory
+}) => {
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-      <Button
-        variant="contained"
-        onClick={handlePrevious}
-        disabled={isFirstCategory}
-      >
-        이전
-      </Button>
-      <Button
+    <Box sx={{
+      position: 'sticky',
+      bottom: 20,
+      padding: '0 16px',
+      backgroundColor: '#FFFFFF',
+      zIndex: 10,
+      display: 'flex',
+      justifyContent: 'center', // 버튼을 중앙에 배치
+    }}>
+      <NavigationButton
         variant="contained"
         onClick={handleNext}
         disabled={isNextButtonDisabled}
       >
-        {isLastCategory ? '제출' : '다음'}
-      </Button>
+        {isLastCategory ? '완료' : '다음'}
+      </NavigationButton>
     </Box>
   );
 };

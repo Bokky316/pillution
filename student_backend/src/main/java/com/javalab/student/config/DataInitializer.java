@@ -48,9 +48,9 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) throws Exception {
 
         // 1. 카테고리 생성
-        SurveyCategory category1 = createCategory("1. 기본 정보");
-        SurveyCategory category2 = createCategory("2. 증상·불편");
-        SurveyCategory category3 = createCategory("3. 생활 습관");
+        SurveyCategory category1 = createCategory("기본 정보");
+        SurveyCategory category2 = createCategory("증상·불편");
+        SurveyCategory category3 = createCategory("생활 습관");
 
         // 카테고리별 서브카테고리 및 질문 생성
         createBasicInfoQuestions(category1);
