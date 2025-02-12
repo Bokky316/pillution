@@ -26,14 +26,15 @@ const useNavigation = () => {
     filteredSubCategories,
   } = useSelector(state => state.survey);
 
-  /**
-   * @description 응답 변경 핸들러
-   * @param {number} questionId - 질문 ID
-   * @param {any} value - 응답 값
-   */
-  const handleResponseChange = useCallback((questionId, value) => {
-    dispatch(updateResponse({ questionId, value }));
-  }, [dispatch]);
+/**
+ * @description 응답 변경 핸들러
+ * @param {number} questionId - 질문 ID
+ * @param {any} value - 응답 값
+ * @param {boolean} isValid - 응답의 유효성 여부
+ */
+const handleResponseChange = useCallback((questionId, value, isValid) => {
+  dispatch(updateResponse({ questionId, value, isValid }));
+}, [dispatch]);
 
   /**
    * @description 이전 버튼 핸들러
@@ -143,13 +144,45 @@ const useNavigation = () => {
   }, [dispatch, filteredCategories, categories, currentCategoryIndex, currentSubCategoryIndex,
     filteredSubCategories, responses, navigate]);
 
-  /**
-   * @description 다음 버튼 비활성화 여부 확인
-   * @returns {boolean} 다음 버튼 비활성화 여부
-   */
-  const isNextButtonDisabled = useCallback(() => {
-    return questions.some(question => !responses[question.id]);
-  }, [questions, responses]);
+
+/**
+ * @description 다음 버튼 비활성화 여부 확인
+ * @returns {boolean} 다음 버튼 비활성화 여부
+ */
+const isNextButtonDisabled = useCallback(() => {
+  return questions.some(question => {
+    const response = responses[question.id];
+
+    // 응답이 없거나, 응답이 유효하지 않은 경우 true 반환
+    if (!response || response.isValid === false) {
+      return true;
+    }
+
+    // 추가 유효성 검사: 특정 질문의 입력값이 범위를 벗어났는지 확인
+    if (question.questionType === 'TEXT') {
+      const value = response.trim();
+      if (question.questionText.includes('키')) {
+        const height = parseInt(value, 10);
+        if (isNaN(height) || height < 50 || height > 250) {
+          return true; // 키가 유효 범위를 벗어남
+        }
+      } else if (question.questionText.includes('몸무게')) {
+        const weight = parseInt(value, 10);
+        if (isNaN(weight) || weight < 10 || weight > 300) {
+          return true; // 몸무게가 유효 범위를 벗어남
+        }
+      } else if (question.questionText.includes('나이')) {
+        const age = parseInt(value, 10);
+        if (isNaN(age) || age < 1 || age > 120) {
+          return true; // 나이가 유효 범위를 벗어남
+        }
+      }
+    }
+
+    return false;
+  });
+}, [questions, responses]);
+
 
   return {
     handleResponseChange,
