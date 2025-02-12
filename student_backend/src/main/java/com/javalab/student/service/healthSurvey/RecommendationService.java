@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -51,6 +52,7 @@ public class RecommendationService {
     @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> getHealthAnalysisAndRecommendations() {
         log.info("getHealthAnalysisAndRecommendations 메서드 시작");
+
         try {
             // 1. 현재 인증된 사용자 정보 가져오기
             Member member = authenticationService.getAuthenticatedMember();
@@ -59,15 +61,24 @@ public class RecommendationService {
             // 2. 사용자 정보 가져오기 (나이, 키, 몸무게 등)
             List<MemberResponse> responses = memberResponseRepository.findAgeHeightAndWeightResponses(member.getId());
             log.info("2. 사용자 응답 데이터 조회 완료. 응답 수: {}", responses.size());
+
+            String name = memberInfoService.getName(member.getId());
+            String gender = memberInfoService.getGender(member.getId());
             int age = memberInfoService.getAge(responses);
             double height = memberInfoService.getHeight(responses);
             double weight = memberInfoService.getWeight(responses);
+
+            // BMI 계산
             double bmi = bmiCalculator.calculateBMI(height, weight);
-            log.info("2. 사용자 정보 계산 완료. 나이: {}, 키: {}, 몸무게: {}, BMI: {}", age, height, weight, bmi);
+            log.info("2. 사용자 정보 계산 완료. 이름: {}, 성별: {}, 나이: {}, 키: {}, 몸무게: {}, BMI: {}", name, gender, age, height, weight, bmi);
 
             // 3. 건강 분석 수행
             log.info("3. 건강 분석 시작");
-            HealthAnalysisDTO healthAnalysis = healthAnalysisService.analyzeHealth(member.getId(), age, bmi, responses, member.getGender());
+            HealthAnalysisDTO healthAnalysis = healthAnalysisService.analyzeHealth(member.getId(), age, bmi, responses, gender);
+            healthAnalysis.setName(name);
+            healthAnalysis.setAge(age);
+            healthAnalysis.setGender(gender);
+            healthAnalysis.setBmi(bmi);
             log.info("3. 건강 분석 완료: {}", healthAnalysis);
 
             // 4. 추천 영양 성분 점수 계산
@@ -113,14 +124,33 @@ public class RecommendationService {
             recommendedProductRepository.flush();
             log.info("7. 추천 제품 저장 완료. 저장된 개수: {}", recommendedProducts.size());
 
-            // 8. 결과 반환 데이터 구성
+            // 8. HealthRecord 저장
+            log.info("8. HealthRecord 저장 시작");
+
+            List<String> recommendedIngredientNames = recommendedIngredients.stream()
+                    .map(RecommendedIngredient::getIngredientName)
+                    .collect(Collectors.toList());
+
+            healthRecordService.saveHealthRecord(
+                    member,
+                    healthAnalysis,
+                    recommendedIngredientNames,
+                    productRecommendations,
+                    name,
+                    gender,
+                    age
+            );
+
+            log.info("8. HealthRecord 저장 완료");
+
+            // 9. 결과 반환 데이터 구성
             Map<String, Object> result = new HashMap<>();
             result.put("healthAnalysis", healthAnalysis);
             result.put("recommendedIngredients", recommendedIngredients);
             result.put("recommendations", recommendedProducts);
-            log.info("8. 결과 데이터 구성 완료");
 
-            log.info("getHealthAnalysisAndRecommendations 메서드 정상 종료");
+            log.info("9. 결과 데이터 구성 완료");
+
             return result;
 
         } catch (Exception e) {
