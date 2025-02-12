@@ -213,6 +213,9 @@ public class MemberController {
         boolean isLoginSuccessful = memberService.login(loginForm);
 
         if (isLoginSuccessful) {
+            // 로그인 성공 시 마지막 로그인 날짜 업데이트
+            memberService.updateLastLogin(loginForm.getEmail());
+
             response.put("message", "로그인 성공");
             response.put("status", "success");
             return ResponseEntity.ok(response); // HTTP 200 OK

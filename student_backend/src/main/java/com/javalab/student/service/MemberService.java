@@ -57,6 +57,9 @@ public class MemberService {
         member.setName(memberFormDto.getName());
         member.setPhone(memberFormDto.getPhone());
         member.setAddress(memberFormDto.getAddress());
+        member.setBirthDate(memberFormDto.getBirthDate());
+        member.setGender(memberFormDto.getGender());
+        member.setPoints(memberFormDto.getPoints());
 
         memberRepository.save(member); // 변경 사항 저장
     }
@@ -81,10 +84,13 @@ public class MemberService {
         // 이메일로 회원 검색
         Member member = memberRepository.findByEmail(loginForm.getEmail());
 
-        // 회원이 존재하지 않거나 비밀번호가 일치하지 않으면 실패
-        return member != null && passwordEncoder.matches(loginForm.getPassword(), member.getPassword());
+        // 이메일 존재 여부 & 비밀번호 일치 확인
+        if (member != null && passwordEncoder.matches(loginForm.getPassword(), member.getPassword())) {
+            updateLastLogin(loginForm.getEmail()); // 로그인 성공 시 마지막 로그인 시간 업데이트
+            return true;// 로그인 성공
+        }
+        return false;
 
-        // 로그인 성공
     }
 
     public Member findById(Long memberId) {
