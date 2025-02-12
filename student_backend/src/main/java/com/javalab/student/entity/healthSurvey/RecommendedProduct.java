@@ -9,7 +9,6 @@ import lombok.*;
 @Entity
 @Table(name = "recommended_product")
 @Getter @Setter
-@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 public class RecommendedProduct {
@@ -18,10 +17,12 @@ public class RecommendedProduct {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "recommendation_id")
-    private Long recommendationId;
+    // Recommendation과 N:1 관계 설정
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recommendation_id", nullable = false)
+    private Recommendation recommendation;
 
-    @Column(name = "product_id")
+    @Column(name = "product_id", nullable = false)
     private Long productId;
 
     @Column(columnDefinition = "TEXT")

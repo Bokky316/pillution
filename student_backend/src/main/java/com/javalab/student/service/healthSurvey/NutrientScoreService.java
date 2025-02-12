@@ -2,6 +2,7 @@ package com.javalab.student.service.healthSurvey;
 
 import com.javalab.student.dto.healthSurvey.HealthAnalysisDTO;
 import com.javalab.student.entity.healthSurvey.MemberResponse;
+import com.javalab.student.entity.healthSurvey.Recommendation;
 import com.javalab.student.entity.healthSurvey.RecommendedIngredient;
 import com.javalab.student.repository.healthSurvey.RecommendedIngredientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,14 +84,13 @@ public class NutrientScoreService {
     /**
      * 추천 영양 성분을 저장합니다.
      *
-     * @param recommendationId 추천 ID
      * @param ingredientScores 계산된 영양 성분 점수
      * @param healthAnalysis 건강 분석 결과
      * @param age 회원의 나이
      * @param bmi 회원의 BMI
      */
     @Transactional
-    public void saveRecommendedIngredients(Long recommendationId, Map<String, Integer> ingredientScores, HealthAnalysisDTO healthAnalysis, int age, double bmi) {
+    public void saveRecommendedIngredients(Recommendation recommendation, Map<String, Integer> ingredientScores, HealthAnalysisDTO healthAnalysis, int age, double bmi) {
         // 추천 영양 성분 결정 (최대 5개, 이름과 점수 포함)
         List<Map<String, Object>> recommendedIngredients = getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
 
@@ -102,7 +102,7 @@ public class NutrientScoreService {
             Integer originalScore = (Integer) ingredientMap.get("score");
 
             RecommendedIngredient ingredient = new RecommendedIngredient();
-            ingredient.setRecommendationId(recommendationId);
+            ingredient.setRecommendation(recommendation); // Recommendation 객체 참조로 설정
             ingredient.setIngredientName(ingredientName);
 
             // 점수 계산 및 저장 (0점 ~ 5점 사이로 정규화)
@@ -113,6 +113,7 @@ public class NutrientScoreService {
             recommendedIngredientRepository.save(ingredient);
         }
     }
+
 
     /**
      * 주요 증상을 추출합니다.
