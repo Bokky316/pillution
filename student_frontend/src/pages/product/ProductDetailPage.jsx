@@ -237,12 +237,12 @@ const ProductDetailPage = () => {
         }}
       >
         {/* 모달 내용은 동일하게 유지 */}
-        <DialogTitle sx={{ display: "flex", alignItems: "center", fontWeight: "bold", fontSize: "20px"}}>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", fontWeight: "bold", fontSize: "20px",padding:"0px !important"}}>
           <IconButton onClick={handleCloseModal} sx={{ marginLeft: "auto" }}>
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: "bold", fontSize: "20px" }}>
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: "bold", fontSize: "20px",paddingY:"0px !important" }}>
           {product?.name || "상품 정보"}
         </DialogTitle>
         <DialogContent>
@@ -278,7 +278,7 @@ const ProductDetailPage = () => {
               </IconButton>
             </Box>
           </Box>
-          <Divider sx={{ mb: 4, mt: 2 }} />
+          <Divider sx={{ mb: 3 }} />
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
             <Typography sx={{ fontWeight: "bold", fontSize: "16px" }}>제품 금액</Typography>
             <Typography variant="h6" sx={{ fontWeight: "bold", fontSize: "18px" }}>
