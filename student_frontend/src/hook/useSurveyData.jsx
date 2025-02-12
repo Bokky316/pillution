@@ -54,7 +54,7 @@ const useSurveyData = () => {
 
     if (gender) {
       const filteredCats = categoriesToUse.map(category => {
-        if (category.name === "3. 생활 습관") {
+        if (category.name === "생활 습관") {
           const filteredSubCategories = category.subCategories.filter(sub => {
             if (gender === '여성' && sub.name === "여성건강") return true;
             if (gender === '남성' && sub.name === "남성건강") return true;
@@ -69,7 +69,7 @@ const useSurveyData = () => {
       dispatch(setFilteredCategories(null));
     }
 
-    if (currentCategory?.name === "2. 증상·불편" && selectedSymptoms.length > 0) {
+    if (currentCategory?.name === "증상·불편" && selectedSymptoms.length > 0) {
       const symptomQuestion = currentCategory.subCategories
         .find(sub => sub.name === "주요 증상")
         ?.questions[0];
