@@ -118,17 +118,20 @@ public class RecommendationService {
         // 영양 성분 점수 계산
         Map<String, Integer> ingredientScores = nutrientScoreService.calculateIngredientScores(ageHeightWeightResponses, age, bmi);
 
-        // 추천 영양 성분 목록 가져오기 (최대 5개)
-        List<String> recommendedIngredients = nutrientScoreService.getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
+        // 추천 영양 성분 목록 가져오기 (최대 5개, 이름과 점수 포함)
+        List<Map<String, Object>> recommendedIngredients = nutrientScoreService.getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
 
         // 제품 추천
         List<ProductRecommendationDTO> recommendations =
-                productRecommendationService.recommendProductsByIngredients(recommendedIngredients, ingredientScores);
+                productRecommendationService.recommendProductsByIngredients(
+                        recommendedIngredients.stream().map(x -> (String) x.get("name")).collect(Collectors.toList()),
+                        ingredientScores
+                );
 
         // 추천 결과 저장
         result.put("recommendations", recommendations);
 
-        // 영양 성분 추천 결과 저장
+        // 영양 성분 추천 결과 저장 (이름과 점수 포함)
         result.put("recommendedIngredients", recommendedIngredients);
 
         // 추천된 영양 성분 저장 (DB에 저장)
@@ -138,10 +141,11 @@ public class RecommendationService {
         List<ProductRecommendationDTO> essentialProducts = recommendations.stream()
                 .limit(5) // 최대 5개 제품만 선택
                 .collect(Collectors.toList());
-        saveHealthRecord(member, healthAnalysis, recommendedIngredients, essentialProducts);
+        saveHealthRecord(member, healthAnalysis, recommendedIngredients.stream().map(x -> (String) x.get("name")).collect(Collectors.toList()), essentialProducts);
 
         return result;
     }
+
 
     /**
      * 사용자의 건강 상태를 분석합니다.

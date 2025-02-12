@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 건강 추천 관련 API를 처리하는 컨트롤러 클래스입니다.
@@ -74,6 +75,7 @@ public class RecommendationController {
 
     /**
      * 추천 영양 성분에 따른 제품 추천 API.
+     *
      * @param data 나이, BMI, 응답 정보를 포함한 Map
      * @return 추천된 제품 목록을 포함한 ResponseEntity
      */
@@ -89,12 +91,15 @@ public class RecommendationController {
         // 2. HealthAnalysisDTO 생성 (최소한의 정보만 설정)
         HealthAnalysisDTO healthAnalysis = new HealthAnalysisDTO();
 
-        // 3. 추천 영양 성분 목록 가져오기 (essential 과 additional 구분 없이)
-        List<String> recommendedIngredients = nutrientScoreService.getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
+        // 3. 추천 영양 성분 목록 가져오기 (이름과 점수 포함)
+        List<Map<String, Object>> recommendedIngredients = nutrientScoreService.getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
 
         // 4. 제품 추천
         List<ProductRecommendationDTO> recommendations =
-                productRecommendationService.recommendProductsByIngredients(recommendedIngredients, ingredientScores);
+                productRecommendationService.recommendProductsByIngredients(
+                        recommendedIngredients.stream().map(x -> (String) x.get("name")).collect(Collectors.toList()),
+                        ingredientScores
+                );
 
         // 5. 결과를 Map에 담아서 반환
         Map<String, List<ProductRecommendationDTO>> resultMap = new HashMap<>();

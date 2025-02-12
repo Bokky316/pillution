@@ -55,9 +55,9 @@ public class NutrientScoreService {
      * @param ingredientScores 계산된 영양 성분 점수
      * @param age 회원의 나이
      * @param bmi 회원의 BMI
-     * @return 추천 영양 성분 목록 (최대 5개)
+     * @return 추천 영양 성분 목록 (최대 5개, 이름과 점수 포함)
      */
-    public List<String> getRecommendedIngredients(HealthAnalysisDTO healthAnalysis, Map<String, Integer> ingredientScores, int age, double bmi) {
+    public List<Map<String, Object>> getRecommendedIngredients(HealthAnalysisDTO healthAnalysis, Map<String, Integer> ingredientScores, int age, double bmi) {
         // 기본 성분 (칼슘, 마그네슘, 비타민D) 기본 점수 1점 부여
         Set<String> baseIngredients = new HashSet<>(Arrays.asList("칼슘", "마그네슘", "비타민D"));
         baseIngredients.forEach(ingredient -> ingredientScores.putIfAbsent(ingredient, 1));
@@ -65,13 +65,18 @@ public class NutrientScoreService {
         // 총점이 1점 이상인 성분만 필터링하고 점수 내림차순 정렬
         List<Map.Entry<String, Integer>> sortedIngredients = ingredientScores.entrySet().stream()
                 .filter(entry -> entry.getValue() >= 1) // 총점이 1점 이상인 것만 포함
-                .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue())) // 점수 내림차순 정렬
+                .sorted(Comparator.comparing(Map.Entry::getValue, Comparator.reverseOrder())) // 점수 내림차순 정렬
                 .collect(Collectors.toList());
 
-        // 상위 5개만 선택
+        // 상위 5개만 선택하여 이름과 점수를 Map에 담아 List로 반환
         return sortedIngredients.stream()
                 .limit(5)
-                .map(Map.Entry::getKey)
+                .map(entry -> {
+                    Map<String, Object> ingredient = new HashMap<>();
+                    ingredient.put("name", entry.getKey());
+                    ingredient.put("score", entry.getValue());
+                    return ingredient;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -86,19 +91,21 @@ public class NutrientScoreService {
      */
     @Transactional
     public void saveRecommendedIngredients(Long recommendationId, Map<String, Integer> ingredientScores, HealthAnalysisDTO healthAnalysis, int age, double bmi) {
-        // 추천 영양 성분 결정 (최대 5개)
-        List<String> recommendedIngredients = getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
+        // 추천 영양 성분 결정 (최대 5개, 이름과 점수 포함)
+        List<Map<String, Object>> recommendedIngredients = getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
 
         // 점수의 최대값을 구해 5점 만점으로 환산하기 위한 기준 설정
         double maxScore = ingredientScores.values().stream().max(Integer::compareTo).orElse(1);
 
-        for (String ingredientName : recommendedIngredients) {
+        for (Map<String, Object> ingredientMap : recommendedIngredients) {
+            String ingredientName = (String) ingredientMap.get("name");
+            Integer originalScore = (Integer) ingredientMap.get("score");
+
             RecommendedIngredient ingredient = new RecommendedIngredient();
             ingredient.setRecommendationId(recommendationId);
             ingredient.setIngredientName(ingredientName);
 
             // 점수 계산 및 저장 (0점 ~ 5점 사이로 정규화)
-            double originalScore = ingredientScores.getOrDefault(ingredientName, 0);
             double normalizedScore = Math.min(5.0, Math.max(0.0, (originalScore / maxScore) * 5));
             double roundedScore = Math.round(normalizedScore * 10.0) / 10.0;
             ingredient.setScore(roundedScore);
@@ -113,7 +120,7 @@ public class NutrientScoreService {
      * @param responses 회원의 설문 응답 목록
      * @return 주요 증상 집합
      */
-    private Set<String> getMainSymptoms(List<MemberResponse> responses) {
+    private Set<String> getMainSymptoms (List < MemberResponse > responses){
         return responses.stream()
                 .filter(r -> r.getQuestion().getSubCategory().getName().equals("주요 증상"))
                 .flatMap(r -> Arrays.stream(r.getResponseText().split(",")))
@@ -124,11 +131,12 @@ public class NutrientScoreService {
     /**
      * 주요 증상에 대한 점수를 계산합니다.
      *
-     * @param responses 회원의 설문 응답 목록
+     * @param responses        회원의 설문 응답 목록
      * @param ingredientScores 영양 성분 점수 Map
-     * @param mainSymptoms 주요 증상 집합
+     * @param mainSymptoms     주요 증상 집합
      */
-    private void calculateMainSymptomScores(List<MemberResponse> responses, Map<String, Integer> ingredientScores, Set<String> mainSymptoms) {
+    private void calculateMainSymptomScores (List < MemberResponse > responses, Map < String, Integer > ingredientScores,
+                                             Set < String > mainSymptoms){
         for (MemberResponse response : responses) {
             String subCategory = response.getQuestion().getSubCategory().getName();
             if (mainSymptoms.contains(subCategory)) {

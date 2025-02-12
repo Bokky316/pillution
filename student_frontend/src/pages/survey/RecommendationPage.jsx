@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Container, Typography, CircularProgress, Box, Paper, Snackbar, Button } from '@mui/material';
 import { fetchHealthAnalysisAndRecommendations, fetchHealthHistory, addRecommendationsToCart } from '@/redux/recommendationSlice';
@@ -14,7 +14,7 @@ const RecommendationPage = () => {
   const { healthAnalysis, recommendations, recommendedIngredients, loading, error, user } =
     useSelector((state) => state.recommendations);
 
-  const [snackbarOpen, setSnackbarOpen] = React.useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   useEffect(() => {
     dispatch(fetchHealthAnalysisAndRecommendations());
@@ -84,7 +84,7 @@ const RecommendationPage = () => {
             </Typography>
             {recommendedIngredients.map((ingredient, index) => (
               <Typography key={index} variant="body1" gutterBottom>
-                • {ingredient}
+                • {ingredient.name} (점수: {ingredient.score})
               </Typography>
             ))}
           </Paper>
