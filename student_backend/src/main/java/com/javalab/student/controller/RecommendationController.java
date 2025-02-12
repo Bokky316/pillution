@@ -4,6 +4,7 @@ import com.javalab.student.dto.healthSurvey.RecommendationDTO;
 import com.javalab.student.dto.healthSurvey.RecommendedIngredientDTO;
 import com.javalab.student.dto.healthSurvey.RecommendedProductDTO;
 import com.javalab.student.entity.Member;
+import com.javalab.student.entity.Product;
 import com.javalab.student.entity.healthSurvey.HealthRecord;
 import com.javalab.student.entity.healthSurvey.Recommendation;
 import com.javalab.student.entity.healthSurvey.RecommendedIngredient;
@@ -105,20 +106,30 @@ public class RecommendationController {
     @GetMapping("/products")
     public ResponseEntity<List<RecommendedProductDTO>> getRecommendedProducts() {
         try {
+            // 현재 인증된 사용자 가져오기
             Member member = authenticationService.getAuthenticatedMember();
 
+            // 최신 추천 데이터를 가져오기
             Recommendation latestRecommendation = recommendationRepository
                     .findTopByMemberIdOrderByCreatedAtDesc(member.getId())
                     .orElseThrow(() -> new RuntimeException("추천 데이터가 없습니다."));
 
-            List<RecommendedProduct> products = recommendedProductRepository.findByRecommendationId(latestRecommendation.getId());
+            // 추천된 상품 리스트 가져오기
+            List<RecommendedProduct> recommendedProducts = recommendedProductRepository.findByRecommendationId(latestRecommendation.getId());
 
-            List<RecommendedProductDTO> productDTOs = products.stream()
-                    .map(product -> {
+            // RecommendedProduct -> RecommendedProductDTO 변환
+            List<RecommendedProductDTO> productDTOs = recommendedProducts.stream()
+                    .map(recommendedProduct -> {
+                        Product product = recommendedProduct.getProduct(); // 연관된 Product 엔티티 가져오기
+
                         RecommendedProductDTO dto = new RecommendedProductDTO();
-                        dto.setId(product.getId());
-                        dto.setProductId(product.getProductId());
-                        dto.setReason(product.getReason());
+                        dto.setId(recommendedProduct.getId());
+                        dto.setProductId(product.getId());
+                        dto.setProductName(product.getName()); // 상품명 추가
+                        dto.setPrice(product.getPrice().doubleValue()); // 가격 추가
+                        dto.setMainImageUrl(product.getMainImageUrl()); // 이미지 URL 추가
+                        dto.setReason(recommendedProduct.getReason()); // 추천 이유 추가
+
                         return dto;
                     })
                     .collect(Collectors.toList());

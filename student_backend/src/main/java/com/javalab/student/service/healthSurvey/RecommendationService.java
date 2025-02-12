@@ -5,10 +5,12 @@ import com.javalab.student.dto.healthSurvey.HealthAnalysisDTO;
 import com.javalab.student.dto.healthSurvey.ProductRecommendationDTO;
 import com.javalab.student.dto.healthSurvey.RecommendationDTO;
 import com.javalab.student.entity.Member;
+import com.javalab.student.entity.Product;
 import com.javalab.student.entity.healthSurvey.MemberResponse;
 import com.javalab.student.entity.healthSurvey.Recommendation;
 import com.javalab.student.entity.healthSurvey.RecommendedIngredient;
 import com.javalab.student.entity.healthSurvey.RecommendedProduct;
+import com.javalab.student.repository.ProductRepository;
 import com.javalab.student.repository.healthSurvey.MemberResponseRepository;
 import com.javalab.student.repository.healthSurvey.RecommendationRepository;
 import com.javalab.student.repository.healthSurvey.RecommendedIngredientRepository;
@@ -41,7 +43,7 @@ public class RecommendationService {
     private final RecommendedIngredientRepository recommendedIngredientRepository;
     private final RecommendedProductRepository recommendedProductRepository;
     private final MemberResponseRepository memberResponseRepository;
-
+    private final ProductRepository productRepository;
     private final HealthRecordService healthRecordService;
 
     /**
@@ -114,16 +116,26 @@ public class RecommendationService {
             List<ProductRecommendationDTO> productRecommendations = productRecommendationService.recommendProductsByIngredients(
                     new ArrayList<>(ingredientScores.keySet()), ingredientScores);
             List<RecommendedProduct> recommendedProducts = new ArrayList<>();
-            for (ProductRecommendationDTO product : productRecommendations) {
-                RecommendedProduct recommendedProduct = new RecommendedProduct();
+
+            for (ProductRecommendationDTO productDTO : productRecommendations) {
+                Product product = productRepository.findById(productDTO.getId())
+                        .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다. ID: " + productDTO.getId()));
+
+                RecommendedProduct recommendedProduct = RecommendedProduct.builder()
+                        .reason(productDTO.getDescription())
+                        .build();
+
+                // 연관 관계 설정
                 recommendedProduct.setRecommendation(recommendation);
-                recommendedProduct.setProductId(product.getId());
-                recommendedProduct.setReason(product.getDescription());
+                recommendedProduct.setProduct(product);
+
                 recommendedProducts.add(recommendedProduct);
             }
             recommendedProducts = recommendedProductRepository.saveAll(recommendedProducts);
             recommendedProductRepository.flush();
             log.info("7. 추천 제품 저장 완료. 저장된 개수: {}", recommendedProducts.size());
+
+
 
             // 8. HealthRecord 저장
             log.info("8. HealthRecord 저장 시작");
