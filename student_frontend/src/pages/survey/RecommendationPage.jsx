@@ -1,38 +1,37 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Container, Typography, CircularProgress, Box, Paper, Snackbar, Button } from '@mui/material';
-import { fetchHealthAnalysisAndRecommendations, fetchHealthHistory, addRecommendationsToCart } from '@/redux/recommendationSlice';
+import {
+  fetchHealthAnalysis,
+  fetchRecommendedIngredients,
+  fetchRecommendedProducts,
+  addRecommendationsToCart
+} from '@/redux/recommendationSlice';
 
-/**
- * RecommendationPage 컴포넌트
- *
- * 건강 분석 결과와 추천 정보를 표시하는 페이지입니다.
- */
 const RecommendationPage = () => {
   const dispatch = useDispatch();
   const { healthAnalysis, recommendations, recommendedIngredients, loading, error } =
     useSelector((state) => state.recommendations);
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
-  /**
-   * 컴포넌트 마운트 시 건강 분석 데이터와 건강 기록을 가져옵니다.
-   */
+  // 데이터 불러오기
   useEffect(() => {
-    dispatch(fetchHealthAnalysisAndRecommendations());
-    dispatch(fetchHealthHistory());
+    dispatch(fetchHealthAnalysis());
+    dispatch(fetchRecommendedIngredients());
+    dispatch(fetchRecommendedProducts());
   }, [dispatch]);
 
-  /**
-   * 에러 발생 시 스낵바를 표시합니다.
-   */
+  // 에러 처리
   useEffect(() => {
-    if (error) setSnackbarOpen(true);
+    if (error) {
+      setSnackbarMessage(error);
+      setSnackbarOpen(true);
+    }
   }, [error]);
 
-  /**
-   * 로딩 중일 때 로딩 인디케이터를 표시합니다.
-   */
+  // 로딩 상태 표시
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
@@ -41,24 +40,27 @@ const RecommendationPage = () => {
     );
   }
 
-  /**
-   * 모든 추천 상품을 장바구니에 추가하는 함수입니다.
-   */
+  // 장바구니 담기 핸들러
   const handleAddAllToCart = () => {
     dispatch(addRecommendationsToCart(recommendations))
       .unwrap()
-      .then(() => alert('모든 추천 상품이 장바구니에 담겼습니다.'))
-      .catch((err) => alert(`장바구니 담기에 실패했습니다. 오류: ${err}`));
+      .then(() => {
+        setSnackbarMessage('모든 추천 상품이 장바구니에 담겼습니다.');
+        setSnackbarOpen(true);
+      })
+      .catch((err) => {
+        setSnackbarMessage(`장바구니 담기에 실패했습니다. 오류: ${err}`);
+        setSnackbarOpen(true);
+      });
   };
 
   return (
     <Container maxWidth="xl">
       <Box my={4}>
+        {/* 건강 분석 결과 */}
         <Typography variant="h4" gutterBottom align="center" fontWeight="bold">
           {healthAnalysis?.name || '사용자'} 님의 건강검문결과표
         </Typography>
-
-        {/* 건강 분석 결과 섹션 */}
         {healthAnalysis && (
           <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
             <Typography variant="h6">
@@ -73,22 +75,22 @@ const RecommendationPage = () => {
           </Paper>
         )}
 
-        {/* 추천 영양 성분 섹션 */}
-        {recommendedIngredients.length > 0 && (
+        {/* 추천 영양 성분 */}
+        {recommendedIngredients && recommendedIngredients.length > 0 && (
           <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
             <Typography variant="h5" gutterBottom fontWeight="bold" color="primary">
               추천 영양 성분
             </Typography>
-            {recommendedIngredients.map((ingredient, index) => (
-              <Typography key={index} variant="body1" gutterBottom>
-                • {ingredient.name} (점수: {ingredient.score})
+            {recommendedIngredients.map((ingredient) => (
+              <Typography key={ingredient.id} variant="body1" gutterBottom>
+                • {ingredient.ingredientName} (점수: {ingredient.score.toFixed(1)})
               </Typography>
             ))}
           </Paper>
         )}
 
-        {/* 추천 상품 섹션 */}
-        {recommendations.length > 0 && (
+        {/* 추천 상품 */}
+        {recommendations && recommendations.length > 0 && (
           <Box mb={6}>
             <Typography variant="h5" gutterBottom fontWeight="bold" color="primary">
               추천 상품
@@ -97,8 +99,8 @@ const RecommendationPage = () => {
               {recommendations.map((product) => (
                 <Paper key={product.id} elevation={2} sx={{ p: 2 }}>
                   <Typography variant="subtitle1">{product.name}</Typography>
-                  <Typography variant="body2">{product.description}</Typography>
-                  <Typography variant="body2">가격: {product.price.toLocaleString()}원</Typography>
+                  <Typography variant="body2">{product.reason}</Typography>
+                  <Typography variant="body2">가격: {product.price?.toLocaleString() || '가격 미상'}원</Typography>
                 </Paper>
               ))}
             </Box>
@@ -111,6 +113,7 @@ const RecommendationPage = () => {
             variant="contained"
             color="primary"
             onClick={handleAddAllToCart}
+            disabled={!recommendations || recommendations.length === 0}
             sx={{
               padding: '10px 20px',
               fontSize: '16px',
@@ -127,7 +130,7 @@ const RecommendationPage = () => {
           open={snackbarOpen}
           autoHideDuration={6000}
           onClose={() => setSnackbarOpen(false)}
-          message={error || "오류가 발생했습니다."}
+          message={snackbarMessage}
         />
       </Box>
     </Container>

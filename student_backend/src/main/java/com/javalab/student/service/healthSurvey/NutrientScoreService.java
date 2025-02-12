@@ -111,6 +111,7 @@ public class NutrientScoreService {
             ingredient.setScore(roundedScore);
 
             recommendedIngredientRepository.save(ingredient);
+            recommendation.getRecommendedIngredients().add(ingredient);
         }
     }
 
@@ -121,7 +122,7 @@ public class NutrientScoreService {
      * @param responses 회원의 설문 응답 목록
      * @return 주요 증상 집합
      */
-    private Set<String> getMainSymptoms (List < MemberResponse > responses){
+    private Set<String> getMainSymptoms(List<MemberResponse> responses) {
         return responses.stream()
                 .filter(r -> r.getQuestion().getSubCategory().getName().equals("주요 증상"))
                 .flatMap(r -> Arrays.stream(r.getResponseText().split(",")))
@@ -136,8 +137,8 @@ public class NutrientScoreService {
      * @param ingredientScores 영양 성분 점수 Map
      * @param mainSymptoms     주요 증상 집합
      */
-    private void calculateMainSymptomScores (List < MemberResponse > responses, Map < String, Integer > ingredientScores,
-                                             Set < String > mainSymptoms){
+    private void calculateMainSymptomScores(List<MemberResponse> responses, Map<String, Integer> ingredientScores,
+                                            Set<String> mainSymptoms) {
         for (MemberResponse response : responses) {
             String subCategory = response.getQuestion().getSubCategory().getName();
             if (mainSymptoms.contains(subCategory)) {

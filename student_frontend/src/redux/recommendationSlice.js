@@ -3,10 +3,10 @@ import { fetchWithAuth } from '@/features/auth/utils/fetchWithAuth';
 import { API_URL } from '@/constant';
 
 /**
- * 건강 분석 및 추천 정보를 가져오는 비동기 액션 생성자
+ * 건강 분석 정보를 가져오는 비동기 액션 생성자
  */
-export const fetchHealthAnalysisAndRecommendations = createAsyncThunk(
-  'recommendations/fetchHealthAnalysisAndRecommendations',
+export const fetchHealthAnalysis = createAsyncThunk(
+  'recommendations/fetchHealthAnalysis',
   async (_, { rejectWithValue }) => {
     try {
       const response = await fetchWithAuth(`${API_URL}recommendation/analysis`, {
@@ -18,7 +18,7 @@ export const fetchHealthAnalysisAndRecommendations = createAsyncThunk(
       if (response.ok) {
         return data;
       } else {
-        return rejectWithValue(data.error || '건강 분석 및 추천을 가져오는데 실패했습니다.');
+        return rejectWithValue(data.error || '건강 분석 정보를 가져오는데 실패했습니다.');
       }
     } catch (error) {
       return rejectWithValue(error.message);
@@ -27,29 +27,56 @@ export const fetchHealthAnalysisAndRecommendations = createAsyncThunk(
 );
 
 /**
- * 건강 기록 히스토리를 가져오는 비동기 액션 생성자
+ * 추천 영양 성분을 가져오는 비동기 액션 생성자
  */
-export const fetchHealthHistory = createAsyncThunk(
-  'recommendations/fetchHealthHistory',
+export const fetchRecommendedIngredients = createAsyncThunk(
+  'recommendations/fetchRecommendedIngredients',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetchWithAuth(`${API_URL}recommendation/history`, {
+      const response = await fetchWithAuth(`${API_URL}recommendation/ingredients`, {
         method: 'GET',
         credentials: 'include',
       });
       const data = await response.json();
 
       if (response.ok) {
+        console.log('Fetched Ingredients:', data); // 디버깅 로그 추가
         return data;
       } else {
-        return rejectWithValue(data.error || '건강 기록을 가져오는데 실패했습니다.');
+        return rejectWithValue(data.error || '추천 영양 성분을 가져오는데 실패했습니다.');
       }
     } catch (error) {
+      console.error('Error fetching ingredients:', error); // 디버깅 로그 추가
       return rejectWithValue(error.message);
     }
   }
 );
 
+/**
+ * 추천 상품을 가져오는 비동기 액션 생성자
+ */
+export const fetchRecommendedProducts = createAsyncThunk(
+  'recommendations/fetchRecommendedProducts',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetchWithAuth(`${API_URL}recommendation/products`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('Fetched Products:', data); // 디버깅 로그 추가
+        return data;
+      } else {
+        return rejectWithValue(data.error || '추천 상품을 가져오는데 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error); // 디버깅 로그 추가
+      return rejectWithValue(error.message);
+    }
+  }
+);
 /**
  * 추천 상품을 장바구니에 추가하는 비동기 액션 생성자
  */
@@ -78,6 +105,7 @@ export const addRecommendationsToCart = createAsyncThunk(
   }
 );
 
+
 /**
  * 추천 관련 상태를 관리하는 Redux 슬라이스
  */
@@ -85,46 +113,66 @@ const recommendationSlice = createSlice({
   name: 'recommendations',
   initialState: {
     healthAnalysis: null,
-    recommendations: [],
     recommendedIngredients: [],
-    healthHistory: [],
+    recommendations: [],
     loading: false,
     error: null,
+    cartAddingStatus: 'idle',
   },
 
   reducers: {},
 
   extraReducers: (builder) => {
     builder
-      .addCase(fetchHealthAnalysisAndRecommendations.pending, (state) => {
+      // 건강 분석 정보
+      .addCase(fetchHealthAnalysis.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchHealthAnalysisAndRecommendations.fulfilled, (state, action) => {
-          state.loading = false;
-          state.healthAnalysis = action.payload.healthAnalysis || null;
-          state.recommendations = action.payload.recommendations || [];
-          state.recommendedIngredients = action.payload.recommendedIngredients || [];
+      .addCase(fetchHealthAnalysis.fulfilled, (state, action) => {
+        state.loading = false;
+        state.healthAnalysis = action.payload || null;
       })
-      .addCase(fetchHealthAnalysisAndRecommendations.rejected, (state, action) => {
+      .addCase(fetchHealthAnalysis.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-      .addCase(fetchHealthHistory.fulfilled, (state, action) => {
-        state.healthHistory = action.payload || [];
-      })
-      .addCase(fetchHealthHistory.rejected, (state, action) => {
-        state.error = action.payload;
-      })
+
+      // 추천 영양 성분
+      .addCase(fetchRecommendedIngredients.pending, (state) => {
+          state.loading = true;
+        })
+        .addCase(fetchRecommendedIngredients.fulfilled, (state, action) => {
+          state.loading = false;
+          state.recommendedIngredients = action.payload || [];
+        })
+        .addCase(fetchRecommendedIngredients.rejected, (state, action) => {
+          state.loading = false;
+          state.error = action.payload;
+        })
+
+      // 추천 상품
+      .addCase(fetchRecommendedProducts.pending, (state) => {
+          state.loading = true;
+        })
+        .addCase(fetchRecommendedProducts.fulfilled, (state, action) => {
+          state.loading = false;
+          state.recommendations = action.payload || [];
+        })
+        .addCase(fetchRecommendedProducts.rejected, (state, action) => {
+          state.loading = false;
+          state.error = action.payload;
+        })
+
       .addCase(addRecommendationsToCart.pending, (state) => {
-        state.loading = true;
+        state.cartAddingStatus = 'loading';
         state.error = null;
       })
       .addCase(addRecommendationsToCart.fulfilled, (state) => {
-        state.loading = false;
+        state.cartAddingStatus = 'succeeded';
       })
       .addCase(addRecommendationsToCart.rejected, (state, action) => {
-        state.loading = false;
+        state.cartAddingStatus = 'failed';
         state.error = action.payload;
       });
   },
