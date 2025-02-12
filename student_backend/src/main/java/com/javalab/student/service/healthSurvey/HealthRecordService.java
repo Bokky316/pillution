@@ -39,7 +39,6 @@ public class HealthRecordService {
      * @param gender               사용자 성별
      * @param age                  사용자 나이
      */
-    @SneakyThrows
     public void saveHealthRecord(Member member, HealthAnalysisDTO analysisDTO,
                                  List<String> recommendedIngredients,
                                  List<ProductRecommendationDTO> recommendedProducts,
