@@ -33,7 +33,7 @@ public class SubscriptionRenewService {
      * - "별/30 * * * * ?"	30초마다 실행
      * - "0 0/10 * * * ?"	10분마다 실행
      */
-    @Scheduled(cron = "0 * * * * ?") // 매일 자정 실행
+    @Scheduled(cron = "0 0 0 * * ?") // 매일 자정 실행
     @Transactional
     public void processSubscriptionRenewals() {
         LocalDate today = LocalDate.now();

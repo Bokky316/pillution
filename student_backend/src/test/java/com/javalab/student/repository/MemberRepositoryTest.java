@@ -33,7 +33,7 @@ class MemberRepositoryTest {
     public Member createMember() {
         MemberFormDto memberFormDto = MemberFormDto.builder()
                 //.email("test@example.com")
-                .email("test1@example.com") // DB에 없는 이메일로 변경
+                .email("test2@example.com") // DB에 없는 이메일로 변경
                 .name("상담사")
                 .address("서울시 강남구")
                 .password("1234") // 원래 비밀번호
