@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
-    Typography, Button, Box, Paper, Divider,
-    Table, TableBody, TableCell, TableRow
+    Typography, Button, Box, Divider,
+    Table, TableBody, TableCell, TableRow, TableHead, TableContainer,
+    Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import {
     fetchPostDetail,
@@ -15,6 +16,7 @@ function PostDetailPage() {
     const { postId } = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
     const {
         post,
@@ -25,17 +27,13 @@ function PostDetailPage() {
         isAdmin
     } = useSelector(state => state.postDetail);
 
-    const auth = useSelector((state) => state.auth); // Redux에서 auth 가져오기
-
-    // Redux 상태에서 userRole 가져오기
+    const auth = useSelector((state) => state.auth);
     const userRole = auth?.user?.authorities?.some(auth => auth.authority === "ROLE_ADMIN") ? "ADMIN" : "USER";
 
     useEffect(() => {
-        console.log("📌 fetchPostDetail 호출!");
         dispatch(fetchPostDetail(postId));
     }, [dispatch, postId]);
 
-    // 로그인 시 Redux 상태를 `localStorage`와 동기화
     useEffect(() => {
         if (auth?.user) {
             localStorage.setItem("auth", JSON.stringify(auth));
@@ -46,12 +44,7 @@ function PostDetailPage() {
         dispatch(setIsAdmin(userRole === "ADMIN"));
     }, [dispatch, userRole]);
 
-    const handleDeletePost = async () => {
-        if (userRole !== "ADMIN") {
-            alert('관리자만 삭제할 수 있습니다.');
-            return;
-        }
-
+    const handleDeleteConfirm = async () => {
         try {
             await dispatch(deletePost({
                 postId,
@@ -68,7 +61,17 @@ function PostDetailPage() {
             } else {
                 alert('삭제에 실패했습니다.');
             }
+        } finally {
+            setOpenDeleteDialog(false);
         }
+    };
+
+    const handleDeleteClick = () => {
+        if (userRole !== "ADMIN") {
+            alert('관리자만 삭제할 수 있습니다.');
+            return;
+        }
+        setOpenDeleteDialog(true);
     };
 
     const handleEditPost = () => {
@@ -84,61 +87,163 @@ function PostDetailPage() {
     if (!post) return null;
 
     return (
-        <Box maxWidth="md" mx="auto" p={3} mb={30}>
-            <Paper elevation={3} sx={{ p: 3 }}>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                    <Typography variant="h5" component="h2">{post.title}</Typography>
-                    <Typography variant="caption" color="gray" sx={{ ml: 4 }}>
-                        작성일: {new Date(post.createdAt).toLocaleDateString()}
-                    </Typography>
-                </Box>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', minHeight: '300px', textAlign: 'left' }}>
-                    {post.content}
-                </Typography>
+        <Box maxWidth="md" mx="auto" p={4} pt={0} mb={5}>
+            <Typography
+                variant="h4"
+                component="h1"
+                gutterBottom
+                align="left"
+                sx={{
+                    mt: 4,
+                    mb: 3,
+                    fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' }
+                }}
+            >
+                필루션 소식
+            </Typography>
 
-                <Box mt={4}>
-                    <Table sx={{ borderCollapse: 'collapse' }}>
-                        <TableBody>
-                            <TableRow
-                                onClick={() => prevPost && navigate(`/post/${prevPost.id}`)}
-                                style={{ cursor: prevPost ? 'pointer' : 'default' }}
-                            >
-                                <TableCell sx={{ pl: 2, fontWeight: 'bold', color: '#555', borderTop: '1px solid #ccc' }}>
-                                    ▲ <span style={{ fontWeight: 'bold', color: '#555' }}>이전 글:</span> {prevPost ? prevPost.title : '없음'}
-                                </TableCell>
-                            </TableRow>
-                            <TableRow
-                                onClick={() => nextPost && navigate(`/post/${nextPost.id}`)}
-                                style={{ cursor: nextPost ? 'pointer' : 'default' }}
-                            >
-                                <TableCell sx={{ pl: 2, fontWeight: 'bold', color: '#555', borderTop: '1px solid #ccc' }}>
-                                    ▼ <span style={{ fontWeight: 'bold', color: '#555' }}>다음 글:</span> {nextPost ? nextPost.title : '없음'}
-                                </TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                </Box>
+            {/* 게시물 테이블 */}
+            <TableContainer sx={{ width: '100%', mb: 4, px: 0 }}>
+                <Table sx={{
+                    borderLeft: 'none',
+                    borderRight: 'none',
+                    width: '100%',
+                    tableLayout: 'fixed',
+                    minWidth: '100%',
+                }}>
+                    <TableBody>
+                        <TableRow sx={{
+                            height: 'auto',
+                            borderBottom: '1px solid #e0e0e0'
+                        }}>
+                            <TableCell sx={{
+                                padding: '16px 0px',
+                                border: 'none',
+                            }}>
+                                {/* 카테고리 */}
+                                <Box
+                                    sx={{
+                                        display: 'inline-block',
+                                        bgcolor: '#add8e6',
+                                        borderRadius: '4px',
+                                        px: 0.5,
+                                        py: 0.5,
+                                        mb: 0.5
+                                    }}
+                                >
+                                    <Typography variant="body1" sx={{
+                                        fontSize: '10px',
+                                        color: '#fff'
+                                    }}>
+                                        {post.category}
+                                    </Typography>
+                                </Box>
 
-                <Box mt={5} display="flex" justifyContent="center">
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        size="medium"
-                        onClick={() => navigate('/board')}
-                        sx={{ mt: 2, px: 4, py: 1 }} // py 값을 1로 줄여서 위아래 크기를 줄임
+                                {/* 제목 */}
+                                <Typography
+                                    fontWeight="bold"
+                                    variant="h6"
+                                    sx={{
+                                        fontSize: '20px',
+                                        mb: 0.5
+                                    }}
+                                >
+                                    {post.title}
+                                </Typography>
+
+                                {/* 날짜 */}
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        display: 'block',
+                                        color: 'grey',
+                                        fontSize: '14px',
+                                        mb: 0.5
+                                    }}
+                                >
+                                    {new Date(post.createdAt).toLocaleDateString('ko-KR', {
+                                        year: 'numeric',
+                                        month: '2-digit',
+                                        day: '2-digit'
+                                    }).replace(/\. /g, '.').slice(0, -1)}
+                                </Typography>
+                            </TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
+            </TableContainer>
+
+            {/* 게시물 내용 */}
+            <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', minHeight: '300px', textAlign: 'left', mb: 4 }}>
+                {post.content}
+            </Typography>
+
+            {/* 이전글/다음글 네비게이션 */}
+            <Table sx={{ borderCollapse: 'collapse' }}>
+                <TableBody>
+                    <TableRow
+                        onClick={() => prevPost && navigate(`/post/${prevPost.id}`)}
+                        style={{ cursor: prevPost ? 'pointer' : 'default' }}
                     >
-                        목록으로 가기
-                    </Button>
-                </Box>
+                        <TableCell sx={{ pl: 2, fontWeight: 'bold', color: '#555', borderTop: '1px solid #ccc' }}>
+                            ▲ <span style={{ fontWeight: 'bold', color: '#555' }}>이전 글:</span> {prevPost ? prevPost.title : '없음'}
+                        </TableCell>
+                    </TableRow>
+                    <TableRow
+                        onClick={() => nextPost && navigate(`/post/${nextPost.id}`)}
+                        style={{ cursor: nextPost ? 'pointer' : 'default' }}
+                    >
+                        <TableCell sx={{ pl: 2, fontWeight: 'bold', color: '#555', borderTop: '1px solid #ccc' }}>
+                            ▼ <span style={{ fontWeight: 'bold', color: '#555' }}>다음 글:</span> {nextPost ? nextPost.title : '없음'}
+                        </TableCell>
+                    </TableRow>
+                </TableBody>
+            </Table>
 
-                {userRole === "ADMIN" && (
-                    <Box mt={2} display="flex" justifyContent="flex-end" gap={2}>
-                        <Button variant="contained" color="info" onClick={handleEditPost}>수정</Button>
-                        <Button variant="contained" color="error" onClick={handleDeletePost}>삭제</Button>
-                    </Box>
-                )}
-            </Paper>
+            {/* 버튼 그룹 */}
+            <Box mt={5} mb={5} display="flex" justifyContent="center">
+                <Button
+                    variant="contained"
+                    color="primary"
+                    size="medium"
+                    onClick={() => navigate('/board')}
+                    sx={{ mt: 2, px: 4, py: 1 }}
+                >
+                    목록으로 가기
+                </Button>
+            </Box>
+
+            {userRole === "ADMIN" && (
+                <Box mt={2} display="flex" justifyContent="flex-end" gap={2}>
+                    <Button variant="contained" color="info" onClick={handleEditPost}>수정</Button>
+                    <Button variant="contained" color="error" onClick={handleDeleteClick}>삭제</Button>
+                </Box>
+            )}
+
+            {/* 삭제 확인 다이얼로그 */}
+            <Dialog
+                open={openDeleteDialog}
+                onClose={() => setOpenDeleteDialog(false)}
+                aria-labelledby="delete-dialog-title"
+                aria-describedby="delete-dialog-description"
+            >
+                <DialogTitle id="delete-dialog-title">
+                    게시글 삭제
+                </DialogTitle>
+                <DialogContent id="delete-dialog-description">
+                    <Typography>
+                        정말 이 게시글을 삭제하시겠습니까?
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+                        삭제
+                    </Button>
+                    <Button onClick={() => setOpenDeleteDialog(false)} color="primary">
+                        취소
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }
