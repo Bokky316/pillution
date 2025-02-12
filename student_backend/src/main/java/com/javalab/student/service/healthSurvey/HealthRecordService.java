@@ -7,10 +7,7 @@ import com.javalab.student.entity.Member;
 import com.javalab.student.entity.healthSurvey.HealthRecord;
 import com.javalab.student.repository.healthSurvey.HealthRecordRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,6 +43,7 @@ public class HealthRecordService {
                                  List<ProductRecommendationDTO> recommendedProducts,
                                  String name, String gender, int age) {
         try {
+            // HealthRecord 객체 생성 및 데이터 설정
             HealthRecord record = HealthRecord.builder()
                     .member(member)
                     .recordDate(LocalDateTime.now())
@@ -59,6 +57,7 @@ public class HealthRecordService {
                     .recommendedProducts(convertToJson(recommendedProducts))
                     .build();
 
+            // HealthRecord 저장
             healthRecordRepository.save(record);
             log.info("건강 기록이 성공적으로 저장되었습니다. 회원 ID: {}, 이름: {}", member.getId(), name);
         } catch (Exception e) {
@@ -67,21 +66,57 @@ public class HealthRecordService {
         }
     }
 
+    /**
+     * 추천된 제품 리스트를 JSON 문자열로 변환합니다.
+     *
+     * @param products 추천된 제품 리스트
+     * @return JSON 문자열로 변환된 추천 제품 리스트
+     */
     private String convertToJson(List<ProductRecommendationDTO> products) {
-        return products.stream()
-                .map(this::convertToJsonMap)
-                .collect(Collectors.toList())
-                .toString();
+        try {
+            return objectMapper.writeValueAsString(products); // ObjectMapper를 사용해 JSON 변환
+        } catch (Exception e) {
+            log.error("추천 제품을 JSON으로 변환 중 오류 발생", e);
+            return "[]"; // 오류 발생 시 빈 배열 반환
+        }
     }
 
+    /**
+     * ProductRecommendationDTO 객체를 JSON 형식의 문자열로 변환합니다.
+     *
+     * @param dto ProductRecommendationDTO 객체
+     * @return JSON 형식의 문자열
+     */
     private String convertToJsonMap(ProductRecommendationDTO dto) {
-        return String.format("{\"id\":%d, \"name\":\"%s\", \"description\":\"%s\", \"price\":%.2f, \"score\":%.2f, \"mainIngredient\":\"%s\"}",
-                dto.getId(), dto.getName(), dto.getDescription(), dto.getPrice(), dto.getScore(), dto.getMainIngredient());
+        return String.format(
+                "{\"id\":%d, \"name\":\"%s\", \"description\":\"%s\", \"price\":%.2f, \"score\":%.2f, \"mainIngredient\":\"%s\"}",
+                dto.getId(),
+                escapeJsonString(dto.getName()),
+                escapeJsonString(dto.getDescription()),
+                dto.getPrice(),
+                dto.getScore(),
+                escapeJsonString(dto.getMainIngredient())
+        );
+    }
+
+
+    /**
+     * 문자열 내 특수 문자를 이스케이프 처리합니다.
+     *
+     * @param input 입력 문자열
+     * @return 이스케이프 처리된 문자열
+     */
+    private String escapeJsonString(String input) {
+        if (input == null) {
+            return "";
+        }
+        return input.replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
     }
 
     /**
      * 현재 로그인한 사용자의 건강 기록 히스토리를 조회합니다.
      *
+     * @param memberId 회원 ID
      * @return 현재 로그인한 사용자의 건강 기록 리스트
      */
     public List<HealthRecord> getHealthHistory(Long memberId) {
