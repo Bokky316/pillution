@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
@@ -11,8 +11,12 @@ import {
   CircularProgress,
   IconButton,
   Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from "@mui/material";
-import { Add as AddIcon, Remove as RemoveIcon } from '@mui/icons-material';
+import { Add as AddIcon, Remove as RemoveIcon, Close as CloseIcon } from "@mui/icons-material";
 import { fetchWithAuth } from "../../features/auth/utils/fetchWithAuth";
 import { API_URL } from "../../constant";
 
@@ -21,32 +25,46 @@ const ProductDetailPage = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [addingToCart, setAddingToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [openModal, setOpenModal] = useState(false);
+  const [isButtonFixed, setIsButtonFixed] = useState(true);
+  const containerRef = useRef(null);
   const auth = useSelector((state) => state.auth);
 
-  // ✅ 현재 로그인한 사용자가 관리자(admin)인지 확인
   const userRole = auth?.user?.authorities?.some((auth) => auth.authority === "ROLE_ADMIN")
     ? "ADMIN"
     : "USER";
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (containerRef.current) {
+        const containerRect = containerRef.current.getBoundingClientRect();
+        const containerBottom = containerRect.bottom;
+        const windowHeight = window.innerHeight;
+        const buttonHeight = 80; // 버튼 영역의 대략적인 높이
+
+        // 컨테이너 하단이 뷰포트 하단에 가까워지면 absolute로 전환
+        setIsButtonFixed(containerBottom - buttonHeight > windowHeight);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // 초기 상태 설정
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const fetchProductDetails = async () => {
       setLoading(true);
       try {
         const response = await fetchWithAuth(`${API_URL}products/${productId}`);
-        console.log('API_URL:', API_URL);
-        console.log('전체 URL:', `${API_URL}products/${productId}`);
-        console.log('productId:', productId);
-
         if (!response.ok) {
           throw new Error("상품 정보를 불러올 수 없습니다.");
         }
         const data = await response.json();
-        console.log("📌 상품 상세 데이터:", data);
         setProduct(data);
       } catch (error) {
-        console.error("🚨 상품 상세 조회 오류:", error);
         setError(error.message || "상품 정보를 불러오는 중 오류 발생!");
       } finally {
         setLoading(false);
@@ -59,154 +77,236 @@ const ProductDetailPage = () => {
   }, [productId]);
 
   const handleQuantityChange = (change) => {
-    setQuantity(prev => {
-      const newQuantity = prev + change;
-      return newQuantity >= 1 ? newQuantity : 1;
-    });
+    setQuantity(prev => Math.max(1, prev + change));
   };
 
   const calculateTotalPrice = () => {
-    if (!product?.price) return 0;
-    return product.price * quantity;
+    return product?.price ? product.price * quantity : 0;
   };
 
-  const addToCart = async () => {
-    if (!product) return;
+  const handleOpenModal = () => setOpenModal(true);
+  const handleCloseModal = () => setOpenModal(false);
 
-    setAddingToCart(true);
-    try {
-      const response = await fetchWithAuth(`${API_URL}cart/add`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, quantity }),
-      });
-
-      if (!response.ok) throw new Error("장바구니에 추가 실패!");
-
-      alert("장바구니에 추가되었습니다!");
-    } catch (error) {
-      alert(error.message || "장바구니 추가 중 오류 발생!");
-    } finally {
-      setAddingToCart(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-        <Typography variant="h6" color="error">
-          {error}
-        </Typography>
-      </Box>
-    );
-  }
+  if (loading) return <Box display="flex" justifyContent="center" alignItems="center" height="100vh"><CircularProgress /></Box>;
+  if (error) return <Box display="flex" justifyContent="center" alignItems="center" height="100vh"><Typography variant="h6" color="error">{error}</Typography></Box>;
 
   return (
-    <Box sx={{ padding: "40px", maxWidth: "1024px", margin: "0 auto" }}>
-      <Grid container spacing={4}>
-        {/* 왼쪽 - 이미지 */}
-        <Grid item xs={12} md={6}>
+    <Box
+      ref={containerRef}
+      sx={{
+        position: "relative",
+        overflowX: "hidden",
+        padding: "40px",
+        paddingBottom: "80px",
+        maxWidth: "1024px",
+        margin: "0 auto",
+        minHeight: "100vh"
+      }}
+    >
+      <Grid container spacing={4} direction="column">
+        {userRole === "ADMIN" && (
+          <Box sx={{ display: "flex", justifyContent: "center", mb: 1 }}>
+            <Box
+              sx={{
+                backgroundColor: product?.active ? "#2E7D32" : "#9E9E9E",
+                color: "white",
+                borderRadius: "5px",
+                paddingX: 4,
+                paddingY: 1,
+                textAlign: "center",
+                minWidth: "400px",
+                boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+              }}
+            >
+              {product?.active ? "활성" : "비활성"}
+            </Box>
+          </Box>
+        )}
+
+        <Grid item xs={12} sx={{ paddingLeft: "0px !important" }}>
           <CardMedia
             component="img"
             image={product?.mainImageUrl || product?.imageUrl || "/images/logo.png"}
             alt={product?.name || "상품 이미지"}
-            sx={{ borderRadius: "8px", boxShadow: 3 }}
+            sx={{
+              borderRadius: "8px",
+              boxShadow: 3,
+              width: "100%",
+              maxWidth: "600px",
+              margin: "0 auto"
+            }}
           />
         </Grid>
 
-        {/* 오른쪽 - 상세 정보 */}
-        <Grid item xs={12} md={6}>
-          <Typography variant="h5" sx={{ fontWeight: "bold", marginBottom: 2, display: 'flex', alignItems: 'center' }}>
+        {/* 나머지 상품 정보 컨텐츠 */}
+        <Grid item xs={12} sx={{ paddingLeft: "0px !important" }}>
+          <Typography variant="h5" sx={{ fontWeight: "bold", marginBottom: 2 }}>
             {product?.name || "상품 이름 없음"}
             {userRole === "ADMIN" && (
-              <>
-                <Chip
-                  label={product?.active ? "활성" : "비활성"}
-                  color={product?.active ? "success" : "default"}
-                  size="small"
-                  sx={{ ml: 2 }}
-                />
-                <Chip
-                  label={`재고: ${product?.stock ?? "없음"}개`}
-                  color={product?.stock > 0 ? "primary" : "error"}
-                  size="small"
-                  sx={{ ml: 1 }}
-                />
-              </>
+              <Chip
+                label={`재고: ${product?.stock ?? "없음"}개`}
+                color={product?.stock > 0 ? "primary" : "error"}
+                size="small"
+                sx={{
+                  paddingX: 1,
+                  borderRadius: "5px",
+                  m: 1,
+                }}
+              />
             )}
-          </Typography>
-          <Typography variant="body1" color="textSecondary" sx={{ marginBottom: 3 }}>
-            {product?.description || "상품 설명이 없습니다."}
           </Typography>
           <Typography variant="h6" sx={{ fontWeight: "bold", color: "primary.main", marginBottom: 2 }}>
             {product?.price ? `${product.price.toLocaleString()}원` : "가격 정보 없음"}
           </Typography>
           <Divider sx={{ marginBottom: 3 }} />
-
-          {/* 카테고리 정보 */}
-          {product?.categories?.length > 0 && (
-            <Typography variant="body2" color="textSecondary">
-              카테고리: {product.categories.join(", ")}
-            </Typography>
-          )}
-
-          {/* 주요 성분 정보 */}
-          {product?.ingredients?.length > 0 && (
-            <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-              주요 성분: {product.ingredients.join(", ")}
-            </Typography>
-          )}
-
-          <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
-            배송비: 3,000원
+          <Typography variant="body1" color="textSecondary" sx={{ marginBottom: 3 }}>
+            {product?.description || "상품 설명이 없습니다."}
           </Typography>
-          <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
-            정기구독: 1만원 이상 무료배송
-          </Typography>
-
-          {/* 수량 선택 및 총 금액 */}
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <Typography variant="body1" sx={{ mr: 2 }}>수량:</Typography>
-            <IconButton
-              size="small"
-              onClick={() => handleQuantityChange(-1)}
-              sx={{ border: '1px solid #e0e0e0' }}
-            >
-              <RemoveIcon />
-            </IconButton>
-            <Typography sx={{ mx: 2 }}>{quantity}</Typography>
-            <IconButton
-              size="small"
-              onClick={() => handleQuantityChange(1)}
-              sx={{ border: '1px solid #e0e0e0' }}
-            >
-              <AddIcon />
-            </IconButton>
+          <Divider sx={{ marginBottom: 1 }} />
+          <Box sx={{ display: "flex", alignItems: "center"}}>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <Typography variant="body2" sx={{ minWidth: "60px", mt: "-40px", fontSize: 15 }}>
+                배송비
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", flexDirection: "column", padding: 2 }}>
+              <Typography variant="body2" sx={{ mb: "10px", fontSize: 15 }}>3,000원</Typography>
+              <Box>
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 0.5 }} style={{fontSize: 12}}>
+                  ・ <span style={{ fontWeight: "bold" }}>정기구독</span> : 1만원 이상 무료배송
+                </Typography>
+                <Typography variant="body2" color="textSecondary" style={{fontSize: 12}}>
+                  ・ <span style={{ fontWeight: "bold" }}>한 번만 구매하기</span> : 배송비 3,000원
+                </Typography>
+              </Box>
+            </Box>
           </Box>
+        </Grid>
+      </Grid>
 
-          <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
-            총 금액: {calculateTotalPrice().toLocaleString()}원
+      {/* 구매하기 버튼 */}
+      <Box
+        sx={{
+          position: isButtonFixed ? "fixed" : "absolute",
+          bottom: isButtonFixed ? 20 : 20,
+          left: isButtonFixed ? "50%" : 0,
+          transform: isButtonFixed ? "translateX(-50%)" : "none",
+          width: isButtonFixed ? "480px" : "100%",
+          padding: isButtonFixed ? "0" : "10px 40px",
+          display: "flex",
+          justifyContent: "center",
+          backgroundColor: "white",
+          zIndex: 1000,
+          paddingLeft: "0px !important"
+        }}
+      >
+        <Button
+          variant="contained"
+          color="primary"
+          sx={{
+            textTransform: "none",
+            width: "100%",
+            paddingY: "14px",
+            backgroundColor: "#FF5722",
+            "&:hover": { backgroundColor: "#E64A19" },
+            borderRadius: "10px",
+            fontSize: "18px"
+          }}
+          onClick={handleOpenModal}
+        >
+          구매하기
+        </Button>
+      </Box>
+
+      {/* 구매 모달 (이전과 동일) */}
+      <Dialog open={openModal} onClose={handleCloseModal} fullWidth maxWidth="xs"
+        sx={{
+          '& .MuiPaper-root': {
+            width: "100%",
+            maxWidth: "480px",
+            borderRadius: "16px",
+            padding: "20px",
+            position: "fixed",
+            bottom: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+            boxShadow: "0px -2px 10px rgba(0, 0, 0, 0.1)",
+            overflowX: "hidden",
+            margin:"0px !important"
+          }
+        }}
+      >
+        {/* 모달 내용은 동일하게 유지 */}
+        <DialogTitle sx={{ display: "flex", alignItems: "center", fontWeight: "bold", fontSize: "20px"}}>
+          <IconButton onClick={handleCloseModal} sx={{ marginLeft: "auto" }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: "bold", fontSize: "20px" }}>
+          {product?.name || "상품 정보"}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 1 }}>
+            <Typography variant="body1" sx={{ fontWeight: "bold", fontSize: "16px" }}>수량</Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              <IconButton
+                size="large"
+                onClick={() => handleQuantityChange(-1)}
+                sx={{
+                  border: "1px solid #ddd",
+                  borderRadius: "50%",
+                  width: "30px",
+                  height: "30px"
+                }}
+              >
+                <RemoveIcon />
+              </IconButton>
+              <Typography sx={{ fontSize: "20px", fontWeight: "bold", margin: 3 }}>
+                {quantity}
+              </Typography>
+              <IconButton
+                size="large"
+                onClick={() => handleQuantityChange(1)}
+                sx={{
+                  border: "1px solid #ddd",
+                  borderRadius: "50%",
+                  width: "30px",
+                  height: "30px"
+                }}
+              >
+                <AddIcon />
+              </IconButton>
+            </Box>
+          </Box>
+          <Divider sx={{ mb: 4, mt: 2 }} />
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
+            <Typography sx={{ fontWeight: "bold", fontSize: "16px" }}>제품 금액</Typography>
+            <Typography variant="h6" sx={{ fontWeight: "bold", fontSize: "18px" }}>
+              {calculateTotalPrice().toLocaleString()}원
+            </Typography>
+          </Box>
+          <Typography variant="body2" sx={{ color: "gray", textAlign: "right", fontSize: "12px", mt: 1 }}>
+            ※ 장바구니에서 할인 혜택을 적용할 수 있습니다.
           </Typography>
-
+        </DialogContent>
+        <DialogActions sx={{ padding: "16px", justifyContent: "center" }}>
           <Button
             variant="contained"
             color="primary"
-            sx={{ textTransform: "none", borderRadius: "25px", paddingX: "20px", paddingY: "10px" }}
-            onClick={addToCart}
-            disabled={addingToCart}
+            sx={{
+              textTransform: "none",
+              width: "100%",
+              paddingY: "14px",
+              backgroundColor: "#FF5722",
+              "&:hover": { backgroundColor: "#E64A19" },
+              borderRadius: "10px",
+              fontSize: "18px"
+            }}
           >
-            {addingToCart ? <CircularProgress size={24} /> : "장바구니에 추가"}
+            장바구니 담기
           </Button>
-        </Grid>
-      </Grid>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
