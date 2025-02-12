@@ -1,7 +1,15 @@
 import React from 'react';
 import { Typography, Box } from '@mui/material';
-import ProductCard from '@/features/survey/RecommendationCard';
+import ProductCard from '@/features/survey/RecommendationProductCard';
 
+/**
+ * 추천 섹션 컴포넌트
+ * @param {Object} props - 컴포넌트 props
+ * @param {string} props.title - 섹션 제목
+ * @param {Array} props.products - 추천 제품 목록
+ * @param {number} props.maxItems - 최대 표시 제품 수
+ * @returns {JSX.Element} RecommendationSection 컴포넌트
+ */
 const RecommendationSection = React.memo(({ title, products, maxItems }) => {
   if (!products || products.length === 0) return null;
 
