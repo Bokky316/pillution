@@ -2,7 +2,6 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden; /* 전체 페이지가 꽉 차도록 설정 */
   font-family: sans-serif; /* 기본 폰트 설정 (선택 사항) */
 }
 
@@ -16,7 +15,6 @@ html, body {
   top: 0;
   padding-top: 80px; /* 헤더 높이만큼 여백 */
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05); /* 그림자 약하게 */
-  overflow-y: auto;
 }
 
 .sidebar-title {

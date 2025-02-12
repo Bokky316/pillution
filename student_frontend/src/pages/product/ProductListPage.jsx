@@ -223,48 +223,6 @@ export default function ProductListPage() {
                   </Box>
                 )}
 
-                {/* ✅ 관리자 전용 정보 */}
-                {userRole === "ADMIN" && (
-                  <Box sx={{ marginTop: "10px" }}>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        width: "90%",
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        padding: "4px 8px", // 내부 여백 추가
-                        borderRadius: "5px", // 모서리 둥글게
-                        display: "inline-block", // 내용 크기에 맞게 조정
-                        border: "1px solid", // 테두리 스타일 지정
-                        borderColor:
-                          product.stock <= 5 ? "#EF5350" : // 빨강 (에러)
-                          product.stock <= 15 ? "#FFA726" : // 주황 (경고)
-                          "#4CAF50", // 초록 (성공)
-                        color:
-                          product.stock <= 5 ? "#EF5350" : // 빨강 (에러)
-                          product.stock <= 15 ? "#FFA726" : // 주황 (경고)
-                          "#4CAF50", // 초록 (성공)
-                        backgroundColor: "transparent", // 배경 투명
-                      }}
-                    >
-                      재고: {product.stock}
-                    </Typography>
-
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        position: "absolute", // 부모(CardContent)를 기준으로 절대 위치 지정
-                        bottom: "0", // CardContent 바닥에 붙이기
-                        left: "0", // 왼쪽 정렬
-                        marginTop: "5px",
-                        display: "inline-block", // 크기 조절
-                        width: "100%", // 원하는 너비
-                        height: "12px", // 원하는 높이
-                        backgroundColor: product.active ? "#4CAF50" : "#666", // 활성화/비활성화 색상
-                      }}
-                    />
-                  </Box>
-                )}
               </CardContent>
             </Card>
           </Grid>
