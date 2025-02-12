@@ -4,12 +4,16 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
     Typography, Button, Box, Divider,
     Table, TableBody, TableCell, TableRow, TableHead, TableContainer,
-    Dialog, DialogTitle, DialogContent, DialogActions
+    Dialog, DialogTitle, DialogContent, DialogActions,
+    Snackbar, IconButton
 } from '@mui/material';
+import CloseIcon from "@mui/icons-material/Close";
 import {
     fetchPostDetail,
     deletePost,
-    setIsAdmin
+    setIsAdmin,
+    setSnackbarOpen,
+    setSnackbarMessage
 } from '../../redux/postDetailSlice';
 
 function PostDetailPage() {
@@ -17,6 +21,10 @@ function PostDetailPage() {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+
+    // ✅ Redux 상태 연결
+    const snackbarOpen = useSelector(state => state.postDetail.snackbarOpen);
+    const snackbarMessage = useSelector(state => state.postDetail.snackbarMessage);
 
     const {
         post,
@@ -32,6 +40,12 @@ function PostDetailPage() {
 
     useEffect(() => {
         dispatch(fetchPostDetail(postId));
+
+        // ✅ 컴포넌트가 unmount될 때 스낵바 상태 초기화
+        return () => {
+            dispatch(setSnackbarOpen(false));
+            dispatch(setSnackbarMessage(""));
+        };
     }, [dispatch, postId]);
 
     useEffect(() => {
@@ -46,13 +60,16 @@ function PostDetailPage() {
 
     const handleDeleteConfirm = async () => {
         try {
-            await dispatch(deletePost({
-                postId,
-                token: auth.user.token
-            })).unwrap();
+            await dispatch(deletePost({ postId, token: auth.user.token })).unwrap();
 
-            alert('게시물이 삭제되었습니다.');
-            navigate('/board');
+            setOpenDeleteDialog(false);
+            dispatch(setSnackbarMessage("게시글이 성공적으로 삭제되었습니다."));
+            dispatch(setSnackbarOpen(true));
+
+            setTimeout(() => {
+                navigate('/board');
+            }, 1000);
+
         } catch (err) {
             console.error('Error deleting post:', err);
             if (err.status === 401 || err.status === 403) {
@@ -61,9 +78,11 @@ function PostDetailPage() {
             } else {
                 alert('삭제에 실패했습니다.');
             }
-        } finally {
-            setOpenDeleteDialog(false);
         }
+    };
+
+    const handleCloseSnackbar = () => {
+        dispatch(setSnackbarOpen(false));
     };
 
     const handleDeleteClick = () => {
@@ -244,6 +263,20 @@ function PostDetailPage() {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Snackbar 추가 */}
+            <Snackbar
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                open={snackbarOpen} // Redux 상태 연결
+                message={snackbarMessage} // Redux 상태 연결
+                autoHideDuration={3000}
+                onClose={handleCloseSnackbar}
+                action={
+                    <IconButton size="small" color="inherit" onClick={handleCloseSnackbar}>
+                        <CloseIcon fontSize="small" />
+                    </IconButton>
+                }
+            />
         </Box>
     );
 }
