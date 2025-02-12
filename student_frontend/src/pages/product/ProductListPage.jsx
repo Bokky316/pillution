@@ -227,24 +227,28 @@ export default function ProductListPage() {
                 {userRole === "ADMIN" && (
                   <Box sx={{ marginTop: "10px" }}>
                     <Typography
-                          variant="body2"
-                          sx={{
-                            width:"90%",
-                            textAlign: "center",
-                            fontWeight: "bold",
-                            padding: "4px 8px", // 내부 여백 추가
-                            borderRadius: "5px", // 모서리 둥글게
-                            display: "inline-block", // 내용 크기에 맞게 조정
-                            backgroundColor:
-                              product.stock <= 5 ? "#EF5350" : // 빨강 (에러)
-                              product.stock <= 15 ? "#FFA726" : // 주황 (경고)
-                              "#4CAF50", // 초록 (성공)
-                            color: "white", // 대비되는 글씨 색상
-                          }}
-                        >
-                          재고: {product.stock}
-                        </Typography>
-
+                      variant="body2"
+                      sx={{
+                        width: "90%",
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        padding: "4px 8px", // 내부 여백 추가
+                        borderRadius: "5px", // 모서리 둥글게
+                        display: "inline-block", // 내용 크기에 맞게 조정
+                        border: "1px solid", // 테두리 스타일 지정
+                        borderColor:
+                          product.stock <= 5 ? "#EF5350" : // 빨강 (에러)
+                          product.stock <= 15 ? "#FFA726" : // 주황 (경고)
+                          "#4CAF50", // 초록 (성공)
+                        color:
+                          product.stock <= 5 ? "#EF5350" : // 빨강 (에러)
+                          product.stock <= 15 ? "#FFA726" : // 주황 (경고)
+                          "#4CAF50", // 초록 (성공)
+                        backgroundColor: "transparent", // 배경 투명
+                      }}
+                    >
+                      재고: {product.stock}
+                    </Typography>
 
                     <Typography
                       variant="body2"
