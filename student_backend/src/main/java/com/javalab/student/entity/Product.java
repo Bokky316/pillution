@@ -49,6 +49,8 @@ public class Product {
     @Column(name = "main_image_url")
     private String mainImageUrl = "";
 
+
+
     /** 대표 이미지 경로 */
 //    private String imgPath;
 //

@@ -239,7 +239,7 @@ public class ProductController {
         return ResponseEntity.ok().build();
     }
 
-    // 새로운 전체 상품 목록 조회 (페이징 O) - /api/products/paged
+    /** 새로운 전체 상품 목록 조회 (페이징 O) */
     @GetMapping("/paged")
     public ResponseEntity<Page<ProductResponseDTO>> getAllProductsPaged(
             @RequestParam(value = "page", defaultValue = "0") int page,
@@ -251,7 +251,7 @@ public class ProductController {
         return ResponseEntity.ok(responseDTOPage);
     }
 
-    // 새로운 카테고리별 필터링 (페이징 O) - /api/products/filter-by-category/paged
+    /** 새로운 카테고리별 필터링 (페이징 O) */
     @GetMapping("/filter-by-category/paged")
     public ResponseEntity<Page<ProductResponseDTO>> getProductsFilteredByCategoryPaged(
             @RequestParam("categoryId") Long categoryId,

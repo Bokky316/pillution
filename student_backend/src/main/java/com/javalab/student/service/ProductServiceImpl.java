@@ -90,7 +90,7 @@ public class ProductServiceImpl implements ProductService {
                 .collect(Collectors.toList());
     }
 
-    // ProductServiceImpl - 검색 기능 구현
+    // 검색 기능 구현
     @Override
     @Transactional(readOnly = true)
     public Page<ProductResponseDTO> searchProducts(String field, String query, Pageable pageable) {
