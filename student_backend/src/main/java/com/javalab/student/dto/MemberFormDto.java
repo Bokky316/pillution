@@ -55,9 +55,11 @@ public class MemberFormDto {
     private String gender;
 
     // 계정 활성화 여부 (기본값: true)
+    @Builder.Default
     private boolean activate = true;
 
     // 사용자 포인트 (기본값: 0)
+    @Builder.Default
     private int points = 0;
 
     @Builder.Default
