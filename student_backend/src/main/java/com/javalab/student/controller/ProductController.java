@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,8 +19,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import org.springframework.dao.DataAccessException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -33,9 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * 상품 관리 관련 API를 처리하는 컨트롤러
- */
 @Slf4j
 @RestController
 @RequestMapping("/api/products")
@@ -72,9 +68,11 @@ public class ProductController {
 
     /** 상품 등록 */
     @PostMapping
-    public ResponseEntity<ProductDto> createProduct(@RequestBody @Valid ProductFormDto productFormDto) {
+    public ResponseEntity<ProductDto> createProduct(@Valid ProductFormDto productFormDto,
+                                                    @RequestParam(value = "imageFiles", required = false) List<MultipartFile> imageFiles) { // 이미지 파일 리스트로 받음
         log.info("상품 등록 요청 수신: {}", productFormDto);
         try {
+            productFormDto.setImageFiles(imageFiles); // ProductFormDto에 이미지 파일 리스트 설정
             ProductDto savedProduct = productService.createProduct(productFormDto);
             log.info("상품 등록 성공: {}", savedProduct);
             return ResponseEntity.ok(savedProduct);
@@ -86,11 +84,14 @@ public class ProductController {
 
     /** 상품 수정 */
     @PutMapping("/{id}")
-    public ResponseEntity<ProductDto> updateProduct(@PathVariable("id") Long id, @RequestBody @Valid ProductFormDto productFormDto) {
+    public ResponseEntity<ProductDto> updateProduct(@PathVariable("id") Long id,
+                                                    @Valid ProductFormDto productFormDto,
+                                                    @RequestParam(value = "imageFiles", required = false) List<MultipartFile> imageFiles) { // 이미지 파일 리스트로 받음 (required=false)
+        productFormDto.setImageFiles(imageFiles); // ProductFormDto에 이미지 파일 리스트 설정
         return ResponseEntity.ok(productService.updateProduct(id, productFormDto));
     }
 
-    // 이미지 업로드 핸들러
+    // 이미지 업로드 핸들러 (기존 uploadImage 핸들러 유지 - 필요에 따라 수정 가능)
     @PostMapping("/upload")
     public ResponseEntity<Map<String, String>> uploadImage(@RequestParam("imageFile") MultipartFile file) {
         try {
@@ -99,7 +100,6 @@ public class ProductController {
             Files.createDirectories(Paths.get(itemImgLocation));
             Files.write(filePath, file.getBytes());
 
-            // 변경: /api/products/images/ 로 시작하는 URL 생성
             String imageUrl = "/api/products/images/" + fileName;
 
             Map<String, String> response = new HashMap<>();
@@ -113,22 +113,21 @@ public class ProductController {
         }
     }
 
-    // 이미지 제공 핸들러
-    @GetMapping("/images/{filename:.+}") // .을 포함한 파일 이름 처리
+    // 이미지 제공 핸들러 (기존 serveImage 핸들러 유지)
+    @GetMapping("/images/{filename:.+}")
     public ResponseEntity<Resource> serveImage(@PathVariable("filename") String filename) {
         try {
             Path file = Paths.get(itemImgLocation).resolve(filename);
             Resource resource = new UrlResource(file.toUri());
 
             if (resource.exists() || resource.isReadable()) {
-                // MediaType 결정 (파일 확장자에 따라)
                 String contentType = Files.probeContentType(file);
                 if(contentType == null) {
-                    contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE; // 기본값
+                    contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
                 }
 
                 return ResponseEntity.ok()
-                        .contentType(MediaType.parseMediaType(contentType)) // MediaType 설정
+                        .contentType(MediaType.parseMediaType(contentType))
                         .body(resource);
             } else {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Image not found");
@@ -140,7 +139,6 @@ public class ProductController {
         }
     }
 
-
     /** 전체 상품 목록 조회 */
     @GetMapping
     public ResponseEntity<List<ProductResponseDTO>> getAllProducts() {
@@ -148,9 +146,7 @@ public class ProductController {
         return ResponseEntity.ok(products);
     }
 
-    /**
-     * 검색어로 상품 목록 조회 (페이징)
-     */
+    /** 검색어로 상품 목록 조회 (페이징) */
     @GetMapping("/search")
     public ResponseEntity<Page<ProductResponseDTO>> searchProducts(
             @RequestParam("field") String field,
@@ -166,7 +162,7 @@ public class ProductController {
     /** 카테고리 ID로 상품 필터링 */
     @GetMapping("/filter-by-category")
     public ResponseEntity<List<ProductResponseDTO>> getProductsFilteredByCategory(@RequestParam("categoryId") Long categoryId) {
-        List<ProductResponseDTO> products = productService.getProductsByCategory(categoryId); // productService 메서드 사용
+        List<ProductResponseDTO> products = productService.getProductsByCategory(categoryId);
         return ResponseEntity.ok(products);
     }
 
@@ -195,39 +191,19 @@ public class ProductController {
         return ResponseEntity.ok(products);
     }
 
-    /**
-     * 특정 상품 상세 정보 조회 (ProductResponseDTO 반환)
-     */
+    /** 특정 상품 상세 정보 조회 (ProductResponseDTO 반환) */
     @GetMapping("/{productId}/dto")
-    public ResponseEntity<ProductResponseDTO> getProductDetailsDto(@PathVariable("productId") Long productId) {
+    public ResponseEntity<ProductDto> getProductDetailsDto(@PathVariable("productId") Long productId) {
         try {
-            Product product = productRepository.findById(productId).orElse(null);
-            if (product == null) {
-                return ResponseEntity.notFound().build();
-            }
-
-            // 이미지 URL 수정: mainImageUrl이 상대경로라면 절대 URL로 변환
-            if (product.getMainImageUrl() != null && !product.getMainImageUrl().isEmpty()) {
-                // 이미 절대 URL인 경우(http:// 등으로 시작)에는 변경하지 않고,
-                // 상대 경로인 경우 서버 기본 URL을 붙인다.
-                if (!product.getMainImageUrl().startsWith("http")) {
-                    String baseUrl = "http://localhost:8080";
-                    product.setMainImageUrl(baseUrl + product.getMainImageUrl());
-                }
-            }
-
-            ProductResponseDTO responseDTO = ProductResponseDTO.fromEntity(product);
-            return ResponseEntity.ok(responseDTO);
+            ProductDto responseDTO = productService.getProductById(productId); // ProductDto 반환
+            return ResponseEntity.ok(responseDTO); // ResponseEntity<ProductDto> 반환 (정상)
         } catch (Exception e) {
             log.error("Error fetching product details for product ID: " + productId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    /**
-     * 상품 카테고리만 업데이트하는 엔드포인트
-     * RequestBody로 전달되는 카테고리 ID 리스트를 이용해 해당 상품의 카테고리를 갱신합니다.
-     */
+    /** 상품 카테고리만 업데이트하는 엔드포인트 */
     @PutMapping("/{id}/categories")
     public ResponseEntity<Void> updateProductCategories(@PathVariable("id") Long productId,
                                                         @RequestBody List<Long> categoryIds) {
@@ -259,9 +235,8 @@ public class ProductController {
             @RequestParam(value = "size", defaultValue = "10") int size) {
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<Product> productPage = productRepository.findByCategories_Id(categoryId, pageable); // 이 메서드는 이미 추가되어 있음
+        Page<Product> productPage = productRepository.findByCategories_Id(categoryId, pageable);
         Page<ProductResponseDTO> responseDTOPage = productPage.map(ProductResponseDTO::fromEntity);
         return ResponseEntity.ok(responseDTOPage);
     }
 }
-

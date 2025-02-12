@@ -2,6 +2,7 @@ package com.javalab.student.dto;
 
 import com.javalab.student.entity.Product;
 import com.javalab.student.entity.ProductCategory;
+import com.javalab.student.entity.ProductImg;
 import com.javalab.student.entity.ProductIngredient;
 import lombok.*;
 
@@ -30,13 +31,12 @@ public class ProductResponseDTO {
 
     /** Product 엔티티를 DTO로 변환 */
     public static ProductResponseDTO fromEntity(Product product) {
-        return ProductResponseDTO.builder()
+        ProductResponseDTO dto = ProductResponseDTO.builder()
                 .id(product.getId())
                 .name(product.getName())
                 .price(product.getPrice())
                 .stock(product.getStock())
                 .active(product.isActive())
-                .mainImageUrl(product.getMainImageUrl())
                 .categories(product.getCategories() != null
                         ? product.getCategories().stream()
                         .map(ProductCategory::getName)
@@ -49,5 +49,15 @@ public class ProductResponseDTO {
                         : List.of())  // Null 처리
                 .description(product.getDescription())
                 .build();
+        // Product 엔티티에서 대표 이미지 URL 설정 (product_img 테이블에서 조회)
+        if (product.getProductImgList() != null && !product.getProductImgList().isEmpty()) {
+            dto.setMainImageUrl(product.getProductImgList().stream()
+                    .filter(img -> "대표".equals(img.getImageType())) // 이미지 유형이 "대표"인 이미지 필터링
+                    .findFirst() // 첫 번째 대표 이미지 가져오기
+                    .map(ProductImg::getImageUrl) // ProductImg 엔티티에서 이미지 URL 추출
+                    .orElse(null)); // 대표 이미지가 없을 경우 null 설정
+        }
+
+        return dto;
     }
 }

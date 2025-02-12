@@ -1,4 +1,3 @@
-// EditProduct.js
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -10,10 +9,15 @@ import {
     Select,
     MenuItem,
     Checkbox,
-    ListItemText
+    ListItemText,
+    Grid,
+    IconButton,
+    Typography
 } from '@mui/material';
+import { Close as CloseIcon } from '@mui/icons-material';
 import { API_URL } from "../../../constant";
 import axios from "axios";
+import './AddProduct.css';
 
 const EditProduct = () => {
     const { productId } = useParams();
@@ -26,17 +30,15 @@ const EditProduct = () => {
         price: '',
         stock: '',
         active: true,
-        mainImageUrl: '',
     });
 
-    const [imageFile, setImageFile] = useState(null);
-    const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+    const [imageFiles, setImageFiles] = useState(Array(5).fill(null));
+    const [imagePreviews, setImagePreviews] = useState(Array(5).fill(null));
     const [categories, setCategories] = useState([]);
     const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // 이미지 URL을 절대 경로로 변환하는 함수
     const getAbsoluteImageUrl = (imageUrl) => {
         if (!imageUrl) return '';
         const baseUrl = API_URL.substring(0, API_URL.indexOf('/api'));
@@ -81,22 +83,22 @@ const EditProduct = () => {
                     price: productData.price || '',
                     stock: productData.stock || '',
                     active: productData.active !== undefined ? productData.active : true,
-                    mainImageUrl: productData.mainImageUrl || '',
                 });
 
                 const categoryIds = productData.categories
                     ? productData.categories.map((catName) => {
-                          const category = categoriesData.find(c => c.name === catName);
-                          return category ? category.id : null;
-                      })
+                        const category = categoriesData.find(c => c.name === catName);
+                        return category ? category.id : null;
+                    })
                     : [];
 
                 setSelectedCategoryIds(categoryIds.filter(id => id !== null));
 
-                // 기존 이미지가 있으면 절대 URL로 변환하여 미리보기 설정
-                if (productData.mainImageUrl) {
-                    setImagePreviewUrl(getAbsoluteImageUrl(productData.mainImageUrl));
+                if (productData.productImgList && productData.productImgList.length > 0) {
+                    const previews = productData.productImgList.map(img => getAbsoluteImageUrl(img.imageUrl));
+                    setImagePreviews(previews);
                 }
+
 
             } catch (error) {
                 console.error("Error fetching data:", error);
@@ -117,93 +119,63 @@ const EditProduct = () => {
         }));
     };
 
-    const handleImageChange = (e) => {
+    const handleImageChange = (e, index) => {
         const file = e.target.files[0];
-        setImageFile(file);
-
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreviewUrl(reader.result);
-            };
-            reader.readAsDataURL(file);
+            const newImageFiles = [...imageFiles];
+            newImageFiles[index] = file;
+            setImageFiles(newImageFiles);
+
+            const previewUrl = URL.createObjectURL(file);
+            const newImagePreviews = [...imagePreviews];
+            newImagePreviews[index] = previewUrl;
+            setImagePreviews(newImagePreviews);
+        } else {
+            const newImageFiles = [...imageFiles];
+            newImageFiles[index] = null;
+            setImageFiles(newImageFiles);
+            const newImagePreviews = [...imagePreviews];
+            newImagePreviews[index] = null;
+            setImagePreviews(newImagePreviews);
         }
     };
 
-    const handleImageDelete = () => {
-        setImageFile(null);
-        setImagePreviewUrl('');
-        setProduct(prev => ({ ...prev, mainImageUrl: '' }));
+    const handleImageDelete = (indexToDelete) => {
+        setImageFiles(imageFiles.filter((_, index) => index !== indexToDelete));
+        setImagePreviews(imagePreviews.filter((_, index) => index !== indexToDelete));
     };
 
     const handleCategoryChange = (e) => {
         setSelectedCategoryIds(e.target.value);
     };
 
-    const uploadImage = async () => {
-        if (!imageFile) return null;
-
-        const formData = new FormData();
-        formData.append("imageFile", imageFile);
-
-        try {
-            const response = await axios.post(`${API_URL}products/upload`, formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                    'Authorization': `Bearer ${token}`
-                },
-            });
-            return response.data.imageUrl;
-        } catch (error) {
-            console.error("이미지 업로드 실패:", error);
-            alert("이미지 업로드에 실패했습니다.");
-            return null;
-        }
-    };
+    const uploadImage = async () => { /* ... */ };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
 
-        let uploadedImageUrl = product.mainImageUrl;
-        if (imageFile) {
-            uploadedImageUrl = await uploadImage();
-            if (uploadedImageUrl === null) {
-                return;
-            }
-        }
+        const formData = new FormData();
+        formData.append('name', product.name);
+        formData.append('description', product.description);
+        formData.append('price', product.price);
+        formData.append('stock', product.stock);
+        formData.append('active', product.active);
+        selectedCategoryIds.forEach(categoryId => formData.append('categoryIds', categoryId));
 
-        const categoryIds = selectedCategoryIds.map(id => Number(id));
-        const price = Number(product.price);
-        const stock = parseInt(product.stock, 10);
+        imageFiles.forEach(file => formData.append('imageFiles', file));
 
-        const updateData = {
-            name: product.name,
-            description: product.description,
-            price: price,
-            stock: stock,
-            active: product.active,
-            mainImageUrl: uploadedImageUrl,
-            // 카테고리 정보는 별도로 처리
-        };
 
         try {
-            const updateProductResponse = await axios.put(`${API_URL}products/${productId}`, updateData, {
+            const updateProductResponse = await axios.put(`${API_URL}products/${productId}`, formData, {
                 headers: {
-                    "Content-Type": "application/json",
+                    "Content-Type": "multipart/form-data",
                     'Authorization': `Bearer ${token}`
                 },
                 credentials: 'include'
             });
 
             if (updateProductResponse.status === 200) {
-                // 상품 수정 후 카테고리 업데이트 API 호출
-                const updateCategoryResponse = await axios.put(`${API_URL}products/${productId}/categories`, categoryIds, {
-                    headers: {
-                        "Content-Type": "application/json",
-                        'Authorization': `Bearer ${token}`
-                    },
-                    credentials: 'include'
-                });
+                const updateCategoryResponse = await axios.put(`${API_URL}products/${productId}/categories`, selectedCategoryIds, { /* ... */ });
 
                 if (updateCategoryResponse.status === 200) {
                     alert("상품이 성공적으로 업데이트되었습니다.");
@@ -225,7 +197,7 @@ const EditProduct = () => {
     if (error) return <div>Error: {error}</div>;
 
     return (
-        <Box sx={{ maxWidth: '600px', margin: '50px auto', padding: '20px', backgroundColor: '#fff', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', borderRadius: '8px' }}>
+        <Box sx={{ maxWidth: '800px', margin: '50px auto', padding: '20px', backgroundColor: '#fff', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', borderRadius: '8px' }} className="edit-product-container">
             <h2 className="edit-product-title">상품 수정</h2>
             <form className="edit-product-form" onSubmit={handleSubmit}>
                 <FormControl fullWidth margin="normal">
@@ -271,23 +243,68 @@ const EditProduct = () => {
                     </Select>
                 </FormControl>
 
-                {/* 이미지 업로드 및 미리보기 */}
-                <Box margin="normal">
-                    {imagePreviewUrl ? (
-                        <Box>
-                            <img src={imagePreviewUrl} alt="상품 이미지 미리보기" style={{ width: '100%', height: 'auto', maxHeight: '300px', objectFit: 'cover' }} />
-                            <Button variant="outlined" color="secondary" onClick={handleImageDelete} sx={{ mt: 2 }}>이미지 삭제</Button>
-                        </Box>
-                    ) : (
-                        <TextField
-                            fullWidth
-                            margin="normal"
+                {/* ✅ 대표 이미지 영역 (AddProduct.jsx 와 동일) */}
+                <Box sx={{ mt: 3, mb: 3 }} className="main-image-section">
+                    <Typography variant="h6" gutterBottom>대표 이미지</Typography>
+                    <Typography variant="body2" color="textSecondary" gutterBottom>상품을 대표하는 이미지를 선택해주세요.</Typography>
+                    <div className="image-upload-box">
+                        <input
+                            className="file-input"
                             type="file"
-                            onChange={handleImageChange}
-                            InputLabelProps={{ shrink: true }}
+                            name="mainImageFile"
+                            onChange={(e) => handleImageChange(e, 0)}
+                            accept="image/*"
                         />
-                    )}
+                        {imagePreviews[0] ? (
+                            <Box position="relative" display="inline-block">
+                                <img className="image-preview" src={imagePreviews[0]} alt="대표 이미지 미리보기" />
+                                <IconButton
+                                    onClick={() => handleImageDelete(0)}
+                                    sx={{ position: 'absolute', top: '-8px', right: '-8px', backgroundColor: 'rgba(255, 255, 255, 0.8)' }}
+                                >
+                                    <CloseIcon fontSize="small" />
+                                </IconButton>
+                            </Box>
+                        ) : (
+                            <span>대표 이미지 선택</span>
+                        )}
+                    </div>
                 </Box>
+
+                {/* ✅ 상세 이미지 영역 (AddProduct.jsx 와 동일) */}
+                <Box sx={{ mt: 3, mb: 3 }} className="detail-image-section">
+                    <Typography variant="h6" gutterBottom>상세 이미지 (추가)</Typography>
+                    <Typography variant="body2" color="textSecondary" gutterBottom>상품 상세 정보를 보여주는 이미지를 추가해주세요. (최대 4장)</Typography>
+                    <Grid container spacing={2}>
+                        {[...Array(4)].map((_, index) => (
+                            <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
+                                <div className="image-upload-box">
+                                    <input
+                                        className="file-input"
+                                        type="file"
+                                        name={`detailImageFile${index + 1}`}
+                                        onChange={(e) => handleImageChange(e, index + 1)}
+                                        accept="image/*"
+                                    />
+                                    {imagePreviews[index + 1] ? (
+                                        <Box position="relative" display="inline-block">
+                                            <img className="image-preview" src={imagePreviews[index + 1]} alt={`상세 이미지 미리보기 ${index + 1}`} />
+                                            <IconButton
+                                                onClick={() => handleImageDelete(index + 1)}
+                                                sx={{ position: 'absolute', top: '-8px', right: '-8px', backgroundColor: 'rgba(255, 255, 255, 0.8)' }}
+                                            >
+                                                <CloseIcon fontSize="small" />
+                                            </IconButton>
+                                        </Box>
+                                    ) : (
+                                        <span>상세 이미지 추가</span>
+                                    )}
+                                </div>
+                            </Grid>
+                        ))}
+                    </Grid>
+                </Box>
+
 
                 <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
                     <Button type="submit" variant="contained" color="primary" sx={{ width: '48%' }}>저장</Button>
