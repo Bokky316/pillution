@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Button, CircularProgress } from "@mui/material";
+import { Box, Typography, CircularProgress } from "@mui/material";
 import {
   fetchCategories,
   fetchQuestions,
@@ -13,8 +13,13 @@ import {
   setFilteredSubCategories,
   setFilteredCategories
 } from '@/redux/surveySlice';
-import QuestionComponent from '@features/survey/QuestionComponent';
+import SurveyContent from '@/features/survey/SurveyContent';
+import CategoryNavigation from '@/features/survey/CategoryNavigation';
 
+/**
+ * 설문 페이지 컴포넌트
+ * @returns {JSX.Element} SurveyPage 컴포넌트
+ */
 const SurveyPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -124,12 +129,18 @@ const SurveyPage = () => {
     }
   }, [categories, currentCategoryIndex, selectedSymptoms, gender, dispatch]);
 
-  // 응답 변경 핸들러
+  /**
+   * 응답 변경 핸들러
+   * @param {number} questionId - 질문 ID
+   * @param {any} value - 응답 값
+   */
   const handleResponseChange = useCallback((questionId, value) => {
     dispatch(updateResponse({ questionId, value }));
   }, [dispatch]);
 
-  // 이전 버튼 핸들러
+  /**
+   * 이전 버튼 핸들러
+   */
   const handlePrevious = useCallback(() => {
     const categoriesToUse = filteredCategories || categories;
     if (currentSubCategoryIndex > 0) {
@@ -141,97 +152,102 @@ const SurveyPage = () => {
     }
   }, [dispatch, filteredCategories, categories, currentSubCategoryIndex, currentCategoryIndex]);
 
-  // 다음 버튼 핸들러
-  // SurveyPage.js의 handleNext 함수 수정
+  /**
+   * 다음 버튼 핸들러
+   */
   const handleNext = useCallback(() => {
-      const categoriesToUse = filteredCategories || categories;
-      const currentCategory = categoriesToUse[currentCategoryIndex];
-      const subCategoriesToUse = filteredSubCategories || currentCategory?.subCategories;
+    const categoriesToUse = filteredCategories || categories;
+    const currentCategory = categoriesToUse[currentCategoryIndex];
+    const subCategoriesToUse = filteredSubCategories || currentCategory?.subCategories;
 
-      if (currentCategoryIndex === categoriesToUse.length - 1 &&
-          currentSubCategoryIndex === subCategoriesToUse.length - 1) {
+    if (currentCategoryIndex === categoriesToUse.length - 1 &&
+        currentSubCategoryIndex === subCategoriesToUse.length - 1) {
 
-          // responses 객체의 모든 응답을 배열로 변환
-          const formattedResponses = Object.entries(responses).map(([qId, response]) => {
-              // questionId를 문자열에서 숫자로 변환
-              const questionId = parseInt(qId, 10);
+      // responses 객체의 모든 응답을 배열로 변환
+      const formattedResponses = Object.entries(responses).map(([qId, response]) => {
+        // questionId를 문자열에서 숫자로 변환
+        const questionId = parseInt(qId, 10);
 
-              // 해당 질문 찾기 - 전체 questions에서 찾지 않고 categories 내의 모든 questions를 검색
-              let question = null;
-              for (const cat of categoriesToUse) {
-                  for (const subCat of cat.subCategories) {
-                      const foundQuestion = subCat.questions?.find(q => q.id === questionId);
-                      if (foundQuestion) {
-                          question = foundQuestion;
-                          break;
-                      }
-                  }
-                  if (question) break;
-              }
-
-              if (!question) return null;
-
-              // 응답 타입에 따라 데이터 포맷 변환
-              let formattedResponse = {
-                  questionId: questionId,
-                  responseType: question.questionType,
-                  responseText: null,
-                  selectedOptions: null
-              };
-
-              // 빈 응답 체크
-              if (response === null || response === undefined ||
-                  (Array.isArray(response) && response.length === 0) ||
-                  (typeof response === 'string' && response.trim() === '')) {
-                  return null;
-              }
-
-              // 응답 타입에 따른 데이터 처리
-              switch (question.questionType) {
-                  case 'TEXT':
-                      formattedResponse.responseText = response;
-                      break;
-                  case 'SINGLE_CHOICE':
-                      formattedResponse.selectedOptions = [parseInt(response, 10)];
-                      break;
-                  case 'MULTIPLE_CHOICE':
-                      formattedResponse.selectedOptions = Array.isArray(response)
-                          ? response.map(Number)
-                          : [Number(response)];
-                      break;
-              }
-
-              return formattedResponse;
-          }).filter(response => response !== null);
-
-          console.log('제출할 응답:', formattedResponses); // 디버깅용
-
-          if (formattedResponses.length === 0) {
-              alert('제출할 응답이 없습니다.');
-              return;
+        // 해당 질문 찾기 - 전체 questions에서 찾지 않고 categories 내의 모든 questions를 검색
+        let question = null;
+        for (const cat of categoriesToUse) {
+          for (const subCat of cat.subCategories) {
+            const foundQuestion = subCat.questions?.find(q => q.id === questionId);
+            if (foundQuestion) {
+              question = foundQuestion;
+              break;
+            }
           }
+          if (question) break;
+        }
 
-          dispatch(submitSurvey({ responses: formattedResponses }))
-              .unwrap()
-              .then(() => {
-                  dispatch(clearResponses());
-                  navigate('/survey-complete');
-              })
-              .catch(error => {
-                  alert(`제출 오류: ${error}`);
-              });
-      } else {
-          if (currentSubCategoryIndex < subCategoriesToUse.length - 1) {
-              dispatch(setCurrentSubCategoryIndex(currentSubCategoryIndex + 1));
-          } else if (currentCategoryIndex < categoriesToUse.length - 1) {
-              dispatch(setCurrentCategoryIndex(currentCategoryIndex + 1));
-              dispatch(setCurrentSubCategoryIndex(0));
-          }
+        if (!question) return null;
+
+        // 응답 타입에 따라 데이터 포맷 변환
+        let formattedResponse = {
+          questionId: questionId,
+          responseType: question.questionType,
+          responseText: null,
+          selectedOptions: null
+        };
+
+        // 빈 응답 체크
+        if (response === null || response === undefined ||
+            (Array.isArray(response) && response.length === 0) ||
+            (typeof response === 'string' && response.trim() === '')) {
+          return null;
+        }
+
+        // 응답 타입에 따른 데이터 처리
+        switch (question.questionType) {
+          case 'TEXT':
+            formattedResponse.responseText = response;
+            break;
+          case 'SINGLE_CHOICE':
+            formattedResponse.selectedOptions = [parseInt(response, 10)];
+            break;
+          case 'MULTIPLE_CHOICE':
+            formattedResponse.selectedOptions = Array.isArray(response)
+                ? response.map(Number)
+                : [Number(response)];
+            break;
+        }
+
+        return formattedResponse;
+      }).filter(response => response !== null);
+
+      console.log('제출할 응답:', formattedResponses); // 디버깅용
+
+      if (formattedResponses.length === 0) {
+        alert('제출할 응답이 없습니다.');
+        return;
       }
-  }, [dispatch, filteredCategories, categories, currentCategoryIndex, currentSubCategoryIndex,
-      filteredSubCategories, responses, navigate]);
 
-  // 다음 버튼 비활성화 여부 확인
+      dispatch(submitSurvey({ responses: formattedResponses }))
+          .unwrap()
+          .then(() => {
+            dispatch(clearResponses());
+            // 설문 완료 후 추천 페이지로 이동
+            navigate('/recommendation');
+          })
+          .catch(error => {
+            alert(`제출 오류: ${error}`);
+          });
+    } else {
+      if (currentSubCategoryIndex < subCategoriesToUse.length - 1) {
+        dispatch(setCurrentSubCategoryIndex(currentSubCategoryIndex + 1));
+      } else if (currentCategoryIndex < categoriesToUse.length - 1) {
+        dispatch(setCurrentCategoryIndex(currentCategoryIndex + 1));
+        dispatch(setCurrentSubCategoryIndex(0));
+      }
+    }
+  }, [dispatch, filteredCategories, categories, currentCategoryIndex, currentSubCategoryIndex,
+    filteredSubCategories, responses, navigate]);
+
+  /**
+   * 다음 버튼 비활성화 여부 확인
+   * @returns {boolean} 다음 버튼 비활성화 여부
+   */
   const isNextButtonDisabled = useCallback(() => {
     return questions.some(question => !responses[question.id]);
   }, [questions, responses]);
@@ -261,41 +277,27 @@ const SurveyPage = () => {
   const subCategoriesToDisplay = filteredSubCategories || currentCategory?.subCategories;
   const currentSubCategory = subCategoriesToDisplay?.[currentSubCategoryIndex];
 
+  const isFirstCategory = currentCategoryIndex === 0 && currentSubCategoryIndex === 0;
+  const isLastCategory = currentCategoryIndex === categoriesToUse.length - 1 &&
+                         currentSubCategoryIndex === subCategoriesToDisplay.length - 1;
+
   // 메인 렌더링
   return (
     <Box sx={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-      {currentCategory && currentSubCategory && (
-        <>
-          <Typography variant="h5" sx={{ mb: 3 }}>{currentCategory.name}</Typography>
-          <Typography variant="h6" sx={{ mb: 2 }}>{currentSubCategory.name}</Typography>
-          {questions.map((question) => (
-            <QuestionComponent
-              key={question.id}
-              question={question}
-              response={responses[question.id]}
-              onResponseChange={(value) => handleResponseChange(question.id, value)}
-            />
-          ))}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-            <Button
-              variant="contained"
-              onClick={handlePrevious}
-              disabled={currentCategoryIndex === 0 && currentSubCategoryIndex === 0}
-            >
-              이전
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleNext}
-              disabled={isNextButtonDisabled()}
-            >
-              {currentCategoryIndex === categoriesToUse.length - 1 &&
-               currentSubCategoryIndex === subCategoriesToDisplay.length - 1
-               ? '제출' : '다음'}
-            </Button>
-          </Box>
-        </>
-      )}
+      <SurveyContent
+        currentCategory={currentCategory}
+        currentSubCategory={currentSubCategory}
+        questions={questions}
+        responses={responses}
+        onResponseChange={handleResponseChange}
+      />
+      <CategoryNavigation
+        handlePrevious={handlePrevious}
+        handleNext={handleNext}
+        isNextButtonDisabled={isNextButtonDisabled()}
+        isFirstCategory={isFirstCategory}
+        isLastCategory={isLastCategory}
+      />
     </Box>
   );
 };
