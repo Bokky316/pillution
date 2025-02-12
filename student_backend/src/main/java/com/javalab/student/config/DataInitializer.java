@@ -126,18 +126,28 @@ public class DataInitializer implements CommandLineRunner {
 
 
     private void createBasicInfoQuestions(SurveyCategory basicInfo) {
-        // 개인정보
-        SurveySubCategory personalInfo = createSubCategory("개인정보", basicInfo);
+    // 이름
+    SurveySubCategory nameSubCategory = createSubCategory("이름", basicInfo);
+    createQuestion("이름을 알려주세요", "TEXT", 1, nameSubCategory);
 
-        createQuestion("이름을 알려주세요", "TEXT", 1, personalInfo);
+    // 성별
+    SurveySubCategory genderSubCategory = createSubCategory("성별", basicInfo);
+    SurveyQuestion genderQ = createQuestion("성별을 알려주세요", "SINGLE_CHOICE", 1, genderSubCategory);
+    createOptions(genderQ, Arrays.asList("여성", "남성"));
 
-        SurveyQuestion genderQ = createQuestion("성별을 알려주세요", "SINGLE_CHOICE", 2, personalInfo);
-        createOptions(genderQ, Arrays.asList("여성", "남성"));
+    // 나이
+    SurveySubCategory ageSubCategory = createSubCategory("나이", basicInfo);
+    createQuestion("나이를 알려주세요", "TEXT", 1, ageSubCategory);
 
-        createQuestion("나이를 알려주세요", "TEXT", 3, personalInfo);
-        createQuestion("키를 알려주세요", "TEXT", 4, personalInfo);
-        createQuestion("몸무게를 알려주세요", "TEXT", 5, personalInfo);
-    }
+    // 키
+    SurveySubCategory heightSubCategory = createSubCategory("키", basicInfo);
+    createQuestion("키를 알려주세요", "TEXT", 1, heightSubCategory);
+
+    // 몸무게
+    SurveySubCategory weightSubCategory = createSubCategory("몸무게", basicInfo);
+    createQuestion("몸무게를 알려주세요", "TEXT", 1, weightSubCategory);
+}
+
 
     private void createSymptomsQuestions(SurveyCategory symptoms) {
         // 주요 증상
@@ -353,33 +363,36 @@ public class DataInitializer implements CommandLineRunner {
         createMaleHealthQuestions(lifestyle);
     }
 
-    private void createExerciseQuestions(SurveyCategory lifestyle) {
-        SurveySubCategory exercise = createSubCategory("운동 및 야외활동", lifestyle);
+private void createExerciseQuestions(SurveyCategory lifestyle) {
+    // 운동 빈도
+    SurveySubCategory exerciseFrequency = createSubCategory("운동 빈도", lifestyle);
+    SurveyQuestion exerciseQ1 = createQuestion(
+            "운동은 얼마나 자주 하시나요?",
+            "SINGLE_CHOICE",
+            1,
+            exerciseFrequency
+    );
+    createOptions(exerciseQ1, Arrays.asList(
+            "주 4회 이상",
+            "주 2~3회",
+            "주 1회 이하"
+    ));
 
-        SurveyQuestion exerciseQ1 = createQuestion(
-                "운동은 얼마나 자주 하시나요?",
-                "SINGLE_CHOICE",
-                1,
-                exercise
-        );
-        createOptions(exerciseQ1, Arrays.asList(
-                "주 4회 이상",
-                "주 2~3회",
-                "주 1회 이하"
-        ));
+    // 야외활동 시간
+    SurveySubCategory outdoorActivity = createSubCategory("야외활동 시간", lifestyle);
+    SurveyQuestion exerciseQ2 = createQuestion(
+            "햇빛을 쬐는 야외활동을 하루에 얼마나 하나요?",
+            "SINGLE_CHOICE",
+            1,
+            outdoorActivity
+    );
+    createOptions(exerciseQ2, Arrays.asList(
+            "4시간 이상",
+            "1~4시간",
+            "1시간 이하"
+    ));
+}
 
-        SurveyQuestion exerciseQ2 = createQuestion(
-                "햇빛을 쬐는 야외활동을 하루에 얼마나 하나요?",
-                "SINGLE_CHOICE",
-                2,
-                exercise
-        );
-        createOptions(exerciseQ2, Arrays.asList(
-                "4시간 이상",
-                "1~4시간",
-                "1시간 이하"
-        ));
-    }
 
     private void createDietQuestions(SurveyCategory lifestyle) {
         SurveySubCategory diet = createSubCategory("식습관", lifestyle);
