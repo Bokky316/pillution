@@ -3,15 +3,19 @@ body {
   font-family: SUIT, Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
 }
 
+html, body{
+    overflow-x: hidden;
+    width: 100%;
+}
+
 #root {
-  max-width: 1280px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/*  text-align: center;*/
 }
 
 .App {
-  text-align: center;
+/*  text-align: center;*/
 }
 
 .App-logo {

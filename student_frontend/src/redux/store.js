@@ -54,7 +54,7 @@ const rootReducer = combineReducers({
     chat: chatReducer, // ✅ chat 리듀서 추가
     products: productReducer,
     subscription: subscriptionReducer,
-
+    sidebar: sidebarReducer,
 
 });
 

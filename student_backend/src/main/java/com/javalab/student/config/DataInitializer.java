@@ -687,6 +687,15 @@ private void createExerciseQuestions(SurveyCategory lifestyle) {
                         .active(true)
                         .categories(List.of(만성질환))
                         .ingredients(List.of(인지질))
+                        .build(),
+                Product.builder()   //추가됨
+                        .name("닥터스베스트 칼슘 마그네슘 비타민D")
+                        .description("뼈 건강을 위한 필수 미네랄과 비타민D 보충제")
+                        .price(new BigDecimal("32000"))
+                        .stock(100)
+                        .active(true)
+                        .categories(List.of(관절뼈,피로활력,수면))
+                        .ingredients(List.of(칼슘, 마그네슘, 비타민D))
                         .build()
         );
 
