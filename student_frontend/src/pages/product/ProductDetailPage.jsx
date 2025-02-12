@@ -105,21 +105,23 @@ const ProductDetailPage = () => {
     >
       <Grid container spacing={4} direction="column">
         {userRole === "ADMIN" && (
-          <Box sx={{ display: "flex", justifyContent: "center", mb: 1 }}>
+          <Box
+            sx={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              minWidth: "100%",
+              zIndex: 10,
+            }}
+          >
             <Box
               sx={{
-                backgroundColor: product?.active ? "#2E7D32" : "#9E9E9E",
-                color: "white",
-                borderRadius: "5px",
-                paddingX: 4,
-                paddingY: 1,
-                textAlign: "center",
-                minWidth: "400px",
-                boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+                backgroundColor: product?.active ? "#4CAF50" : "#666",
+                height: "10px",
+                borderRadius: 5,
               }}
-            >
-              {product?.active ? "활성" : "비활성"}
-            </Box>
+            />
           </Box>
         )}
 
@@ -145,15 +147,20 @@ const ProductDetailPage = () => {
             {userRole === "ADMIN" && (
               <Chip
                 label={`재고: ${product?.stock ?? "없음"}개`}
-                color={product?.stock > 0 ? "primary" : "error"}
                 size="small"
                 sx={{
                   paddingX: 1,
                   borderRadius: "5px",
                   m: 1,
+                  backgroundColor:
+                    product?.stock <= 5 ? "#EF5350" : // 빨강 (에러)
+                    product?.stock <= 15 ? "#FFA726" : // 주황 (경고)
+                    "#4CAF50", // 초록 (성공)
+                  color: "white",
                 }}
               />
             )}
+
           </Typography>
           <Typography variant="h6" sx={{ fontWeight: "bold", color: "primary.main", marginBottom: 2 }}>
             {product?.price ? `${product.price.toLocaleString()}원` : "가격 정보 없음"}

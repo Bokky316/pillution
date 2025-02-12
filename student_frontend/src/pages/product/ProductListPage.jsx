@@ -196,24 +196,27 @@ export default function ProductListPage() {
                 sx={{ objectFit: "cover" }}
               />
               {/* ✅ 상품 정보 */}
-              <CardContent sx={{ textAlign: "center", flexGrow: 1 }}>
-                <Typography variant="h6">{product.name}</Typography>
+              <CardContent sx={{ flexGrow: 1,position:"relative" }}>
+                <Typography variant="h6" sx={{ fontSize:"13.5px" }} >{product.name}</Typography>
                 <Typography variant="body1" sx={{ fontWeight: "bold", color: "#ff5722" }}>
                   {product.price.toLocaleString()}원
                 </Typography>
 
                 {/* ✅ 주요 성분 태그 */}
                 {product.ingredients && product.ingredients.length > 0 && (
-                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: "5px", justifyContent: "center", marginTop: "10px" }}>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: "5px", marginTop: "3px" }}>
                     {product.ingredients.map((ingredient, index) => (
                       <Chip
                         key={index}
                         label={ingredient}
                         sx={{
-                          fontSize: "12px",
+                          fontSize: "10px",
                           backgroundColor: "#f5f5f5",
                           color: "#333",
                           fontWeight: "bold",
+                          borderRadius: "5px", // 둥근 정도 조정 (기본값: 16px)
+                          paddingLeft: "8px",
+                          paddingRight: "8px"
                         }}
                       />
                     ))}
@@ -223,18 +226,39 @@ export default function ProductListPage() {
                 {/* ✅ 관리자 전용 정보 */}
                 {userRole === "ADMIN" && (
                   <Box sx={{ marginTop: "10px" }}>
-                    <Typography variant="body2" color="textSecondary">
-                      재고: {product.stock}
-                    </Typography>
+                    <Typography
+                          variant="body2"
+                          sx={{
+                            width:"90%",
+                            textAlign: "center",
+                            fontWeight: "bold",
+                            padding: "4px 8px", // 내부 여백 추가
+                            borderRadius: "5px", // 모서리 둥글게
+                            display: "inline-block", // 내용 크기에 맞게 조정
+                            backgroundColor:
+                              product.stock <= 5 ? "#EF5350" : // 빨강 (에러)
+                              product.stock <= 15 ? "#FFA726" : // 주황 (경고)
+                              "#4CAF50", // 초록 (성공)
+                            color: "white", // 대비되는 글씨 색상
+                          }}
+                        >
+                          재고: {product.stock}
+                        </Typography>
+
+
                     <Typography
                       variant="body2"
                       sx={{
-                        color: product.active ? "green" : "red",
+                        position: "absolute", // 부모(CardContent)를 기준으로 절대 위치 지정
+                        bottom: "0", // CardContent 바닥에 붙이기
+                        left: "0", // 왼쪽 정렬
                         marginTop: "5px",
+                        display: "inline-block", // 크기 조절
+                        width: "100%", // 원하는 너비
+                        height: "12px", // 원하는 높이
+                        backgroundColor: product.active ? "#4CAF50" : "#666", // 활성화/비활성화 색상
                       }}
-                    >
-                      {product.active ? "활성화" : "비활성화"}
-                    </Typography>
+                    />
                   </Box>
                 )}
               </CardContent>
