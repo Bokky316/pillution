@@ -16,7 +16,7 @@ export const fetchHealthAnalysis = createAsyncThunk(
       const data = await response.json();
 
       if (response.ok) {
-        return data;
+        return data.healthAnalysis; // healthAnalysis만 반환
       } else {
         return rejectWithValue(data.error || '건강 분석 정보를 가져오는데 실패했습니다.');
       }
@@ -122,17 +122,17 @@ const recommendationSlice = createSlice({
     builder
       // 건강 분석 정보
       .addCase(fetchHealthAnalysis.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchHealthAnalysis.fulfilled, (state, action) => {
-        state.loading = false;
-        state.healthAnalysis = action.payload || null;
-      })
-      .addCase(fetchHealthAnalysis.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
+          state.loading = true;
+          state.error = null;
+        })
+        .addCase(fetchHealthAnalysis.fulfilled, (state, action) => {
+          state.loading = false;
+          state.healthAnalysis = action.payload || null; // healthAnalysis 저장
+        })
+        .addCase(fetchHealthAnalysis.rejected, (state, action) => {
+          state.loading = false;
+          state.error = action.payload;
+        })
 
       // 추천 영양 성분
       .addCase(fetchRecommendedIngredients.pending, (state) => {

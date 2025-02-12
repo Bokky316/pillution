@@ -4,9 +4,11 @@ import com.javalab.student.dto.healthSurvey.RecommendationDTO;
 import com.javalab.student.dto.healthSurvey.RecommendedIngredientDTO;
 import com.javalab.student.dto.healthSurvey.RecommendedProductDTO;
 import com.javalab.student.entity.Member;
+import com.javalab.student.entity.healthSurvey.HealthRecord;
 import com.javalab.student.entity.healthSurvey.Recommendation;
 import com.javalab.student.entity.healthSurvey.RecommendedIngredient;
 import com.javalab.student.entity.healthSurvey.RecommendedProduct;
+import com.javalab.student.service.healthSurvey.HealthRecordService;
 import com.javalab.student.service.healthSurvey.RecommendationService;
 import com.javalab.student.service.healthSurvey.AuthenticationService;
 import com.javalab.student.repository.healthSurvey.RecommendationRepository;
@@ -35,6 +37,7 @@ public class RecommendationController {
     private final RecommendationRepository recommendationRepository;
     private final RecommendedIngredientRepository recommendedIngredientRepository;
     private final RecommendedProductRepository recommendedProductRepository;
+    private final HealthRecordService healthRecordService;
     /**
      * 현재 로그인한 사용자의 건강 분석 및 추천 정보를 제공합니다.
      *
@@ -125,6 +128,18 @@ public class RecommendationController {
             return ResponseEntity.ok(productDTOs);
         } catch (Exception e) {
             log.error("추천 상품 조회 중 오류 발생", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/health-records")
+    public ResponseEntity<List<HealthRecord>> getHealthRecords() {
+        try {
+            Member member = authenticationService.getAuthenticatedMember();
+            List<HealthRecord> healthRecords = healthRecordService.getHealthHistory(member.getId());
+            return ResponseEntity.ok(healthRecords);
+        } catch (Exception e) {
+            log.error("건강 기록 조회 중 오류 발생", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }

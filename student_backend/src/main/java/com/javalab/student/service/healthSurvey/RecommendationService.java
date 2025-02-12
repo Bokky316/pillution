@@ -1,6 +1,5 @@
 package com.javalab.student.service.healthSurvey;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.javalab.student.dto.healthSurvey.HealthAnalysisDTO;
 import com.javalab.student.dto.healthSurvey.ProductRecommendationDTO;
 import com.javalab.student.dto.healthSurvey.RecommendationDTO;
@@ -19,29 +18,25 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class RecommendationService {
 
-    private final NutrientScoreService nutrientScoreService;
-    private final ProductRecommendationService productRecommendationService;
     private final AuthenticationService authenticationService;
     private final MemberInfoService memberInfoService;
-    private final BmiCalculator bmiCalculator;
     private final HealthAnalysisService healthAnalysisService;
-
+    private final NutrientScoreService nutrientScoreService;
+    private final ProductRecommendationService productRecommendationService;
+    private final HealthRecordService healthRecordService;
+    private final BmiCalculator bmiCalculator;
     private final RecommendationRepository recommendationRepository;
     private final RecommendedIngredientRepository recommendedIngredientRepository;
     private final RecommendedProductRepository recommendedProductRepository;
     private final MemberResponseRepository memberResponseRepository;
-
-    private final HealthRecordService healthRecordService;
 
     /**
      * 현재 로그인한 사용자의 건강 분석 및 추천 정보를 제공합니다.
@@ -51,6 +46,7 @@ public class RecommendationService {
     @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> getHealthAnalysisAndRecommendations() {
         log.info("getHealthAnalysisAndRecommendations 메서드 시작");
+
         try {
             // 1. 현재 인증된 사용자 정보 가져오기
             Member member = authenticationService.getAuthenticatedMember();
@@ -59,15 +55,24 @@ public class RecommendationService {
             // 2. 사용자 정보 가져오기 (나이, 키, 몸무게 등)
             List<MemberResponse> responses = memberResponseRepository.findAgeHeightAndWeightResponses(member.getId());
             log.info("2. 사용자 응답 데이터 조회 완료. 응답 수: {}", responses.size());
+
             int age = memberInfoService.getAge(responses);
             double height = memberInfoService.getHeight(responses);
             double weight = memberInfoService.getWeight(responses);
             double bmi = bmiCalculator.calculateBMI(height, weight);
-            log.info("2. 사용자 정보 계산 완료. 나이: {}, 키: {}, 몸무게: {}, BMI: {}", age, height, weight, bmi);
+            String gender = memberInfoService.getGender(member.getId());
+
+            log.info("2. 사용자 정보 계산 완료. 나이: {}, 키: {}, 몸무게: {}, BMI: {}, 성별: {}", age, height, weight, bmi, gender);
 
             // 3. 건강 분석 수행
-            log.info("3. 건강 분석 시작");
-            HealthAnalysisDTO healthAnalysis = healthAnalysisService.analyzeHealth(member.getId(), age, bmi, responses, member.getGender());
+            HealthAnalysisDTO healthAnalysis = healthAnalysisService.analyzeHealth(member.getId(), age, bmi, responses, gender);
+
+            // 이름, 나이, 성별 정보 설정
+            healthAnalysis.setName(member.getName());
+            healthAnalysis.setAge(age);
+            healthAnalysis.setGender(gender);
+            healthAnalysis.setBmi(bmi);
+
             log.info("3. 건강 분석 완료: {}", healthAnalysis);
 
             // 4. 추천 영양 성분 점수 계산
@@ -80,7 +85,7 @@ public class RecommendationService {
             Recommendation recommendation = new Recommendation();
             recommendation.setMemberId(member.getId());
             recommendation.setCreatedAt(LocalDateTime.now());
-            recommendation = recommendationRepository.saveAndFlush(recommendation); // saveAndFlush 사용
+            recommendation = recommendationRepository.saveAndFlush(recommendation);
             log.info("5. 추천 엔티티 저장 완료. ID: {}", recommendation.getId());
 
             // 6. 추천 영양 성분 저장
@@ -113,12 +118,29 @@ public class RecommendationService {
             recommendedProductRepository.flush();
             log.info("7. 추천 제품 저장 완료. 저장된 개수: {}", recommendedProducts.size());
 
-            // 8. 결과 반환 데이터 구성
+            // 8. HealthRecord 저장
+            log.info("8. HealthRecord 저장 시작");
+            List<String> recommendedIngredientNames = recommendedIngredients.stream()
+                    .map(RecommendedIngredient::getIngredientName)
+                    .collect(Collectors.toList());
+
+            healthRecordService.saveHealthRecord(
+                    member,
+                    healthAnalysis,
+                    recommendedIngredientNames,
+                    productRecommendations,
+                    member.getName(),
+                    gender,
+                    age
+            );
+            log.info("8. HealthRecord 저장 완료");
+
+            // 9. 결과 반환 데이터 구성
             Map<String, Object> result = new HashMap<>();
             result.put("healthAnalysis", healthAnalysis);
             result.put("recommendedIngredients", recommendedIngredients);
             result.put("recommendations", recommendedProducts);
-            log.info("8. 결과 데이터 구성 완료");
+            log.info("9. 결과 데이터 구성 완료");
 
             log.info("getHealthAnalysisAndRecommendations 메서드 정상 종료");
             return result;
@@ -164,11 +186,11 @@ public class RecommendationService {
                                     0,
                                     null,
                                     null))
-                            .toList();
+                            .collect(Collectors.toList());
 
             dto.setProductRecommendations(productRecommendations);
 
             return dto;
-        }).toList();
+        }).collect(Collectors.toList());
     }
 }
