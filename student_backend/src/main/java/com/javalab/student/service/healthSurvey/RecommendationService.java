@@ -6,11 +6,13 @@ import com.javalab.student.dto.healthSurvey.ProductRecommendationDTO;
 import com.javalab.student.dto.healthSurvey.RecommendationDTO;
 import com.javalab.student.entity.Member;
 import com.javalab.student.entity.Product;
+import com.javalab.student.entity.healthSurvey.HealthRecord;
 import com.javalab.student.entity.healthSurvey.MemberResponse;
 import com.javalab.student.entity.healthSurvey.Recommendation;
 import com.javalab.student.entity.healthSurvey.RecommendedIngredient;
 import com.javalab.student.entity.healthSurvey.RecommendedProduct;
 import com.javalab.student.repository.ProductRepository;
+import com.javalab.student.repository.healthSurvey.HealthRecordRepository;
 import com.javalab.student.repository.healthSurvey.MemberResponseRepository;
 import com.javalab.student.repository.healthSurvey.RecommendationRepository;
 import com.javalab.student.repository.healthSurvey.RecommendedIngredientRepository;
@@ -45,14 +47,15 @@ public class RecommendationService {
     private final MemberResponseRepository memberResponseRepository;
     private final ProductRepository productRepository;
     private final HealthRecordService healthRecordService;
+    private final HealthRecordRepository healthRecordRepository; // 추가
 
     /**
-     * 현재 로그인한 사용자의 건강 분석 및 추천 정보를 제공합니다.
+     * 현재 로그인한 사용자의 건강 분석 정보를 제공합니다.
      *
-     * @return 건강 분석 및 추천 정보를 포함한 Map
+     * @return 건강 분석 정보를 포함한 HealthAnalysisDTO
      */
     @Transactional(rollbackFor = Exception.class)
-    public Map<String, Object> getHealthAnalysisAndRecommendations() {
+    public HealthAnalysisDTO getHealthAnalysisAndRecommendations() {
         log.info("getHealthAnalysisAndRecommendations 메서드 시작");
 
         try {
@@ -135,84 +138,46 @@ public class RecommendationService {
             recommendedProductRepository.flush();
             log.info("7. 추천 제품 저장 완료. 저장된 개수: {}", recommendedProducts.size());
 
-
-
             // 8. HealthRecord 저장
-            log.info("8. HealthRecord 저장 시작");
-
-            List<String> recommendedIngredientNames = recommendedIngredients.stream()
-                    .map(RecommendedIngredient::getIngredientName)
-                    .collect(Collectors.toList());
-
-            healthRecordService.saveHealthRecord(
-                    member,
-                    healthAnalysis,
-                    recommendedIngredientNames,
-                    productRecommendations,
-                    name,
-                    gender,
-                    age
-            );
+            healthRecordService.saveHealthRecord(member, healthAnalysis,
+                    ingredientScores.keySet().stream().collect(Collectors.toList()),
+                    productRecommendations, name, gender, age);
 
             log.info("8. HealthRecord 저장 완료");
 
-            // 9. 결과 반환 데이터 구성
-            Map<String, Object> result = new HashMap<>();
-            result.put("healthAnalysis", healthAnalysis);
-            result.put("recommendedIngredients", recommendedIngredients);
-            result.put("recommendations", recommendedProducts);
-
-            log.info("9. 결과 데이터 구성 완료");
-
-            return result;
+            log.info("getHealthAnalysisAndRecommendations 메서드 종료");
+            return healthAnalysis;
 
         } catch (Exception e) {
-            log.error("getHealthAnalysisAndRecommendations 메서드 실행 중 오류 발생", e);
-            throw new RuntimeException("건강 분석 및 추천 생성 중 오류가 발생했습니다.", e);
+            log.error("getHealthAnalysisAndRecommendations 메서드 실행 중 오류 발생: {}", e.getMessage(), e);
+            throw e; // 예외 다시 던지기
         }
     }
-
 
     /**
      * 현재 로그인한 사용자의 건강 기록 히스토리를 조회합니다.
      *
-     * @return 사용자의 모든 건강 기록 리스트를 반환
+     * @return 건강 기록 리스트를 포함한 ResponseEntity
      */
-    @Transactional(readOnly = true)
     public List<RecommendationDTO> getHealthHistory() {
         Member member = authenticationService.getAuthenticatedMember();
+        List<HealthRecord> healthRecords = healthRecordRepository.findByMemberIdOrderByRecordDateDesc(member.getId());
 
-        // 사용자의 모든 Recommendation 기록 조회
-        List<Recommendation> recommendations = recommendationRepository.findByMemberId(member.getId());
-
-        // Recommendation -> RecommendationDTO로 변환
-        return recommendations.stream().map(recommendation -> {
-            RecommendationDTO dto = new RecommendationDTO();
-            dto.setId(recommendation.getId());
-            dto.setMemberId(recommendation.getMemberId());
-            dto.setCreatedAt(recommendation.getCreatedAt());
-
-            // 영양 성분 정보 추가 (필요한 경우)
-//            List<RecommendedIngredient> ingredients =
-//                    recommendedIngredientRepository.findByRecommendationId(recommendation.getId());
-//            dto.setRecommendedIngredients(ingredients); // 이 줄 추가 (필요한 경우)
-
-            List<ProductRecommendationDTO> productRecommendations =
-                    recommendedProductRepository.findByRecommendationId(recommendation.getId())
-                            .stream()
-                            .map(product -> new ProductRecommendationDTO(
-                                    product.getId(),
-                                    null,
-                                    product.getReason(),
-                                    null,
-                                    0,
-                                    null,
-                                    null))
-                            .toList();
-
-            dto.setProductRecommendations(productRecommendations);
-
-            return dto;
-        }).toList();
+        return healthRecords.stream()
+                .map(record -> RecommendationDTO.builder()
+                        .id(record.getId())
+                        .memberId(member.getId())
+                        .createdAt(record.getRecordDate())
+                        .recordDate(record.getRecordDate())
+                        .name(record.getName())
+                        .gender(record.getGender())
+                        .age(record.getAge())
+                        .bmi(record.getBmi())
+                        .riskLevels(record.getRiskLevels())
+                        .overallAssessment(record.getOverallAssessment())
+                        .recommendedIngredients(record.getRecommendedIngredients())
+                        .recommendedProducts(record.getRecommendedProducts())
+                        .build())
+                .collect(Collectors.toList());
     }
 }

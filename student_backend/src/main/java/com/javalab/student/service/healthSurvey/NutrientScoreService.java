@@ -46,8 +46,60 @@ public class NutrientScoreService {
         // 나이와 BMI에 따른 점수 조정
         adjustScoresByAgeAndBMI(ingredientScores, age, bmi);
 
+        // 주요 증상에 해당하는 영양 성분을 추출하고 점수를 높게 설정
+        Set<String> mainSymptomIngredients = getMainSymptomIngredients(responses);
+        for (String ingredient : mainSymptomIngredients) {
+            ingredientScores.compute(ingredient, (k, v) -> Math.max((v == null) ? 3 : v, 3)); // 최소 3점 보장
+        }
+
         return ingredientScores;
     }
+
+
+    /**
+     * 주요 증상에 해당하는 영양 성분을 추출합니다.
+     *
+     * @param responses 회원의 응답 목록
+     * @return 주요 증상에 해당하는 영양 성분 집합
+     */
+    private Set<String> getMainSymptomIngredients(List<MemberResponse> responses) {
+        Set<String> mainSymptomIngredients = new HashSet<>();
+
+        for (MemberResponse response : responses) {
+            String subCategory = response.getQuestion().getSubCategory().getName();
+            if (subCategory.equals("혈관·혈액순환")) {
+                mainSymptomIngredients.add("오메가-3");
+                mainSymptomIngredients.add("비타민B군");
+            } else if (subCategory.equals("소화·장")) {
+                mainSymptomIngredients.add("글루타민");
+                mainSymptomIngredients.add("프로바이오틱스");
+            } else if (subCategory.equals("피부")) {
+                mainSymptomIngredients.add("콜라겐");
+                mainSymptomIngredients.add("비오틴");
+            } else if (subCategory.equals("눈")) {
+                mainSymptomIngredients.add("루테인");
+                mainSymptomIngredients.add("오메가-3");
+            } else if (subCategory.equals("두뇌 활동")) {
+                mainSymptomIngredients.add("인지질(PS)");
+                mainSymptomIngredients.add("오메가-3");
+            } else if (subCategory.equals("피로감")) {
+                mainSymptomIngredients.add("비타민B군");
+                mainSymptomIngredients.add("마그네슘");
+            } else if (subCategory.equals("뼈·관절")) {
+                mainSymptomIngredients.add("칼슘");
+                mainSymptomIngredients.add("비타민D");
+            } else if (subCategory.equals("면역")) {
+                mainSymptomIngredients.add("아연");
+                mainSymptomIngredients.add("비타민C");
+            } else if (subCategory.equals("모발")) {
+                mainSymptomIngredients.add("비오틴");
+                mainSymptomIngredients.add("아연");
+            }
+        }
+
+        return mainSymptomIngredients;
+    }
+
 
     /**
      * 계산된 영양 성분 점수를 기반으로 추천 영양 성분을 결정합니다.
@@ -59,26 +111,50 @@ public class NutrientScoreService {
      * @return 추천 영양 성분 목록 (최대 5개, 이름과 점수 포함)
      */
     public List<Map<String, Object>> getRecommendedIngredients(HealthAnalysisDTO healthAnalysis, Map<String, Integer> ingredientScores, int age, double bmi) {
-        // 기본 성분 (칼슘, 마그네슘, 비타민D) 기본 점수 1점 부여
-        Set<String> baseIngredients = new HashSet<>(Arrays.asList("칼슘", "마그네슘", "비타민D"));
-        baseIngredients.forEach(ingredient -> ingredientScores.putIfAbsent(ingredient, 1));
+        Set<String> mainSymptomIngredients = getMainSymptomIngredients(healthAnalysis.getResponses());
 
-        // 총점이 1점 이상인 성분만 필터링하고 점수 내림차순 정렬
+        if (ingredientScores.isEmpty() && mainSymptomIngredients.isEmpty()) {
+            ingredientScores.put("칼슘", 1);
+            ingredientScores.put("마그네슘", 1);
+            ingredientScores.put("비타민D", 1);
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        // 모든 영양 성분을 점수 순으로 정렬
         List<Map.Entry<String, Integer>> sortedIngredients = ingredientScores.entrySet().stream()
-                .filter(entry -> entry.getValue() >= 1) // 총점이 1점 이상인 것만 포함
-                .sorted(Comparator.comparing(Map.Entry::getValue, Comparator.reverseOrder())) // 점수 내림차순 정렬
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
                 .collect(Collectors.toList());
 
-        // 상위 5개만 선택하여 이름과 점수를 Map에 담아 List로 반환
-        return sortedIngredients.stream()
-                .limit(5)
-                .map(entry -> {
-                    Map<String, Object> ingredient = new HashMap<>();
-                    ingredient.put("name", entry.getKey());
-                    ingredient.put("score", entry.getValue());
-                    return ingredient;
-                })
-                .collect(Collectors.toList());
+        // 주요 증상 영양 성분을 우선 추가
+        for (Map.Entry<String, Integer> entry : sortedIngredients) {
+            if (mainSymptomIngredients.contains(entry.getKey()) && result.size() < 5) {
+                Map<String, Object> ingredient = new HashMap<>();
+                ingredient.put("name", entry.getKey());
+                ingredient.put("score", entry.getValue());
+                result.add(ingredient);
+            }
+        }
+
+        // 남은 자리에 다른 영양 성분 추가
+        for (Map.Entry<String, Integer> entry : sortedIngredients) {
+            if (!mainSymptomIngredients.contains(entry.getKey()) && result.size() < 5) {
+                Map<String, Object> ingredient = new HashMap<>();
+                ingredient.put("name", entry.getKey());
+                ingredient.put("score", entry.getValue());
+                result.add(ingredient);
+            }
+        }
+
+        // 결과가 비어있으면 기본값 추가
+        if (result.isEmpty()) {
+            Map<String, Object> defaultIngredient = new HashMap<>();
+            defaultIngredient.put("name", "기본 영양소");
+            defaultIngredient.put("score", 1);
+            result.add(defaultIngredient);
+        }
+
+        return result;
     }
 
     /**
@@ -91,22 +167,23 @@ public class NutrientScoreService {
      */
     @Transactional
     public void saveRecommendedIngredients(Recommendation recommendation, Map<String, Integer> ingredientScores, HealthAnalysisDTO healthAnalysis, int age, double bmi) {
-        // 추천 영양 성분 결정 (최대 5개, 이름과 점수 포함)
         List<Map<String, Object>> recommendedIngredients = getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
 
-        // 점수의 최대값을 구해 5점 만점으로 환산하기 위한 기준 설정
-        double maxScore = ingredientScores.values().stream().max(Integer::compareTo).orElse(1);
+        // recommendedIngredients의 점수만 고려하여 maxScore 계산
+        double maxScore = recommendedIngredients.stream()
+                .mapToInt(map -> (Integer) map.get("score"))
+                .max()
+                .orElse(1);
 
         for (Map<String, Object> ingredientMap : recommendedIngredients) {
             String ingredientName = (String) ingredientMap.get("name");
             Integer originalScore = (Integer) ingredientMap.get("score");
 
             RecommendedIngredient ingredient = new RecommendedIngredient();
-            ingredient.setRecommendation(recommendation); // Recommendation 객체 참조로 설정
+            ingredient.setRecommendation(recommendation);
             ingredient.setIngredientName(ingredientName);
 
-            // 점수 계산 및 저장 (0점 ~ 5점 사이로 정규화)
-            double normalizedScore = Math.min(5.0, Math.max(0.0, (originalScore / maxScore) * 5));
+            double normalizedScore = Math.min(5.0, Math.max(0.0, (originalScore / (double) maxScore) * 5));
             double roundedScore = Math.round(normalizedScore * 10.0) / 10.0;
             ingredient.setScore(roundedScore);
 

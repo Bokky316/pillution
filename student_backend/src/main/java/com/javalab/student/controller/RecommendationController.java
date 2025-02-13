@@ -1,5 +1,6 @@
 package com.javalab.student.controller;
 
+import com.javalab.student.dto.healthSurvey.HealthAnalysisDTO;
 import com.javalab.student.dto.healthSurvey.RecommendationDTO;
 import com.javalab.student.dto.healthSurvey.RecommendedIngredientDTO;
 import com.javalab.student.dto.healthSurvey.RecommendedProductDTO;
@@ -39,20 +40,25 @@ public class RecommendationController {
     private final RecommendedIngredientRepository recommendedIngredientRepository;
     private final RecommendedProductRepository recommendedProductRepository;
     private final HealthRecordService healthRecordService;
+
     /**
-     * 현재 로그인한 사용자의 건강 분석 및 추천 정보를 제공합니다.
+     * 현재 로그인한 사용자의 건강 분석 정보를 제공합니다.
      *
-     * @return 건강 분석 및 추천 정보를 포함한 ResponseEntity
+     * @return 건강 분석 정보를 포함한 ResponseEntity
      */
-    @GetMapping("/analysis")
-    public ResponseEntity<Map<String, Object>> getHealthAnalysisAndRecommendations() {
+    @GetMapping(value = "/analysis", produces = "application/json")
+    public ResponseEntity<HealthAnalysisDTO> getHealthAnalysisAndRecommendations() {
         try {
-            Map<String, Object> result = recommendationService.getHealthAnalysisAndRecommendations();
-            return ResponseEntity.ok(result);
+            HealthAnalysisDTO healthAnalysis = recommendationService.getHealthAnalysisAndRecommendations();
+            if (healthAnalysis == null) {
+                log.warn("건강 분석 정보가 없습니다.");
+                return ResponseEntity.ok(new HealthAnalysisDTO()); // 빈 DTO 반환
+            }
+            log.info("건강 분석 정보: {}", healthAnalysis);
+            return ResponseEntity.ok(healthAnalysis);
         } catch (Exception e) {
-            log.error("건강 분석 및 추천 정보 조회 중 오류 발생", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "건강 분석 및 추천 정보 조회 중 오류가 발생했습니다."));
+            log.error("건강 분석 정보 조회 중 오류 발생: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new HealthAnalysisDTO()); // 빈 DTO 반환
         }
     }
 
@@ -61,19 +67,19 @@ public class RecommendationController {
      *
      * @return 건강 기록 리스트를 포함한 ResponseEntity
      */
-    @GetMapping("/history")
+    @GetMapping(value = "/history", produces = "application/json")
     public ResponseEntity<List<RecommendationDTO>> getHealthHistory() {
         try {
             List<RecommendationDTO> history = recommendationService.getHealthHistory();
+            log.info("건강 기록 히스토리: {}", history);
             return ResponseEntity.ok(history);
         } catch (Exception e) {
-            log.error("건강 기록 조회 중 오류 발생", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(null);
+            log.error("건강 기록 조회 중 오류 발생: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
-    @GetMapping("/ingredients")
+    @GetMapping(value = "/ingredients", produces = "application/json")
     public ResponseEntity<List<RecommendedIngredientDTO>> getRecommendedIngredients() {
         try {
             Member member = authenticationService.getAuthenticatedMember();
@@ -94,16 +100,15 @@ public class RecommendationController {
                     })
                     .collect(Collectors.toList());
 
-            log.info("Recommended Ingredients: {}", ingredientDTOs);
-
+            log.info("추천된 영양 성분: {}", ingredientDTOs);
             return ResponseEntity.ok(ingredientDTOs);
         } catch (Exception e) {
-            log.error("추천 영양 성분 조회 중 오류 발생", e);
+            log.error("추천 영양 성분 조회 중 오류 발생: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
-    @GetMapping("/products")
+    @GetMapping(value = "/products", produces = "application/json")
     public ResponseEntity<List<RecommendedProductDTO>> getRecommendedProducts() {
         try {
             // 현재 인증된 사용자 가져오기
@@ -134,26 +139,24 @@ public class RecommendationController {
                     })
                     .collect(Collectors.toList());
 
-            log.info("Recommended Products: {}", productDTOs);
-
+            log.info("추천된 상품: {}", productDTOs);
             return ResponseEntity.ok(productDTOs);
         } catch (Exception e) {
-            log.error("추천 상품 조회 중 오류 발생", e);
+            log.error("추천 상품 조회 중 오류 발생: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
-    @GetMapping("/health-records")
+    @GetMapping(value = "/health-records", produces = "application/json")
     public ResponseEntity<List<HealthRecord>> getHealthRecords() {
         try {
             Member member = authenticationService.getAuthenticatedMember();
             List<HealthRecord> healthRecords = healthRecordService.getHealthHistory(member.getId());
+            log.info("건강 기록: {}", healthRecords);
             return ResponseEntity.ok(healthRecords);
         } catch (Exception e) {
-            log.error("건강 기록 조회 중 오류 발생", e);
+            log.error("건강 기록 조회 중 오류 발생: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 }
-
-

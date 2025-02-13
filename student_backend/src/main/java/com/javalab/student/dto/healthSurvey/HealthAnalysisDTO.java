@@ -21,4 +21,6 @@ public class HealthAnalysisDTO {
     private Map<String, String> riskLevels;
     private String overallAssessment;
     private List<MemberResponse> responses;
+
+
 }
