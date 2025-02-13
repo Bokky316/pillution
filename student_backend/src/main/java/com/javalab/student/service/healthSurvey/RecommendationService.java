@@ -82,7 +82,7 @@ public class RecommendationService {
 
             // 4. 추천 영양 성분 점수 계산
             log.info("4. 추천 영양 성분 점수 계산 시작");
-            Map<String, Integer> ingredientScores = nutrientScoreService.calculateIngredientScores(textResponses, optionResponses, age, bmi);
+            Map<String, Integer> ingredientScores = nutrientScoreService.calculateIngredientScores(optionResponses, age, bmi, gender);
             log.info("4. 추천 영양 성분 점수 계산 완료. 점수 수: {}", ingredientScores.size());
 
             // 5. 추천 엔티티 생성 및 저장

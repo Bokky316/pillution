@@ -41,8 +41,14 @@ public class HealthAnalysisService {
                 .collect(Collectors.toList());
 
         // RiskCalculationService를 사용하여 위험도 계산
-        Map<String, String> riskLevels = riskCalculationService.calculateAllRisks(age, bmi, combinedResponses);
+        List<MemberResponseOption> memberResponseOptions = combinedResponses.stream()
+                .filter(response -> response instanceof MemberResponseOption)
+                .map(response -> (MemberResponseOption) response)
+                .collect(Collectors.toList());
+
+        Map<String, String> riskLevels = riskCalculationService.calculateAllRisks(age, bmi, memberResponseOptions);
         log.info("Calculated risk levels: {}", riskLevels);
+
 
         // 전반적인 건강 평가 생성
         String overallAssessment = generateOverallAssessment(bmi, riskLevels);
