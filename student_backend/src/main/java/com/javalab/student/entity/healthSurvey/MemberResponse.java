@@ -25,7 +25,7 @@ public class MemberResponse extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id", nullable = false)
-    @JsonBackReference // 이 부분을 추가/수정했습니다.
+    @JsonBackReference
     private SurveyQuestion question;
 
     @Column(name = "response_text", columnDefinition = "TEXT")
