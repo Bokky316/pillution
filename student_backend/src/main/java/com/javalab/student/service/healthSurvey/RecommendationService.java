@@ -129,7 +129,7 @@ public class RecommendationService {
             for (Map<String, Object> ingredientData : recommendedIngredients) {
                 RecommendedIngredient ingredient = new RecommendedIngredient();
                 ingredient.setIngredientName((String) ingredientData.get("name"));
-                ingredient.setScore((Double) ingredientData.get("score"));
+                ingredient.setScore(((Number) ingredientData.get("score")).doubleValue());
                 recommendation.addRecommendedIngredient(ingredient);
             }
 
@@ -140,13 +140,19 @@ public class RecommendationService {
                 recommendation.addRecommendedProduct(product);
             }
 
+            recommendationRepository.save(recommendation);
+
             // Recommendation 저장
             recommendationRepository.save(recommendation);
 
 
+
+            log.info("건강 분석 결과: {}", healthAnalysis);
+            log.info("추천 제품: {}", recommendations);
+            log.info("추천 영양 성분: {}", recommendedIngredients);
             return result;
         } catch (Exception e) {
-            log.error("Error in getHealthAnalysisAndRecommendations", e);
+            log.error("건강 분석 및 추천 생성 중 오류 발생", e);
             throw new RuntimeException("건강 분석 및 추천 생성 중 오류가 발생했습니다.", e);
         }
     }

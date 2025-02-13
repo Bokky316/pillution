@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,10 +39,15 @@ public class RecommendationController {
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             log.error("건강 분석 및 추천 정보 조회 중 오류 발생", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "건강 분석 및 추천 정보 조회 중 오류가 발생했습니다."));
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "건강 분석 및 추천 정보 조회 중 오류가 발생했습니다.");
+            errorResponse.put("healthAnalysis", null);
+            errorResponse.put("recommendations", Collections.emptyList());
+            errorResponse.put("recommendedIngredients", Collections.emptyList());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
+
 
     /**
      * 사용자의 나이, BMI, 응답을 기반으로 건강 위험도를 계산합니다.
