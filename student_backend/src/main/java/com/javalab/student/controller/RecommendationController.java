@@ -1,5 +1,6 @@
 package com.javalab.student.controller;
 
+import com.javalab.student.dto.healthSurvey.HealthAnalysisDTO;
 import com.javalab.student.dto.healthSurvey.RecommendationDTO;
 import com.javalab.student.dto.healthSurvey.RecommendedIngredientDTO;
 import com.javalab.student.dto.healthSurvey.RecommendedProductDTO;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -144,15 +146,31 @@ public class RecommendationController {
     }
 
     @GetMapping("/health-records")
-    public ResponseEntity<List<HealthRecord>> getHealthRecords() {
+    public ResponseEntity<List<HealthAnalysisDTO>> getHealthRecords() {
         try {
             Member member = authenticationService.getAuthenticatedMember();
             List<HealthRecord> healthRecords = healthRecordService.getHealthHistory(member.getId());
-            return ResponseEntity.ok(healthRecords);
+            List<HealthAnalysisDTO> dtos = healthRecords.stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+            log.info("변환된 DTO: {}", dtos);
+            return ResponseEntity.ok(dtos);
         } catch (Exception e) {
             log.error("건강 기록 조회 중 오류 발생", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
+    }
+
+    private HealthAnalysisDTO convertToDTO(HealthRecord record) {
+        HealthAnalysisDTO dto = new HealthAnalysisDTO();
+        dto.setName(record.getName());
+        dto.setGender(record.getGender());
+        dto.setAge(record.getAge());
+        dto.setBmi(record.getBmi());
+        dto.setRecordDate(record.getRecordDate());
+        dto.setRiskLevels(record.getRiskLevels()); // 문자열 그대로 저장
+        dto.setOverallAssessment(record.getOverallAssessment());
+        return dto;
     }
 }
 

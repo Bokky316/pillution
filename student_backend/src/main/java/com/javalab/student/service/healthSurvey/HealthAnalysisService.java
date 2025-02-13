@@ -49,7 +49,6 @@ public class HealthAnalysisService {
         Map<String, String> riskLevels = riskCalculationService.calculateAllRisks(age, bmi, memberResponseOptions);
         log.info("Calculated risk levels: {}", riskLevels);
 
-
         // 전반적인 건강 평가 생성
         String overallAssessment = generateOverallAssessment(bmi, riskLevels);
         log.info("Generated overall assessment: {}", overallAssessment);
@@ -57,10 +56,8 @@ public class HealthAnalysisService {
         // HealthAnalysisDTO 생성 및 반환
         HealthAnalysisDTO healthAnalysisDTO = new HealthAnalysisDTO();
         healthAnalysisDTO.setBmi(bmi);
-        healthAnalysisDTO.setRiskLevels(riskLevels);
+        healthAnalysisDTO.setRiskLevels(convertRiskLevelsToString(riskLevels));
         healthAnalysisDTO.setOverallAssessment(overallAssessment);
-        healthAnalysisDTO.setTextResponses(textResponses);
-        healthAnalysisDTO.setOptionResponses(optionResponses);
         healthAnalysisDTO.setGender(gender);
 
         log.info("Health analysis completed: {}", healthAnalysisDTO);
@@ -100,5 +97,17 @@ public class HealthAnalysisService {
         assessment.append("자세한 건강 관리 방법은 전문의와 상담하시기 바랍니다.");
 
         return assessment.toString();
+    }
+
+    /**
+     * 위험 수준 맵을 문자열로 변환합니다.
+     *
+     * @param riskLevels 위험 수준 맵
+     * @return 위험 수준을 나타내는 문자열
+     */
+    private String convertRiskLevelsToString(Map<String, String> riskLevels) {
+        return riskLevels.entrySet().stream()
+                .map(entry -> entry.getKey() + ":" + entry.getValue())
+                .collect(Collectors.joining(","));
     }
 }

@@ -7,6 +7,7 @@ import lombok.Setter;
 import com.javalab.student.entity.healthSurvey.MemberResponse;
 import com.javalab.student.entity.healthSurvey.MemberResponseOption;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -19,8 +20,8 @@ public class HealthAnalysisDTO {
     private String gender;
     private int age;
     private double bmi;
-    private Map<String, String> riskLevels;
+    private String riskLevels;
     private String overallAssessment;
-    private List<MemberResponse> textResponses;
-    private List<MemberResponseOption> optionResponses;
+    private LocalDateTime recordDate;
 }
+

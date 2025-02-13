@@ -37,7 +37,7 @@ public class RecommendationService {
     private final RecommendedIngredientRepository recommendedIngredientRepository;
     private final RecommendedProductRepository recommendedProductRepository;
     private final MemberResponseRepository memberResponseRepository;
-    private MemberResponseOptionRepository memberResponseOptionRepository;
+    private final MemberResponseOptionRepository memberResponseOptionRepository;
     private final ProductRepository productRepository;
     private final HealthRecordService healthRecordService;
 
@@ -55,16 +55,19 @@ public class RecommendationService {
             Member member = authenticationService.getAuthenticatedMember();
             log.info("1. 인증된 사용자 ID: {}", member.getId());
 
-            // 2. 사용자 정보 가져오기 (나이, 키, 몸무게 등)
             List<MemberResponse> textResponses = memberResponseRepository.findAgeHeightAndWeightResponses(member.getId());
             List<MemberResponseOption> optionResponses = memberResponseOptionRepository.findLatestResponsesByMemberId(member.getId());
-            log.info("2. 사용자 응답 데이터 조회 완료. 텍스트 응답 수: {}, 옵션 응답 수: {}", textResponses.size(), optionResponses.size());
+            log.info("1. 인증된 사용자 ID: {}", member.getId());
+
+            // 2. 사용자 정보 가져오기 (나이, 키, 몸무게 등)
+            List<MemberResponse> responses = memberResponseRepository.findAgeHeightAndWeightResponses(member.getId());
+            log.info("2. 사용자 응답 데이터 조회 완료. 응답 수: {}", responses.size());
 
             String name = memberInfoService.getName(member.getId());
             String gender = memberInfoService.getGender(member.getId());
-            int age = memberInfoService.getAge(textResponses);
-            double height = memberInfoService.getHeight(textResponses);
-            double weight = memberInfoService.getWeight(textResponses);
+            int age = memberInfoService.getAge(responses);
+            double height = memberInfoService.getHeight(responses);
+            double weight = memberInfoService.getWeight(responses);
 
             // BMI 계산
             double bmi = bmiCalculator.calculateBMI(height, weight);
@@ -90,7 +93,7 @@ public class RecommendationService {
             Recommendation recommendation = new Recommendation();
             recommendation.setMemberId(member.getId());
             recommendation.setCreatedAt(LocalDateTime.now());
-            recommendation = recommendationRepository.saveAndFlush(recommendation);
+            recommendation = recommendationRepository.saveAndFlush(recommendation); // saveAndFlush 사용
             log.info("5. 추천 엔티티 저장 완료. ID: {}", recommendation.getId());
 
             // 6. 추천 영양 성분 저장
@@ -121,6 +124,7 @@ public class RecommendationService {
                         .reason(productDTO.getDescription())
                         .build();
 
+                // 연관 관계 설정
                 recommendedProduct.setRecommendation(recommendation);
                 recommendedProduct.setProduct(product);
 
@@ -130,8 +134,11 @@ public class RecommendationService {
             recommendedProductRepository.flush();
             log.info("7. 추천 제품 저장 완료. 저장된 개수: {}", recommendedProducts.size());
 
+
+
             // 8. HealthRecord 저장
             log.info("8. HealthRecord 저장 시작");
+
             List<String> recommendedIngredientNames = recommendedIngredients.stream()
                     .map(RecommendedIngredient::getIngredientName)
                     .collect(Collectors.toList());
@@ -145,6 +152,7 @@ public class RecommendationService {
                     gender,
                     age
             );
+
             log.info("8. HealthRecord 저장 완료");
 
             // 9. 결과 반환 데이터 구성
