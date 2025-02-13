@@ -31,7 +31,9 @@ public class ProductFormDto {
 
     private boolean active;
 
-    private List<MultipartFile> imageFiles; // 이미지 파일 리스트를 받을 필드 추가
+    private MultipartFile mainImageFile; // ✅ 대표 이미지 파일 필드 추가
+
+    private List<MultipartFile> detailImageFiles; // ✅ 상세 이미지 파일 리스트 필드 추가
 
     /** 추가된 필드: 영양 성분 ID 리스트 */
     private List<Long> ingredientIds;

@@ -17,7 +17,7 @@ public interface ProductService {
     ProductDto updateProduct(Long id, ProductFormDto productFormDto);
 
     /** 상품 단건 조회 */
-    ProductDto getProductById(Long id);
+    ProductResponseDTO getProductById(Long id);
 
     /** 상품 활성화/비활성화 */
     void toggleProductActive(Long id);

@@ -32,8 +32,13 @@ const EditProduct = () => {
         active: true,
     });
 
-    const [imageFiles, setImageFiles] = useState(Array(5).fill(null));
-    const [imagePreviews, setImagePreviews] = useState(Array(5).fill(null));
+    // ✅ 대표 이미지 관련 state
+    const [mainImageFile, setMainImageFile] = useState(null);
+    const [mainImagePreview, setMainImagePreview] = useState(null);
+    // ✅ 상세 이미지 관련 state
+    const [detailImageFiles, setDetailImageFiles] = useState(Array(4).fill(null)); // 상세 이미지 4개 배열로 초기화
+    const [detailImagePreviews, setDetailImagePreviews] = useState(Array(4).fill(null)); // 상세 이미지 미리보기 4개 배열로 초기화
+
     const [categories, setCategories] = useState([]);
     const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -94,9 +99,27 @@ const EditProduct = () => {
 
                 setSelectedCategoryIds(categoryIds.filter(id => id !== null));
 
+                // 대표 이미지와 상세 이미지 분리 처리 및 state 업데이트
                 if (productData.productImgList && productData.productImgList.length > 0) {
-                    const previews = productData.productImgList.map(img => getAbsoluteImageUrl(img.imageUrl));
-                    setImagePreviews(previews);
+                    const mainImage = productData.productImgList.find(img => img.imageType === '대표');
+                    if (mainImage) {
+                        setMainImagePreview(getAbsoluteImageUrl(mainImage.imageUrl));
+                    } else {
+                        setMainImagePreview(null); // 대표 이미지 없는 경우 null 설정 명시적으로 추가
+                    }
+
+                    const detailImages = productData.productImgList.filter(img => img.imageType !== '대표');
+                    const detailPreviews = detailImages.map(img => getAbsoluteImageUrl(img.imageUrl));
+                    const initialDetailPreviews = Array(4).fill(null);
+                    detailPreviews.forEach((preview, index) => {
+                        if (index < 4) {
+                            initialDetailPreviews[index] = preview;
+                        }
+                    });
+                    setDetailImagePreviews(initialDetailPreviews);
+                } else {
+                    setMainImagePreview(null); // 이미지 없는 경우 대표 이미지 미리보기 null 로 명시적으로 초기화
+                    setDetailImagePreviews(Array(4).fill(null)); // 이미지 없는 경우 상세 이미지 미리보기 null 배열로 명시적으로 초기화
                 }
 
 
@@ -119,37 +142,57 @@ const EditProduct = () => {
         }));
     };
 
-    const handleImageChange = (e, index) => {
+    // ✅ 대표 이미지 변경 핸들러
+    const handleMainImageChange = (e) => {
         const file = e.target.files[0];
+        setMainImageFile(file);
         if (file) {
-            const newImageFiles = [...imageFiles];
-            newImageFiles[index] = file;
-            setImageFiles(newImageFiles);
-
-            const previewUrl = URL.createObjectURL(file);
-            const newImagePreviews = [...imagePreviews];
-            newImagePreviews[index] = previewUrl;
-            setImagePreviews(newImagePreviews);
+            setMainImagePreview(URL.createObjectURL(file));
         } else {
-            const newImageFiles = [...imageFiles];
-            newImageFiles[index] = null;
-            setImageFiles(newImageFiles);
-            const newImagePreviews = [...imagePreviews];
-            newImagePreviews[index] = null;
-            setImagePreviews(newImagePreviews);
+            setMainImagePreview(null);
         }
     };
 
-    const handleImageDelete = (indexToDelete) => {
-        setImageFiles(imageFiles.filter((_, index) => index !== indexToDelete));
-        setImagePreviews(imagePreviews.filter((_, index) => index !== indexToDelete));
+    // ✅ 상세 이미지 변경 핸들러
+    const handleDetailImageChange = (e, index) => {
+        const file = e.target.files[0];
+        const newDetailImageFiles = [...detailImageFiles];
+        const newDetailImagePreviews = [...detailImagePreviews];
+
+        if (file) {
+            newDetailImageFiles[index] = file;
+            newDetailImagePreviews[index] = URL.createObjectURL(file);
+        } else {
+            newDetailImageFiles[index] = null;
+            newDetailImagePreviews[index] = null;
+        }
+
+        setDetailImageFiles(newDetailImageFiles);
+        setDetailImagePreviews(newDetailImagePreviews);
+    };
+
+    // ✅ 대표 이미지 삭제 핸들러
+    const handleMainImageDelete = () => {
+        setMainImageFile(null);
+        setMainImagePreview(null);
+    };
+
+    // ✅ 상세 이미지 삭제 핸들러
+    const handleDetailImageDelete = (index) => { // index 파라미터 추가
+        const newDetailImageFiles = [...detailImageFiles];
+        const newDetailImagePreviews = [...detailImagePreviews];
+
+        newDetailImageFiles[index] = null;
+        newDetailImagePreviews[index] = null;
+
+        setDetailImageFiles(newDetailImageFiles);
+        setDetailImagePreviews(newDetailImagePreviews);
     };
 
     const handleCategoryChange = (e) => {
         setSelectedCategoryIds(e.target.value);
     };
 
-    const uploadImage = async () => { /* ... */ };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -162,7 +205,17 @@ const EditProduct = () => {
         formData.append('active', product.active);
         selectedCategoryIds.forEach(categoryId => formData.append('categoryIds', categoryId));
 
-        imageFiles.forEach(file => formData.append('imageFiles', file));
+        // ✅ 대표 이미지를 'mainImageFile' 키로 FormData에 추가 (mainImageFile state 사용)
+        if (mainImageFile) {
+            formData.append('mainImageFile', mainImageFile);
+        }
+
+        // ✅ 상세 이미지들을 'detailImageFiles' 키로 FormData에 추가 (detailImageFiles state 사용)
+        detailImageFiles.forEach(file => {
+            if (file) {
+                formData.append('detailImageFiles', file);
+            }
+        });
 
 
         try {
@@ -175,14 +228,8 @@ const EditProduct = () => {
             });
 
             if (updateProductResponse.status === 200) {
-                const updateCategoryResponse = await axios.put(`${API_URL}products/${productId}/categories`, selectedCategoryIds, { /* ... */ });
-
-                if (updateCategoryResponse.status === 200) {
-                    alert("상품이 성공적으로 업데이트되었습니다.");
-                    navigate('/adminpage/products');
-                } else {
-                    throw new Error(`카테고리 업데이트 실패: ${updateCategoryResponse.status}`);
-                }
+                alert("상품이 성공적으로 업데이트되었습니다.");
+                navigate('/adminpage/products');
             } else {
                 throw new Error(`상품 업데이트 실패: ${updateProductResponse.status}`);
             }
@@ -243,7 +290,7 @@ const EditProduct = () => {
                     </Select>
                 </FormControl>
 
-                {/* ✅ 대표 이미지 영역 (AddProduct.jsx 와 동일) */}
+                {/* 대표 이미지 영역 */}
                 <Box sx={{ mt: 3, mb: 3 }} className="main-image-section">
                     <Typography variant="h6" gutterBottom>대표 이미지</Typography>
                     <Typography variant="body2" color="textSecondary" gutterBottom>상품을 대표하는 이미지를 선택해주세요.</Typography>
@@ -252,53 +299,68 @@ const EditProduct = () => {
                             className="file-input"
                             type="file"
                             name="mainImageFile"
-                            onChange={(e) => handleImageChange(e, 0)}
+                            // ✅ handleMainImageChange 핸들러 사용
+                            onChange={handleMainImageChange}
                             accept="image/*"
                         />
-                        {imagePreviews[0] ? (
+                        {/* ✅ mainImagePreview state 사용 */}
+                        {mainImagePreview && (
                             <Box position="relative" display="inline-block">
-                                <img className="image-preview" src={imagePreviews[0]} alt="대표 이미지 미리보기" />
+                                <img className="image-preview" src={mainImagePreview} alt="대표 이미지 미리보기" />
                                 <IconButton
-                                    onClick={() => handleImageDelete(0)}
+                                    // ✅ handleMainImageDelete 핸들러 사용
+                                    onClick={handleMainImageDelete}
                                     sx={{ position: 'absolute', top: '-8px', right: '-8px', backgroundColor: 'rgba(255, 255, 255, 0.8)' }}
                                 >
                                     <CloseIcon fontSize="small" />
                                 </IconButton>
                             </Box>
-                        ) : (
-                            <span>대표 이미지 선택</span>
                         )}
                     </div>
                 </Box>
 
-                {/* ✅ 상세 이미지 영역 (AddProduct.jsx 와 동일) */}
+                {/* 상세 이미지 영역 */}
                 <Box sx={{ mt: 3, mb: 3 }} className="detail-image-section">
                     <Typography variant="h6" gutterBottom>상세 이미지 (추가)</Typography>
                     <Typography variant="body2" color="textSecondary" gutterBottom>상품 상세 정보를 보여주는 이미지를 추가해주세요. (최대 4장)</Typography>
                     <Grid container spacing={2}>
-                        {[...Array(4)].map((_, index) => (
+                        {detailImagePreviews.map((previewUrl, index) => (
+                            previewUrl &&
                             <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
                                 <div className="image-upload-box">
                                     <input
                                         className="file-input"
                                         type="file"
                                         name={`detailImageFile${index + 1}`}
-                                        onChange={(e) => handleImageChange(e, index + 1)}
+                                        // ✅ handleDetailImageChange 핸들러 사용, index 전달
+                                        onChange={(e) => handleDetailImageChange(e, index)}
                                         accept="image/*"
                                     />
-                                    {imagePreviews[index + 1] ? (
-                                        <Box position="relative" display="inline-block">
-                                            <img className="image-preview" src={imagePreviews[index + 1]} alt={`상세 이미지 미리보기 ${index + 1}`} />
-                                            <IconButton
-                                                onClick={() => handleImageDelete(index + 1)}
-                                                sx={{ position: 'absolute', top: '-8px', right: '-8px', backgroundColor: 'rgba(255, 255, 255, 0.8)' }}
-                                            >
-                                                <CloseIcon fontSize="small" />
-                                            </IconButton>
-                                        </Box>
-                                    ) : (
-                                        <span>상세 이미지 추가</span>
-                                    )}
+                                    <Box position="relative" display="inline-block">
+                                        <img className="image-preview" src={previewUrl} alt={`상세 이미지 미리보기 ${index + 1}`} />
+                                        <IconButton
+                                            // ✅ handleDetailImageDelete 핸들러 사용, index 전달
+                                            onClick={() => handleDetailImageDelete(index)}
+                                            sx={{ position: 'absolute', top: '-8px', right: '-8px', backgroundColor: 'rgba(255, 255, 255, 0.8)' }}
+                                        >
+                                            <CloseIcon fontSize="small" />
+                                        </IconButton>
+                                    </Box>
+                                </div>
+                            </Grid>
+                        ))}
+                        {[...Array(4 - detailImagePreviews.filter(preview => preview).length)].map((_, index) => ( // 상세 이미지 슬롯 부족분 채우기
+                            <Grid item xs={12} sm={6} md={4} lg={3} key={`empty-${index}`}>
+                                <div className="image-upload-box">
+                                    <input
+                                        className="file-input"
+                                        type="file"
+                                        name={`detailImageFile${detailImagePreviews.filter(preview => preview).length + index + 1}`}
+                                        // ✅ handleDetailImageChange 핸들러 사용, index 계산하여 전달
+                                        onChange={(e) => handleDetailImageChange(e, detailImagePreviews.filter(preview => preview).length + index)}
+                                        accept="image/*"
+                                    />
+                                    <span>상세 이미지 추가</span>
                                 </div>
                             </Grid>
                         ))}

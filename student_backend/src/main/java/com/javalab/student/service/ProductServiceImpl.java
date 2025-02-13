@@ -48,26 +48,44 @@ public class ProductServiceImpl implements ProductService {
         Product product = modelMapper.map(productFormDto, Product.class);
         Product savedProduct = productRepository.save(product);
 
-        if (productFormDto.getImageFiles() != null && !productFormDto.getImageFiles().isEmpty()) {
-            for (int order = 0; order < productFormDto.getImageFiles().size(); order++) { // order 변수 제거하고 for loop index 사용
-                MultipartFile imageFile = productFormDto.getImageFiles().get(order);
+        // ✅ 대표 이미지 저장
+        if (productFormDto.getMainImageFile() != null) {
+            MultipartFile mainImageFile = productFormDto.getMainImageFile();
+            try {
+                String imageUrl = saveImage(mainImageFile);
+                ProductImg productImg = ProductImg.builder()
+                        .product(savedProduct)
+                        .imageUrl(imageUrl)
+                        .imageType("대표") // ✅ imageType "대표" 로 설정
+                        .order(0) // 대표 이미지는 order 0으로 설정 (필요하다면)
+                        .build();
+                productImgRepository.save(productImg);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to save main image", e);
+            }
+        }
+
+        // ✅ 상세 이미지들 저장
+        if (productFormDto.getDetailImageFiles() != null && !productFormDto.getDetailImageFiles().isEmpty()) {
+            List<MultipartFile> detailImageFiles = productFormDto.getDetailImageFiles();
+            for (int order = 1; order <= detailImageFiles.size(); order++) { // order 1부터 시작 (대표 이미지 order 0)
+                MultipartFile detailImageFile = detailImageFiles.get(order - 1);
                 try {
-                    String imageUrl = saveImage(imageFile);
+                    String imageUrl = saveImage(detailImageFile);
                     ProductImg productImg = ProductImg.builder()
                             .product(savedProduct)
                             .imageUrl(imageUrl)
-                            // 첫 번째 이미지인 경우 "대표", 나머지는 "상세" 로 imageType 설정
-                            .imageType(order == 0 ? "대표" : "상세") // <-- 동적으로 imageType 설정
+                            .imageType("상세") // ✅ imageType "상세" 로 설정
                             .order(order)
                             .build();
                     productImgRepository.save(productImg);
                 } catch (IOException e) {
-                    throw new RuntimeException("Failed to save image", e);
+                    throw new RuntimeException("Failed to save detail image", e);
                 }
             }
         }
 
-        return getProductDtoWithMainImage(savedProduct); // 수정된 getProductDtoWithMainImage 사용
+        return getProductDtoWithMainImage(savedProduct);
     }
 
     /** 상품 정보 수정 */
@@ -77,7 +95,7 @@ public class ProductServiceImpl implements ProductService {
         Product existingProduct = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        // 기존 이미지 삭제 (ProductImg 테이블에서)
+        // 기존 이미지 삭제 (ProductImg 테이블에서) - 수정 시 기존 이미지 삭제 로직은 그대로 유지
         List<ProductImg> existingImages = productImgRepository.findByProductId(id);
         for (ProductImg img : existingImages) {
             deleteImageFile(img.getImageUrl()); // 파일 시스템에서 이미지 파일 삭제
@@ -87,42 +105,66 @@ public class ProductServiceImpl implements ProductService {
         modelMapper.map(productFormDto, existingProduct); // Product 정보 업데이트 (이미지 제외)
         Product updatedProduct = productRepository.save(existingProduct);
 
-        // 새 이미지 저장 및 ProductImg 생성 (createProduct 와 유사)
-        if (productFormDto.getImageFiles() != null && !productFormDto.getImageFiles().isEmpty()) {
-            int order = 0; // 이미지 순서 초기화
-            for (MultipartFile imageFile : productFormDto.getImageFiles()) {
-                try {
-                    String imageUrl = saveImage(imageFile);
-                    ProductImg productImg = ProductImg.builder()
-                            .product(updatedProduct)
-                            .imageUrl(imageUrl)
-                            .imageType("상세") // 기본적으로 "상세" 이미지 유형으로 설정, 필요에 따라 변경
-                            .order(order++)
-                            .build();
-                    productImgRepository.save(productImg);
-                } catch (IOException e) {
-                    throw new RuntimeException("Failed to save image", e);
-                }
-            }
-            // 대표 이미지 설정 (첫 번째 이미지를 대표 이미지로 가정)
-            List<ProductImg> updatedImages = productImgRepository.findByProductId(id); // 업데이트된 이미지 목록 다시 조회
-            if (!updatedImages.isEmpty()) {
-                ProductImg mainImage = updatedImages.get(0);
-                mainImage.setImageType("대표"); // 첫 번째 이미지를 대표 이미지로 설정
-                productImgRepository.save(mainImage);
+        // ✅ 대표 이미지 저장 (수정 시 대표 이미지 덮어쓰기)
+        if (productFormDto.getMainImageFile() != null) {
+            MultipartFile mainImageFile = productFormDto.getMainImageFile();
+            try {
+                String imageUrl = saveImage(mainImageFile);
+                ProductImg productImg = ProductImg.builder()
+                        .product(updatedProduct)
+                        .imageUrl(imageUrl)
+                        .imageType("대표") // ✅ imageType "대표" 로 설정
+                        .order(0) // 대표 이미지는 order 0으로 설정 (필요하다면)
+                        .build();
+                productImgRepository.save(productImg);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to save main image", e);
             }
         }
 
-        return getProductDtoWithMainImage(updatedProduct); // 수정된 getProductDtoWithMainImage 사용
+        // ✅ 상세 이미지들 저장 (수정 시 상세 이미지 새로 추가)
+        if (productFormDto.getDetailImageFiles() != null && !productFormDto.getDetailImageFiles().isEmpty()) {
+            List<MultipartFile> detailImageFiles = productFormDto.getDetailImageFiles();
+            for (int order = 1; order <= detailImageFiles.size(); order++) { // order 1부터 시작 (대표 이미지 order 0)
+                MultipartFile detailImageFile = detailImageFiles.get(order - 1);
+                try {
+                    String imageUrl = saveImage(detailImageFile);
+                    ProductImg productImg = ProductImg.builder()
+                            .product(updatedProduct)
+                            .imageUrl(imageUrl)
+                            .imageType("상세") // ✅ imageType "상세" 로 설정
+                            .order(order)
+                            .build();
+                    productImgRepository.save(productImg);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to save detail image", e);
+                }
+            }
+        }
+
+        return getProductDtoWithMainImage(updatedProduct);
     }
 
 
     /** 상품 단건 조회 */
     @Override
-    public ProductDto getProductById(Long id) {
+    public ProductResponseDTO getProductById(Long id) { // ✅ 반환 타입 ProductResponseDTO 로 변경
         Product product = productRepository.findProductByIdWithCategories(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-        return getProductDtoWithMainImage(product); // 수정된 getProductDtoWithMainImage 사용
+        return ProductResponseDTO.fromEntity(product); // ✅ ProductResponseDTO.fromEntity() 사용
+    }
+
+// Product 엔티티를 ProductDto 로 변환하면서 대표 이미지 URL 설정 (삭제)
+// private ProductDto getProductDtoWithMainImage(Product product) { ... }
+
+    // Product 엔티티를 ProductDto 로 변환하면서 대표 이미지 URL 설정 (ProductResponseDTO 로 변경, 이름 변경)
+    private ProductResponseDTO getProductResponseDTOWithImages(Product product) { // ✅ ProductResponseDTO 로 반환, 이름 변경
+        ProductResponseDTO productResponseDTO = ProductResponseDTO.fromEntity(product); // ProductResponseDTO.fromEntity() 사용
+        ProductImg mainImage = productImgRepository.findFirstByProductIdAndImageTypeOrderByOrderAsc(product.getId(), "대표");
+        if (mainImage != null) {
+            productResponseDTO.setMainImageUrl(mainImage.getImageUrl());
+        }
+        return productResponseDTO;
     }
 
     /** 상품 활성화/비활성화 */

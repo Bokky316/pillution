@@ -69,10 +69,12 @@ public class ProductController {
     /** 상품 등록 */
     @PostMapping
     public ResponseEntity<ProductDto> createProduct(@Valid ProductFormDto productFormDto,
-                                                    @RequestParam(value = "imageFiles", required = false) List<MultipartFile> imageFiles) { // 이미지 파일 리스트로 받음
+                                                    @RequestParam(value = "mainImageFile", required = false) MultipartFile mainImageFile, // ✅ 대표 이미지
+                                                    @RequestParam(value = "detailImageFiles", required = false) List<MultipartFile> detailImageFiles) { // ✅ 상세 이미지들
         log.info("상품 등록 요청 수신: {}", productFormDto);
         try {
-            productFormDto.setImageFiles(imageFiles); // ProductFormDto에 이미지 파일 리스트 설정
+            productFormDto.setMainImageFile(mainImageFile); // ProductFormDto 에 대표 이미지 파일 설정
+            productFormDto.setDetailImageFiles(detailImageFiles); // ProductFormDto 에 상세 이미지 파일 리스트 설정
             ProductDto savedProduct = productService.createProduct(productFormDto);
             log.info("상품 등록 성공: {}", savedProduct);
             return ResponseEntity.ok(savedProduct);
@@ -86,12 +88,14 @@ public class ProductController {
     @PutMapping("/{id}")
     public ResponseEntity<ProductDto> updateProduct(@PathVariable("id") Long id,
                                                     @Valid ProductFormDto productFormDto,
-                                                    @RequestParam(value = "imageFiles", required = false) List<MultipartFile> imageFiles) { // 이미지 파일 리스트로 받음 (required=false)
-        productFormDto.setImageFiles(imageFiles); // ProductFormDto에 이미지 파일 리스트 설정
+                                                    @RequestParam(value = "mainImageFile", required = false) MultipartFile mainImageFile, // ✅ 대표 이미지
+                                                    @RequestParam(value = "detailImageFiles", required = false) List<MultipartFile> detailImageFiles) { // ✅ 상세 이미지들
+        productFormDto.setMainImageFile(mainImageFile); // ProductFormDto 에 대표 이미지 파일 설정
+        productFormDto.setDetailImageFiles(detailImageFiles); // ProductFormDto 에 상세 이미지 파일 리스트 설정
         return ResponseEntity.ok(productService.updateProduct(id, productFormDto));
     }
 
-    // 이미지 업로드 핸들러 (기존 uploadImage 핸들러 유지 - 필요에 따라 수정 가능)
+    /** 이미지 업로드 핸들러  */
     @PostMapping("/upload")
     public ResponseEntity<Map<String, String>> uploadImage(@RequestParam("imageFile") MultipartFile file) {
         try {
@@ -113,7 +117,7 @@ public class ProductController {
         }
     }
 
-    // 이미지 제공 핸들러 (기존 serveImage 핸들러 유지)
+    /** 이미지 제공 핸들러 */
     @GetMapping("/images/{filename:.+}")
     public ResponseEntity<Resource> serveImage(@PathVariable("filename") String filename) {
         try {
@@ -192,11 +196,13 @@ public class ProductController {
     }
 
     /** 특정 상품 상세 정보 조회 (ProductResponseDTO 반환) */
-    @GetMapping("/{productId}/dto")
-    public ResponseEntity<ProductDto> getProductDetailsDto(@PathVariable("productId") Long productId) {
+    @GetMapping("/{productId}/dto") // ✅ URL 유지
+    public ResponseEntity<ProductResponseDTO> getProductDetailsDto(@PathVariable("productId") Long productId) { // ✅ 반환 타입 ProductResponseDTO 로 변경
         try {
-            ProductDto responseDTO = productService.getProductById(productId); // ProductDto 반환
-            return ResponseEntity.ok(responseDTO); // ResponseEntity<ProductDto> 반환 (정상)
+            // ProductResponseDTO.fromEntity() 를 사용하여 Product 엔티티를 DTO로 변환
+            // ProductResponseDTO productResponseDTO = ProductResponseDTO.fromEntity(productRepository.findById(productId).orElseThrow(() -> new RuntimeException("Product not found"))); // 기존 코드 (삭제)
+            ProductResponseDTO productResponseDTO = productService.getProductById(productId); // ✅ ProductService.getProductById() 사용
+            return ResponseEntity.ok(productResponseDTO); // ✅ ProductResponseDTO 반환
         } catch (Exception e) {
             log.error("Error fetching product details for product ID: " + productId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

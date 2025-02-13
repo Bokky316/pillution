@@ -28,6 +28,7 @@ public class ProductResponseDTO {
     private List<String> categories;  // 카테고리 이름 리스트
     private List<String> ingredients; // 영양 성분 리스트
     private String description;
+    private List<ProductImgDto> productImgList;
 
     /** Product 엔티티를 DTO로 변환 */
     public static ProductResponseDTO fromEntity(Product product) {
@@ -56,6 +57,13 @@ public class ProductResponseDTO {
                     .findFirst() // 첫 번째 대표 이미지 가져오기
                     .map(ProductImg::getImageUrl) // ProductImg 엔티티에서 이미지 URL 추출
                     .orElse(null)); // 대표 이미지가 없을 경우 null 설정
+        }
+
+        // Product 엔티티에서 ProductImg 리스트를 ProductImgDto 리스트로 변환하여 설정 (✅ 추가)
+        if (product.getProductImgList() != null && !product.getProductImgList().isEmpty()) {
+            dto.setProductImgList(product.getProductImgList().stream()
+                    .map(ProductImgDto::fromEntity) // ProductImg 엔티티를 ProductImgDto 로 변환
+                    .collect(Collectors.toList()));
         }
 
         return dto;
