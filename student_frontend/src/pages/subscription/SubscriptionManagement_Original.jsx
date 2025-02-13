@@ -37,7 +37,6 @@ export default function SubscriptionManagement() {
     const subscriptionItems = useSelector(state => state.subscription.nextItems);
     // ✅ 초기값 설정 (nextItems가 없으면 빈 배열 반환)
     const nextItems = subscription?.nextItems || [];
-    const [isModalOpen, setIsModalOpen] = useState(false); // ✅ 모달 상태
 
 
     // ✅ 카카오 주소 선택 후 Redux 상태 업데이트
@@ -408,239 +407,147 @@ const handleCancelSubscription = () => {
 //     };
 
 
-//     if (loading) return <div>로딩 중...</div>;
-//     if (error) return <div>에러 발생: {error}</div>;
-//     if (!subscription || Object.keys(subscription).length === 0) {
-//         return <div>구독 정보가 없습니다.</div>;  // 예외 처리 추가
-//     }
     if (loading) return <div>로딩 중...</div>;
     if (error) return <div>에러 발생: {error}</div>;
     if (!subscription || Object.keys(subscription).length === 0) {
-        return <div style={{ textAlign: "center", color: "#888", padding: "20px" }}>정기구독 내역이 없습니다.</div>;
+        return <div>구독 정보가 없습니다.</div>;  // 예외 처리 추가
     }
 
-    // ✅ 현재 구독 제품 가격 계산
-    const totalQuantity = subscription.items.reduce((sum, item) => sum + item.quantity, 0);
-    const originalTotalPrice = subscription.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const discountTotalPrice = subscription.discountedTotalPrice || originalTotalPrice * 0.85; // 예제: 15% 할인 적용
-
-    // ✅ 다음 구독 제품 가격 계산
-    const nextTotalQuantity = subscription.nextItems.reduce((sum, item) => sum + item.nextMonthQuantity, 0);
-    const nextOriginalTotalPrice = subscription.nextItems.reduce((sum, item) => sum + item.nextMonthPrice * item.nextMonthQuantity, 0);
-    const nextDiscountTotalPrice = nextOriginalTotalPrice * 0.85; // 15% 할인 예제
-    const shippingFee = 3000;
-    const nextDiscountAmount = nextOriginalTotalPrice - nextDiscountTotalPrice;
-    const nextFinalPrice = nextDiscountTotalPrice - shippingFee;
-
-//     // ✅ 수량 조절 함수
-//     const handleQuantityChange = (productId, newQuantity) => {
-//         const updatedItems = subscription.nextItems.map(item =>
-//             item.productId === productId ? { ...item, nextMonthQuantity: newQuantity } : item
-//         );
-//
-//         dispatch(updateNextSubscriptionItems({ subscriptionId: subscription.id, updatedItems }));
-//     };
-
-    // ✅ 상품 추가 모달에서 선택한 상품 추가
-    const handleSelectProduct = (product) => {
-        const existingItem = subscription.nextItems.find(item => item.productId === product.id);
-
-        if (existingItem) {
-            // ✅ 이미 있는 상품이면 수량 증가
-            handleQuantityChange(product.id, existingItem.nextMonthQuantity + 1);
-        } else {
-            // ✅ 새 상품 추가 (상품 정보 포함)
-            const newItem = {
-                subscriptionId: subscription.id,
-                productId: product.id,
-                productName: product.name,  // ✅ 상품명 추가
-                imageUrl: product.imageUrl,  // ✅ 이미지 추가
-                nextMonthQuantity: 1,
-                nextMonthPrice: product.price,
-            };
-            dispatch(addNextSubscriptionItem(newItem))
-                .then(() => dispatch(fetchSubscription())); // ✅ 최신 상태 다시 불러오기
-        }
-
-        setIsModalOpen(false);
-    };
-
-
-
     return (
+        <div>
+            <h2>정기구독 관리</h2>
+            <p>최근 결제일: {subscription.lastBillingDate || "없음"}</p>
+            <p>회차 정보: {subscription.currentCycle}회차</p>
 
-            <div style={{ maxWidth: "600px", margin: "0 auto", padding: "20px", fontFamily: "Arial, sans-serif" }}>
-                {/* ✅ 상단 구독 정보 */}
-                <div style={{ textAlign: "left", marginBottom: "10px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-                            <p style={{ fontSize: "20px", fontWeight: "bold", color: "#333" }}>{subscription.lastBillingDate || "진행중인 구독상품 없음"}</p>
-                            <p style={{ fontSize: "14px", color: "#888" }}> 구독번호: {subscription.id}</p> {/* ✅ subscriptionId 추가 */}
-                        </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "20px" }}>
-                        <p style={{ fontSize: "22px", fontWeight: "bold", color: "#000" }}>
-                                                {subscription.currentCycle}회차 <span style={{ color: "green" }}>진행중</span> {subscription.items.length}건 {/* ✅ 상품 종류 갯수로 변경 */}
-                                            </p>
-                        <div style={{ textAlign: "right" }}>
-                            <p style={{ fontSize: "16px", color: "#aaa", textDecoration: "line-through", marginBottom: "5px" }}>
-                                {originalTotalPrice.toLocaleString()}원
-                            </p>
-                            <p style={{ fontSize: "20px", fontWeight: "bold", color: "red" }}>
-                                {discountTotalPrice.toLocaleString()}원
-                            </p>
-                        </div>
-                    </div>
+            <h3>구독중인 제품</h3>
+            {subscription.items.map((item, index) => (
+                <div key={index}>
+                    <span>{item.productName} ({item.quantity}개) - {item.price}원</span>
                 </div>
+            ))}
 
-                {/* ✅ 구독중인 제품 */}
-                <h3 style={{ borderBottom: "2px solid #ddd", paddingBottom: "5px" }}>구독중인 제품</h3>
-                {subscription.items.map((item, index) => (
-                    <div key={index} style={{ display: "flex", alignItems: "center", marginBottom: "15px" }}>
-                        <img
-                            src={item.imageUrl || "https://via.placeholder.com/70"}
-                            alt={item.productName}
-                            style={{ width: "70px", height: "70px", objectFit: "cover", marginRight: "15px" }}
+            <h3>다음 결제 상품 목록</h3>
+            {(subscription?.nextItems && subscription.nextItems.length > 0) ? (
+                subscription.nextItems.map((item, index) => (
+                    <div key={index}>
+                        <span>{item.productName} - </span>
+                        <input
+                            type="number"
+                            min="1"
+                            value={item.nextMonthQuantity}
+                            onChange={(e) => handleQuantityChange(item.productId, Number(e.target.value))} // ✅ 수정된 handleQuantityChange 적용
                         />
-                        <div style={{ flexGrow: 1 }}>
-                            <p style={{ fontSize: "12px", color: "#555", border: "1px solid #ccc", padding: "2px 5px", display: "inline-block", borderRadius: "3px" }}>
-                                건강기능식품
-                            </p>
-                            <p style={{ fontSize: "16px", fontWeight: "bold", margin: "5px 0" }}>{item.productName}</p>
-                            <p style={{ fontSize: "12px", color: "#888" }}>{item.quantity}개</p>
-                        </div>
-                        <div style={{ textAlign: "right", minWidth: "120px" }}>
-                            <p style={{ fontSize: "14px", color: "#666" }}>{item.price.toLocaleString()}원 / 개</p>
-                            <p style={{ fontSize: "16px", fontWeight: "bold" }}>{(item.price * item.quantity).toLocaleString()}원</p>
-                        </div>
+                        <span>개 - {item.nextMonthPrice * item.nextMonthQuantity}원</span>
+                        <button onClick={() => handleDeleteItem(item.productId)}>삭제</button>
                     </div>
-                ))}
+                ))
+            ) : (
+                <p>다음 회차에 반영될 상품이 없습니다.</p>
+            )}
 
-{/*                  */}{/* ✅ 구독 중인 제품 총 결제금액 */}
-{/*                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "20px" }}> */}
-{/*                     <span style={{ fontSize: "16px", fontWeight: "bold", color: "#333" }}>정기결제 제품 총 결제금액</span> */}
-{/*                     <div style={{ textAlign: "right" }}> */}
-{/*                         <p style={{ fontSize: "16px", color: "#aaa", textDecoration: "line-through", marginBottom: "5px" }}> */}
-{/*                             {originalTotalPrice.toLocaleString()}원 */}
-{/*                         </p> */}
-{/*                         <p style={{ fontSize: "20px", fontWeight: "bold", color: "red" }}> */}
-{/*                             {discountTotalPrice.toLocaleString()}원 */}
-{/*                         </p> */}
-{/*                     </div> */}
-{/*                 </div> */}
 
-                {/* ✅ 할인 정보 */}
-                <p style={{ color: "#888", fontSize: "13px", marginTop: "10px" }}>
-                    25%할인 #무료배송 #구독할인10% #건강설문 할인 10% #장기고객우대 5%
-                </p>
+            {/* ✅ 총 가격 + 버튼을 한 줄에 정렬 */}
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "10px" }}>
+                <h3>총 합계: {totalPrice} 원</h3>
+{/*                 <button onClick={() => dispatch(updateNextSubscriptionItems({ subscriptionId: subscription.id, updatedItems: subscription.nextItems }))}> */}
+{/*                     다음 결제 상품 업데이트(미사용) */}
+{/*                 </button> */}
+{/*                 <button onClick={handleReplaceNextItems}> */}
+{/*                     다음 결제 상품 교체하기(미사용) */}
+{/*                 </button> */}
+            </div>
 
-                {/* ✅ 구분선 */}
-                <hr style={{ border: "1px solid #ddd", margin: "15px 0" }} />
+            <h2>상품 추가</h2>
+            <h3>상품 선택</h3>
 
-            <div style={{ maxWidth: "600px", margin: "0 auto", padding: "20px" }}>
-                {/* ✅ 다음 구독 제품 편집 */}
-                <h3 style={{ borderBottom: "2px solid #ddd", paddingBottom: "5px", display: "flex", justifyContent: "space-between" }}>
-                    다음 구독 제품 편집
-                    <button onClick={() => setIsModalOpen(true)}>추가하기</button>
-                </h3>
-                {subscription.nextItems.map((item, index) => (
-                    <div key={index} style={{ display: "flex", alignItems: "center", marginBottom: "15px" }}>
-                        <img src={item.imageUrl || "https://via.placeholder.com/70"} alt={item.productName}
-                            style={{ width: "70px", height: "70px", objectFit: "cover", marginRight: "15px" }} />
-                        <div style={{ flexGrow: 1 }}>
-                            <p style={{ fontSize: "16px", fontWeight: "bold", margin: "5px 0" }}>{item.productName}</p>
-                        </div>
-                        <div style={{ textAlign: "right", minWidth: "120px" }}>
-                            <button onClick={() => handleQuantityChange(item.productId, Math.max(1, item.nextMonthQuantity - 1))}>-</button>
-                            <span style={{ margin: "0 10px" }}>{item.nextMonthQuantity}</span>
-                            <button onClick={() => handleQuantityChange(item.productId, item.nextMonthQuantity + 1)}>+</button>
-                            <p>{(item.nextMonthPrice * item.nextMonthQuantity).toLocaleString()}원</p>
-                            <button onClick={() => dispatch(deleteNextSubscriptionItem({ subscriptionId: subscription.id, productId: item.productId }))}>
-                                삭제
-                            </button>
-                        </div>
-                    </div>
-                ))}
-
-                {/* ✅ 다음 구독 제품 결제 정보 */}
-                <div style={{ background: "#f5f5f5", padding: "15px", borderRadius: "5px", marginTop: "20px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-                        <span style={{ color: "#666", fontWeight: "bold" }}>제품 합계 금액</span>
-                        <span>{nextOriginalTotalPrice.toLocaleString()}원</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-                        <span style={{ color: "#666", fontWeight: "bold" }}>기본 배송비</span>
-                        <span>-{shippingFee.toLocaleString()}원</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-                        <span style={{ color: "#666", fontWeight: "bold" }}>총 할인금액</span>
-                        <span>-{nextDiscountAmount.toLocaleString()}원</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", borderTop: "2px solid #ddd", paddingTop: "10px" }}>
-                        <span style={{ fontSize: "18px", fontWeight: "bold", color: "#333" }}>총 결제금액</span>
-                        <span style={{ fontSize: "18px", fontWeight: "bold", color: "red" }}>{nextFinalPrice.toLocaleString()}원</span>
-                    </div>
-                </div>
-                {/* ✅ 상품 추가 모달 */}
-                {isModalOpen && (
-                    <div style={{
-                        position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-                        background: "#fff", padding: "20px", borderRadius: "10px", boxShadow: "0px 0px 10px rgba(0,0,0,0.3)",
-                        maxHeight: "80vh", overflowY: "auto"
-                    }}>
-                        <h2>상품 선택</h2>
-                        {products.map((product) => (
-                            <div key={product.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                                <div>
-                                    <p>{product.name}</p>
-                                    <p>{product.price.toLocaleString()}원</p>
-                                </div>
-                                <button onClick={() => handleSelectProduct(product)}>선택</button>
-                            </div>
-                        ))}
-                        <button onClick={() => setIsModalOpen(false)}>닫기</button>
+                <select value={selectedProduct?.id || ""} onChange={(e) => {
+                    const product = products.find(p => p.id === Number(e.target.value));
+                    dispatch(setSelectedProduct(product));
+                }}>
+                    <option value="">상품 선택</option>
+                    {products.length > 0 ? (
+                        products.map((product) => (
+                            <option key={product.id} value={product.id}>
+                                {product.name} - {product.price}원
+                            </option>
+                        ))
+                    ) : (
+                        <option>상품 목록이 없습니다.</option>
+                    )}
+                </select>
+                {selectedProduct && (
+                    <div>
+                        <h4>상품 상세 정보</h4>
+                        <p>상품명: {selectedProduct.name}</p>
+                        <p>가격: {selectedProduct.price}원</p>
                     </div>
                 )}
+
+                <h4>수량 선택</h4>
+                <input
+                    type="number"
+                    min="1"
+                    value={selectedQuantity}
+                    onChange={(e) => dispatch(setSelectedQuantity(Number(e.target.value)))}
+                />
+                <button onClick={handleAddProduct}>다음 정기결제에 상품 추가</button>
+
+            <h3>결제일 관리</h3>
+            <input
+                type="date"
+                value={subscription?.nextBillingDate || ""}
+                onChange={handleBillingDateChange}
+            />
+
+            <h3>다음 회차 결제수단 변경</h3>
+            <select
+                value={subscription?.nextPaymentMethod || ""} // ✅ Redux에서 불러온 nextPaymentMethod 반영
+                onChange={(e) =>
+                    dispatch(updateNextPaymentMethod({
+                        subscriptionId: subscription.id,
+                        nextPaymentMethod: e.target.value
+                    }))
+                }
+            >
+                <option value="naverpay">네이버페이</option>
+                <option value="kakaopay">카카오페이</option>
+                <option value="bank">계좌입금</option>
+                <option value="card">카드결제</option>
+            </select>
+
+            <div>
+                <h3>배송정보</h3>
+                <div>
+                    <label>우편번호</label>
+                    <input type="text" value={postalCode} readOnly placeholder="우편번호를 입력해주세요" />
+                </div>
+                <div>
+                    <label>도로명 주소</label>
+                    <input type="text" value={roadAddress} readOnly placeholder="도로명 주소를 검색해주세요" />
+                    {/* ✅ 카카오 주소 검색 버튼 */}
+                    <KakaoAddressSearch onAddressSelect={handleAddressSelect} />
+                </div>
+                <div>
+                    {/* 상세 주소 입력 */}
+                    <label>상세 주소</label>
+                    <input
+                        type="text"
+                        value={detailAddress}
+                        onChange={(e) => dispatch(updateDetailAddress(e.target.value))}
+                        placeholder="상세 주소를 입력해주세요"
+                    />
+                    <button onClick={handleAddressUpdate}>배송지 변경</button>
+                </div>
             </div>
 
-            {/* ✅ 상세 할인 내역 박스 */}
-            <div style={{ background: "#f5f5f5", padding: "15px", borderRadius: "5px", marginTop: "15px" }}>
-                <h4 style={{ fontSize: "16px", fontWeight: "bold", color: "#333", marginBottom: "10px", marginTop: "0px" }}>상세 할인 내역</h4>
-
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-                    <span style={{ color: "#666", fontWeight: "bold" }}>배송비 무료</span>
-                    <span>- {shippingFee.toLocaleString()}원</span>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-                    <span style={{ color: "#666", fontWeight: "bold" }}>장기 유지 고객 5%</span>
-                    <span>- {(nextOriginalTotalPrice * 0.05).toLocaleString()}원</span>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-                    <span style={{ color: "#666", fontWeight: "bold" }}>건강설문 할인 10%</span>
-                    <span>- {(nextOriginalTotalPrice * 0.1).toLocaleString()}원</span>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "space-between", borderTop: "2px solid #ddd", paddingTop: "10px" }}>
-                    <span style={{ fontSize: "18px", fontWeight: "bold", color: "#333" }}>정기구독 할인 합계</span>
-                    <span style={{ fontSize: "18px", fontWeight: "bold", color: "red" }}>- {nextDiscountAmount.toLocaleString()}원</span>
-                </div>
-            </div>
-
-
-                {/* ✅ 다음 구독 제품 총 결제금액 */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "20px" }}>
-                    <span style={{ fontSize: "16px", fontWeight: "bold", color: "#333" }}>다음 구독 제품 총 결제금액</span>
-                    <div style={{ textAlign: "right" }}>
-                        <p style={{ fontSize: "16px", color: "#aaa", textDecoration: "line-through", marginBottom: "5px" }}>
-                            {nextOriginalTotalPrice.toLocaleString()}원
-                        </p>
-                        <p style={{ fontSize: "20px", fontWeight: "bold", color: "red" }}>
-                            {nextDiscountTotalPrice.toLocaleString()}원
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-
-        );
+{/*             <button onClick={handleUpdateSubscription}>변경사항 저장미사용</button> */}
+            <button
+                onClick={handleCancelSubscription}
+                disabled={subscription.status === "CANCELLED"} // 취소된 경우 버튼 비활성화
+            >
+                {subscription.status === "CANCELLED" ? "구독 취소됨" : "구독 취소"}
+            </button>
+{/*             <button onClick={handleProcessBilling}>자동 결제 실행</button> */}
+        </div>
+    );
 }
