@@ -1,6 +1,7 @@
 package com.javalab.student.service.healthSurvey;
 
 import com.javalab.student.dto.healthSurvey.HealthAnalysisDTO;
+import com.javalab.student.dto.healthSurvey.RecommendationDTO;
 import com.javalab.student.dto.healthSurvey.RecommendedProductDTO;
 import com.javalab.student.entity.Member;
 import com.javalab.student.entity.healthSurvey.*;
@@ -37,7 +38,6 @@ public class RecommendationService {
     private final NutrientScoreService nutrientScoreService;
     private final RecommendationRepository recommendationRepository;
     private final ProductRepository productRepository;
-
 
     /**
      * 현재 로그인한 사용자의 건강 상태를 분석하고 제품을 추천합니다.
@@ -145,8 +145,6 @@ public class RecommendationService {
             // Recommendation 저장
             recommendationRepository.save(recommendation);
 
-
-
             log.info("건강 분석 결과: {}", healthAnalysis);
             log.info("추천 제품: {}", recommendations);
             log.info("추천 영양 성분: {}", recommendedIngredients);
@@ -213,14 +211,30 @@ public class RecommendationService {
         return nutrientScoreService.calculateIngredientScores(responses, age, bmi);
     }
 
-
     /**
      * 현재 로그인한 사용자의 건강 기록 히스토리를 조회합니다.
      *
      * @return 건강 기록 리스트
      */
-    public List<HealthRecord> getHealthHistory() {
+    public List<RecommendationDTO> getHealthHistory() {
         Member member = authenticationService.getAuthenticatedMember();
-        return healthRecordService.getHealthHistory(member.getId());
+        List<HealthRecord> healthRecords = healthRecordService.getHealthHistory(member.getId());
+
+        return healthRecords.stream()
+                .map(healthRecord -> RecommendationDTO.builder()
+                        .id(healthRecord.getId())
+                        .memberId(member.getId())
+                        .createdAt(healthRecord.getCreatedAt())
+                        .recordDate(healthRecord.getRecordDate())
+                        .name(healthRecord.getName())
+                        .gender(healthRecord.getGender())
+                        .age(healthRecord.getAge())
+                        .bmi(healthRecord.getBmi())
+                        .riskLevels(healthRecord.getRiskLevels())
+                        .overallAssessment(healthRecord.getOverallAssessment())
+                        .recommendedIngredients(healthRecord.getRecommendedIngredients())
+                        .recommendedProducts(healthRecord.getRecommendedProducts())
+                        .build())
+                .collect(Collectors.toList());
     }
 }
