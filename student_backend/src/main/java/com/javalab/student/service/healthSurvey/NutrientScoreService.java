@@ -47,13 +47,12 @@ public class NutrientScoreService {
     /**
      * 계산된 영양 성분 점수를 기반으로 추천 영양 성분을 결정합니다.
      *
-     * @param healthAnalysis   건강 분석 결과
      * @param ingredientScores 계산된 영양 성분 점수
      * @param age              회원의 나이
      * @param bmi              회원의 BMI
      * @return 추천 영양 성분 목록 (최대 5개, 이름과 점수 포함)
      */
-    public List<Map<String, Object>> getRecommendedIngredients(HealthAnalysisDTO healthAnalysis, Map<String, Integer> ingredientScores, int age, double bmi) {
+    public List<Map<String, Object>> getRecommendedIngredients(List<MemberResponseOption> responses, Map<String, Integer> ingredientScores, int age, double bmi) {
         // 기본 성분 (칼슘, 마그네슘, 비타민D) 기본 점수 1점 부여
         Set<String> baseIngredients = new HashSet<>(Arrays.asList("칼슘", "마그네슘", "비타민D"));
         baseIngredients.forEach(ingredient -> ingredientScores.putIfAbsent(ingredient, 1));
@@ -79,17 +78,18 @@ public class NutrientScoreService {
     /**
      * 추천 영양 성분을 저장합니다.
      *
-     * @param ingredientScores 계산된 영양 성분 점수
-     * @param healthAnalysis   건강 분석 결과
-     * @param age              회원의 나이
-     * @param bmi              회원의 BMI
+     * @param recommendation 추천 객체. 이 객체에 추천된 영양 성분이 연결됩니다.
+     * @param responses 회원의 설문 응답 목록. 각 응답은 MemberResponseOption 객체로 표현됩니다.
+     * @param ingredientScores 계산된 영양 성분 점수. 각 영양 성분의 이름과 점수가 매핑되어 있습니다.
+     * @param age 회원의 나이. 추천 영양 성분 결정에 사용될 수 있습니다.
+     * @param bmi 회원의 BMI. 추천 영양 성분 결정에 사용될 수 있습니다.
      */
     @Transactional
-    public void saveRecommendedIngredients(Recommendation recommendation, Map<String, Integer> ingredientScores, HealthAnalysisDTO healthAnalysis, int age, double bmi) {
-        // 추천 영양 성분 결정 (최대 5개, 이름과 점수 포함)
-        List<Map<String, Object>> recommendedIngredients = getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
+    public void saveRecommendedIngredients(Recommendation recommendation, List<MemberResponseOption> responses, Map<String, Integer> ingredientScores, int age, double bmi) {
+        // 응답, 점수, 나이, BMI를 기반으로 추천 영양 성분 목록을 가져옵니다.
+        List<Map<String, Object>> recommendedIngredients = getRecommendedIngredients(responses, ingredientScores, age, bmi);
 
-        // 점수의 최대값을 구해 5점 만점으로 환산하기 위한 기준 설정
+        // 점수의 최대값을 구합니다. 이는 점수 정규화에 사용됩니다.
         double maxScore = ingredientScores.values().stream().max(Integer::compareTo).orElse(1);
 
         for (Map<String, Object> ingredientMap : recommendedIngredients) {
@@ -97,14 +97,15 @@ public class NutrientScoreService {
             Integer originalScore = (Integer) ingredientMap.get("score");
 
             RecommendedIngredient ingredient = new RecommendedIngredient();
-            ingredient.setRecommendation(recommendation); // Recommendation 객체 참조로 설정
+            ingredient.setRecommendation(recommendation);
             ingredient.setIngredientName(ingredientName);
 
-            // 점수 계산 및 저장 (0점 ~ 5점 사이로 정규화)
-            double normalizedScore = Math.min(5.0, Math.max(0.0, (originalScore / maxScore) * 5));
+            // 점수를 0-5 범위로 정규화합니다.
+            double normalizedScore = Math.min(5.0, Math.max(0.0, (originalScore / (double) maxScore) * 5));
             double roundedScore = Math.round(normalizedScore * 10.0) / 10.0;
             ingredient.setScore(roundedScore);
 
+            // 영양 성분을 저장하고 추천 객체에 연결합니다.
             recommendedIngredientRepository.save(ingredient);
             recommendation.getRecommendedIngredients().add(ingredient);
         }

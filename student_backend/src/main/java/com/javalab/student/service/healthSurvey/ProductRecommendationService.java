@@ -38,9 +38,27 @@ public class ProductRecommendationService {
                 .sorted(Comparator.comparingInt(dto -> -dto.getRecommendedIngredients().size())) // 추천 영양 성분 개수 내림차순 정렬
                 .collect(Collectors.toList());
 
-        return recommendedProducts;
-    }
+        // 중복 영양 성분을 처리하면서 최종 추천 목록 생성
+        List<ProductRecommendationDTO> finalRecommendations = new ArrayList<>();
+        Set<String> coveredIngredients = new HashSet<>();
 
+        for (ProductRecommendationDTO product : recommendedProducts) {
+            List<String> productIngredients = product.getRecommendedIngredients();
+
+            // 아직 커버되지 않은 새로운 영양 성분이 있는 경우에만 추가
+            if (productIngredients.stream().anyMatch(ingredient -> !coveredIngredients.contains(ingredient))) {
+                finalRecommendations.add(product);
+                coveredIngredients.addAll(productIngredients);
+            }
+
+            // 모든 추천 영양 성분이 커버되면 종료
+            if (coveredIngredients.containsAll(recommendedIngredients)) {
+                break;
+            }
+        }
+
+        return finalRecommendations;
+    }
 
     /**
      * Product 엔티티를 ProductRecommendationDTO로 변환합니다.
