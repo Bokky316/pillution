@@ -1,183 +1,220 @@
 package com.javalab.student.service.healthSurvey;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.javalab.student.dto.healthSurvey.HealthAnalysisDTO;
-import com.javalab.student.dto.healthSurvey.ProductRecommendationDTO;
-import com.javalab.student.dto.healthSurvey.RecommendationDTO;
+import com.javalab.student.dto.healthSurvey.RecommendedProductDTO;
 import com.javalab.student.entity.Member;
-import com.javalab.student.entity.Product;
-import com.javalab.student.entity.healthSurvey.HealthRecord;
-import com.javalab.student.entity.healthSurvey.MemberResponse;
-import com.javalab.student.entity.healthSurvey.Recommendation;
-import com.javalab.student.entity.healthSurvey.RecommendedIngredient;
-import com.javalab.student.entity.healthSurvey.RecommendedProduct;
+import com.javalab.student.entity.healthSurvey.*;
 import com.javalab.student.repository.ProductRepository;
-import com.javalab.student.repository.healthSurvey.HealthRecordRepository;
 import com.javalab.student.repository.healthSurvey.MemberResponseRepository;
 import com.javalab.student.repository.healthSurvey.RecommendationRepository;
-import com.javalab.student.repository.healthSurvey.RecommendedIngredientRepository;
-import com.javalab.student.repository.healthSurvey.RecommendedProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * 추천 영양 성분 및 제품 추천 서비스
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class RecommendationService {
 
-    private final NutrientScoreService nutrientScoreService;
-    private final ProductRecommendationService productRecommendationService;
     private final AuthenticationService authenticationService;
     private final MemberInfoService memberInfoService;
     private final BmiCalculator bmiCalculator;
     private final HealthAnalysisService healthAnalysisService;
-
-    private final RecommendationRepository recommendationRepository;
-    private final RecommendedIngredientRepository recommendedIngredientRepository;
-    private final RecommendedProductRepository recommendedProductRepository;
-    private final MemberResponseRepository memberResponseRepository;
-    private final ProductRepository productRepository;
     private final HealthRecordService healthRecordService;
-    private final HealthRecordRepository healthRecordRepository; // 추가
+    private final MemberResponseRepository memberResponseRepository;
+    private final RiskCalculationService riskCalculationService;
+    private final ProductRecommendationService productRecommendationService;
+    private final NutrientScoreService nutrientScoreService;
+    private final RecommendationRepository recommendationRepository;
+    private final ProductRepository productRepository;
+
 
     /**
-     * 현재 로그인한 사용자의 건강 분석 정보를 제공합니다.
+     * 현재 로그인한 사용자의 건강 상태를 분석하고 제품을 추천합니다.
      *
-     * @return 건강 분석 정보를 포함한 HealthAnalysisDTO
+     * @return 건강 분석 결과, 추천 제품, 추천 영양 성분을 포함하는 Map
      */
     @Transactional(rollbackFor = Exception.class)
-    public HealthAnalysisDTO getHealthAnalysisAndRecommendations() {
-        log.info("getHealthAnalysisAndRecommendations 메서드 시작");
+    public Map<String, Object> getHealthAnalysisAndRecommendations() {
+        Map<String, Object> result = new HashMap<>();
 
         try {
-            // 1. 현재 인증된 사용자 정보 가져오기
+            // 인증 정보 확인 및 사용자 정보 조회
             Member member = authenticationService.getAuthenticatedMember();
-            log.info("1. 인증된 사용자 ID: {}", member.getId());
+            log.info("Authenticated member: {}", member.getId());
 
-            // 2. 사용자 정보 가져오기 (나이, 키, 몸무게 등)
-            List<MemberResponse> responses = memberResponseRepository.findAgeHeightAndWeightResponses(member.getId());
-            log.info("2. 사용자 응답 데이터 조회 완료. 응답 수: {}", responses.size());
+            // 사용자 입력 기반의 응답 목록 가져오기
+            List<MemberResponse> ageHeightWeightResponses = memberResponseRepository.findAgeHeightAndWeightResponses(member.getId());
+            log.info("User responses: {}", ageHeightWeightResponses);
 
+            if (ageHeightWeightResponses.isEmpty()) {
+                throw new IllegalStateException("사용자 응답이 없습니다.");
+            }
+
+            // 사용자 정보 추출
             String name = memberInfoService.getName(member.getId());
             String gender = memberInfoService.getGender(member.getId());
-            int age = memberInfoService.getAge(responses);
-            double height = memberInfoService.getHeight(responses);
-            double weight = memberInfoService.getWeight(responses);
+            int age = memberInfoService.getAge(ageHeightWeightResponses);
+            log.info("Extracted user info - name: {}, gender: {}, age: {}", name, gender, age);
+
+            // 키와 몸무게 추출
+            double height = memberInfoService.getHeight(ageHeightWeightResponses);
+            double weight = memberInfoService.getWeight(ageHeightWeightResponses);
+            log.info("Extracted height: {}, weight: {}", height, weight);
+
+            if (height <= 0 || weight <= 0) {
+                throw new IllegalStateException("키 또는 몸무게 데이터가 올바르지 않습니다.");
+            }
 
             // BMI 계산
             double bmi = bmiCalculator.calculateBMI(height, weight);
-            log.info("2. 사용자 정보 계산 완료. 사용자 정보: [이름: {}, 성별: {}, 나이: {}, 키: {}, 몸무게: {}, BMI: {:.2f}]",
-                    name, gender, age, height, weight, bmi);
+            log.info("Calculated BMI: {}", bmi);
 
-            // 3. 건강 분석 수행
-            log.info("3. 건강 분석 시작");
-            HealthAnalysisDTO healthAnalysis = healthAnalysisService.analyzeHealth(member.getId(), age, bmi, responses, gender);
+            // 건강 분석 수행
+            HealthAnalysisDTO healthAnalysis = healthAnalysisService.analyzeHealth(member.getId(), age, bmi, ageHeightWeightResponses, gender);
+            if (healthAnalysis == null) {
+                throw new IllegalStateException("건강 분석 결과가 null입니다.");
+            }
             healthAnalysis.setName(name);
-            healthAnalysis.setAge(age);
             healthAnalysis.setGender(gender);
-            healthAnalysis.setBmi(bmi);
-            log.info("3. 건강 분석 완료: {}", healthAnalysis);
+            healthAnalysis.setAge(age);
+            result.put("healthAnalysis", healthAnalysis);
 
-            // 4. 추천 영양 성분 점수 계산
-            log.info("4. 추천 영양 성분 점수 계산 시작");
-            Map<String, Integer> ingredientScores = nutrientScoreService.calculateIngredientScores(responses, age, bmi);
-            log.info("4. 추천 영양 성분 점수 계산 완료. 점수 수: {}", ingredientScores.size());
+            // 추천 영양 성분 및 제품 추천 추가
+            Map<String, Integer> ingredientScores = nutrientScoreService.calculateIngredientScores(ageHeightWeightResponses, age, bmi);
+            List<Map<String, Object>> recommendedIngredients = nutrientScoreService.getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
 
-            // 5. 추천 엔티티 생성 및 저장
-            log.info("5. 추천 엔티티 생성 시작");
+            // recommendedIngredients가 null인 경우 빈 리스트로 초기화
+            if (recommendedIngredients == null) {
+                recommendedIngredients = new ArrayList<>();
+            }
+
+            List<RecommendedProductDTO> recommendations = new ArrayList<>();
+            // recommendedIngredients가 비어 있지 않은 경우에만 제품 추천
+            if (!recommendedIngredients.isEmpty()) {
+                recommendations = productRecommendationService.recommendProductsByIngredients(
+                        recommendedIngredients.stream()
+                                .map(x -> (String) x.get("name"))
+                                .collect(Collectors.toList()),
+                        ingredientScores
+                );
+            }
+
+            result.put("recommendations", recommendations);
+            result.put("recommendedIngredients", recommendedIngredients);
+
+            // 건강 기록 저장
+            healthRecordService.saveHealthRecord(member, healthAnalysis,
+                    recommendedIngredients.stream().map(x -> (String) x.get("name")).collect(Collectors.toList()),
+                    recommendations,
+                    name, gender, age);
+
+            log.info("Health analysis and recommendations generated successfully");
+
+            // Recommendation 엔티티 생성 및 저장
             Recommendation recommendation = new Recommendation();
             recommendation.setMemberId(member.getId());
-            recommendation.setCreatedAt(LocalDateTime.now());
-            recommendation = recommendationRepository.saveAndFlush(recommendation); // saveAndFlush 사용
-            log.info("5. 추천 엔티티 저장 완료. ID: {}", recommendation.getId());
 
-            // 6. 추천 영양 성분 저장
-            log.info("6. 추천 영양 성분 저장 시작");
-            List<RecommendedIngredient> recommendedIngredients = new ArrayList<>();
-            for (Map.Entry<String, Integer> entry : ingredientScores.entrySet()) {
+            // RecommendedIngredient 생성 및 추가
+            for (Map<String, Object> ingredientData : recommendedIngredients) {
                 RecommendedIngredient ingredient = new RecommendedIngredient();
-                ingredient.setRecommendation(recommendation);
-                ingredient.setIngredientName(entry.getKey());
-                ingredient.setScore(entry.getValue());
-                recommendedIngredients.add(ingredient);
+                ingredient.setIngredientName((String) ingredientData.get("name"));
+                ingredient.setScore((Double) ingredientData.get("score"));
+                recommendation.addRecommendedIngredient(ingredient);
             }
-            recommendedIngredients = recommendedIngredientRepository.saveAll(recommendedIngredients);
-            recommendedIngredientRepository.flush();
-            log.info("6. 추천 영양 성분 저장 완료. 저장된 개수: {}", recommendedIngredients.size());
 
-            // 7. 추천 제품 생성 및 저장
-            log.info("7. 추천 제품 생성 시작");
-            List<ProductRecommendationDTO> productRecommendations = productRecommendationService.recommendProductsByIngredients(
-                    new ArrayList<>(ingredientScores.keySet()), ingredientScores);
-            List<RecommendedProduct> recommendedProducts = new ArrayList<>();
-
-            for (ProductRecommendationDTO productDTO : productRecommendations) {
-                Product product = productRepository.findById(productDTO.getId())
-                        .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다. ID: " + productDTO.getId()));
-
-                RecommendedProduct recommendedProduct = RecommendedProduct.builder()
-                        .reason(productDTO.getDescription())
-                        .build();
-
-                // 연관 관계 설정
-                recommendedProduct.setRecommendation(recommendation);
-                recommendedProduct.setProduct(product);
-
-                recommendedProducts.add(recommendedProduct);
+            // RecommendedProduct 생성 및 추가
+            for (RecommendedProductDTO productData : recommendations) {
+                RecommendedProduct product = new RecommendedProduct();
+                product.setProduct(productRepository.findById(productData.getId()).orElseThrow());
+                recommendation.addRecommendedProduct(product);
             }
-            recommendedProducts = recommendedProductRepository.saveAll(recommendedProducts);
-            recommendedProductRepository.flush();
-            log.info("7. 추천 제품 저장 완료. 저장된 개수: {}", recommendedProducts.size());
 
-            // 8. HealthRecord 저장
-            healthRecordService.saveHealthRecord(member, healthAnalysis,
-                    ingredientScores.keySet().stream().collect(Collectors.toList()),
-                    productRecommendations, name, gender, age);
+            // Recommendation 저장
+            recommendationRepository.save(recommendation);
 
-            log.info("8. HealthRecord 저장 완료");
 
-            log.info("getHealthAnalysisAndRecommendations 메서드 종료");
-            return healthAnalysis;
-
+            return result;
         } catch (Exception e) {
-            log.error("getHealthAnalysisAndRecommendations 메서드 실행 중 오류 발생: {}", e.getMessage(), e);
-            throw e; // 예외 다시 던지기
+            log.error("Error in getHealthAnalysisAndRecommendations", e);
+            throw new RuntimeException("건강 분석 및 추천 생성 중 오류가 발생했습니다.", e);
         }
     }
 
     /**
+     * 사용자의 나이, BMI, 응답을 기반으로 건강 위험도를 계산합니다.
+     *
+     * @param age       사용자의 나이
+     * @param bmi       사용자의 BMI
+     * @param responses 사용자의 설문 응답 목록
+     * @return 계산된 위험도 정보를 포함한 Map
+     */
+    public Map<String, String> calculateRisks(int age, double bmi, List<MemberResponse> responses) {
+        return riskCalculationService.calculateAllRisks(age, bmi, responses);
+    }
+
+    /**
+     * 추천 영양 성분에 따른 제품 추천 API.
+     *
+     * @param age       사용자의 나이
+     * @param bmi       사용자의 BMI
+     * @param responses 사용자의 설문 응답 목록
+     * @return 추천된 제품 목록을 포함한 ResponseEntity
+     */
+    public Map<String, List<RecommendedProductDTO>> recommendProductsByIngredients(int age, double bmi, List<MemberResponse> responses) {
+        // 1. 영양 성분 점수 계산
+        Map<String, Integer> ingredientScores = nutrientScoreService.calculateIngredientScores(responses, age, bmi);
+
+        // 2. HealthAnalysisDTO 생성 (최소한의 정보만 설정)
+        HealthAnalysisDTO healthAnalysis = new HealthAnalysisDTO();
+
+        // 3. 추천 영양 성분 목록 가져오기 (이름과 점수 포함)
+        List<Map<String, Object>> recommendedIngredients = nutrientScoreService.getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
+
+        // 4. 제품 추천
+        List<RecommendedProductDTO> recommendations =
+                productRecommendationService.recommendProductsByIngredients(
+                        recommendedIngredients.stream().map(x -> (String) x.get("name")).collect(Collectors.toList()),
+                        ingredientScores
+                );
+
+        // 5. 결과를 Map에 담아서 반환
+        Map<String, List<RecommendedProductDTO>> resultMap = new HashMap<>();
+        resultMap.put("recommendations", recommendations);
+
+        return resultMap;
+    }
+
+    /**
+     * 사용자의 응답, 나이, BMI를 기반으로 영양 점수를 계산합니다.
+     *
+     * @param responses 사용자의 설문 응답 목록
+     * @param age       사용자의 나이
+     * @param bmi       사용자의 BMI
+     * @return 계산된 영양 점수를 포함한 Map
+     */
+    public Map<String, Integer> calculateNutrientScores(List<MemberResponse> responses, int age, double bmi) {
+        return nutrientScoreService.calculateIngredientScores(responses, age, bmi);
+    }
+
+
+    /**
      * 현재 로그인한 사용자의 건강 기록 히스토리를 조회합니다.
      *
-     * @return 건강 기록 리스트를 포함한 ResponseEntity
+     * @return 건강 기록 리스트
      */
-    public List<RecommendationDTO> getHealthHistory() {
+    public List<HealthRecord> getHealthHistory() {
         Member member = authenticationService.getAuthenticatedMember();
-        List<HealthRecord> healthRecords = healthRecordRepository.findByMemberIdOrderByRecordDateDesc(member.getId());
-
-        return healthRecords.stream()
-                .map(record -> RecommendationDTO.builder()
-                        .id(record.getId())
-                        .memberId(member.getId())
-                        .createdAt(record.getRecordDate())
-                        .recordDate(record.getRecordDate())
-                        .name(record.getName())
-                        .gender(record.getGender())
-                        .age(record.getAge())
-                        .bmi(record.getBmi())
-                        .riskLevels(record.getRiskLevels())
-                        .overallAssessment(record.getOverallAssessment())
-                        .recommendedIngredients(record.getRecommendedIngredients())
-                        .recommendedProducts(record.getRecommendedProducts())
-                        .build())
-                .collect(Collectors.toList());
+        return healthRecordService.getHealthHistory(member.getId());
     }
 }

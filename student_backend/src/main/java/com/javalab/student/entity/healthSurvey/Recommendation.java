@@ -39,4 +39,14 @@ public class Recommendation {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
+
+    public void addRecommendedIngredient(RecommendedIngredient ingredient) {
+        recommendedIngredients.add(ingredient);
+        ingredient.setRecommendation(this);
+    }
+
+    public void addRecommendedProduct(RecommendedProduct product) {
+        recommendedProducts.add(product);
+        product.setRecommendation(this);
+    }
 }
