@@ -16,8 +16,7 @@ public class RiskCalculationService {
      * @param responses 사용자의 설문 응답 목록
      * @return 각 건강 영역별 위험 수준을 포함하는 Map
      */
-    public Map<String, String> calculateAllRisks(int age, double bmi, List<Object> responses)
-    {
+    public Map<String, String> calculateAllRisks(int age, double bmi, List<MemberResponse> responses) {
         Map<String, String> riskLevels = new HashMap<>();
 
         riskLevels.put("혈관·혈액순환", calculateCardiovascularRisk(age, bmi, responses));
