@@ -200,11 +200,8 @@ function PostCreatePage() {
 
     // 취소 버튼 처리
     const handleCancelClick = () => {
-        if (formData.title.trim() || formData.content.trim()) {
-            dispatch(setOpenCancelDialog(true));
-        } else {
-            navigate("/board");
-        }
+        // 제목 또는 내용 둘 다 비어있을 때도 다이얼로그를 띄움
+        dispatch(setOpenCancelDialog(true));
     };
 
     // 취소 확인
