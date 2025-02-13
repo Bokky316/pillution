@@ -122,6 +122,7 @@ public class RecommendationService {
 
                 RecommendedProduct recommendedProduct = RecommendedProduct.builder()
                         .reason(productDTO.getDescription())
+                        .relatedIngredients(productDTO.getRecommendedIngredients())
                         .build();
 
                 // 연관 관계 설정
@@ -133,8 +134,6 @@ public class RecommendationService {
             recommendedProducts = recommendedProductRepository.saveAll(recommendedProducts);
             recommendedProductRepository.flush();
             log.info("7. 추천 제품 저장 완료. 저장된 개수: {}", recommendedProducts.size());
-
-
 
             // 8. HealthRecord 저장
             log.info("8. HealthRecord 저장 시작");

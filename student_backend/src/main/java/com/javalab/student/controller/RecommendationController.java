@@ -108,29 +108,26 @@ public class RecommendationController {
     @GetMapping("/products")
     public ResponseEntity<List<RecommendedProductDTO>> getRecommendedProducts() {
         try {
-            // 현재 인증된 사용자 가져오기
             Member member = authenticationService.getAuthenticatedMember();
 
-            // 최신 추천 데이터를 가져오기
             Recommendation latestRecommendation = recommendationRepository
                     .findTopByMemberIdOrderByCreatedAtDesc(member.getId())
                     .orElseThrow(() -> new RuntimeException("추천 데이터가 없습니다."));
 
-            // 추천된 상품 리스트 가져오기
             List<RecommendedProduct> recommendedProducts = recommendedProductRepository.findByRecommendationId(latestRecommendation.getId());
 
-            // RecommendedProduct -> RecommendedProductDTO 변환
             List<RecommendedProductDTO> productDTOs = recommendedProducts.stream()
                     .map(recommendedProduct -> {
-                        Product product = recommendedProduct.getProduct(); // 연관된 Product 엔티티 가져오기
+                        Product product = recommendedProduct.getProduct();
 
                         RecommendedProductDTO dto = new RecommendedProductDTO();
                         dto.setId(recommendedProduct.getId());
                         dto.setProductId(product.getId());
-                        dto.setProductName(product.getName()); // 상품명 추가
-                        dto.setPrice(product.getPrice().doubleValue()); // 가격 추가
-                        dto.setMainImageUrl(product.getMainImageUrl()); // 이미지 URL 추가
-                        dto.setReason(recommendedProduct.getReason()); // 추천 이유 추가
+                        dto.setProductName(product.getName());
+                        dto.setPrice(product.getPrice().doubleValue());
+                        dto.setMainImageUrl(product.getMainImageUrl());
+                        dto.setReason(recommendedProduct.getReason());
+                        dto.setRelatedIngredients(recommendedProduct.getRelatedIngredients());
 
                         return dto;
                     })
@@ -144,6 +141,7 @@ public class RecommendationController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
 
     @GetMapping("/health-records")
     public ResponseEntity<List<HealthAnalysisDTO>> getHealthRecords() {
