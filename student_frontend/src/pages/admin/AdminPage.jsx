@@ -30,7 +30,7 @@ const AdminPage = () => {
                     <Route path="orders" element={<OrderManagement onPageChange={() => handlePageChange("orders")} />} />
                     <Route path="products" element={<ProductManagement onPageChange={() => handlePageChange("products")} />} />
                     <Route path="products/:productId/edit" element={<EditProduct />} />
-                    <Route path="products/add" element={<AddProduct />} /> {/* 상품 추가 */}
+                    <Route path="products/add" element={<AddProduct />} />
                 </Routes>
             </div>
         </div>

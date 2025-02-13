@@ -29,7 +29,7 @@ const Footer = () => {
     }, []);
 
     const footerStyle = {
-        marginTop: '20px',
+
         padding: isMobile ? '10px' : '20px',
         backgroundColor: '#f5f5f5',
         textAlign: 'center',

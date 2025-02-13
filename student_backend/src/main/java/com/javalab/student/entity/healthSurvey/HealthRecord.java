@@ -43,4 +43,13 @@ public class HealthRecord {
 
     @Column(columnDefinition = "TEXT")
     private String recommendedProducts;
+
+    @Column(nullable = false, length = 100)
+    private String name; // 사용자 이름
+
+    @Column(nullable = false, length = 10)
+    private String gender; // 사용자 성별
+
+    @Column(nullable = false)
+    private int age; // 사용자 나이
 }

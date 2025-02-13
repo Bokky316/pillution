@@ -73,6 +73,7 @@ const Header = () => {
                         <MenuItem onClick={() => { handleMenuClose(); navigate("/recommendation"); }}>추천</MenuItem>
                         <MenuItem onClick={() => { handleMenuClose(); navigate("/cart"); }}>장바구니</MenuItem>
                         <MenuItem onClick={() => { handleMenuClose(); navigate("/survey"); }}>설문조사</MenuItem>
+                        <MenuItem onClick={() => { handleMenuClose(); navigate("/subscription"); }}>구독</MenuItem>
                         <MenuItem onClick={() => { handleMenuClose(); navigate("/board"); }}>필루션소식</MenuItem>
                     </Menu>
                 </Box>

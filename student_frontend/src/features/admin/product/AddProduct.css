@@ -1,71 +1,30 @@
-/* 전체 컨테이너 스타일 (필요에 따라 조정) */
-.add-product-container {
-    max-width: 800px; /* max-width 값 조정 */
-    margin: 0 auto;
-    padding: 20px;
+.image-upload-container {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
 }
 
-/* 대표 이미지 영역 스타일 */
-.main-image-section {
-    margin-bottom: 30px; /* 간격 조정 */
-}
-
-.main-image-section .MuiTypography-h6 { /* 대표 이미지 제목 스타일 (MUI Typography 컴포넌트 사용 시) */
-    font-size: 1.5rem; /* 글꼴 크기 조정 */
-    margin-bottom: 10px;
-}
-
-.main-image-section .MuiTypography-body2 { /* 대표 이미지 설명 스타일 (MUI Typography 컴포넌트 사용 시) */
-    color: #777; /* 글자색 조정 */
-    margin-bottom: 15px;
-}
-
-/* 상세 이미지 영역 스타일 */
-.detail-image-section {
-    margin-bottom: 30px; /* 간격 조정 */
-}
-
-.detail-image-section .MuiTypography-h6 { /* 상세 이미지 제목 스타일 (MUI Typography 컴포넌트 사용 시) */
-    font-size: 1.2rem; /* 글꼴 크기 조정 */
-    margin-bottom: 10px;
-}
-
-.detail-image-section .MuiTypography-body2 { /* 상세 이미지 설명 스타일 (MUI Typography 컴포넌트 사용 시) */
-    color: #777; /* 글자색 조정 */
-    margin-bottom: 15px;
-}
-
-/* 이미지 업로드 박스 공통 스타일 */
 .image-upload-box {
-    height: 200px; /* 높이 값 조정 */
-    border: 1px dashed #ccc; /* border 스타일 변경 */
-    border-radius: 8px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 10px; /* 이미지 박스 간 간격 추가 */
-}
-
-.image-upload-box:hover {
-    border-color: #999;
-    background-color: #f9f9f9; /* hover 시 배경색 변경 */
+  width: 30%;
+  height: 150px;
+  border: 2px dashed #cccccc;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
 }
 
 .image-preview {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain; /* object-fit 속성 변경 (contain) */
-    border-radius: 8px; /* 미리보기 이미지 border-radius 추가 */
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
 }
 
 .file-input {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
 }
