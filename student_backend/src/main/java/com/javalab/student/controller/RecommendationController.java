@@ -133,6 +133,7 @@ public class RecommendationController {
                         dto.setProductId(product.getId());
                         dto.setProductName(product.getName()); // 상품명 추가
                         dto.setPrice(product.getPrice().doubleValue()); // 가격 추가
+                        // 기존 dto.setMainImageUrl(product.getMainImageUrl());  이미지 URL 추가
                         String mainImageUrl = product.getProductImgList().stream()
                                 .filter(img -> "대표".equals(img.getImageType()))
                                 .findFirst()
