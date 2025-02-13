@@ -6,15 +6,9 @@ import com.javalab.student.dto.healthSurvey.ProductRecommendationDTO;
 import com.javalab.student.dto.healthSurvey.RecommendationDTO;
 import com.javalab.student.entity.Member;
 import com.javalab.student.entity.Product;
-import com.javalab.student.entity.healthSurvey.MemberResponse;
-import com.javalab.student.entity.healthSurvey.Recommendation;
-import com.javalab.student.entity.healthSurvey.RecommendedIngredient;
-import com.javalab.student.entity.healthSurvey.RecommendedProduct;
+import com.javalab.student.entity.healthSurvey.*;
 import com.javalab.student.repository.ProductRepository;
-import com.javalab.student.repository.healthSurvey.MemberResponseRepository;
-import com.javalab.student.repository.healthSurvey.RecommendationRepository;
-import com.javalab.student.repository.healthSurvey.RecommendedIngredientRepository;
-import com.javalab.student.repository.healthSurvey.RecommendedProductRepository;
+import com.javalab.student.repository.healthSurvey.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -43,6 +37,7 @@ public class RecommendationService {
     private final RecommendedIngredientRepository recommendedIngredientRepository;
     private final RecommendedProductRepository recommendedProductRepository;
     private final MemberResponseRepository memberResponseRepository;
+    private MemberResponseOptionRepository memberResponseOptionRepository;
     private final ProductRepository productRepository;
     private final HealthRecordService healthRecordService;
 
@@ -61,14 +56,15 @@ public class RecommendationService {
             log.info("1. 인증된 사용자 ID: {}", member.getId());
 
             // 2. 사용자 정보 가져오기 (나이, 키, 몸무게 등)
-            List<MemberResponse> responses = memberResponseRepository.findAgeHeightAndWeightResponses(member.getId());
-            log.info("2. 사용자 응답 데이터 조회 완료. 응답 수: {}", responses.size());
+            List<MemberResponse> textResponses = memberResponseRepository.findAgeHeightAndWeightResponses(member.getId());
+            List<MemberResponseOption> optionResponses = memberResponseOptionRepository.findLatestResponsesByMemberId(member.getId());
+            log.info("2. 사용자 응답 데이터 조회 완료. 텍스트 응답 수: {}, 옵션 응답 수: {}", textResponses.size(), optionResponses.size());
 
             String name = memberInfoService.getName(member.getId());
             String gender = memberInfoService.getGender(member.getId());
-            int age = memberInfoService.getAge(responses);
-            double height = memberInfoService.getHeight(responses);
-            double weight = memberInfoService.getWeight(responses);
+            int age = memberInfoService.getAge(textResponses);
+            double height = memberInfoService.getHeight(textResponses);
+            double weight = memberInfoService.getWeight(textResponses);
 
             // BMI 계산
             double bmi = bmiCalculator.calculateBMI(height, weight);
@@ -77,7 +73,7 @@ public class RecommendationService {
 
             // 3. 건강 분석 수행
             log.info("3. 건강 분석 시작");
-            HealthAnalysisDTO healthAnalysis = healthAnalysisService.analyzeHealth(member.getId(), age, bmi, responses, gender);
+            HealthAnalysisDTO healthAnalysis = healthAnalysisService.analyzeHealth(member.getId(), age, bmi, textResponses, optionResponses, gender);
             healthAnalysis.setName(name);
             healthAnalysis.setAge(age);
             healthAnalysis.setGender(gender);
@@ -86,7 +82,7 @@ public class RecommendationService {
 
             // 4. 추천 영양 성분 점수 계산
             log.info("4. 추천 영양 성분 점수 계산 시작");
-            Map<String, Integer> ingredientScores = nutrientScoreService.calculateIngredientScores(responses, age, bmi);
+            Map<String, Integer> ingredientScores = nutrientScoreService.calculateIngredientScores(textResponses, optionResponses, age, bmi);
             log.info("4. 추천 영양 성분 점수 계산 완료. 점수 수: {}", ingredientScores.size());
 
             // 5. 추천 엔티티 생성 및 저장
