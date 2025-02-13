@@ -14,6 +14,9 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class HealthAnalysisDTO {
+    private String name;       // 이름 추가
+    private String gender;     // 성별 추가
+    private int age;           // 나이 추가
     private double bmi;
     private Map<String, String> riskLevels;
     private String overallAssessment;

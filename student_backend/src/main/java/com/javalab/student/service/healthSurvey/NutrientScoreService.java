@@ -2,6 +2,7 @@ package com.javalab.student.service.healthSurvey;
 
 import com.javalab.student.dto.healthSurvey.HealthAnalysisDTO;
 import com.javalab.student.entity.healthSurvey.MemberResponse;
+import com.javalab.student.entity.healthSurvey.Recommendation;
 import com.javalab.student.entity.healthSurvey.RecommendedIngredient;
 import com.javalab.student.repository.healthSurvey.RecommendedIngredientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +21,6 @@ public class NutrientScoreService {
 
     @Autowired
     private RecommendedIngredientRepository recommendedIngredientRepository;
-
 
     /**
      * 회원의 응답, 나이, BMI를 기반으로 영양 성분 점수를 계산합니다.
@@ -50,98 +50,71 @@ public class NutrientScoreService {
     }
 
     /**
-     * 계산된 영양 성분 점수를 기반으로 필수 및 추가 추천 영양 성분을 결정합니다.
+     * 계산된 영양 성분 점수를 기반으로 추천 영양 성분을 결정합니다.
      *
      * @param healthAnalysis 건강 분석 결과
      * @param ingredientScores 계산된 영양 성분 점수
      * @param age 회원의 나이
      * @param bmi 회원의 BMI
-     * @return 필수 및 추가 추천 영양 성분 목록
+     * @return 추천 영양 성분 목록 (최대 5개, 이름과 점수 포함)
      */
-    public Map<String, List<String>> getRecommendedIngredients(HealthAnalysisDTO healthAnalysis, Map<String, Integer> ingredientScores, int age, double bmi) {
-        Map<String, List<String>> recommendedIngredients = new HashMap<>();
-        List<String> essentialIngredients = new ArrayList<>();
-        List<String> additionalIngredients = new ArrayList<>();
+    public List<Map<String, Object>> getRecommendedIngredients(HealthAnalysisDTO healthAnalysis, Map<String, Integer> ingredientScores, int age, double bmi) {
+        // 기본 성분 (칼슘, 마그네슘, 비타민D) 기본 점수 1점 부여
+        Set<String> baseIngredients = new HashSet<>(Arrays.asList("칼슘", "마그네슘", "비타민D"));
+        baseIngredients.forEach(ingredient -> ingredientScores.putIfAbsent(ingredient, 1));
 
-        // 주요 증상에 따라 무조건 essentialIngredients에 추가
-        addEssentialIngredientsByMainSymptoms(healthAnalysis, essentialIngredients);
+        // 총점이 1점 이상인 성분만 필터링하고 점수 내림차순 정렬
+        List<Map.Entry<String, Integer>> sortedIngredients = ingredientScores.entrySet().stream()
+                .filter(entry -> entry.getValue() >= 1) // 총점이 1점 이상인 것만 포함
+                .sorted(Comparator.comparing(Map.Entry::getValue, Comparator.reverseOrder())) // 점수 내림차순 정렬
+                .collect(Collectors.toList());
 
-        // 점수 기준으로 정렬
-        List<Map.Entry<String, Integer>> sortedIngredients = new ArrayList<>(ingredientScores.entrySet());
-        sortedIngredients.sort((e1, e2) -> e2.getValue().compareTo(e1.getValue()));
-
-        // 상위 5개 성분을 essential로 추천 (이미 추가된 성분 제외)
-        int count = 0;
-        for (int i = 0; i < sortedIngredients.size(); i++) {
-            String ingredient = sortedIngredients.get(i).getKey();
-            if (!essentialIngredients.contains(ingredient) && count < 5) {
-                essentialIngredients.add(ingredient);
-                count++;
-            }
-        }
-
-        // 나머지 성분을 additional로 추천
-        for (int i = 0; i < sortedIngredients.size(); i++) {
-            String ingredient = sortedIngredients.get(i).getKey();
-            if (!essentialIngredients.contains(ingredient)) {
-                additionalIngredients.add(ingredient);
-            }
-        }
-
-        recommendedIngredients.put("essential", essentialIngredients);
-        recommendedIngredients.put("additional", additionalIngredients);
-
-        return recommendedIngredients;
-    }
-
-    /**
-     * 주요 증상 관련 문항에 사용자가 체크한 경우, 해당 문항에 매핑된 영양제를 무조건 추천 영양제에 포함
-     * @param healthAnalysis 건강 분석 결과
-     * @param essentialIngredients 필수 영양제 목록
-     */
-    private void addEssentialIngredientsByMainSymptoms(HealthAnalysisDTO healthAnalysis, List<String> essentialIngredients) {
-        Map<String, Integer> ingredientScores = new HashMap<>();
-        List<MemberResponse> responses = healthAnalysis.getResponses();
-        if (responses == null) {
-            System.out.println("Warning: responses is null in HealthAnalysisDTO");
-            return;
-        }
-        Set<String> mainSymptoms = getMainSymptoms(responses);
-
-        // 주요 증상에 대한 점수 계산 (여기서 ingredientScores가 업데이트됨)
-        calculateMainSymptomScores(responses, ingredientScores, mainSymptoms);
-
-        // ingredientScores에 있는 모든 영양제를 essentialIngredients에 추가
-        essentialIngredients.addAll(ingredientScores.keySet());
+        // 상위 5개만 선택하여 이름과 점수를 Map에 담아 List로 반환
+        return sortedIngredients.stream()
+                .limit(5)
+                .map(entry -> {
+                    Map<String, Object> ingredient = new HashMap<>();
+                    ingredient.put("name", entry.getKey());
+                    ingredient.put("score", entry.getValue());
+                    return ingredient;
+                })
+                .collect(Collectors.toList());
     }
 
     /**
      * 추천 영양 성분을 저장합니다.
      *
-     * @param recommendationId 추천 ID
      * @param ingredientScores 계산된 영양 성분 점수
      * @param healthAnalysis 건강 분석 결과
      * @param age 회원의 나이
      * @param bmi 회원의 BMI
      */
     @Transactional
-    public void saveRecommendedIngredients(Long recommendationId, Map<String, Integer> ingredientScores, HealthAnalysisDTO healthAnalysis, int age, double bmi) {
-        Map<String, List<String>> recommendedIngredients = getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
+    public void saveRecommendedIngredients(Recommendation recommendation, Map<String, Integer> ingredientScores, HealthAnalysisDTO healthAnalysis, int age, double bmi) {
+        // 추천 영양 성분 결정 (최대 5개, 이름과 점수 포함)
+        List<Map<String, Object>> recommendedIngredients = getRecommendedIngredients(healthAnalysis, ingredientScores, age, bmi);
 
-        for (Map.Entry<String, List<String>> entry : recommendedIngredients.entrySet()) {
-            String category = entry.getKey(); // "essential" 또는 "additional"
-            for (String ingredientName : entry.getValue()) {
-                RecommendedIngredient ingredient = new RecommendedIngredient();
-                ingredient.setRecommendationId(recommendationId);
-                ingredient.setIngredientName(ingredientName);
-                ingredient.setCategory(category);
-                ingredient.setScore(ingredientScores.get(ingredientName));
-                // ingredient.setReason(generateRecommendationReason(ingredientName, healthAnalysis, age, bmi));
+        // 점수의 최대값을 구해 5점 만점으로 환산하기 위한 기준 설정
+        double maxScore = ingredientScores.values().stream().max(Integer::compareTo).orElse(1);
 
-                recommendedIngredientRepository.save(ingredient);
-            }
+        for (Map<String, Object> ingredientMap : recommendedIngredients) {
+            String ingredientName = (String) ingredientMap.get("name");
+            Integer originalScore = (Integer) ingredientMap.get("score");
+
+            RecommendedIngredient ingredient = new RecommendedIngredient();
+            ingredient.setRecommendation(recommendation); // Recommendation 객체 참조로 설정
+            ingredient.setIngredientName(ingredientName);
+
+            // 점수 계산 및 저장 (0점 ~ 5점 사이로 정규화)
+            double normalizedScore = Math.min(5.0, Math.max(0.0, (originalScore / maxScore) * 5));
+            double roundedScore = Math.round(normalizedScore * 10.0) / 10.0;
+            ingredient.setScore(roundedScore);
+
+            recommendedIngredientRepository.save(ingredient);
+            recommendation.getRecommendedIngredients().add(ingredient);
         }
     }
+
 
     /**
      * 주요 증상을 추출합니다.
@@ -153,17 +126,19 @@ public class NutrientScoreService {
         return responses.stream()
                 .filter(r -> r.getQuestion().getSubCategory().getName().equals("주요 증상"))
                 .flatMap(r -> Arrays.stream(r.getResponseText().split(",")))
+                .map(String::trim)
                 .collect(Collectors.toSet());
     }
 
     /**
      * 주요 증상에 대한 점수를 계산합니다.
      *
-     * @param responses 회원의 설문 응답 목록
+     * @param responses        회원의 설문 응답 목록
      * @param ingredientScores 영양 성분 점수 Map
-     * @param mainSymptoms 주요 증상 집합
+     * @param mainSymptoms     주요 증상 집합
      */
-    private void calculateMainSymptomScores(List<MemberResponse> responses, Map<String, Integer> ingredientScores, Set<String> mainSymptoms) {
+    private void calculateMainSymptomScores(List<MemberResponse> responses, Map<String, Integer> ingredientScores,
+                                            Set<String> mainSymptoms) {
         for (MemberResponse response : responses) {
             String subCategory = response.getQuestion().getSubCategory().getName();
             if (mainSymptoms.contains(subCategory)) {
@@ -199,6 +174,7 @@ public class NutrientScoreService {
             }
         }
     }
+
 
     /**
      * 혈관·혈액순환 관련 영양 성분 점수를 계산합니다.
@@ -532,8 +508,11 @@ public class NutrientScoreService {
         for (MemberResponse response : responses) {
             String subCategory = response.getQuestion().getSubCategory().getName();
             switch (subCategory) {
-                case "운동 및 야외활동":
-                    calculateExerciseScores(response, ingredientScores);
+                case "운동 빈도":
+                    calculateExerciseFrequencyScores(response, ingredientScores);
+                    break;
+                case "야외활동 시간":
+                    calculateOutdoorActivityScores(response, ingredientScores);
                     break;
                 case "식습관":
                     calculateDietScores(response, ingredientScores);
@@ -558,22 +537,41 @@ public class NutrientScoreService {
     }
 
     /**
-     * 운동 및 야외활동에 대한 점수를 계산합니다.
+     * 운동 빈도에 대한 점수를 계산합니다.
      *
      * @param response 회원의 응답
      * @param ingredientScores 영양 성분 점수 Map
      */
-    private void calculateExerciseScores(MemberResponse response, Map<String, Integer> ingredientScores) {
+    private void calculateExerciseFrequencyScores(MemberResponse response, Map<String, Integer> ingredientScores) {
         switch (response.getResponseText()) {
             case "주 1회 이하":
                 ingredientScores.compute("비타민D", (k, v) -> (v == null) ? 5 : v + 5);
                 ingredientScores.compute("칼슘", (k, v) -> (v == null) ? 4 : v + 4);
                 break;
-            case "1시간 이하":
-                ingredientScores.compute("비타민D", (k, v) -> (v == null) ? 4 : v + 4);
+            case "주 2~3회":
+                ingredientScores.compute("비타민D", (k, v) -> (v == null) ? 2 : v + 2);
+                ingredientScores.compute("칼슘", (k, v) -> (v == null) ? 1 : v + 1);
                 break;
         }
     }
+
+    /**
+     * 야외활동 시간에 대한 점수를 계산합니다.
+     *
+     * @param response 회원의 응답
+     * @param ingredientScores 영양 성분 점수 Map
+     */
+    private void calculateOutdoorActivityScores(MemberResponse response, Map<String, Integer> ingredientScores) {
+        switch (response.getResponseText()) {
+            case "1시간 이하":
+                ingredientScores.compute("비타민D", (k, v) -> (v == null) ? 4 : v + 4);
+                break;
+            case "1~4시간":
+                ingredientScores.compute("비타민D", (k, v) -> (v == null) ? 2 : v + 2);
+                break;
+        }
+    }
+
 
     /**
      * 식습관에 대한 점수를 계산합니다.

@@ -3,10 +3,10 @@ import { fetchWithAuth } from '@/features/auth/utils/fetchWithAuth';
 import { API_URL } from '@/constant';
 
 /**
- * 건강 분석 및 추천 정보를 가져오는 비동기 액션 생성자
+ * 건강 분석 정보를 가져오는 비동기 액션 생성자
  */
-export const fetchHealthAnalysisAndRecommendations = createAsyncThunk(
-  'recommendations/fetchHealthAnalysisAndRecommendations',
+export const fetchHealthAnalysis = createAsyncThunk(
+  'recommendations/fetchHealthAnalysis',
   async (_, { rejectWithValue }) => {
     try {
       const response = await fetchWithAuth(`${API_URL}recommendation/analysis`, {
@@ -14,10 +14,11 @@ export const fetchHealthAnalysisAndRecommendations = createAsyncThunk(
         credentials: 'include',
       });
       const data = await response.json();
+
       if (response.ok) {
-        return data;
+        return data.healthAnalysis; // healthAnalysis만 반환
       } else {
-        return rejectWithValue(data.error || '건강 분석 및 추천을 가져오는데 실패했습니다.');
+        return rejectWithValue(data.error || '건강 분석 정보를 가져오는데 실패했습니다.');
       }
     } catch (error) {
       return rejectWithValue(error.message);
@@ -26,21 +27,46 @@ export const fetchHealthAnalysisAndRecommendations = createAsyncThunk(
 );
 
 /**
- * 건강 기록 히스토리를 가져오는 비동기 액션 생성자
+ * 추천 영양 성분을 가져오는 비동기 액션 생성자
  */
-export const fetchHealthHistory = createAsyncThunk(
-  'recommendations/fetchHealthHistory',
+export const fetchRecommendedIngredients = createAsyncThunk(
+  'recommendations/fetchRecommendedIngredients',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetchWithAuth(`${API_URL}recommendation/history`, {
+      const response = await fetchWithAuth(`${API_URL}recommendation/ingredients`, {
         method: 'GET',
         credentials: 'include',
       });
       const data = await response.json();
+
       if (response.ok) {
         return data;
       } else {
-        return rejectWithValue(data.error || '건강 기록을 가져오는데 실패했습니다.');
+        return rejectWithValue(data.error || '추천 영양 성분을 가져오는데 실패했습니다.');
+      }
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+/**
+ * 추천 상품을 가져오는 비동기 액션 생성자
+ */
+export const fetchRecommendedProducts = createAsyncThunk(
+  'recommendations/fetchRecommendedProducts',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetchWithAuth(`${API_URL}recommendation/products`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        return data;
+      } else {
+        return rejectWithValue(data.error || '추천 상품을 가져오는데 실패했습니다.');
       }
     } catch (error) {
       return rejectWithValue(error.message);
@@ -61,11 +87,11 @@ export const addRecommendationsToCart = createAsyncThunk(
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ products }), // 상품 데이터를 서버로 전송
+        body: JSON.stringify({ products }),
       });
 
       if (response.ok) {
-        return await response.json(); // 성공 시 서버 응답 데이터 반환
+        return await response.json();
       } else {
         const errorData = await response.json();
         return rejectWithValue(errorData.error || '추천 상품을 장바구니에 추가하는데 실패했습니다.');
@@ -83,58 +109,70 @@ const recommendationSlice = createSlice({
   name: 'recommendations',
   initialState: {
     healthAnalysis: null,
-    recommendations: {}, // 백엔드 응답 구조에 맞게 빈 객체로 초기화
-    recommendedIngredients: { essential: [], additional: [] },
-    healthHistory: [],
+    recommendedIngredients: [],
+    recommendedProducts: [],
     loading: false,
     error: null,
+    cartAddingStatus: 'idle', // 장바구니 상태 추가
   },
 
   reducers: {},
+
   extraReducers: (builder) => {
     builder
-      // 건강 분석 및 추천 정보 요청 시작
-      .addCase(fetchHealthAnalysisAndRecommendations.pending, (state) => {
+      // 건강 분석 정보
+      .addCase(fetchHealthAnalysis.pending, (state) => {
+          state.loading = true;
+          state.error = null;
+        })
+        .addCase(fetchHealthAnalysis.fulfilled, (state, action) => {
+          state.loading = false;
+          state.healthAnalysis = action.payload || null; // healthAnalysis 저장
+        })
+        .addCase(fetchHealthAnalysis.rejected, (state, action) => {
+          state.loading = false;
+          state.error = action.payload;
+        })
+
+      // 추천 영양 성분
+      .addCase(fetchRecommendedIngredients.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      // 건강 분석 및 추천 정보 요청 성공
-      .addCase(fetchHealthAnalysisAndRecommendations.fulfilled, (state, action) => {
+      .addCase(fetchRecommendedIngredients.fulfilled, (state, action) => {
         state.loading = false;
-        state.healthAnalysis = action.payload.healthAnalysis;
-        state.recommendations = action.payload.recommendations;
-        state.recommendedIngredients = action.payload.recommendedIngredients || { essential: [], additional: [] };
+        state.recommendedIngredients = action.payload || [];
       })
-      // 건강 기록 히스토리 요청 성공
-      .addCase(fetchHealthHistory.fulfilled, (state, action) => {
-        state.healthHistory = action.payload;
-      })
-      // 건강 분석 및 추천 정보 요청 실패
-      .addCase(fetchHealthAnalysisAndRecommendations.rejected, (state, action) => {
+      .addCase(fetchRecommendedIngredients.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
-      })
-      // 건강 기록 히스토리 요청 실패
-      .addCase(fetchHealthHistory.rejected, (state, action) => {
         state.error = action.payload;
       })
 
-      // 추천 상품 장바구니 추가 시작
+      // 추천 상품
+      .addCase(fetchRecommendedProducts.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchRecommendedProducts.fulfilled, (state, action) => {
+        state.loading = false;
+        state.recommendedProducts = action.payload || [];
+      })
+      .addCase(fetchRecommendedProducts.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // 장바구니 추가
       .addCase(addRecommendationsToCart.pending, (state) => {
-        state.loading = true; // 로딩 상태 활성화
-        state.error = null;   // 이전 에러 초기화
+        state.cartAddingStatus = 'loading';
+        state.error = null;
       })
-
-      // 추천 상품 장바구니 추가 성공
       .addCase(addRecommendationsToCart.fulfilled, (state) => {
-        state.loading = false; // 로딩 상태 비활성화
-        // 성공 시 별도 상태 변경은 필요하지 않음
+        state.cartAddingStatus = 'succeeded';
       })
-
-      // 추천 상품 장바구니 추가 실패
       .addCase(addRecommendationsToCart.rejected, (state, action) => {
-        state.loading = false; // 로딩 상태 비활성화
-        state.error = action.payload; // 에러 메시지 저장
+        state.cartAddingStatus = 'failed';
+        state.error = action.payload;
       });
   },
 });

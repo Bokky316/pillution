@@ -1,28 +1,34 @@
 package com.javalab.student.entity.healthSurvey;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.javalab.student.entity.Product;
+import com.javalab.student.entity.healthSurvey.Recommendation;
 import jakarta.persistence.*;
 import lombok.*;
 
-/**
- * 추천된 상품 정보를 나타내는 엔티티
- */
+import java.math.BigDecimal;
+
+
 @Entity
 @Table(name = "recommended_product")
 @Getter @Setter
-@ToString
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class RecommendedProduct {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "recommendation_id")
-    private Long recommendationId;
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recommendation_id", nullable = false)
+    private Recommendation recommendation;
 
-    @Column(name = "product_id")
-    private Long productId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
 
     @Column(columnDefinition = "TEXT")
     private String reason;

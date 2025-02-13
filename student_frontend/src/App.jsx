@@ -39,7 +39,7 @@ import KakaoAddressSearch from "@/features/auth/components/KakaoAddressSearch";
 import useAuth from "@/hook/useAuth";
 import useWebSocket from "@hook/useWebSocket";
 import useMessage from "@hook/useMessage";
-import "@/App.css";
+// import "@/App.css";
 
 function App() {
     const { isLoading, isLoggedIn, user } = useAuth();
