@@ -90,7 +90,7 @@ public class RecommendationService {
             Recommendation recommendation = new Recommendation();
             recommendation.setMemberId(member.getId());
             recommendation.setCreatedAt(LocalDateTime.now());
-            recommendation = recommendationRepository.saveAndFlush(recommendation); // saveAndFlush 사용
+            recommendation = recommendationRepository.saveAndFlush(recommendation);
             log.info("5. 추천 엔티티 저장 완료. ID: {}", recommendation.getId());
 
             // 6. 추천 영양 성분 저장
@@ -121,7 +121,6 @@ public class RecommendationService {
                         .reason(productDTO.getDescription())
                         .build();
 
-                // 연관 관계 설정
                 recommendedProduct.setRecommendation(recommendation);
                 recommendedProduct.setProduct(product);
 
@@ -131,11 +130,8 @@ public class RecommendationService {
             recommendedProductRepository.flush();
             log.info("7. 추천 제품 저장 완료. 저장된 개수: {}", recommendedProducts.size());
 
-
-
             // 8. HealthRecord 저장
             log.info("8. HealthRecord 저장 시작");
-
             List<String> recommendedIngredientNames = recommendedIngredients.stream()
                     .map(RecommendedIngredient::getIngredientName)
                     .collect(Collectors.toList());
@@ -149,7 +145,6 @@ public class RecommendationService {
                     gender,
                     age
             );
-
             log.info("8. HealthRecord 저장 완료");
 
             // 9. 결과 반환 데이터 구성
