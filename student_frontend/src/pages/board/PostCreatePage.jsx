@@ -158,7 +158,7 @@ function PostCreatePage() {
 
             console.log('생성 결과:', result);
 
-            setSnackbarMessage("게시물이 등록되었습니다.");
+            setSnackbarMessage("게시물이 성공적으로 등록되었습니다.");
             setSnackbarOpen(true);
 
             setTimeout(() => {

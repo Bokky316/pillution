@@ -86,7 +86,7 @@ function FAQBoardPage() {
         if (postToDelete) {
             try {
                 await dispatch(deleteFAQPost(postToDelete)).unwrap();
-                setSnackbar({ open: true, message: "게시글이 삭제되었습니다." });
+                setSnackbar({ open: true, message: "게시글이 성공적으로 삭제되었습니다." });
             } catch (err) {
                 setSnackbar({ open: true, message: "게시글 삭제에 실패했습니다." });
             }
@@ -182,7 +182,7 @@ function FAQBoardPage() {
             >
                 <Table>
                     <TableHead>
-                        <TableRow sx={{ borderTop: '2px solid #888' }}>
+                        <TableRow sx={{ borderTop: '2px solid #888'}}>
                             <TableCell
                                 align="center"
                                 sx={{
@@ -382,11 +382,11 @@ function FAQBoardPage() {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
+                    <Button onClick={handleConfirmDelete} color="error" autoFocus>
+                        삭제
+                    </Button>
                     <Button onClick={handleCloseDeleteDialog} color="primary">
                         취소
-                    </Button>
-                    <Button onClick={handleConfirmDelete} color="primary" autoFocus>
-                        삭제
                     </Button>
                 </DialogActions>
             </Dialog>
