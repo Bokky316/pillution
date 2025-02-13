@@ -255,15 +255,132 @@ const ChatRoom = () => {
                 </Box>
             )}
 
-            <Box sx={{ flexGrow: 1, overflowY: "auto", p: 2 }}>
+            <Box sx={{ flexGrow: 1, overflowY: "auto", p: 2, bgcolor: "#f5f5f5" }}>
                 {messages.map((msg, index) => (
-                    <Box key={index} sx={{ display: "flex", justifyContent: msg.senderId === user?.id ? "flex-end" : "flex-start", mb: 1 }}>
-                        <Paper elevation={1} sx={{ p: 1, maxWidth: "70%", bgcolor: msg.senderId === user?.id ? "#dcf8c6" : "#ffffff" }}>
-                            <Typography variant="body2">{msg.content}</Typography>
-                        </Paper>
+                    <Box
+                        key={index}
+                        sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: msg.senderId === user?.id ? "flex-end" : "flex-start",
+                            mb: 2
+                        }}
+                    >
+                        {/* 시간 표시 */}
+                        <Typography
+                            variant="caption"
+                            sx={{
+                                color: "#666",
+                                mb: 0.5,
+                                fontSize: "11px"
+                            }}
+                        >
+                            {new Date(msg.sentAt).toLocaleTimeString('ko-KR', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                            })}
+                        </Typography>
+
+                        <Box sx={{
+                            display: "flex",
+                            alignItems: "flex-end",
+                            flexDirection: msg.senderId === user?.id ? "row-reverse" : "row"
+                        }}>
+                            {/* 상담사 프로필 (상담사 메시지일 때만 표시) */}
+                            {msg.senderId !== user?.id && (
+                                <Box
+                                    component="img"
+                                    src="/path/to/counselor-avatar.png" // 실제 이미지 경로로 수정 필요
+                                    sx={{
+                                        width: 36,
+                                        height: 36,
+                                        borderRadius: "50%",
+                                        mr: msg.senderId === user?.id ? 0 : 1,
+                                        ml: msg.senderId === user?.id ? 1 : 0,
+                                        bgcolor: "#e0e0e0"
+                                    }}
+                                />
+                            )}
+
+                            {/* 메시지 말풍선 */}
+                            <Paper
+                                elevation={0}
+                                sx={{
+                                    p: 1.5,
+                                    px: 2,
+                                    maxWidth: "70%",
+                                    bgcolor: msg.senderId === user?.id ? "#AC8A57" : "#ffffff", // 사용자 메시지는 갈색, 상담사 메시지는 흰색
+                                    color: msg.senderId === user?.id ? "#ffffff" : "#000000",
+                                    borderRadius: msg.senderId === user?.id
+                                        ? "20px 3px 20px 20px"  // 사용자 메시지
+                                        : "3px 20px 20px 20px", // 상담사 메시지
+                                    boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                                    position: "relative",
+                                    wordBreak: "break-word"
+                                }}
+                            >
+                                <Typography variant="body1" sx={{ fontSize: "14px" }}>
+                                    {msg.content}
+                                </Typography>
+                            </Paper>
+                        </Box>
                     </Box>
                 ))}
             </Box>
+
+            {/* 입력창 영역 */}
+            {!isChatClosed && topic && (
+                <Paper
+                    elevation={0}
+                    sx={{
+                        p: 2,
+                        display: "flex",
+                        alignItems: "center",
+                        borderTop: "1px solid #e0e0e0",
+                        bgcolor: "#ffffff"
+                    }}
+                >
+                    <TextField
+                        fullWidth
+                        value={messageInput}
+                        onChange={(e) => setMessageInput(e.target.value)}
+                        onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
+                        placeholder="메시지를 입력하세요"
+                        variant="standard" // outlined에서 standard로 변경
+                        size="small"
+                        sx={{
+                            mr: 1,
+                            "& .MuiInputBase-root": {
+                                padding: "8px 12px",
+                                fontSize: "14px",
+                            },
+                            "& .MuiInputBase-input": {
+                                padding: "0px"
+                            },
+                            "& fieldset": { border: "none" }
+                        }}
+                        disabled={isChatClosed}
+                        multiline
+                        maxRows={4}
+                    />
+                    <Button
+                        onClick={handleSendMessage}
+                        sx={{
+                            minWidth: "inherit",
+                            bgcolor: "#AC8A57",
+                            color: "white",
+                            p: "8px 16px",
+                            "&:hover": {
+                                bgcolor: "#8B7355"
+                            }
+                        }}
+                        disabled={!messageInput.trim() || isChatClosed}
+                    >
+                        전송
+                    </Button>
+                </Paper>
+            )}
 
             {!isChatClosed && topic && (
                 <Paper elevation={3} sx={{ p: 2, display: "flex", alignItems: "center" }}>
