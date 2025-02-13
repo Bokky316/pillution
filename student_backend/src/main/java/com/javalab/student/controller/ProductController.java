@@ -245,4 +245,19 @@ public class ProductController {
         Page<ProductResponseDTO> responseDTOPage = productPage.map(ProductResponseDTO::fromEntity);
         return ResponseEntity.ok(responseDTOPage);
     }
+
+    /** 상품 이미지 삭제 핸들러 */
+    @DeleteMapping("/{productId}/images") // 예시 URL: /api/products/1/images?imageType=대표
+    public ResponseEntity<Void> deleteProductImage(
+            @PathVariable("productId") Long productId,
+            @RequestParam("imageType") String imageType, // or @RequestParam("imageIndex") Integer imageIndex 상세 이미지의 경우 인덱스
+            @RequestParam(value = "imageIndex", required = false) Integer imageIndex) { // 상세 이미지 인덱스 (필수 아님)
+        try {
+            productService.deleteProductImage(productId, imageType, imageIndex);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("Error deleting product image", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }

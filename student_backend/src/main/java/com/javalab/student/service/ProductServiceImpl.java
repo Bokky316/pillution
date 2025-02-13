@@ -95,26 +95,32 @@ public class ProductServiceImpl implements ProductService {
         Product existingProduct = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        // 기존 이미지 삭제 (ProductImg 테이블에서) - 수정 시 기존 이미지 삭제 로직은 그대로 유지
-        List<ProductImg> existingImages = productImgRepository.findByProductId(id);
-        for (ProductImg img : existingImages) {
-            deleteImageFile(img.getImageUrl()); // 파일 시스템에서 이미지 파일 삭제
-        }
-        productImgRepository.deleteAll(existingImages); // DB에서 이미지 정보 삭제
+        // ProductFormDto 필드를 Product 엔티티에 직접 업데이트 (이미지 관련 필드 제외)
+        existingProduct.setName(productFormDto.getName());
+        existingProduct.setDescription(productFormDto.getDescription());
+        existingProduct.setPrice(productFormDto.getPrice());
+        existingProduct.setStock(productFormDto.getStock());
+        existingProduct.setActive(productFormDto.isActive());
 
-        modelMapper.map(productFormDto, existingProduct); // Product 정보 업데이트 (이미지 제외)
-        Product updatedProduct = productRepository.save(existingProduct);
+        Product updatedProduct = productRepository.save(existingProduct); // 이미지 정보 제외하고 먼저 저장
 
-        // ✅ 대표 이미지 저장 (수정 시 대표 이미지 덮어쓰기)
+        // ✅ 대표 이미지 처리 (수정된 경우 기존 대표 이미지 삭제 후 새로운 대표 이미지 저장)
         if (productFormDto.getMainImageFile() != null) {
+            // 기존 대표 이미지 삭제 (ProductImg 테이블에서, 파일 시스템에서도 삭제)
+            ProductImg existingMainImage = productImgRepository.findFirstByProductIdAndImageTypeOrderByOrderAsc(id, "대표");
+            if (existingMainImage != null) {
+                deleteImageFile(existingMainImage.getImageUrl()); // 파일 시스템에서 삭제
+                productImgRepository.delete(existingMainImage); // DB 에서 삭제
+            }
+            // 새로운 대표 이미지 저장
             MultipartFile mainImageFile = productFormDto.getMainImageFile();
             try {
                 String imageUrl = saveImage(mainImageFile);
                 ProductImg productImg = ProductImg.builder()
                         .product(updatedProduct)
                         .imageUrl(imageUrl)
-                        .imageType("대표") // ✅ imageType "대표" 로 설정
-                        .order(0) // 대표 이미지는 order 0으로 설정 (필요하다면)
+                        .imageType("대표")
+                        .order(0)
                         .build();
                 productImgRepository.save(productImg);
             } catch (IOException e) {
@@ -122,17 +128,20 @@ public class ProductServiceImpl implements ProductService {
             }
         }
 
-        // ✅ 상세 이미지들 저장 (수정 시 상세 이미지 새로 추가)
+        // ✅ 상세 이미지 처리 (기존 상세 이미지 삭제 후 새로운 상세 이미지들 저장)
+        // 수정: 기존 상세 이미지 삭제 ->  새로운 상세 이미지만 추가 (기존 상세 이미지 유지)
         if (productFormDto.getDetailImageFiles() != null && !productFormDto.getDetailImageFiles().isEmpty()) {
+
+            // 새로운 상세 이미지들 저장
             List<MultipartFile> detailImageFiles = productFormDto.getDetailImageFiles();
-            for (int order = 1; order <= detailImageFiles.size(); order++) { // order 1부터 시작 (대표 이미지 order 0)
+            for (int order = 1; order <= detailImageFiles.size(); order++) {
                 MultipartFile detailImageFile = detailImageFiles.get(order - 1);
                 try {
                     String imageUrl = saveImage(detailImageFile);
                     ProductImg productImg = ProductImg.builder()
                             .product(updatedProduct)
                             .imageUrl(imageUrl)
-                            .imageType("상세") // ✅ imageType "상세" 로 설정
+                            .imageType("상세")
                             .order(order)
                             .build();
                     productImgRepository.save(productImg);
@@ -153,9 +162,6 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new RuntimeException("Product not found"));
         return ProductResponseDTO.fromEntity(product); // ✅ ProductResponseDTO.fromEntity() 사용
     }
-
-// Product 엔티티를 ProductDto 로 변환하면서 대표 이미지 URL 설정 (삭제)
-// private ProductDto getProductDtoWithMainImage(Product product) { ... }
 
     // Product 엔티티를 ProductDto 로 변환하면서 대표 이미지 URL 설정 (ProductResponseDTO 로 변경, 이름 변경)
     private ProductResponseDTO getProductResponseDTOWithImages(Product product) { // ✅ ProductResponseDTO 로 반환, 이름 변경
@@ -258,5 +264,37 @@ public class ProductServiceImpl implements ProductService {
             productDto.setMainImageUrl(mainImage.getImageUrl());
         }
         return productDto;
+    }
+
+    /** 상품 이미지 삭제 */
+    @Override
+    @Transactional
+    public void deleteProductImage(Long productId, String imageType, Integer imageIndex) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        if ("대표".equals(imageType)) {
+            // 대표 이미지 삭제
+            ProductImg mainImage = productImgRepository.findFirstByProductIdAndImageTypeOrderByOrderAsc(productId, "대표");
+            if (mainImage != null) {
+                deleteImageFile(mainImage.getImageUrl()); // 파일 시스템에서 삭제
+                productImgRepository.delete(mainImage); // DB에서 삭제
+            }
+        } else if ("상세".equals(imageType) && imageIndex != null) {
+            // 특정 인덱스의 상세 이미지 삭제 (인덱스 기반 삭제는 order 컬럼 활용, order 는 1부터 시작)
+            List<ProductImg> detailImages = productImgRepository.findByProductIdAndImageTypeOrderByOrderAsc(productId, "상세"); // 상세 이미지 리스트 조회 (order 순으로 정렬)
+            if (imageIndex > 0 && imageIndex <= detailImages.size()) { // 유효한 인덱스 범위인지 확인
+                ProductImg detailImageToDelete = detailImages.get(imageIndex - 1); // 인덱스는 1부터 시작하므로 -1
+                deleteImageFile(detailImageToDelete.getImageUrl()); // 파일 시스템에서 삭제
+                productImgRepository.delete(detailImageToDelete); // DB에서 삭제
+            }
+        } else if ("상세".equals(imageType) && imageIndex == null) {
+            // 모든 상세 이미지 삭제 (imageIndex 파라미터가 없는 경우)
+            List<ProductImg> detailImages = productImgRepository.findByProductIdAndImageTypeOrderByOrderAsc(productId, "상세");
+            for (ProductImg detailImage : detailImages) {
+                deleteImageFile(detailImage.getImageUrl()); // 파일 시스템에서 삭제
+                productImgRepository.delete(detailImage); // DB에서 삭제
+            }
+        }
     }
 }

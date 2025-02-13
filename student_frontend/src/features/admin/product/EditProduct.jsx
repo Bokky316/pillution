@@ -171,23 +171,66 @@ const EditProduct = () => {
         setDetailImagePreviews(newDetailImagePreviews);
     };
 
-    // ✅ 대표 이미지 삭제 핸들러
-    const handleMainImageDelete = () => {
-        setMainImageFile(null);
-        setMainImagePreview(null);
-    };
+    // ✅ 대표 이미지 삭제 핸들러 수정 (API 호출 추가)
+        const handleMainImageDelete = async () => {
+            try {
+                const token = localStorage.getItem('accessToken');
+                const response = await fetch(`${API_URL}products/${productId}/images?imageType=대표`, { // 백엔드 API 호출 (DELETE 요청)
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': token ? `Bearer ${token}` : '',
+                        'Content-Type': 'application/json', // 명시적으로 Content-Type 설정
+                    },
+                    credentials: 'include'
+                });
 
-    // ✅ 상세 이미지 삭제 핸들러
-    const handleDetailImageDelete = (index) => { // index 파라미터 추가
-        const newDetailImageFiles = [...detailImageFiles];
-        const newDetailImagePreviews = [...detailImagePreviews];
+                if (!response.ok) {
+                    throw new Error('대표 이미지 삭제 실패');
+                }
 
-        newDetailImageFiles[index] = null;
-        newDetailImagePreviews[index] = null;
+                setMainImageFile(null);
+                setMainImagePreview(null);
+                alert('대표 이미지가 삭제되었습니다.'); // 성공 알림 추가
 
-        setDetailImageFiles(newDetailImageFiles);
-        setDetailImagePreviews(newDetailImagePreviews);
-    };
+            } catch (error) {
+                console.error("Error deleting main image:", error);
+                alert('대표 이미지 삭제 중 오류가 발생했습니다.'); // 실패 알림 추가
+            }
+        };
+
+        // ✅ 상세 이미지 삭제 핸들러 수정 (API 호출 추가, index 파라미터 추가)
+        const handleDetailImageDelete = async (indexToDelete) => {
+            try {
+                const token = localStorage.getItem('accessToken');
+                const response = await fetch(`${API_URL}products/${productId}/images?imageType=상세&imageIndex=${indexToDelete + 1}`, { // 백엔드 API 호출 (DELETE 요청), imageIndex 쿼리 파라미터 추가 (1부터 시작)
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': token ? `Bearer ${token}` : '',
+                        'Content-Type': 'application/json', // 명시적으로 Content-Type 설정
+                    },
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('상세 이미지 삭제 실패');
+                }
+
+                const newDetailImageFiles = [...detailImageFiles];
+                const newDetailImagePreviews = [...detailImagePreviews];
+
+                newDetailImageFiles[indexToDelete] = null;
+                newDetailImagePreviews[indexToDelete] = null;
+
+                setDetailImageFiles(newDetailImageFiles);
+                setDetailImagePreviews(newDetailImagePreviews);
+                alert('상세 이미지가 삭제되었습니다.'); // 성공 알림 추가
+
+
+            } catch (error) {
+                console.error("Error deleting detail image:", error);
+                alert('상세 이미지 삭제 중 오류가 발생했습니다.'); // 실패 알림 추가
+            }
+        };
 
     const handleCategoryChange = (e) => {
         setSelectedCategoryIds(e.target.value);
@@ -206,39 +249,39 @@ const EditProduct = () => {
         selectedCategoryIds.forEach(categoryId => formData.append('categoryIds', categoryId));
 
         // ✅ 대표 이미지를 'mainImageFile' 키로 FormData에 추가 (mainImageFile state 사용)
-        if (mainImageFile) {
-            formData.append('mainImageFile', mainImageFile);
-        }
+                if (mainImageFile) { // ✅ mainImageFile 이 있는 경우만 추가
+                    formData.append('mainImageFile', mainImageFile);
+                }
 
-        // ✅ 상세 이미지들을 'detailImageFiles' 키로 FormData에 추가 (detailImageFiles state 사용)
-        detailImageFiles.forEach(file => {
-            if (file) {
-                formData.append('detailImageFiles', file);
-            }
-        });
+                // ✅ 상세 이미지들을 'detailImageFiles' 키로 FormData에 추가 (detailImageFiles state 사용)
+                detailImageFiles.forEach(file => {
+                    if (file) { // ✅ file 이 있는 경우만 추가
+                        formData.append('detailImageFiles', file);
+                    }
+                });
 
 
-        try {
-            const updateProductResponse = await axios.put(`${API_URL}products/${productId}`, formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                    'Authorization': `Bearer ${token}`
-                },
-                credentials: 'include'
-            });
+                try {
+                    const updateProductResponse = await axios.put(`${API_URL}products/${productId}`, formData, {
+                        headers: {
+                            "Content-Type": "multipart/form-data",
+                            'Authorization': `Bearer ${token}`
+                        },
+                        credentials: 'include'
+                    });
 
-            if (updateProductResponse.status === 200) {
-                alert("상품이 성공적으로 업데이트되었습니다.");
-                navigate('/adminpage/products');
-            } else {
-                throw new Error(`상품 업데이트 실패: ${updateProductResponse.status}`);
-            }
+                    if (updateProductResponse.status === 200) {
+                        alert("상품이 성공적으로 업데이트되었습니다.");
+                        navigate('/adminpage/products');
+                    } else {
+                        throw new Error(`상품 업데이트 실패: ${updateProductResponse.status}`);
+                    }
 
-        } catch (error) {
-            console.error("Error updating product:", error);
-            alert("상품 업데이트 중 오류가 발생했습니다.");
-        }
-    };
+                } catch (error) {
+                    console.error("Error updating product:", error);
+                    alert("상품 업데이트 중 오류가 발생했습니다.");
+                }
+            };
 
     if (loading) return <div>Loading...</div>;
     if (error) return <div>Error: {error}</div>;

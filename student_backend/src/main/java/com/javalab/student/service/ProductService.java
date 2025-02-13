@@ -33,5 +33,6 @@ public interface ProductService {
     /** 검색 메서드 추가 */
     Page<ProductResponseDTO> searchProducts(String field, String query, Pageable pageable);
 
-
+    /** 상품 이미지 삭제 */
+    void deleteProductImage(Long productId, String imageType, Integer imageIndex);
 }
