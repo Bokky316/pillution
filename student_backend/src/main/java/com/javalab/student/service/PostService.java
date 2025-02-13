@@ -54,6 +54,7 @@ public class PostService {
 
         existingPost.setTitle(postDto.getTitle());
         existingPost.setContent(postDto.getContent());
+        existingPost.setCategory(postDto.getCategory());
 
         validatePost(existingPost);
 
