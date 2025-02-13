@@ -74,7 +74,7 @@ function BoardPage() {
                 gutterBottom
                 align="left"
                 sx={{
-                    my: 4,
+                    my: 5,
                     fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' },
                     px: { xs: 2, sm: 3 },
                 }}

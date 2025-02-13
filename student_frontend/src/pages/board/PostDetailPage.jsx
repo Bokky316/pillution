@@ -193,7 +193,7 @@ function PostDetailPage() {
             </TableContainer>
 
             {/* 게시물 내용 */}
-            <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', minHeight: '300px', textAlign: 'left', mb: 4 }}>
+            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', minHeight: '300px', textAlign: 'left', mb: 4 }}>
                 {post.content}
             </Typography>
 
