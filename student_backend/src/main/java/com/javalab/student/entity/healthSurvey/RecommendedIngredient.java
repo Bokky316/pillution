@@ -26,6 +26,9 @@ public class RecommendedIngredient {
     @JoinColumn(name = "recommendation_id", nullable = false)
     private Recommendation recommendation;
 
+    @Column(name = "category")
+    private String category;
+
     @Column(name = "ingredient_name", nullable = false)
     private String ingredientName;
 

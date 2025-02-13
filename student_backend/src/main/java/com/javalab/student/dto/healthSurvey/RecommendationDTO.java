@@ -21,5 +21,5 @@ public class RecommendationDTO {
     private String overallAssessment;
     private String recommendedIngredients;
     private String recommendedProducts;
-    private List<ProductRecommendationDTO> productRecommendations;
+    private List<RecommendedProductDTO> productRecommendations;
 }

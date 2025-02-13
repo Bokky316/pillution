@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -38,5 +39,21 @@ public class Recommendation {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+    }
+
+    public void addRecommendedIngredient(RecommendedIngredient ingredient) {
+        if (recommendedIngredients == null) {
+            recommendedIngredients = new ArrayList<>();
+        }
+        recommendedIngredients.add(ingredient);
+        ingredient.setRecommendation(this);
+    }
+
+    public void addRecommendedProduct(RecommendedProduct product) {
+        if (recommendedProducts == null) {
+            recommendedProducts = new ArrayList<>();
+        }
+        recommendedProducts.add(product);
+        product.setRecommendation(this);
     }
 }

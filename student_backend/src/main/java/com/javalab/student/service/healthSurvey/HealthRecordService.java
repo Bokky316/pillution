@@ -2,7 +2,7 @@ package com.javalab.student.service.healthSurvey;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.javalab.student.dto.healthSurvey.HealthAnalysisDTO;
-import com.javalab.student.dto.healthSurvey.ProductRecommendationDTO;
+import com.javalab.student.dto.healthSurvey.RecommendedProductDTO;
 import com.javalab.student.entity.Member;
 import com.javalab.student.entity.healthSurvey.HealthRecord;
 import com.javalab.student.repository.healthSurvey.HealthRecordRepository;
@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 건강 기록 저장 및 조회 서비스
@@ -40,7 +39,7 @@ public class HealthRecordService {
      */
     public void saveHealthRecord(Member member, HealthAnalysisDTO analysisDTO,
                                  List<String> recommendedIngredients,
-                                 List<ProductRecommendationDTO> recommendedProducts,
+                                 List<RecommendedProductDTO> recommendedProducts,
                                  String name, String gender, int age) {
         try {
             // HealthRecord 객체 생성 및 데이터 설정
@@ -72,7 +71,7 @@ public class HealthRecordService {
      * @param products 추천된 제품 리스트
      * @return JSON 문자열로 변환된 추천 제품 리스트
      */
-    private String convertToJson(List<ProductRecommendationDTO> products) {
+    private String convertToJson(List<RecommendedProductDTO> products) {
         try {
             return objectMapper.writeValueAsString(products); // ObjectMapper를 사용해 JSON 변환
         } catch (Exception e) {
@@ -82,12 +81,12 @@ public class HealthRecordService {
     }
 
     /**
-     * ProductRecommendationDTO 객체를 JSON 형식의 문자열로 변환합니다.
+     * RecommendedProductDTO 객체를 JSON 형식의 문자열로 변환합니다.
      *
-     * @param dto ProductRecommendationDTO 객체
+     * @param dto RecommendedProductDTO 객체
      * @return JSON 형식의 문자열
      */
-    private String convertToJsonMap(ProductRecommendationDTO dto) {
+    private String convertToJsonMap(RecommendedProductDTO dto) {
         return String.format(
                 "{\"id\":%d, \"name\":\"%s\", \"description\":\"%s\", \"price\":%.2f, \"score\":%.2f, \"mainIngredient\":\"%s\"}",
                 dto.getId(),

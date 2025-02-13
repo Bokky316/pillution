@@ -14,25 +14,36 @@ import {
  * @returns {JSX.Element} RecommendationPage 컴포넌트
  */
 const RecommendationPage = () => {
+  // Redux dispatch 훅
   const dispatch = useDispatch();
+
+  // Redux 스토어에서 상태 가져오기
   const {
-    healthAnalysis,
-    recommendedIngredients,
-    recommendedProducts,
-    loading,
-    error,
-    cartAddingStatus
+    healthAnalysis,           // 건강 분석 결과
+    recommendedIngredients,   // 추천 영양 성분 목록
+    recommendedProducts,      // 추천 상품 목록
+    loading,                  // 로딩 상태
+    error,                    // 에러 메시지
+    cartAddingStatus          // 장바구니 추가 상태
   } = useSelector((state) => state.recommendations);
 
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
+  // 스낵바 상태 관리
+  const [snackbarOpen, setSnackbarOpen] = useState(false);    // 스낵바 표시 여부
+  const [snackbarMessage, setSnackbarMessage] = useState('');  // 스낵바 메시지
 
+  /**
+   * 컴포넌트 마운트 시 및 설문 응답 변경 시 추천 데이터 가져오기
+   */
   useEffect(() => {
+    // API 호출하여 건강 분석 정보, 추천 영양 성분, 추천 상품 가져오기
     dispatch(fetchHealthAnalysis());
     dispatch(fetchRecommendedIngredients());
     dispatch(fetchRecommendedProducts());
-  }, [dispatch]);
+  }, [dispatch]);  // dispatch가 변경될 때마다 실행
 
+  /**
+   * 에러 발생 시 스낵바 표시
+   */
   useEffect(() => {
     if (error) {
       setSnackbarMessage(error);
@@ -40,6 +51,9 @@ const RecommendationPage = () => {
     }
   }, [error]);
 
+  /**
+   * 장바구니 추가 상태 변경 시 스낵바 표시
+   */
   useEffect(() => {
     if (cartAddingStatus === 'succeeded') {
       setSnackbarMessage('모든 추천 상품이 장바구니에 담겼습니다.');
@@ -50,10 +64,16 @@ const RecommendationPage = () => {
     }
   }, [cartAddingStatus]);
 
+  /**
+   * 추천 상품 전체를 장바구니에 추가하는 함수
+   */
   const handleAddAllToCart = () => {
     dispatch(addRecommendationsToCart(recommendedProducts));
   };
 
+  /**
+   * 로딩 중 화면 표시
+   */
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
@@ -64,49 +84,53 @@ const RecommendationPage = () => {
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      {/* 건강 분석 결과 */}
-      {healthAnalysis && (
-        <Box mb={6}>
-          <Typography
-            variant="h4"
-            align="center"
-            gutterBottom
-            sx={{ fontWeight: 700, color: '#333' }}
-          >
-            {healthAnalysis.name}님의 건강검문결과표
-          </Typography>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        {/* 건강 분석 결과 */}
+        {healthAnalysis && Object.values(healthAnalysis).some(value => value !== null && value !== 0) ? (
+          <Box mb={6}>
+            <Typography
+              variant="h4"
+              align="center"
+              gutterBottom
+              sx={{ fontWeight: 700, color: '#333' }}
+            >
+              {healthAnalysis.name}님의 건강검문결과표
+            </Typography>
 
-          <Paper
-            elevation={0}
-            sx={{
-              p: 4,
-              borderRadius: '16px',
-              backgroundColor: 'rgba(255, 241, 240, 0.5)',
-              border: '1px solid rgba(0, 0, 0, 0.1)'
-            }}
-          >
-            <Box
+            <Paper
+              elevation={0}
               sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2
+                p: 4,
+                borderRadius: '16px',
+                backgroundColor: 'rgba(255, 241, 240, 0.5)',
+                border: '1px solid rgba(0, 0, 0, 0.1)'
               }}
             >
-              <Typography variant="h6" gutterBottom>
-                {healthAnalysis.name} | {healthAnalysis.gender} | {healthAnalysis.age}세 | BMI {healthAnalysis.bmi?.toFixed(1)}
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                {healthAnalysis.overallAssessment}
-              </Typography>
-              {healthAnalysis.warnings && (
-                <Typography variant="body2" color="error.main">
-                  {healthAnalysis.warnings}
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2
+                }}
+              >
+                <Typography variant="h6" gutterBottom>
+                  {healthAnalysis.name} | {healthAnalysis.gender} | {healthAnalysis.age}세 | BMI {healthAnalysis.bmi?.toFixed(1)}
                 </Typography>
-              )}
-            </Box>
-          </Paper>
-        </Box>
-      )}
+                <Typography variant="body1" color="text.secondary">
+                  {healthAnalysis.overallAssessment}
+                </Typography>
+                {healthAnalysis.warnings && (
+                  <Typography variant="body2" color="error.main">
+                    {healthAnalysis.warnings}
+                  </Typography>
+                )}
+              </Box>
+            </Paper>
+          </Box>
+        ) : (
+          <Typography>건강 분석 정보가 없습니다.</Typography>
+        )}
+      </Container>
 
       {/* 추천 영양 성분 */}
       {recommendedIngredients?.length > 0 && (
@@ -268,6 +292,7 @@ const RecommendationPage = () => {
         </Box>
       )}
 
+      {/* 스낵바 */}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={6000}
