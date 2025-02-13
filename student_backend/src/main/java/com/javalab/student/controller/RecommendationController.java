@@ -6,6 +6,7 @@ import com.javalab.student.dto.healthSurvey.RecommendedIngredientDTO;
 import com.javalab.student.dto.healthSurvey.RecommendedProductDTO;
 import com.javalab.student.entity.Member;
 import com.javalab.student.entity.Product;
+import com.javalab.student.entity.ProductImg;
 import com.javalab.student.entity.healthSurvey.HealthRecord;
 import com.javalab.student.entity.healthSurvey.Recommendation;
 import com.javalab.student.entity.healthSurvey.RecommendedIngredient;
@@ -132,7 +133,12 @@ public class RecommendationController {
                         dto.setProductId(product.getId());
                         dto.setProductName(product.getName()); // 상품명 추가
                         dto.setPrice(product.getPrice().doubleValue()); // 가격 추가
-                        //dto.setMainImageUrl(product.getMainImageUrl()); // 이미지 URL 추가
+                        String mainImageUrl = product.getProductImgList().stream()
+                                .filter(img -> "대표".equals(img.getImageType()))
+                                .findFirst()
+                                .map(ProductImg::getImageUrl)
+                                .orElse(null);
+                        dto.setMainImageUrl(mainImageUrl); // 이미지 URL 추가
                         dto.setReason(recommendedProduct.getReason()); // 추천 이유 추가
 
                         return dto;
