@@ -1,9 +1,9 @@
 import { DataGrid } from '@mui/x-data-grid';
 import { Button, Snackbar } from '@mui/material';
 import { useState, useEffect } from 'react';
-import { API_URL } from "../../../constant";
+import { API_URL } from "@/utils/constants";
 import { useNavigate } from "react-router-dom";
-import './MemberList.css';
+import '@/styles/MemberList.css';
 
 const MemberList = () => {
     const [members, setMembers] = useState([]);
