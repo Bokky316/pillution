@@ -85,16 +85,16 @@ public class CartController {
      */
     @PostMapping(value = "/cart/orders")
     public @ResponseBody ResponseEntity<Object> orderCartItem(@RequestBody CartOrderRequestDto cartOrderRequestDto, Principal principal) {
-        List<CartOrderItemDto> cartOrderItems = cartOrderRequestDto.getCartOrderItems();
+        List<CartOrderRequestDto.CartOrderItem> cartOrderItems = cartOrderRequestDto.getCartOrderItems();
         if (cartOrderItems == null || cartOrderItems.isEmpty()) {
             return new ResponseEntity<>("주문할 상품을 선택해주세요", HttpStatus.BAD_REQUEST);
         }
-        for (CartOrderItemDto cartOrderItem : cartOrderItems) {
+        for (CartOrderRequestDto.CartOrderItem cartOrderItem : cartOrderItems) {
             if (!cartService.validateCartItem(cartOrderItem.getCartItemId(), principal.getName())) {
                 return new ResponseEntity<>("주문 권한이 없습니다.", HttpStatus.FORBIDDEN);
             }
         }
-        Long orderId = cartService.orderCartItem(cartOrderItems, principal.getName());
+        Long orderId = cartService.orderCartItem(cartOrderRequestDto, principal.getName());
         return new ResponseEntity<>(orderId, HttpStatus.OK);
     }
 
