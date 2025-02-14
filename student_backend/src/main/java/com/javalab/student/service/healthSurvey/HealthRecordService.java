@@ -2,17 +2,19 @@ package com.javalab.student.service.healthSurvey;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.javalab.student.dto.healthSurvey.HealthAnalysisDTO;
-import com.javalab.student.dto.healthSurvey.RecommendedProductDTO;
+import com.javalab.student.dto.healthSurvey.ProductRecommendationDTO;
 import com.javalab.student.entity.Member;
 import com.javalab.student.entity.healthSurvey.HealthRecord;
 import com.javalab.student.repository.healthSurvey.HealthRecordRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 건강 기록 저장 및 조회 서비스
@@ -30,38 +32,38 @@ public class HealthRecordService {
      * 건강 분석 결과를 저장합니다.
      *
      * @param member               회원 엔티티
-     * @param analysisDTO          건강 분석 결과 DTO
      * @param recommendedIngredients 추천된 영양 성분 리스트
      * @param recommendedProducts  추천된 제품 리스트
      * @param name                 사용자 이름
      * @param gender               사용자 성별
      * @param age                  사용자 나이
      */
-    public void saveHealthRecord(Member member, HealthAnalysisDTO analysisDTO,
+    @Transactional
+    public void saveHealthRecord(Member member, HealthAnalysisDTO healthAnalysis,
                                  List<String> recommendedIngredients,
-                                 List<RecommendedProductDTO> recommendedProducts,
+                                 List<ProductRecommendationDTO> recommendedProducts,
                                  String name, String gender, int age) {
         try {
-            // HealthRecord 객체 생성 및 데이터 설정
-            HealthRecord record = HealthRecord.builder()
+            HealthRecord healthRecord = HealthRecord.builder()
                     .member(member)
                     .recordDate(LocalDateTime.now())
                     .name(name)
                     .gender(gender)
                     .age(age)
-                    .bmi(analysisDTO.getBmi())
-                    .riskLevels(objectMapper.writeValueAsString(analysisDTO.getRiskLevels()))
-                    .overallAssessment(analysisDTO.getOverallAssessment())
+                    .bmi(healthAnalysis.getBmi())
+                    .riskLevels(objectMapper.writeValueAsString(healthAnalysis.getRiskLevels()))
+                    .overallAssessment(healthAnalysis.getOverallAssessment())
                     .recommendedIngredients(String.join(", ", recommendedIngredients))
-                    .recommendedProducts(convertToJson(recommendedProducts))
+                    .recommendedProducts(objectMapper.writeValueAsString(recommendedProducts))
+                    .createdAt(LocalDateTime.now())
                     .build();
 
-            // HealthRecord 저장
-            healthRecordRepository.save(record);
-            log.info("건강 기록이 성공적으로 저장되었습니다. 회원 ID: {}, 이름: {}", member.getId(), name);
+            log.debug("HealthRecord 객체 생성: {}", healthRecord);
+            healthRecordRepository.save(healthRecord);
+            log.info("HealthRecord 저장 완료. ID: {}", healthRecord.getId());
         } catch (Exception e) {
-            log.error("건강 기록 저장 중 오류 발생. 회원 ID: {}, 이름: {}", member.getId(), name, e);
-            throw new RuntimeException("건강 기록 저장 중 오류 발생", e);
+            log.error("HealthRecord 저장 중 상세 오류: ", e);
+            throw new RuntimeException("HealthRecord 저장 중 오류 발생: " + e.getMessage(), e);
         }
     }
 
@@ -71,7 +73,7 @@ public class HealthRecordService {
      * @param products 추천된 제품 리스트
      * @return JSON 문자열로 변환된 추천 제품 리스트
      */
-    private String convertToJson(List<RecommendedProductDTO> products) {
+    private String convertToJson(List<ProductRecommendationDTO> products) {
         try {
             return objectMapper.writeValueAsString(products); // ObjectMapper를 사용해 JSON 변환
         } catch (Exception e) {
@@ -79,25 +81,6 @@ public class HealthRecordService {
             return "[]"; // 오류 발생 시 빈 배열 반환
         }
     }
-
-    /**
-     * RecommendedProductDTO 객체를 JSON 형식의 문자열로 변환합니다.
-     *
-     * @param dto RecommendedProductDTO 객체
-     * @return JSON 형식의 문자열
-     */
-    private String convertToJsonMap(RecommendedProductDTO dto) {
-        return String.format(
-                "{\"id\":%d, \"name\":\"%s\", \"description\":\"%s\", \"price\":%.2f, \"score\":%.2f, \"mainIngredient\":\"%s\"}",
-                dto.getId(),
-                escapeJsonString(dto.getName()),
-                escapeJsonString(dto.getDescription()),
-                dto.getPrice(),
-                dto.getScore(),
-                escapeJsonString(dto.getMainIngredient())
-        );
-    }
-
 
     /**
      * 문자열 내 특수 문자를 이스케이프 처리합니다.

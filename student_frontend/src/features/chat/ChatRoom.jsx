@@ -224,6 +224,7 @@ const ChatRoom = () => {
 
     return (
         <Box sx={{ height: "100vh", display: "flex", flexDirection: "column", bgcolor: "#f5f5f5" }}>
+            {/* 헤더 부분 */}
             <Paper elevation={3} sx={{ p: 2, bgcolor: "#4a4a4a", color: "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <Typography variant="h6">
                     {topic ? `1:1 채팅 상담 - ${topicOptions[topic]}` : "1:1 채팅 상담"}
@@ -235,10 +236,12 @@ const ChatRoom = () => {
                 )}
             </Paper>
 
+            {/* 상태 메시지 */}
             <Typography variant="body1" color={isChatClosed ? "error" : isCounselorConnected ? "primary" : "textSecondary"} sx={{ p: 2 }}>
                 {getStatusMessage()}
             </Typography>
 
+            {/* 주제 선택 */}
             {!topic && !isChatClosed && (
                 <Box sx={{ p: 2 }}>
                     <Select
@@ -255,34 +258,124 @@ const ChatRoom = () => {
                 </Box>
             )}
 
+            {/* 메시지 목록 */}
             <Box sx={{ flexGrow: 1, overflowY: "auto", p: 2 }}>
                 {messages.map((msg, index) => (
-                    <Box key={index} sx={{ display: "flex", justifyContent: msg.senderId === user?.id ? "flex-end" : "flex-start", mb: 1 }}>
-                        <Paper elevation={1} sx={{ p: 1, maxWidth: "70%", bgcolor: msg.senderId === user?.id ? "#dcf8c6" : "#ffffff" }}>
-                            <Typography variant="body2">{msg.content}</Typography>
-                        </Paper>
+                    <Box
+                        key={index}
+                        sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: msg.senderId === user?.id ? "flex-end" : "flex-start",
+                            mb: 2
+                        }}
+                    >
+                        <Box sx={{
+                            display: "flex",
+                            alignItems: "flex-end",
+                            flexDirection: msg.senderId === user?.id ? "row-reverse" : "row"
+                        }}>
+                            {msg.senderId !== user?.id && (
+                                <Box
+                                    component="img"
+                                    src="/path/to/counselor-avatar.png"
+                                    sx={{
+                                        width: 36,
+                                        height: 36,
+                                        borderRadius: "50%",
+                                        mr: msg.senderId === user?.id ? 0 : 1,
+                                        ml: msg.senderId === user?.id ? 1 : 0,
+                                        bgcolor: "#e0e0e0"
+                                    }}
+                                />
+                            )}
+                            <Paper
+                                elevation={0}
+                                sx={{
+                                    p: 1.5,
+                                    px: 2,
+                                    maxWidth: "70%",
+                                    bgcolor: msg.senderId === user?.id ? "#AC8A57" : "#ffffff",
+                                    color: msg.senderId === user?.id ? "#ffffff" : "#000000",
+                                    borderRadius: msg.senderId === user?.id
+                                        ? "20px 3px 20px 20px"
+                                        : "3px 20px 20px 20px",
+                                    boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                                    position: "relative",
+                                    wordBreak: "break-word"
+                                }}
+                            >
+                                <Typography variant="body1" sx={{ fontSize: "14px" }}>
+                                    {msg.content}
+                                </Typography>
+                            </Paper>
+                        </Box>
+                        <Typography
+                            variant="caption"
+                            sx={{
+                                color: "#666",
+                                mt: 0.5,
+                                fontSize: "11px",
+                                mr: msg.senderId === user?.id ? 0 : "auto",
+                                ml: msg.senderId === user?.id ? "auto" : 0
+                            }}
+                        >
+                            {new Date(msg.sentAt).toLocaleTimeString('ko-KR', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                            })}
+                        </Typography>
                     </Box>
                 ))}
             </Box>
 
-            {!isChatClosed && topic && (
-                <Paper elevation={3} sx={{ p: 2, display: "flex", alignItems: "center" }}>
+            {/* 메시지 입력창 */}
+            {!isChatClosed && (
+                <Paper
+                    elevation={0}
+                    sx={{
+                        p: 2,
+                        display: "flex",
+                        alignItems: "center",
+                        borderTop: "1px solid #e0e0e0",
+                        bgcolor: "#ffffff"
+                    }}
+                >
                     <TextField
                         fullWidth
                         value={messageInput}
                         onChange={(e) => setMessageInput(e.target.value)}
-                        onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                        onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
                         placeholder="메시지를 입력하세요"
-                        variant="outlined"
+                        variant="standard"
                         size="small"
-                        sx={{ mr: 1 }}
-                        disabled={isChatClosed}
+                        sx={{
+                            mr: 1,
+                            "& .MuiInputBase-root": {
+                                padding: "8px 12px",
+                                fontSize: "14px",
+                            },
+                            "& .MuiInputBase-input": {
+                                padding: "0px"
+                            },
+                            "& fieldset": { border: "none" }
+                        }}
+                        multiline
+                        maxRows={4}
                     />
                     <Button
                         onClick={handleSendMessage}
-                        variant="contained"
-                        color="primary"
-                        disabled={!messageInput.trim() || isChatClosed}
+                        sx={{
+                            minWidth: "inherit",
+                            bgcolor: "#AC8A57",
+                            color: "white",
+                            p: "8px 16px",
+                            "&:hover": {
+                                bgcolor: "#8B7355"
+                            }
+                        }}
+                        disabled={!messageInput.trim()}
                     >
                         전송
                     </Button>

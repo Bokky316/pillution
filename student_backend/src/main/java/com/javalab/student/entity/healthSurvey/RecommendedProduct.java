@@ -7,7 +7,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "recommended_product")
@@ -32,4 +33,9 @@ public class RecommendedProduct {
 
     @Column(columnDefinition = "TEXT")
     private String reason;
+
+    @ElementCollection
+    @CollectionTable(name = "recommended_product_ingredients", joinColumns = @JoinColumn(name = "recommended_product_id"))
+    @Column(name = "ingredient_name")
+    private List<String> relatedIngredients = new ArrayList<>();
 }
