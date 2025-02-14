@@ -5,78 +5,76 @@ import com.javalab.student.dto.cartOrder.OrderHistDto;
 import com.javalab.student.service.cartOrder.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.List;
 import java.util.Optional;
 
 /**
- * 주문 관련 컨트롤러
+ * 주문 관련 API 컨트롤러
  * - 주문 생성, 주문 내역 조회, 주문 취소 기능 제공
  */
-@Controller
+@RestController
+@RequestMapping("/api/orders")
 @RequiredArgsConstructor
+@Slf4j
 public class OrderController {
 
     private final OrderService orderService;
 
     /**
      * 주문 생성
+     * @param orderDto 주문 정보
+     * @param principal 사용자 정보
+     * @return 주문 ID
      */
-    @PostMapping("/order")
-    public @ResponseBody ResponseEntity<Object> order(@RequestBody @Valid OrderDto orderDto,
-                                                      BindingResult bindingResult, Principal principal) {
-        if (bindingResult.hasErrors()) {
-            return new ResponseEntity<>(errorMessage(bindingResult), HttpStatus.BAD_REQUEST);
-        }
+    @PostMapping
+    public ResponseEntity<Object> order(@RequestBody @Valid OrderDto orderDto, Principal principal) {
+        log.info("주문 생성 요청 - 주문 정보: {}", orderDto);
         try {
             Long orderId = orderService.order(orderDto, principal.getName());
-            return new ResponseEntity<>(orderId, HttpStatus.OK);
+            log.info("주문 생성 완료 - 주문 ID: {}", orderId);
+            return ResponseEntity.ok(orderId);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            log.error("주문 생성 실패", e);
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
     /**
      * 주문 내역 조회
+     * @param page 페이지 번호
+     * @param principal 사용자 정보
+     * @return 주문 내역 목록
      */
-    @GetMapping(value = {"/orders", "/orders/{page}"})
-    public String orderHist(@PathVariable("page") Optional<Integer> page, Principal principal, Model model){
-        Pageable pageable = PageRequest.of(page.orElse(0), 4);
+    @GetMapping
+    public ResponseEntity<Page<OrderHistDto>> orderHist(@RequestParam(value = "page", defaultValue = "0") int page, Principal principal) {
+        log.info("주문 내역 조회 요청 - 사용자: {}, 페이지: {}", principal.getName(), page);
+        Pageable pageable = PageRequest.of(page, 4);
         Page<OrderHistDto> ordersHistDtoList = orderService.getOrderList(principal.getName(), pageable);
-        model.addAttribute("orders", ordersHistDtoList);
-        model.addAttribute("page", pageable.getPageNumber());
-        model.addAttribute("maxPage", 5);
-        return "order/orderHist";
+        return ResponseEntity.ok(ordersHistDtoList);
     }
 
     /**
      * 주문 취소
+     * @param orderId 주문 ID
+     * @param principal 사용자 정보
+     * @return 취소된 주문 ID
      */
-    @PostMapping("/order/{orderId}/cancel")
-    public @ResponseBody ResponseEntity<Object> cancelOrder(@PathVariable("orderId") Long orderId, Principal principal){
-        if(!orderService.validateOrder(orderId, principal.getName())){
-            return new ResponseEntity<>("주문 취소 권한이 없습니다.", HttpStatus.FORBIDDEN);
+    @PostMapping("/{orderId}/cancel")
+    public ResponseEntity<Object> cancelOrder(@PathVariable("orderId") Long orderId, Principal principal) {
+        log.info("주문 취소 요청 - 주문 ID: {}", orderId);
+        if (!orderService.validateOrder(orderId, principal.getName())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("주문 취소 권한이 없습니다.");
         }
         orderService.cancelOrder(orderId);
-        return new ResponseEntity<>(orderId, HttpStatus.OK);
-    }
-
-    private String errorMessage(BindingResult bindingResult) {
-        StringBuilder sb = new StringBuilder();
-        for (FieldError fieldError : bindingResult.getFieldErrors()) {
-            sb.append(fieldError.getDefaultMessage());
-        }
-        return sb.toString();
+        log.info("주문 취소 완료 - 주문 ID: {}", orderId);
+        return ResponseEntity.ok(orderId);
     }
 }

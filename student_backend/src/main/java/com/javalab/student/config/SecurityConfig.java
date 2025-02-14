@@ -1,30 +1,32 @@
 package com.javalab.student.config;
 
-
 import com.javalab.student.config.jwt.RefreshTokenCheckFilter;
 import com.javalab.student.config.jwt.TokenAuthenticationFilter;
 import com.javalab.student.config.jwt.TokenProvider;
 import com.javalab.student.security.CustomUserDetailsService;
-import com.javalab.student.security.handler.CustomAuthenticationEntryPoint;
 import com.javalab.student.security.handler.CustomAuthenticationSuccessHandler;
 import com.javalab.student.security.handler.CustomLogoutSuccessHandler;
 import com.javalab.student.security.oauth.CustomOAuth2UserService;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.CorsUtils;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Spring Security 설정 파일
@@ -88,14 +90,14 @@ public class SecurityConfig {
         );
 
         /*
-            * 정적 자원 및 URL에 대한 접근 제어 설정(인가) 로드맵
-            * authorizeRequests() : 애플리케이션의 접근 제어(Authorization) 정책을 정의
-            * requestMatchers() : 요청에 대한 보안 검사를 설정
-            * permitAll() : 모든 사용자에게 접근을 허용
-            * hasRole() : 특정 권한을 가진 사용자만 접근을 허용
-            * anyRequest() : 모든 요청에 대해 접근을 허용
-            * authenticated() : 인증된 사용자만 접근을 허용
-            * favicon.ico : 파비콘 요청은 인증 없이 접근 가능, 이코드 누락시키면 계속 서버에 요청을 보내서 서버에 부하를 줄 수 있다.
+         * 정적 자원 및 URL에 대한 접근 제어 설정(인가) 로드맵
+         * authorizeRequests() : 애플리케이션의 접근 제어(Authorization) 정책을 정의
+         * requestMatchers() : 요청에 대한 보안 검사를 설정
+         * permitAll() : 모든 사용자에게 접근을 허용
+         * hasRole() : 특정 권한을 가진 사용자만 접근을 허용
+         * anyRequest() : 모든 요청에 대해 접근을 허용
+         * authenticated() : 인증된 사용자만 접근을 허용
+         * favicon.ico : 파비콘 요청은 인증 없이 접근 가능, 이코드 누락시키면 계속 서버에 요청을 보내서 서버에 부하를 줄 수 있다.
          */
         // URL 별 접근 권한 설정
         http.authorizeHttpRequests(request -> request
@@ -106,8 +108,6 @@ public class SecurityConfig {
                 .requestMatchers("/", "/api/auth/login", "/api/auth/logout", "/api/auth/userInfo", "/api/auth/login/error").permitAll()
                 .requestMatchers("/api/members/register", "/api/members/checkEmail").permitAll()
                 .requestMatchers("/api/email/send", "/api/email/verify").permitAll()
-                .requestMatchers("/api/survey/**").permitAll()
-                .requestMatchers("/api/recommendations/**").authenticated()
                 .requestMatchers("/members/login").permitAll()
                 .requestMatchers("/api/products/**").permitAll()
                 .requestMatchers("/api/categories").permitAll()
@@ -116,7 +116,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/upload").permitAll()
                 .requestMatchers("/api/subscription/**").permitAll()
 
-
+                // 로그인한 사용자만 접근 가능
+                .requestMatchers("/api/survey/**").authenticated() // 설문 API는 로그인한 사용자만 접근 가능
+                .requestMatchers("/api/recommendations/**").authenticated() // 추천 API는 로그인한 사용자만 접근 가능
+                .requestMatchers("/api/cart/**").authenticated() // 장바구니 API는 로그인한 사용자만 접근 가능
 
                 // 관리자 전용 엔드포인트
                 .requestMatchers("/admin/**").hasRole("ADMIN")
@@ -136,12 +139,12 @@ public class SecurityConfig {
                 // WebSocket 엔드포인트 허용
                 .requestMatchers("/ws/**").permitAll()
 
+                // CORS preflight 요청 허용
+                .requestMatchers(CorsUtils::isPreFlightRequest).permitAll() // CORS preflight 요청 허용
+
                 // 그 외 모든 요청은 인증 필요
                 .anyRequest().authenticated()
         );
-
-
-
 
         /*
          * 필터의 순서는 addFilterBefore 메서드를 사용하여 정의
@@ -176,8 +179,8 @@ public class SecurityConfig {
         );
 
         // http.csrf(csrf -> csrf.disable()); // CSRF 보안 설정을 비활성화
-        http.csrf(csrf -> csrf.disable());  // 프론트 엔드를 리액트로 할경우 CSRF 보안 설정을 비활성화
-        http.cors(Customizer.withDefaults());   // 이 설정은 출처가 다른 도메인에서 요청을 허용하기 위한 설정, 스프링은 8080포트에서 실행되고 있고, 리액트는 3000포트에서 실행되고 있기 때문에 스프링은 3000 포트에서 오는 요청을 허용하지 않는다. 이를 해결하기 위해 CORS 설정을 추가한다.
+        http.csrf(AbstractHttpConfigurer::disable);  // 프론트 엔드를 리액트로 할경우 CSRF 보안 설정을 비활성화
+        http.cors(cors -> cors.configurationSource(corsConfigurationSource()));   // 이 설정은 출처가 다른 도메인에서 요청을 허용하기 위한 설정, 스프링은 8080포트에서 실행되고, 리액트는 3000포트에서 실행되고 있기 때문에 스프링은 3000 포트에서 오는 요청을 허용하지 않는다. 이를 해결하기 위해 CORS 설정을 추가한다.
 
         /*
          * 소셜 로그인 설정
@@ -231,5 +234,29 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-}
+    /**
+     * CORS 설정을 위한 Bean
+     * 이 설정은 클라이언트의 Cross-Origin 요청을 처리하기 위한 상세한 CORS 정책을 정의합니다.
+     *
+     * @return CorsConfigurationSource 객체
+     */
+    /**
+     * CORS 설정을 위한 Bean
+     * 이 설정은 클라이언트의 Cross-Origin 요청을 처리하기 위한 상세한 CORS 정책을 정의합니다.
+     *
+     * @return CorsConfigurationSource 객체
+     */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000")); // 클라이언트 origin
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setExposedHeaders(Arrays.asList("Authorization")); // Authorization 헤더 노출
 
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+}

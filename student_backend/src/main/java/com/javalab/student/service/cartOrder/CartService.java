@@ -14,6 +14,7 @@ import com.javalab.student.repository.MemberRepository;
 import com.javalab.student.repository.ProductRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ import java.util.List;
 /**
  * 장바구니 관련 비즈니스 로직을 처리하는 서비스 클래스
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -79,7 +81,6 @@ public class CartService {
         }
         return cartItemRepository.findCartDetailDtoList(cart.getId());
     }
-
 
     /**
      * 장바구니 아이템의 소유자를 확인합니다.
@@ -149,5 +150,34 @@ public class CartService {
         }
 
         return orderId;
+    }
+
+    /**
+     * 상품의 재고를 확인합니다.
+     *
+     * @param productId 상품 ID
+     * @param quantity 확인할 수량
+     * @return 재고 충분 여부
+     */
+    @Transactional(readOnly = true)
+    public boolean checkStock(Long productId, int quantity) {
+        log.debug("checkStock 메서드 호출 - productId: {}, quantity: {}", productId, quantity);
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다."));
+        log.debug("product.getStock(): {}", product.getStock());
+        return product.getStock() >= quantity;
+    }
+
+    /**
+     * 장바구니 아이템 ID로 상품 ID를 조회합니다.
+     *
+     * @param cartItemId 장바구니 아이템 ID
+     * @return 상품 ID
+     */
+    @Transactional(readOnly = true)
+    public Long getItemIdByCartItemId(Long cartItemId) {
+        CartItem cartItem = cartItemRepository.findById(cartItemId)
+                .orElseThrow(() -> new EntityNotFoundException("장바구니 아이템을 찾을 수 없습니다."));
+        return cartItem.getProduct().getId();
     }
 }
