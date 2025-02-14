@@ -12,7 +12,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "health_records")
-@Getter @Setter
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -52,4 +53,7 @@ public class HealthRecord {
 
     @Column(nullable = false)
     private int age; // 사용자 나이
+
+    @Column(nullable = false)
+    private LocalDateTime createdAt; // 건강 기록 생성 시간
 }
