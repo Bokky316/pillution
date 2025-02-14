@@ -8,11 +8,13 @@ import "@/styles/CartPage.css";
 /**
  * 장바구니 페이지 컴포넌트
  * 장바구니 아이템 목록을 표시하고 관리하는 기능을 제공합니다.
+ * @returns {JSX.Element} 장바구니 페이지 컴포넌트
  */
 const CartPage = () => {
   const dispatch = useDispatch();
   const { items: cartItems, status, error } = useSelector(state => state.cart);
   const [selectAll, setSelectAll] = useState(false);
+  const [selectedPurchaseType, setSelectedPurchaseType] = useState(null);
 
   /**
    * 컴포넌트 마운트 시 장바구니 아이템을 불러옵니다.
@@ -61,7 +63,6 @@ const CartPage = () => {
       const newQuantity = Math.max(1, item.quantity + change);
       try {
         await dispatch(updateCartItem({ cartItemId, count: newQuantity })).unwrap();
-        // 수량 변경 후 장바구니 목록을 다시 불러옵니다.
         dispatch(fetchCartItems());
       } catch (error) {
         console.error('Failed to update cart item:', error);
@@ -78,10 +79,24 @@ const CartPage = () => {
   };
 
   /**
-   * 총 가격 계산
+   * 구매 유형 선택 처리 함수
+   * @param {string} type - 선택된 구매 유형 ('oneTime' 또는 'subscription')
    */
-  const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shippingFee = 3000; // 배송비
+  const handlePurchaseTypeSelect = (type) => {
+    setSelectedPurchaseType(type);
+  };
+
+  /**
+   * 결제 처리 함수
+   */
+  const handleCheckout = () => {
+    if (selectedPurchaseType) {
+      console.log(`Proceeding to checkout with ${selectedPurchaseType} purchase type`);
+      // 여기에 결제 로직 추가
+    } else {
+      alert("구매 유형을 선택해주세요.");
+    }
+  };
 
   if (status === 'loading') return <div>Loading...</div>;
   if (status === 'failed') return <div>Error: {error}</div>;
@@ -91,6 +106,7 @@ const CartPage = () => {
       <h2>CART</h2>
       <main className="cart-container">
         <section className="cart-items">
+          {/* 전체 선택 체크박스 */}
           <div className="select-all-container">
             <input
               type="checkbox"
@@ -100,6 +116,7 @@ const CartPage = () => {
             />
             <label htmlFor="select-all" className="checkbox-label">전체 선택</label>
           </div>
+          {/* 장바구니 아이템 목록 */}
           {cartItems.length === 0 ? (
             <div className="empty-cart-message">
               장바구니가 비어 있습니다.
@@ -116,7 +133,29 @@ const CartPage = () => {
             ))
           )}
         </section>
-        <CartSummary totalPrice={totalPrice} shippingFee={shippingFee} />
+        {/* 구매 유형 선택 (카트 서머리) */}
+        <div className="purchase-type-selection">
+          <CartSummary
+            cartItems={cartItems}
+            purchaseType="oneTime"
+            isSelected={selectedPurchaseType === 'oneTime'}
+            onSelect={() => handlePurchaseTypeSelect('oneTime')}
+          />
+          <CartSummary
+            cartItems={cartItems}
+            purchaseType="subscription"
+            isSelected={selectedPurchaseType === 'subscription'}
+            onSelect={() => handlePurchaseTypeSelect('subscription')}
+          />
+        </div>
+        {/* 결제하기 버튼 */}
+        <button
+          className="checkout-btn"
+          onClick={handleCheckout}
+          disabled={!selectedPurchaseType}
+        >
+          결제하기
+        </button>
       </main>
     </div>
   );
