@@ -32,7 +32,7 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
                 .allowedOrigins("http://localhost:3000")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                 .allowedHeaders("*")    // 모든 헤더를 허용
                 .allowCredentials(true);    // 쿠키를 주고 받을 수 있게 설정, 세션을 사용할 때는 true로 설정, 왜? 세션은 쿠키를 사용하기 때문, 쿠키에는 사용자의 정보가 담겨있음
     }
@@ -51,5 +51,9 @@ public class WebConfig implements WebMvcConfigurer {
 
         registry.addResourceHandler("/static-images/**")
                 .addResourceLocations("classpath:/static/images/");  // 정적 리소스
+
+        registry.addResourceHandler("/favicon.ico")
+                .addResourceLocations("classpath:/static/")
+                .setCachePeriod(0);
     }
 }

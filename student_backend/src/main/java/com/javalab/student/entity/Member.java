@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
+import java.time.LocalDate;
 
 /**
  * 회원 엔티티
@@ -26,9 +27,11 @@ import java.util.Collections;
 @Table(name = "member")
 @Getter @Setter
 @ToString
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Member extends BaseEntity{
+
     @Id
     @Column(name = "member_id")
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -37,7 +40,7 @@ public class Member extends BaseEntity{
     private String name;
 
     // 이메일은 중복될 수 없다. unique = true
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String email;
 
     private String password;
@@ -46,11 +49,18 @@ public class Member extends BaseEntity{
 
     private String address;
 
-    @Builder
-    public Member(String email, String password, String auth) {
-        this.email = email;
-        this.password = password;
-    }
+    // 생년월일 (DB: birth_date DATE)
+    private LocalDate birthDate;
+
+    // 성별 (DB: gender VARCHAR(10))
+    private String gender;
+
+    // 계정 활성화 여부 (DB: activate BOOLEAN DEFAULT TRUE true: 활성, false: 탈퇴)
+    @Column(nullable = false)
+    private boolean activate = true;
+
+    // 사용자 포인트 (DB: points INT DEFAULT 0)
+    private int points = 0;
 
     // 회원의 권한을 나타내는 열거형 상수, 한 사용자가 다수의 권한을 가질 수 있다.
     @Enumerated(EnumType.STRING)
@@ -60,6 +70,21 @@ public class Member extends BaseEntity{
     private boolean social; // 소셜 로그인 여부, 이값을 사용하는 쪽에서는 e.g member.isSocial()로 사용
 
     private String provider; // 소셜 로그인 제공자 이름 (예: kakao)
+
+    // 탈퇴 날짜 (회원 비활성화 시 저장)
+    private LocalDateTime deletedAt;
+
+    // 마지막 로그인 날짜 (로그인 성공 시 업데이트)
+    private LocalDateTime lastLoginAt;
+
+
+
+    @Builder
+    public Member(String email, String password, String auth) {
+        this.email = email;
+        this.password = password;
+        this.role = Role.valueOf(auth); // 문자열로 받은 auth 값을 Role로 변환 추후 시스템에 관리자를 추가해야하는 기능구현이 추가로 있을 경우 대비
+    }
 
     /*
         * 회원 엔티티 생성 정적 메서드
@@ -82,6 +107,9 @@ public class Member extends BaseEntity{
         member.setPhone(memberFormDto.getPhone());
         member.setSocial(false); // 일반 회원가입이므로 소셜 로그인 여부는 false
         member.setRole(memberFormDto.getRole());  // 회원가입 시 사용자의 권한 : USER [수정]
+        member.setActivate(true); // 기본값: 활성 상태
+        member.setBirthDate(memberFormDto.getBirthDate()); // 생년월일 추가
+        member.setGender(memberFormDto.getGender()); // 성별 추가
         return member;
     }
 
@@ -98,35 +126,22 @@ public class Member extends BaseEntity{
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + this.role.name()));
     }
+
+    /*
+     * 회원 탈퇴 처리 (active 변경 + deletedAt 저장)
+     */
+    public void deactivateMember() {
+        this.activate = false; // 비활성화
+        this.deletedAt = LocalDateTime.now(); // 탈퇴 날짜 저장
+    }
+
+    /*
+     * 로그인 성공 시 마지막 로그인 날짜 업데이트
+     */
+    public void updateLastLogin() {
+        this.lastLoginAt = LocalDateTime.now();
+        System.out.println("🔹 [Member] 마지막 로그인 시간 업데이트: " + this.lastLoginAt);
+    }
+
 }
 
-
-//// 추가: BaseEntity 클래스
-//@MappedSuperclass
-//@EntityListeners(AuditingEntityListener.class)
-//@Getter
-//public abstract class BaseEntity {
-//
-//    @CreatedDate
-//    @Column(updatable = false)
-//    private LocalDateTime createdDate;
-//
-//    @LastModifiedDate
-//    private LocalDateTime lastModifiedDate;
-//}
-//
-//// 추가: Role 열거형
-//public enum Role {
-//    USER, ADMIN
-//}
-//
-//// 추가: MemberFormDto 클래스
-//@Getter @Setter
-//public class MemberFormDto {
-//    private String name;
-//    private String email;
-//    private String password;
-//    private String address;
-//    private String phone;
-//    private Role role;
-//}

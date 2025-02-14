@@ -48,6 +48,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         }
 
         return new MemberSecurityDto(
+                member.getId(), // 사용자 ID 추가
                 member.getEmail(),
                 member.getPassword(),
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + member.getRole().toString())),

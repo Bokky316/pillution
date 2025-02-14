@@ -1,14 +1,19 @@
 package com.javalab.student.config;
 
 
+import com.javalab.student.config.jwt.RefreshTokenCheckFilter;
+import com.javalab.student.config.jwt.TokenAuthenticationFilter;
 import com.javalab.student.config.jwt.TokenProvider;
 import com.javalab.student.security.CustomUserDetailsService;
+import com.javalab.student.security.handler.CustomAuthenticationEntryPoint;
 import com.javalab.student.security.handler.CustomAuthenticationSuccessHandler;
+import com.javalab.student.security.handler.CustomLogoutSuccessHandler;
 import com.javalab.student.security.oauth.CustomOAuth2UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
@@ -43,34 +48,42 @@ public class SecurityConfig {
     private final CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler; // 로그인 성공 핸들러
     private final TokenAuthenticationFilter tokenAuthenticationFilter; // 토큰을 검증하고 인증 객체를 SecurityContext에 저장하는 역할
     private final TokenProvider tokenProvider;  // 토큰 생성 및 검증
+    private final RefreshTokenCheckFilter refreshTokenCheckFilter; // 추가된 필터
+    private final CustomLogoutSuccessHandler customLogoutSuccessHandler; // 로그아웃 성공 핸들러
 
 
+    /**
+     * Spring Security 필터 체인 구성을 정의하는 빈입니다.
+     * 이 설정은 애플리케이션의 보안 정책을 정의합니다.
+     *
+     * @param http HttpSecurity 객체, 보안 설정을 구성하는 데 사용됩니다.
+     * @return 구성된 SecurityFilterChain 객체
+     * @throws Exception 보안 구성 중 발생할 수 있는 예외
+     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
+        // 폼 로그인 설정
         http.formLogin(form -> form
-                .loginPage("/api/auth/login")   // 인증되지 않은 사용자가 보호된 리소스에 접근하면 /api/auth/login으로 리다이렉트됩니다.
-                // Spring Security가 인증 처리할 URL(로그인 요청을 처리하는 URL)을 설정, 리액트에서 로그인을 요청할때 사용(/api/auth/login)
-                .loginProcessingUrl("/api/auth/login")
-                .successHandler(customAuthenticationSuccessHandler)
-                .failureHandler((request, response, exception) -> {
-                            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                            response.setContentType("application/json");
-                            response.getWriter().write("{\"error\":\"login failure!\"}");})
-                .permitAll()
+                .loginPage("/api/auth/login")  // 커스텀 로그인 페이지 URL
+                .loginProcessingUrl("/api/auth/login")  // 로그인 처리 URL
+                .successHandler(customAuthenticationSuccessHandler)  // 로그인 성공 핸들러
+                .failureHandler((request, response, exception) -> {  // 로그인 실패 핸들러
+                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"error\":\"login failure!\"}");
+                })
+                .permitAll()  // 로그인 관련 URL은 모든 사용자에게 접근 허용
         );
 
         /*
-            * [수정] 로그아웃 설정
-            * logout() : 스프링의 기본 로그아웃 관련 설정
-            * - /logout 을 기본 로그아웃 요청을 처리하는 URL로 하겠다.
-            * - 로그아웃 성공 시 / 경로로 리디렉트
+         * [수정] 로그아웃 설정
+         * logout() : 스프링의 기본 로그아웃 관련 설정
+         * - /api/auth/logout 을 기본 로그아웃 요청을 처리하는 URL로 하겠다.
+         *   즉 리액트에서 이 요청을 보내면 시큐리티의 기본 로그아웃 처리가 진행된다.
          */
         http.logout(logout -> logout
                 .logoutUrl("/api/auth/logout")
-                .logoutSuccessHandler((request, response, authentication) -> {  //[수정]
-                    response.setStatus(HttpServletResponse.SC_OK);
-                })
+                .logoutSuccessHandler(customLogoutSuccessHandler) // 커스텀 로그아웃 성공 핸들러 사용
                 .permitAll()
         );
 
@@ -84,41 +97,87 @@ public class SecurityConfig {
             * authenticated() : 인증된 사용자만 접근을 허용
             * favicon.ico : 파비콘 요청은 인증 없이 접근 가능, 이코드 누락시키면 계속 서버에 요청을 보내서 서버에 부하를 줄 수 있다.
          */
+        // URL 별 접근 권한 설정
         http.authorizeHttpRequests(request -> request
-                .requestMatchers("/", "/api/auth/login", "/api/auth/logout").permitAll() // 로그인 API 허용 [수정] 로그인 요청은 아무나 할 수 있음
+                // OAuth2 관련 엔드포인트
+                .requestMatchers("/api/oauth2/**", "/oauth2/**", "/login/oauth2/code/**").permitAll()
 
-                .requestMatchers( "/api/auth/userInfo", "/api/auth/login/error").permitAll() // 로그인 API 허용
-                .requestMatchers("/api/students/**").permitAll()
-                .requestMatchers("/api/students/add").hasRole("ADMIN") // 학생 등록 API에 ROLE_ADMIN 요구
-                .requestMatchers("/images/**", "/static-images/**", "/css/**", "/favicon.ico", "/error", "/img/**").permitAll()
+                // 공개 접근 가능한 API 엔드포인트
+                .requestMatchers("/", "/api/auth/login", "/api/auth/logout", "/api/auth/userInfo", "/api/auth/login/error").permitAll()
+                .requestMatchers("/api/members/register", "/api/members/checkEmail").permitAll()
+                .requestMatchers("/api/email/send", "/api/email/verify").permitAll()
+                .requestMatchers("/api/survey/**").permitAll()
+                .requestMatchers("/api/recommendations/**").authenticated()
+                .requestMatchers("/members/login").permitAll()
+                .requestMatchers("/api/products/**").permitAll()
+                .requestMatchers("/api/categories").permitAll()
+                .requestMatchers("/api/auth/userInfo").permitAll()
+                .requestMatchers("/api/posts/**", "/api/faq/**").permitAll() // 게시물 조회
+                .requestMatchers("/api/upload").permitAll()
+                .requestMatchers("/api/subscription/**").permitAll()
+
+
+
+                // 관리자 전용 엔드포인트
                 .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/posts/create").hasRole("ADMIN")  // 게시물 작성
+                .requestMatchers("/api/posts/*/update").hasRole("ADMIN")  // 게시물 수정
+                .requestMatchers("/api/posts/*/delete").hasRole("ADMIN")  // 게시물 삭제
+
+                // 사용자 및 관리자 접근 가능한 엔드포인트
+                .requestMatchers("/api/members/**").hasAnyRole("USER", "ADMIN")
+
+                // Swagger UI 및 API 문서
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+
+                // 정적 리소스
+                .requestMatchers("/images/**", "/static-images/**", "/css/**", "/favicon.ico", "/error", "/img/**").permitAll()
+
+                // WebSocket 엔드포인트 허용
+                .requestMatchers("/ws/**").permitAll()
+
+                // 그 외 모든 요청은 인증 필요
                 .anyRequest().authenticated()
         );
 
 
-        // 원본
-        // UsernamePasswordAuthenticationFilter 앞에 TokenAuthenticationFilter를 추가
-        // 사용자가 입력한 username과 password를 이용하여 UsernamePasswordAuthenticationFilter가 인증을 시도하기 전에
-        // TokenAuthenticationFilter를 통해 토큰을 검증하도록 설정
-        //http.addFilterBefore(tokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-        // UsernamePasswordAuthenticationFilter 이후에 TokenAuthenticationFilter 추가
-        http.addFilterAfter(new TokenAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class);
 
-        // 인증 실패 시 처리할 핸들러를 설정
-        // 권한이 없는 페이지에 접근 시 처리할 핸들러를 설정
-        //http.addFilterBefore(new TokenAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class);
+        /*
+         * 필터의 순서는 addFilterBefore 메서드를 사용하여 정의
+         * RefreshTokenCheckFilter -> TokenAuthenticationFilter -> UsernamePasswordAuthenticationFilter 순서로 실행
+         * UsernamePasswordAuthenticationFilter가 전체 필터 체인의 기준점
+         * 콘솔 로그에서 Filter 로 검색하면 전체 필터와 순서가 출력됨.
+         */
+        /**
+         * UsernamePasswordAuthenticationFilter 이전에 TokenAuthenticationFilter 추가
+         * - 사용자의 인증이 일어나기 전에 토큰을 검증하고 인증 객체를 SecurityContext에 저장
+         * - 그렇게 저장된 인증 객체는 컨트롤러에서 @AuthenticationPrincipal 어노테이션을 사용하여 사용할 수 있다.
+         * [수정] UsernamePasswordAuthenticationFilter보다 앞에 있어야, 사용자가 제출한 인증 정보가 아닌 토큰을 통한 인증이 우선 처리됩니다.
+         * 토큰 인증이 완료되지 않은 경우 폼 기반 인증을 수행하도록 체인에서 뒤쪽에 위치합니다.
+         */
+        http.addFilterBefore(tokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        /**
+         * RefreshTokenCheckFilter 추가, TokenAuthenticationFilter가 액세스 토큰의 유효성을 확인하기 전에
+         * RefreshTokenCheckFilter가 리프레시 토큰의 유효성을 확인하고 액세스 토큰을 발급해야
+         * 리프레시 토큰을 먼저 타면 혹시 액세스 토큰이 완료되어도 리프레시 토큰이 유효하다면 살릴 수가 있다.
+         * 즉, TokenAuthenticationFilter보다 앞에 배치되어야, 토큰 갱신 작업이 먼저 이루어진 후 인증 검사가 실행됩니다.
+         */
+        http.addFilterBefore(refreshTokenCheckFilter, TokenAuthenticationFilter.class);
+
+
+        /**
+         * 인증 실패 시 처리할 핸들러를 설정
+         * - 권한이 없는 페이지에 접근 시 처리할 핸들러를 설정
+         * - 인증 실패 시 401 Unauthorized 에러를 반환
+         */
         http.exceptionHandling(exception -> exception
                 .authenticationEntryPoint(new CustomAuthenticationEntryPoint())
         );
 
         // http.csrf(csrf -> csrf.disable()); // CSRF 보안 설정을 비활성화
-        // 시큐리티를 통해서 최초로 테스트 할 때는 이 코드를 사용하고
-        // 회원가입 폼이 정상적으로 오픈된 후에는 이 코드를 주석처리해야 한다.
-        // 그렇지 않으면 memberForm.html에서 csrf 토큰을 받지 못해 403 에러가 발생한다.
-        http.csrf(csrf -> csrf.disable())
-                .cors(Customizer.withDefaults()
-       ); // CORS 설정 적용); // CSRF 보안 설정을 비활성화
+        http.csrf(csrf -> csrf.disable());  // 프론트 엔드를 리액트로 할경우 CSRF 보안 설정을 비활성화
+        http.cors(Customizer.withDefaults());   // 이 설정은 출처가 다른 도메인에서 요청을 허용하기 위한 설정, 스프링은 8080포트에서 실행되고 있고, 리액트는 3000포트에서 실행되고 있기 때문에 스프링은 3000 포트에서 오는 요청을 허용하지 않는다. 이를 해결하기 위해 CORS 설정을 추가한다.
 
         /*
          * 소셜 로그인 설정
@@ -134,17 +193,25 @@ public class SecurityConfig {
         http.oauth2Login(oauth2 -> oauth2
                 .loginPage("/members/login")
                 .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                .successHandler(customAuthenticationSuccessHandler)
+                .defaultSuccessUrl("http://localhost:3000/oauth2/redirect", true)
         );
+
+
 
         // 지금까지 설정한 내용을 빌드하여 반환, 반환 객체는 SecurityFilterChain 객체
         return http.build();
     }
 
-//    @Bean
-//    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-//        return authenticationConfiguration.getAuthenticationManager();
-//    }
-
+    /**
+     * AuthenticationManager 빈 등록
+     * - AuthenticationManagerBuilder를 사용하여 인증 객체를 생성하고 반환
+     * - 이렇게 생성된 빈은 누구에 의해서 사용되는가? -> TokenAuthenticationFilter
+     * - TokenAuthenticationFilter에서 인증 객체를 SecurityContext에 저장하기 위해 사용
+     * @param http
+     * @return
+     * @throws Exception
+     */
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
         return http.getSharedObject(AuthenticationManagerBuilder.class)
@@ -158,18 +225,11 @@ public class SecurityConfig {
     /**
      * 비밀번호 암호화를 위한 PasswordEncoder 빈 등록
      * - BCryptPasswordEncoder : BCrypt 해시 함수를 사용하여 비밀번호를 암호화
-     * @return
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-//    @Bean
-//    public TokenAuthenticationFilter tokenAuthenticationFilter() {
-//        return new TokenAuthenticationFilter(tokenProvider);
-//    }
-
-
-
 }
+

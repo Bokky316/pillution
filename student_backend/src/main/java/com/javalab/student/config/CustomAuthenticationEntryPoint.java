@@ -27,6 +27,22 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
                          AuthenticationException authException)
             throws IOException, ServletException {
 
+        log.info("CustomAuthenticationEntryPoint commence() 호출, 권한 없는 요청");
+
+        // 현재 요청이 이미 /members/login인 경우 추가 리다이렉트를 방지
+        if ("/members/login".equals(request.getRequestURI())) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("로그인이 필요합니다.");
+            return;
+        }
+
+        // OAuth2 관련 요청인지 확인
+        if (request.getRequestURI().startsWith("/oauth2") || request.getRequestURI().startsWith("/login/oauth2/code/")) {
+            // OAuth2 요청의 경우 기본 동작을 수행 (리다이렉트 등)
+            response.sendRedirect("/oauth2/authorization/kakao");
+            return;
+        }
+
         // 요청이 AJAX 요청인지 확인
         String ajaxHeader = request.getHeader("X-Requested-With");
         boolean isAjax = "XMLHttpRequest".equals(ajaxHeader);
@@ -45,7 +61,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
 
             response.getWriter().write(objectMapper.writeValueAsString(errorDetails));
         } else {
-            log.info("여기는 CustomAuthenticationEntryPoint 권한이 없어서 로그인 페이지로 이동");
+            log.info("일반 브라우저 요청: 로그인 페이지로 리다이렉트");
             // 일반 브라우저 요청인 경우 로그인 페이지로 리다이렉트
             response.sendRedirect("/members/login");
         }

@@ -1,0 +1,51 @@
+.nav-bar {
+  background-color: #fafafa;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 100%;
+}
+
+.nav-bar .MuiToolbar-root {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 80px;
+    max-width: 1280px; /* 최대 너비 설정 */
+    margin: 0 auto; /* 중앙 정렬 */
+    padding: 0 16px; /* 좌우 패딩 추가 */
+}
+
+.nav-bar .logo-container {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.nav-bar img {
+  height: 50px;
+  vertical-align: middle;
+}
+
+.nav-bar .menu-icon {
+  margin-right: 16px;
+}
+
+.menu-item {
+  color: #333333;
+  text-decoration: none;
+}
+
+.user-info {
+  margin-right: 16px;
+  color: #4f4f4f;
+}
+
+.nav-bar button,
+.nav-bar a {
+  color: #4f4f4f;
+  text-decoration: none;
+}
+
+.nav-bar button:hover,
+.nav-bar a:hover {
+  text-decoration: underline;
+}

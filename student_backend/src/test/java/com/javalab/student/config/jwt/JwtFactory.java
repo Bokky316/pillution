@@ -24,8 +24,8 @@ public class JwtFactory {
     // 토큰 발급 시간은 현재 시간으로 설정
     private Date issuedAt = new Date();
 
-    // 토큰의 만료 시간은 14일로 설정
-    private Date expiration = new Date(new Date().getTime() + Duration.ofDays(14).toMillis());
+    // 토큰의 만료 시간은 7일로 설정
+    private Date expiration = new Date(new Date().getTime() + Duration.ofDays(7).toMillis());
 
     // 토큰에 담을 클레임 정보를 설정, 기본값은 빈 맵
     private Map<String, Object> claims = emptyMap();

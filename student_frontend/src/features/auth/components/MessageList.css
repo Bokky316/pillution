@@ -1,0 +1,15 @@
+/* src/components/StudentList.css */
+.data-grid-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.unread-message {
+    background-color: #ffebee; /* 연한 빨강 - 읽지 않은 메시지 */
+}
+
+.read-message {
+    background-color: #ffffff; /* 기본 흰색 - 읽은 메시지 */
+}

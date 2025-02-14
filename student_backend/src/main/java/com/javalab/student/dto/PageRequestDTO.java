@@ -28,6 +28,8 @@ public class PageRequestDTO {
     private int size = 20;
     private String type; // 검색의 종류 t,c, w, tc,tw, twc
     private String keyword;
+    private String status; // 회원 상태 (활성/탈퇴)
+    private String searchType; //  검색 타입 (name, email)
     public String[] getTypes(){
         if(type == null || type.isEmpty()){
             return null;

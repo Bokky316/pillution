@@ -1,0 +1,62 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif; /* 기본 폰트 설정 (선택 사항) */
+}
+
+.sidebar {
+  width: 250px;
+  height: 100vh;
+  background-color: #f8f9fa; /* 아주 연한 회색 배경 (거의 흰색) */
+  border-right: 1px solid #dee2e6; /* 오른쪽에 경계선 추가 */
+  position: fixed;
+  left: 0;
+  top: 0;
+  padding-top: 80px; /* 헤더 높이만큼 여백 */
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05); /* 그림자 약하게 */
+}
+
+.sidebar-title {
+  text-align: center;
+  font-size: 1.25rem; /* 조금 더 큰 폰트 */
+  padding: 1rem 0;
+  margin-bottom: 1rem; /* 메뉴와의 간격 */
+  color: #343a40; /* 진한 회색 제목 */
+  font-weight: 600; /* 제목 굵게 */
+}
+
+.sidebar-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0; /* 기본 마진 제거 */
+}
+
+.sidebar-menu li {
+  /* padding, text-align 제거:  Link에 적용 */
+}
+
+.sidebar-menu li a {
+  display: block; /* 링크를 블록 레벨로 만들어 클릭 영역 확장 */
+  padding: 0.75rem 1.5rem; /* 상하좌우 패딩 (더 넉넉하게) */
+  text-decoration: none;
+  color: #495057; /* 기본 텍스트 색상 (회색 계열) */
+  transition: background-color 0.2s ease, color 0.2s ease; /* 부드러운 전환 효과 */
+  text-align: center; /* 텍스트 중앙 정렬 */
+}
+
+.sidebar-menu li:hover a {
+  background-color: #e9ecef; /* 호버 시 배경색 (연한 회색) */
+  color: #0056b3; /* 호버 시 글자색 (파란색 계열) */
+}
+
+.sidebar-menu .active a {
+  background-color: #007bff; /* 활성 메뉴 배경색 (파란색) */
+  color: white; /* 활성 메뉴 글자색 (흰색) */
+  font-weight: bold; /* 활성 메뉴 텍스트 굵게 */
+}
+
+/* 선택 사항:  아이콘 추가 (react-icons 같은 라이브러리 사용 추천) */
+.sidebar-menu li a i {
+  margin-right: 0.5rem; /* 아이콘과 텍스트 사이 간격 */
+}

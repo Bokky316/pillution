@@ -14,10 +14,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -35,7 +33,11 @@ public class TokenProvider {
      * @param expiredAt : 토큰의 만료 시간을 나타냅니다.
      * now.getTime() + expiredAt.toMillis() : 현재 시간을 기준으로 만료 시간을 계산합니다.
      */
-    public String generateToken(String email, Collection<? extends GrantedAuthority> authorities, String name, Duration expiredAt) {
+    public String generateToken(String email
+                                //, Collection<? extends GrantedAuthority> authorities
+                                //, String name
+            , Duration expiredAt) {
+
         Date now = new Date(); // 현재 시간
         Date expiry = new Date(now.getTime() + expiredAt.toMillis());   // 만료시간 : 현재시간 + 만료시간
         // 토큰 생성
@@ -45,14 +47,12 @@ public class TokenProvider {
                 .setIssuedAt(now)                               // 발급 시간
                 .setExpiration(expiry)                          // 만료 시간
                 .setSubject(email)                              // 주제(사용자 이메일)
-                .claim("name", name) // 이름 추가              // 클레임은 payload에 담긴 정보(사용자 이름 추가)
-                .claim("authorities", authorities)             // 클레임은 payload에 담긴 정보(권한 정보 추가)
                 .signWith(SignatureAlgorithm.HS256, jwtProperties.getSecretKey()) // 서명
                 .compact();                                     // JWT 생성
     }
 
     /**
-     * 토큰 생성
+     * [미사용] 토큰 생성
      * - 토큰의 만료 시간을 받아 토큰을 생성합니다.
      * - 토큰의 발급 시간은 현재 시간을 사용합니다.
      * - 토큰의 만료 시간은 Date 객체로 받아서 사용합니다.
@@ -66,7 +66,6 @@ public class TokenProvider {
      */
     private String makeToken(Date expiry, Member user) {
         Date now = new Date();
-
         return Jwts.builder()
                 .setHeaderParam(Header.TYPE, Header.JWT_TYPE)   // 헤더 설정(TYPE: JWT, ALG: HS256)
                 .setIssuer(jwtProperties.getIssuer()) // 발급자(properties에서 받아온 발급자)
@@ -85,36 +84,18 @@ public class TokenProvider {
      * - 클라이언트가 토큰을 전송하면 서버에서 토큰을 검사합니다. 이때 이 메소드를 호출합니다.
      * @param token
      */
-    public boolean validToken(String token) {
+    public boolean validateToken(String token) {
         try {
-            // 토큰을 파싱하여 유효성 검사
             // 유효성을 검사할 때 사용하는 시크릿 키는 jwtProperties에서 받아온 시크릿 키를 사용합니다.
-            // parser() : 토큰을 파싱하는 메소드
-            // parseClaimsJws : 토큰을 파싱하는 메소드
-            Jwts.parser().setSigningKey(jwtProperties.getSecretKey()).parseClaimsJws(token);
-            return true;    // 바로 위의 토큰 파싱이 성공적이었다는 의미, 즉 토큰이 유효하다는 의미, true 반환
+            // parser() : token을 파싱하는 메소드, setSigningKey() : 토큰을 검사할 때 사용하는 시크릿 키를 설정하는 메소드
+            // parseClaimsJws(token) : token을 파싱하여 클레임을 받아옵니다.
+            Jwts.parser()
+                    .setSigningKey(jwtProperties.getSecretKey())
+                    .parseClaimsJws(token);
+            return true;    // 토큰이 유효하다는 의미, true 반환
         } catch (Exception e) {
             return false;   // 토큰 파싱이 실패했다는 의미, 즉 토큰이 유효하지 않다는 의미, false 반환
         }
-    }
-
-    /**
-     * 토큰에서 Authentication 객체를 생성합니다.
-     * - 토큰을 파싱하여 Authentication 객체를 생성합니다.
-     * @param token
-     * @return
-     */
-    public Authentication getAuthentication(String token) {
-        // 1. 토큰을 파싱하여 클레임을 받아옵니다. 클레임: 토큰에 담긴 정보
-        Claims claims = getClaims(token);
-
-        // 2. 권한을 설정합니다. ROLE_USER 권한을 가진 사용자로 설정합니다.왜 ROLE_USER 권한을 가진 사용자로 설정하는가? 토큰을 검사할 때 사용자의 권한을 설정하기 위해서입니다.
-        Set<SimpleGrantedAuthority> authorities = Collections.singleton(new SimpleGrantedAuthority("ROLE_USER"));
-
-        // 3. UsernamePasswordAuthenticationToken 객체를 생성합니다.
-        return new UsernamePasswordAuthenticationToken(
-                new org.springframework.security.core.userdetails.User(
-                        claims.getSubject(), "", authorities), token, authorities);
     }
 
     /**
@@ -130,7 +111,7 @@ public class TokenProvider {
      * - 토큰을 파싱하여 클레임을 반환합니다.
      * - parse() : 토큰을 파싱하는 메소드
      * - setSigningKey() : 토큰을 검사할 때 사용하는 시크릿 키(salt)를 설정하는 메소드
-     * - parseClaimsJws : 토큰을 파싱하는 메소드
+     * - parseClaimsJws : 토큰을 파싱하여 클레임을 반환하는 메소드
      * - getBody() : 토큰의 바디를 반환하는 메소드, 바디에는 토큰에 담긴 정보가 담겨있습니다.(이름, 권한 등)
      */
     private Claims getClaims(String token) {
@@ -139,4 +120,49 @@ public class TokenProvider {
                 .parseClaimsJws(token)
                 .getBody();
     }
+
+    /**
+     * 리프레시 토큰 생성
+     * - email과 만료 시간을 받아 리프레시 토큰을 생성합니다.
+     * @param email
+     * @param expiredAt
+     * @return
+     */
+    public String generateRefreshToken(String email, Duration expiredAt) {
+        Date now = new Date(); // 현재 시간
+        Date expiry = new Date(now.getTime() + expiredAt.toMillis()); // 만료 시간 계산
+
+        // 리프레시 토큰 생성
+        return Jwts.builder()
+                .setHeaderParam(Header.TYPE, Header.JWT_TYPE)   // 헤더 설정(TYPE: JWT)
+                .setIssuer(jwtProperties.getIssuer())           // 발급자 설정
+                .setIssuedAt(now)                               // 발급 시간
+                .setExpiration(expiry)                          // 만료 시간
+                .setSubject(email)                              // 주제(email)
+                .signWith(SignatureAlgorithm.HS256, jwtProperties.getSecretKey()) // 서명
+                .compact();                                     // JWT 생성
+    }
+
+    /**
+     * 리프레시 토큰에서 email 추출
+     * - 리프레시 토큰을 파싱하여 email을 추출합니다.
+     * @param token
+     * @return
+     */
+    public String getEmailFromToken(String token) {
+        Claims claims = getClaims(token); // 기존 메소드 활용
+        return claims.getSubject(); // JWT의 subject로 설정된 email 반환
+    }
+
+    /**
+     * 토큰 만료 시간 반환
+     * - 주어진 JWT 토큰에서 만료 시간을 추출하여 반환합니다.
+     * @param token JWT 토큰
+     * @return Date 만료 시간
+     */
+    public Date getExpiration(String token) {
+        Claims claims = getClaims(token); // JWT 클레임 추출
+        return claims.getExpiration(); // 만료 시간 반환
+    }
+
 }
