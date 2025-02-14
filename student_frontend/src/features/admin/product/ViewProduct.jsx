@@ -65,7 +65,7 @@ const ViewProduct = ({ productId, open, onClose }) => {
 
     const handleEdit = () => {
         onClose();
-        navigate(`/adminpage/products/${productId}/edit`);
+        navigate(`/adminPage/products/${productId}/edit`);
     };
 
     const getAbsoluteImageUrl = (imageUrl) => {

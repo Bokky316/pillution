@@ -2,11 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Typography, useMediaQuery, useTheme, Box } from "@mui/material";
 import { Link } from "react-router-dom";
 import "../../assets/styles/footer.css";
+import { useLocation } from "react-router-dom";
+
 
 const Footer = () => {
     const [isBottom, setIsBottom] = useState(false);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const location = useLocation();
+    const isAdminPage = location.pathname.toLowerCase().startsWith("/adminpage"); // ✅ 대소문자 구분 제거
 
     useEffect(() => {
         const handleScroll = () => {

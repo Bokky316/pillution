@@ -47,6 +47,7 @@ const EditProduct = () => {
     const getAbsoluteImageUrl = (imageUrl) => {
         if (!imageUrl) return '';
         const baseUrl = API_URL.substring(0, API_URL.indexOf('/api'));
+        //console.log(`imageUrl : ', ${baseUrl}${imageUrl}`)
         return imageUrl.startsWith('http') ? imageUrl : `${baseUrl}${imageUrl}`;
     };
 
@@ -271,7 +272,7 @@ const EditProduct = () => {
 
                 if (updateProductResponse.status === 200) {
                     alert("상품이 성공적으로 업데이트되었습니다.");
-                    navigate('/adminpage/products');
+                    navigate('/adminPage/products');
                 } else {
                     throw new Error(`상품 업데이트 실패: ${updateProductResponse.status}`);
                 }
@@ -412,7 +413,7 @@ const EditProduct = () => {
 
                 <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
                     <Button type="submit" variant="contained" color="primary" sx={{ width: '48%' }}>저장</Button>
-                    <Button variant="outlined" color="secondary" sx={{ width: '48%' }} onClick={() => navigate('/adminpage/products')}>취소</Button>
+                    <Button variant="outlined" color="secondary" sx={{ width: '48%' }} onClick={() => navigate('/adminPage/products')}>취소</Button>
                 </Box>
             </form>
         </Box>

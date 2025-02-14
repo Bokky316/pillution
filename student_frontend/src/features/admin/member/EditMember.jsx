@@ -86,7 +86,7 @@ const handleUpdate = () => {
     .then(data => {
         if (data.status === 'success') {
             alert('수정이 완료되었습니다.');
-            navigate('/adminpage/members');
+            navigate('/adminPage/members');
         } else {
             alert(data.message || '업데이트 실패');
         }
@@ -167,7 +167,7 @@ const handleUpdate = () => {
                     <Button variant="contained" color="primary" onClick={handleUpdate}>
                         수정
                     </Button>
-                    <Button variant="outlined" color="secondary" onClick={() => navigate('/adminpage/members')}>
+                    <Button variant="outlined" color="secondary" onClick={() => navigate('/adminPage/members')}>
                         취소
                     </Button>
                 </div>

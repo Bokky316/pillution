@@ -191,7 +191,7 @@ const AddProduct = () => {
             }
 
             alert('상품이 성공적으로 추가되었습니다.');
-            navigate('/adminpage/products');
+            navigate('/adminPage/products');
         } catch (error) {
             console.error('Error:', error);
             alert(error.message);
@@ -338,7 +338,7 @@ const AddProduct = () => {
                 </FormControl>
                 <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
                     <Button type="submit" variant="contained" color="primary">저장</Button>
-                    <Button variant="outlined" color="secondary" onClick={() => navigate('/adminpage/products')}>취소</Button>
+                    <Button variant="outlined" color="secondary" onClick={() => navigate('/adminPage/products')}>취소</Button>
                 </Box>
             </form>
         </Box>

@@ -41,7 +41,9 @@ const ProductDetailPage = () => {
     if (product?.productImgList && product.productImgList.length > 0) {
       const mainImage = product.productImgList.find(img => img.imageType === "대표");
       if (mainImage) {
+          // 밑에꺼 쓰려면 .env 파일 생성 후 VITE_PUBLIC_URL=http://localhost:8080 주입
         return `http://localhost:8080${mainImage.imageUrl}`; // ✅ 절대 경로 사용
+        //return `${import.meta.env.VITE_PUBLIC_URL}${mainImage.imageUrl}`;
       }
     }
     return null;

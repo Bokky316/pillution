@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useLocation } from "react-router-dom";
+
 import {
     AppBar, Toolbar, Button, IconButton, Menu, MenuItem, Box, Typography, Badge, useMediaQuery
 } from "@mui/material";
@@ -14,11 +16,15 @@ import { API_URL } from "@/constant";
 const Header = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const location = useLocation();
     const { user, isLoggedIn } = useSelector(state => state.auth);
     const [anchorEl, setAnchorEl] = useState(null);
     const [userMenuAnchorEl, setUserMenuAnchorEl] = useState(null);
     const unreadMessagesCount = useSelector(state => state.messages.unreadCount || 0);
     const invitedRequestsCount = useSelector(state => state.chat.invitedRequestsCount || 0);
+
+     // 어드민 페이지 여부 확인
+    const isAdminPage = location.pathname.toLowerCase().startsWith("/adminpage"); // ✅ 대소문자 구분 제거
 
     // 화면 크기 확인
     const isMobile = useMediaQuery('(max-width:600px)');
@@ -40,8 +46,8 @@ const Header = () => {
 
     return (
         <AppBar position="fixed" sx={{
-            backgroundColor: '#f4f4f4',
-            boxShadow: 'none',
+            backgroundColor: isAdminPage ? '#ffffff' : '#f4f4f4', // 어드민 페이지일 경우 흰색 배경
+            boxShadow: isAdminPage ? 'none' : 'none',
             color: '#000000',
             zIndex: 1100,
         }}>
@@ -49,7 +55,7 @@ const Header = () => {
                 display: 'flex',
                 justifyContent: 'space-between', // 왼쪽, 중앙, 오른쪽 정렬
                 alignItems: 'center',
-                maxWidth: '480px', // 모바일 중심 UI
+                maxWidth:  '480px', // 어드민 페이지에서는 maxWidth 제거
                 width: '100%',
                 margin: '0 auto',
                 padding: '0 16px', // 좌우 패딩 추가
