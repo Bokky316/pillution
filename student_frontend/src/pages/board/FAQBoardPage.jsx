@@ -63,7 +63,7 @@ function FAQBoardPage() {
     // 로딩 중일 경우 "로딩 중..." 메시지 표시
     if (loading) return <Typography align="center" variant="h6">로딩 중...</Typography>;
     // 에러가 발생했을 경우 에러 메시지 표시
-    if (error) return <Typography align="center" color="error" variant="h6">{error}</Typography>;
+    if (error) return <Typography align="center" sx={{ color: '#EF5503' }} variant="h6">{error}</Typography>;
 
     // 게시글 클릭 시 게시글 내용 확장/축소
     const handlePostClick = (postId) => {
@@ -135,13 +135,13 @@ function FAQBoardPage() {
                          onClick={() => dispatch(setSelectedCategory(category))}
                          sx={{
                              cursor: 'pointer',
-                             margin: { xs: '0.5px', sm: '2px' }, // margin 값 조정
-                             fontSize: { xs: '0.75rem', sm: '0.85rem' }, // 폰트 크기 약간 키움
-                             padding: { xs: '2px 4px', sm: '3px 8px' }, // padding 값 조정
-                             minWidth: { xs: 'auto', sm: '50px' }, // minWidth 값 조정
+                             margin: { xs: '0.5px', sm: '2px' },
+                             fontSize: { xs: '0.75rem', sm: '0.85rem' },
+                             padding: { xs: '2px 4px', sm: '3px 8px' },
+                             minWidth: { xs: 'auto', sm: '50px' },
                              fontWeight: 'bold',
                              textDecoration: 'none',
-                             color: selectedCategory === category ? 'black' : 'grey',
+                             color: selectedCategory === category ? '#4169E1' : 'grey',
                          }}
                      >
                          {category}
@@ -157,12 +157,13 @@ function FAQBoardPage() {
                 >
                     <Button
                         variant="contained"
-                        color="primary"
                         size={isMobile ? "small" : "medium"}
                         onClick={() => navigate('/post/create', {
                             state: { defaultCategory: '자주 묻는 질문' }
                         })}
                         sx={{
+                            backgroundColor: '#4169E1',
+                            color: 'white',
                             fontSize: { xs: '0.8rem', sm: '0.875rem' }
                         }}
                     >
@@ -273,32 +274,34 @@ function FAQBoardPage() {
                                                     }}>
                                                         <Button
                                                             variant="outlined"
-                                                            color="primary"
+                                                            sx={{
+                                                                borderColor: '#29B6F6',
+                                                                color: '#29B6F6',
+                                                                fontSize: '0.7rem',
+                                                                minWidth: 'auto',
+                                                                padding: '2px 8px'
+                                                            }}
                                                             size="small"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 handleEditPost(post.id);
-                                                            }}
-                                                            sx={{
-                                                                fontSize: '0.7rem',
-                                                                minWidth: 'auto',
-                                                                padding: '2px 8px'
                                                             }}
                                                         >
                                                             수정
                                                         </Button>
                                                         <Button
                                                             variant="outlined"
-                                                            color="error"
+                                                            sx={{
+                                                                borderColor: '#EF5350',
+                                                                color: '#EF5350',
+                                                                fontSize: '0.7rem',
+                                                                minWidth: 'auto',
+                                                                padding: '2px 8px'
+                                                            }}
                                                             size="small"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 handleDeletePost(post.id);
-                                                            }}
-                                                            sx={{
-                                                                fontSize: '0.7rem',
-                                                                minWidth: 'auto',
-                                                                padding: '2px 8px'
                                                             }}
                                                         >
                                                             삭제
@@ -317,7 +320,10 @@ function FAQBoardPage() {
                                                 }}>
                                                     <Button
                                                         variant="outlined"
-                                                        color="primary"
+                                                        sx={{
+                                                            borderColor: '#29B6F6',
+                                                            color: '#29B6F6',
+                                                        }}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleEditPost(post.id);
@@ -327,7 +333,10 @@ function FAQBoardPage() {
                                                     </Button>
                                                     <Button
                                                         variant="outlined"
-                                                        color="error"
+                                                        sx={{
+                                                            borderColor: '#EF5350',
+                                                            color: '#EF5350',
+                                                        }}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleDeletePost(post.id);
@@ -382,10 +391,10 @@ function FAQBoardPage() {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleConfirmDelete} color="error" autoFocus>
+                    <Button onClick={handleConfirmDelete} sx={{ color: '#EF5350' }} autoFocus>
                         삭제
                     </Button>
-                    <Button onClick={handleCloseDeleteDialog} color="primary">
+                    <Button onClick={handleCloseDeleteDialog} sx={{ color: '#29B6F6' }}>
                         취소
                     </Button>
                 </DialogActions>
