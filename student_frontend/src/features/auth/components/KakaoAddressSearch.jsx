@@ -1,4 +1,5 @@
 import React from "react";
+import { Button } from "@mui/material"; // ✅ Material-UI 버튼 적용
 
 export default function KakaoAddressSearch({ onAddressSelect }) {
     const handleAddressSearch = () => {
@@ -11,6 +12,18 @@ export default function KakaoAddressSearch({ onAddressSelect }) {
     };
 
     return (
-        <button onClick={handleAddressSearch}>주소 검색</button>
+        <Button
+            variant="contained"
+            onClick={handleAddressSearch}
+            sx={{
+                marginLeft: "10px",
+                height: "100%",  // ✅ 버튼 높이를 우편번호 입력 필드와 동일하게 맞춤
+                display: "flex",
+                alignItems: "center",  // ✅ 위아래 정렬 맞춤
+                whiteSpace: "nowrap"
+            }}
+        >
+            우편번호 검색
+        </Button>
     );
 }

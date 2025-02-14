@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import KakaoAddressSearch from "@/features/auth/components/KakaoAddressSearch"; // 공통 컴포넌트 추가
+import DeleteIcon from "@mui/icons-material/Delete";
+import { Box, Button, Typography, TextField, IconButton, Dialog, DialogTitle, DialogActions } from "@mui/material";
+import npayLogo from "/src/assets/images/npay.png";
+import kakaopayLogo from "/src/assets/images/kakaopay.png";
+import paycoLogo from "/src/assets/images/payco.png";
 
 import {
     fetchSubscription,
@@ -38,6 +43,15 @@ export default function SubscriptionManagement() {
     // ✅ 초기값 설정 (nextItems가 없으면 빈 배열 반환)
     const nextItems = subscription?.nextItems || [];
     const [isModalOpen, setIsModalOpen] = useState(false); // ✅ 모달 상태
+    const [confirmCancel, setConfirmCancel] = useState(false);
+
+    const paymentMethods = [
+        { id: "naverpay", name: "네이버페이", logo: npayLogo },
+        { id: "kakaopay", name: "카카오페이", logo: kakaopayLogo },
+        { id: "payco", name: "페이코", logo: paycoLogo },
+        { id: "card", name: "신용 / 체크카드" },
+        { id: "bank", name: "가상계좌" },
+    ];
 
 
     // ✅ 카카오 주소 선택 후 Redux 상태 업데이트
@@ -55,17 +69,17 @@ export default function SubscriptionManagement() {
     const roadAddress = subscription?.roadAddress || "";
     const detailAddress = subscription?.detailAddress || "";
 
-    useEffect(() => {
-        console.log("🔍 [DEBUG] Redux에서 가져온 구독 데이터:", subscription);
-    }, [subscription]); // ✅ Redux 상태가 변경될 때마다 로그 출력
+//     useEffect(() => {
+//         console.log("🔍 [DEBUG] Redux에서 가져온 구독 데이터:", subscription);
+//     }, [subscription]); // ✅ Redux 상태가 변경될 때마다 로그 출력
 
-    useEffect(() => {
-        console.log("📌 Redux 업데이트 후 상태:", {
-            postalCode: subscription?.postalCode,
-            roadAddress: subscription?.roadAddress,
-            detailAddress: subscription?.detailAddress
-        });
-    }, [subscription]); // ✅ Redux 상태가 변경될 때마다 로그 출력
+//     useEffect(() => {
+//         console.log("📌 Redux 업데이트 후 상태:", {
+//             postalCode: subscription?.postalCode,
+//             roadAddress: subscription?.roadAddress,
+//             detailAddress: subscription?.detailAddress
+//         });
+//     }, [subscription]); // ✅ Redux 상태가 변경될 때마다 로그 출력
 
     // ✅ 배송지 업데이트
     const handleAddressUpdate = () => {
@@ -98,18 +112,14 @@ export default function SubscriptionManagement() {
 
     // 정기구독 - 다음달 결제 예정 상품 수량 변경
     const handleQuantityChange = (productId, newQuantity) => {
-        const subscriptionItems = subscription?.nextItems || []; // ✅ nextItems가 없으면 빈 배열 사용
+        if (newQuantity < 1) return; // 최소 수량 제한
 
-        if (!subscriptionItems.length) {
-            console.error("❌ Redux 상태에서 subscriptionItems가 없음!");
-            return;
-        }
-
-        const updatedItems = subscriptionItems.map(item =>
+        // ✅ 기존 Redux 상태 복사 후 변경된 부분만 업데이트 (UI 즉시 반영)
+        const updatedItems = subscription.nextItems.map(item =>
             item.productId === productId ? { ...item, nextMonthQuantity: newQuantity } : item
         );
 
-        // ✅ Redux 상태를 먼저 업데이트 (서버 응답을 기다리지 않음)
+        // ✅ Redux 상태를 먼저 업데이트하여 UI가 즉시 반응하도록 함
         dispatch({
             type: "subscription/updateNextItemsDirectly",
             payload: updatedItems,
@@ -119,14 +129,17 @@ export default function SubscriptionManagement() {
         dispatch(updateNextSubscriptionItems({ subscriptionId: subscription.id, updatedItems }))
             .then((result) => {
                 if (updateNextSubscriptionItems.fulfilled.match(result)) {
-                    console.log("✅ [SUCCESS] 서버 업데이트 성공:", result.payload);
-                    // ✅ 최신 상태 다시 가져오기 (서버 동기화)
+                    console.log("✅ DB 업데이트 성공:", result.payload);
+
+                    // ✅ 서버 응답 후 Redux 상태를 다시 가져와서 동기화
                     dispatch(fetchSubscription());
                 } else {
-                    console.error("❌ [ERROR] 서버 업데이트 실패:", result.error);
+                    console.error("❌ DB 업데이트 실패:", result.error);
                 }
-            });
+            })
+            .catch(error => console.error("❌ API 요청 중 오류 발생:", error));
     };
+
 
 
 
@@ -280,25 +293,37 @@ export default function SubscriptionManagement() {
 //         dispatch(updateSubscription(updatedData));
 //     };
 
-    // 구독 취소
-const handleCancelSubscription = () => {
-    if (!subscription?.id) {
-        console.error("❌ [ERROR] 구독 ID 없음! 취소 불가.");
-        return;
-    }
+//     // 구독 취소
+//     const handleCancelSubscription = () => {
+//         if (!subscription?.id) {
+//             console.error("❌ [ERROR] 구독 ID 없음! 취소 불가.");
+//             return;
+//         }
+//
+//         if (window.confirm("⚠️ 정말로 구독을 취소하시겠습니까?")) {
+//             dispatch(cancelSubscription({ subscriptionId: subscription.id }))
+//                 .then((result) => {
+//                     if (cancelSubscription.fulfilled.match(result)) {
+//                         alert("✅ 구독이 취소되었습니다!");
+//                         dispatch(fetchSubscription()); // ✅ 최신 상태 반영
+//                     } else {
+//                         alert(result.payload || "❌ 구독 취소 실패!");
+//                     }
+//                 });
+//         }
+//     };
 
-    if (window.confirm("⚠️ 정말로 구독을 취소하시겠습니까?")) {
-        dispatch(cancelSubscription({ subscriptionId: subscription.id }))
-            .then((result) => {
-                if (cancelSubscription.fulfilled.match(result)) {
-                    alert("✅ 구독이 취소되었습니다!");
-                    dispatch(fetchSubscription()); // ✅ 최신 상태 반영
-                } else {
-                    alert(result.payload || "❌ 구독 취소 실패!");
-                }
-            });
-    }
-};
+    // 구독취소
+      const handleCancelSubscription = () => {
+        setConfirmCancel(true);
+      };
+
+      const confirmCancelSubscription = () => {
+        dispatch(cancelSubscription({ subscriptionId: subscription.id })).then(() => {
+          dispatch(fetchSubscription()); // 구독 취소 후 최신 데이터 다시 불러오기
+        });
+        setConfirmCancel(false);
+      };
 
 
     // ✅ 기존 nextItems에서 productId 없는 경우 보완
@@ -413,11 +438,12 @@ const handleCancelSubscription = () => {
 //     if (!subscription || Object.keys(subscription).length === 0) {
 //         return <div>구독 정보가 없습니다.</div>;  // 예외 처리 추가
 //     }
-    if (loading) return <div>로딩 중...</div>;
+    if (!subscription) return <div>로딩 중...</div>; // ✅ subscription이 없을 때만 "로딩 중..." 표시
     if (error) return <div>에러 발생: {error}</div>;
-    if (!subscription || Object.keys(subscription).length === 0) {
+    if (!subscription.items || subscription.items.length === 0) {
         return <div style={{ textAlign: "center", color: "#888", padding: "20px" }}>정기구독 내역이 없습니다.</div>;
     }
+
 
     // ✅ 현재 구독 제품 가격 계산
     const totalQuantity = subscription.items.reduce((sum, item) => sum + item.quantity, 0);
@@ -537,10 +563,10 @@ const handleCancelSubscription = () => {
 
             <div style={{ maxWidth: "600px", margin: "0 auto", padding: "20px" }}>
                 {/* ✅ 다음 구독 제품 편집 */}
-                <h3 style={{ borderBottom: "2px solid #ddd", paddingBottom: "5px", display: "flex", justifyContent: "space-between" }}>
+                <Typography variant="h6" sx={{ borderBottom: "2px solid #ddd", paddingBottom: "5px", display: "flex", justifyContent: "space-between" }}>
                     다음 구독 제품 편집
-                    <button onClick={() => setIsModalOpen(true)}>추가하기</button>
-                </h3>
+                    <Button variant="contained" size="small" onClick={() => setIsModalOpen(true)}>추가하기</Button>
+                </Typography>
                 {subscription.nextItems.map((item, index) => (
                     <div key={index} style={{ display: "flex", alignItems: "center", marginBottom: "15px" }}>
                         <img src={item.imageUrl || "https://via.placeholder.com/70"} alt={item.productName}
@@ -549,19 +575,31 @@ const handleCancelSubscription = () => {
                             <p style={{ fontSize: "16px", fontWeight: "bold", margin: "5px 0" }}>{item.productName}</p>
                         </div>
                         <div style={{ textAlign: "right", minWidth: "120px" }}>
-                            <button onClick={() => handleQuantityChange(item.productId, Math.max(1, item.nextMonthQuantity - 1))}>-</button>
+                            {/* ✅ 수량 조절 버튼 */}
+                            <IconButton onClick={() => handleQuantityChange(item.productId, Math.max(1, item.nextMonthQuantity - 1))}>
+                                -
+                            </IconButton>
+{/*                             <button onClick={() => handleQuantityChange(item.productId, Math.max(1, item.nextMonthQuantity - 1))}>-</button> */}
                             <span style={{ margin: "0 10px" }}>{item.nextMonthQuantity}</span>
-                            <button onClick={() => handleQuantityChange(item.productId, item.nextMonthQuantity + 1)}>+</button>
+                            <IconButton onClick={() => handleQuantityChange(item.productId, item.nextMonthQuantity + 1)}>
+                                        +
+                            </IconButton>
+{/*                             <button onClick={() => handleQuantityChange(item.productId, item.nextMonthQuantity + 1)}>+</button> */}
                             <p>{(item.nextMonthPrice * item.nextMonthQuantity).toLocaleString()}원</p>
-                            <button onClick={() => dispatch(deleteNextSubscriptionItem({ subscriptionId: subscription.id, productId: item.productId }))}>
-                                삭제
-                            </button>
+                            {/* ✅ 삭제 버튼 */}
+                            <IconButton onClick={() => handleDeleteItem(item.productId)} color="error">
+                                <DeleteIcon />
+                            </IconButton>
+{/*                             <button onClick={() => dispatch(deleteNextSubscriptionItem({ subscriptionId: subscription.id, productId: item.productId }))}> */}
+{/*                                 삭제 */}
+{/*                             </button> */}
+
                         </div>
                     </div>
                 ))}
 
                 {/* ✅ 다음 구독 제품 결제 정보 */}
-                <div style={{ background: "#f5f5f5", padding: "15px", borderRadius: "5px", marginTop: "20px" }}>
+                <div style={{ background: "#f5f5f5", padding: "20px", borderRadius: "5px", marginTop: "20px", maxWidth: "100%" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
                         <span style={{ color: "#666", fontWeight: "bold" }}>제품 합계 금액</span>
                         <span>{nextOriginalTotalPrice.toLocaleString()}원</span>
@@ -584,62 +622,296 @@ const handleCancelSubscription = () => {
                     <div style={{
                         position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
                         background: "#fff", padding: "20px", borderRadius: "10px", boxShadow: "0px 0px 10px rgba(0,0,0,0.3)",
-                        maxHeight: "80vh", overflowY: "auto"
+                        width: "90%", maxWidth: "500px", maxHeight: "80vh", overflowY: "auto"
                     }}>
-                        <h2>상품 선택</h2>
-                        {products.map((product) => (
-                            <div key={product.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                                <div>
-                                    <p>{product.name}</p>
-                                    <p>{product.price.toLocaleString()}원</p>
+                        {/* ✅ 모달 헤더 (닫기 버튼 추가) */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+                            <h2 style={{ fontSize: "18px", fontWeight: "bold", textAlign: "center", flexGrow: 1 }}>
+                                정기구독 제품 추가
+                            </h2>
+                            <button onClick={() => setIsModalOpen(false)} style={{
+                                background: "none", border: "none", fontSize: "20px", cursor: "pointer"
+                            }}>
+                                ✖
+                            </button>
+                        </div>
+
+                        {/* 상품 리스트 */}
+                        {products.map((product) => {
+                            const isAdded = subscription.nextItems.some(item => item.productId === product.id);
+
+                            return (
+                                <div key={product.id} style={{
+                                    display: "flex", alignItems: "center", marginBottom: "15px", paddingBottom: "10px",
+                                    borderBottom: "1px solid #eee"
+                                }}>
+                                    {/* 상품 이미지 */}
+                                    <img
+                                        src={product.imageUrl || "https://via.placeholder.com/70"}
+                                        alt={product.name}
+                                        style={{ width: "70px", height: "70px", objectFit: "cover", marginRight: "15px", borderRadius: "5px" }}
+                                    />
+
+                                    {/* 상품 정보 */}
+                                    <div style={{ flexGrow: 1 }}>
+                                        <p style={{ fontSize: "16px", fontWeight: "bold", marginBottom: "3px" }}>{product.name}</p>
+                                        <p style={{ fontSize: "14px", fontWeight: "bold", color: "#ff5733", marginBottom: "5px" }}>
+                                            {product.price.toLocaleString()}원
+                                        </p>
+
+                                        {/* 카테고리 및 성분 태그 */}
+                                        <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
+                                            {[...product.categories, ...product.ingredients].map((tag, index) => (
+                                                <span key={index} style={{
+                                                    fontSize: "12px", color: "#666", background: "#f0f0f0",
+                                                    padding: "3px 6px", borderRadius: "10px"
+                                                }}>
+                                                    #{tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* 추가 버튼 */}
+                                    {isAdded ? (
+                                        <span style={{
+                                            fontSize: "14px", fontWeight: "bold", color: "#ff5733"
+                                        }}>
+                                            추가됨 ✔️
+                                        </span>
+                                    ) : (
+                                        <button onClick={() => handleSelectProduct(product)} style={{
+                                            width: "35px", height: "35px", borderRadius: "50%", border: "1px solid #ddd",
+                                            background: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+                                            fontSize: "20px", cursor: "pointer"
+                                        }}>
+                                            +
+                                        </button>
+                                    )}
                                 </div>
-                                <button onClick={() => handleSelectProduct(product)}>선택</button>
-                            </div>
-                        ))}
-                        <button onClick={() => setIsModalOpen(false)}>닫기</button>
+                            );
+                        })}
+
+                        {/* 닫기 버튼 */}
+                        <button onClick={() => setIsModalOpen(false)} style={{
+                            width: "100%", padding: "10px", background: "#f5f5f5", border: "none",
+                            borderRadius: "5px", fontSize: "16px", cursor: "pointer", marginTop: "10px"
+                        }}>
+                            닫기
+                        </button>
                     </div>
                 )}
+
+
+                {/* ✅ 상세 할인 내역 박스 */}
+                <div style={{ background: "#f5f5f5", padding: "15px", borderRadius: "5px", marginTop: "15px" }}>
+                    <h4 style={{ fontSize: "16px", fontWeight: "bold", color: "#333", marginBottom: "10px", marginTop: "0px" }}>상세 할인 내역</h4>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+                        <span style={{ color: "#666", fontWeight: "bold" }}>배송비 무료</span>
+                        <span>- {shippingFee.toLocaleString()}원</span>
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+                        <span style={{ color: "#666", fontWeight: "bold" }}>장기 유지 고객 5%</span>
+                        <span>- {(nextOriginalTotalPrice * 0.05).toLocaleString()}원</span>
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+                        <span style={{ color: "#666", fontWeight: "bold" }}>건강설문 할인 10%</span>
+                        <span>- {(nextOriginalTotalPrice * 0.1).toLocaleString()}원</span>
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", borderTop: "2px solid #ddd", paddingTop: "10px" }}>
+                        <span style={{ fontSize: "18px", fontWeight: "bold", color: "#333" }}>정기구독 할인 합계</span>
+                        <span style={{ fontSize: "18px", fontWeight: "bold", color: "red" }}>- {nextDiscountAmount.toLocaleString()}원</span>
+                    </div>
+                </div>
             </div>
 
-            {/* ✅ 상세 할인 내역 박스 */}
-            <div style={{ background: "#f5f5f5", padding: "15px", borderRadius: "5px", marginTop: "15px" }}>
-                <h4 style={{ fontSize: "16px", fontWeight: "bold", color: "#333", marginBottom: "10px", marginTop: "0px" }}>상세 할인 내역</h4>
 
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-                    <span style={{ color: "#666", fontWeight: "bold" }}>배송비 무료</span>
-                    <span>- {shippingFee.toLocaleString()}원</span>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-                    <span style={{ color: "#666", fontWeight: "bold" }}>장기 유지 고객 5%</span>
-                    <span>- {(nextOriginalTotalPrice * 0.05).toLocaleString()}원</span>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-                    <span style={{ color: "#666", fontWeight: "bold" }}>건강설문 할인 10%</span>
-                    <span>- {(nextOriginalTotalPrice * 0.1).toLocaleString()}원</span>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "space-between", borderTop: "2px solid #ddd", paddingTop: "10px" }}>
-                    <span style={{ fontSize: "18px", fontWeight: "bold", color: "#333" }}>정기구독 할인 합계</span>
-                    <span style={{ fontSize: "18px", fontWeight: "bold", color: "red" }}>- {nextDiscountAmount.toLocaleString()}원</span>
-                </div>
-            </div>
 
 
                 {/* ✅ 다음 구독 제품 총 결제금액 */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "20px" }}>
-                    <span style={{ fontSize: "16px", fontWeight: "bold", color: "#333" }}>다음 구독 제품 총 결제금액</span>
-                    <div style={{ textAlign: "right" }}>
-                        <p style={{ fontSize: "16px", color: "#aaa", textDecoration: "line-through", marginBottom: "5px" }}>
-                            {nextOriginalTotalPrice.toLocaleString()}원
-                        </p>
-                        <p style={{ fontSize: "20px", fontWeight: "bold", color: "red" }}>
-                            {nextDiscountTotalPrice.toLocaleString()}원
-                        </p>
-                    </div>
-                </div>
+{/*                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "20px" }}> */}
+{/*                     <span style={{ fontSize: "16px", fontWeight: "bold", color: "#333" }}>다음 구독 제품 총 결제금액</span> */}
+{/*                     <div style={{ textAlign: "right" }}> */}
+{/*                         <p style={{ fontSize: "16px", color: "#aaa", textDecoration: "line-through", marginBottom: "5px" }}> */}
+{/*                             {nextOriginalTotalPrice.toLocaleString()}원 */}
+{/*                         </p> */}
+{/*                         <p style={{ fontSize: "20px", fontWeight: "bold", color: "red" }}> */}
+{/*                             {nextDiscountTotalPrice.toLocaleString()}원 */}
+{/*                         </p> */}
+{/*                     </div> */}
+{/*                 </div> */}
+
+            {/* ✅ 구분선 */}
+            <hr style={{ border: "1px solid #ddd", margin: "15px 0" }} />
+
+            {/* ✅ 다음 회차 결제수단 변경 */}
+            <Box sx={{ background: "#f5f5f5", padding: "20px", borderRadius: "5px", marginTop: "20px" }}>
+                <Typography variant="h6" sx={{ fontWeight: "bold", color: "#333", marginBottom: "10px" }}>
+                    다음 회차 결제수단 변경
+                </Typography>
+
+                {paymentMethods.map((method) => (
+                    <Box
+                        key={method.id}
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            padding: "10px",
+                            borderRadius: "5px",
+                            cursor: "pointer",
+                            background: subscription?.nextPaymentMethod === method.id ? "#e0f7fa" : "transparent",
+                            "&:hover": { background: "#f0f0f0" }
+                        }}
+                        onClick={() =>
+                            dispatch(updateNextPaymentMethod({
+                                subscriptionId: subscription.id,
+                                nextPaymentMethod: method.id
+                            }))
+                        }
+                    >
+                        <input
+                            type="radio"
+                            name="paymentMethod"
+                            value={method.id}
+                            checked={subscription?.nextPaymentMethod === method.id}
+                            onChange={(e) =>
+                                dispatch(updateNextPaymentMethod({
+                                    subscriptionId: subscription.id,
+                                    nextPaymentMethod: e.target.value
+                                }))
+                            }
+                            style={{ marginRight: "10px" }}
+                        />
+
+                        {method.logo && (
+                            <img src={method.logo} alt={method.name} style={{ width: "50px", marginRight: "10px" }} />
+                        )}
+
+                        <Typography sx={{ fontSize: "16px", fontWeight: "bold" }}>
+                            {method.name}
+                        </Typography>
+                    </Box>
+                ))}
+            </Box>
+
+
+
+            {/* ✅ 구분선 */}
+            <hr style={{ border: "1px solid #ddd", margin: "15px 0" }} />
+            {/* ✅ 결제일 관리 추가 */}
+            <div style={{ background: "#f5f5f5", padding: "15px", borderRadius: "5px", marginTop: "15px" }}>
+                <h3 style={{ fontSize: "16px", fontWeight: "bold", color: "#333", marginBottom: "10px" }}>
+                    결제일 관리
+                </h3>
+                <input
+                    type="date"
+                    value={subscription?.nextBillingDate || ""}
+                    onChange={handleBillingDateChange}
+                    style={{ width: "90%", padding: "10px", fontSize: "16px", border: "1px solid #ccc", borderRadius: "5px" }}
+                />
             </div>
+
+            {/* ✅ 배송정보 섹션 */}
+            <Box sx={{ background: "#f5f5f5", padding: "20px", borderRadius: "5px", marginTop: "20px" }}>
+                <Typography variant="h6" sx={{ fontWeight: "bold", color: "#333", marginBottom: "10px" }}>
+                    배송정보
+                </Typography>
+
+                {/* ✅ 우편번호 (한글 라벨 추가 + 검색 버튼 포함) */}
+                <Box sx={{ marginBottom: "10px" }}>
+                    <Typography sx={{ fontWeight: "bold", color: "#666", marginBottom: "5px" }}>우편번호</Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <TextField
+                            fullWidth
+                            variant="outlined"
+                            value={postalCode}
+                            placeholder="우편번호"
+                            InputProps={{ readOnly: true }}
+                            sx={{
+                                flex: 1,
+                                background: "#f5f5f5", // ✅ 회색 배경
+                                borderRadius: "5px"
+                            }}
+                        />
+                        <KakaoAddressSearch onAddressSelect={handleAddressSelect} />
+                    </Box>
+                </Box>
+
+                {/* ✅ 도로명 주소 */}
+                <Box sx={{ marginBottom: "10px" }}>
+                    <Typography sx={{ fontWeight: "bold", color: "#666", marginBottom: "5px" }}>도로명 주소</Typography>
+                    <TextField
+                        fullWidth
+                        variant="outlined"
+                        value={roadAddress}
+                        placeholder="도로명 주소"
+                        InputProps={{ readOnly: true }}
+                        sx={{
+                            background: "#f5f5f5", // ✅ 회색 배경
+                            borderRadius: "5px"
+                        }}
+                    />
+                </Box>
+
+                {/* ✅ 상세 주소 */}
+                <Box sx={{ marginBottom: "15px" }}>
+                    <Typography sx={{ fontWeight: "bold", color: "#666", marginBottom: "5px" }}>상세 주소</Typography>
+                    <TextField
+                        fullWidth
+                        variant="outlined"
+                        value={detailAddress}
+                        onChange={(e) => dispatch(updateDetailAddress(e.target.value))}
+                        placeholder="상세 주소"
+                        sx={{ background: "#fff" }} // ✅ 직접 입력하는 필드는 흰색 유지
+                    />
+                </Box>
+
+                {/* ✅ 배송지 변경 버튼 */}
+                <Button fullWidth variant="contained" color="primary" onClick={handleAddressUpdate}>
+                    배송지 변경
+                </Button>
+            </Box>
+
+
+
+
+            {/* ✅ 구독 취소 버튼 */}
+{/*             <button onClick={handleCancelSubscription} */}
+{/*                 disabled={subscription.status === "CANCELLED"} */}
+{/*                 style={{ */}
+{/*                     width: "100%", padding: "15px", background: subscription.status === "CANCELLED" ? "#ccc" : "#FF3B30", */}
+{/*                     color: "white", border: "none", borderRadius: "5px", fontWeight: "bold", cursor: subscription.status === "CANCELLED" ? "default" : "pointer", */}
+{/*                     marginTop: "20px" */}
+{/*                 }}> */}
+{/*                 {subscription.status === "CANCELLED" ? "구독 취소됨" : "구독 취소"} */}
+{/*             </button> */}
+{/* 구독 취소 */}
+                <Button variant="contained" color="error" fullWidth sx={{ marginTop: "20px" }} onClick={handleCancelSubscription}>
+                  구독 취소
+                </Button>
+                {/* 구독 취소 확인창 */}
+                  <Dialog open={confirmCancel} onClose={() => setConfirmCancel(false)}>
+                    <DialogTitle>정말 구독을 취소하시겠습니까?</DialogTitle>
+                    <DialogActions>
+                      <Button onClick={() => setConfirmCancel(false)}>아니오</Button>
+                      <Button color="error" onClick={confirmCancelSubscription}>
+                        예, 취소합니다
+                      </Button>
+                    </DialogActions>
+                  </Dialog>
+
+
+
+
+
+
+
+
+        </div>
 
 
         );
