@@ -1,14 +1,14 @@
 package com.javalab.student.service.cartOrder;
 
-import com.javalab.student.dto.OrderDto;
-import com.javalab.student.dto.OrderHistDto;
-import com.javalab.student.dto.OrderItemDto;
+import com.javalab.student.dto.cartOrder.OrderDto;
+import com.javalab.student.dto.cartOrder.OrderHistDto;
+import com.javalab.student.dto.cartOrder.OrderItemDto;
 import com.javalab.student.entity.Member;
 import com.javalab.student.entity.Product;
 import com.javalab.student.entity.cartOrder.Order;
 import com.javalab.student.entity.cartOrder.OrderItem;
 import com.javalab.student.repository.MemberRepository;
-import com.javalab.student.repository.OrderRepository;
+import com.javalab.student.repository.cartOrder.OrderRepository;
 import com.javalab.student.repository.ProductRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -73,7 +73,7 @@ public class OrderService {
             OrderHistDto orderHistDto = new OrderHistDto(order);
             List<OrderItem> orderItems = order.getOrderItems();
             for (OrderItem orderItem : orderItems) {
-                OrderItemDto orderItemDto = new OrderItemDto(orderItem);
+                OrderItemDto orderItemDto = new OrderItemDto(orderItem, "");
                 orderHistDto.addOrderItemDto(orderItemDto);
             }
             orderHistDtos.add(orderHistDto);

@@ -7,10 +7,16 @@ import java.util.List;
 
 /**
  * 장바구니 주문 요청 DTO
- * - CartOrderItemDto 리스트를 가지고 있다.
  */
 @Getter
 @Setter
 public class CartOrderRequestDto {
-    private List<CartOrderItemDto> cartOrderItems;  // 장바구니 주문 항목 리스트
+    private List<CartOrderItem> cartOrderItems;
+
+    @Getter
+    @Setter
+    public static class CartOrderItem {
+        private Long cartItemId;  // 장바구니 아이템 ID
+        private int quantity;     // 수량
+    }
 }

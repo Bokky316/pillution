@@ -1,13 +1,13 @@
 package com.javalab.student.service.cartOrder;
 
 import com.javalab.student.dto.cartOrder.CartItemDto;
-import com.javalab.student.dto.CartDetailDto;
+import com.javalab.student.dto.cartOrder.CartDetailDto;
 import com.javalab.student.entity.Member;
 import com.javalab.student.entity.Product;
 import com.javalab.student.entity.cartOrder.Cart;
 import com.javalab.student.entity.cartOrder.CartItem;
-import com.javalab.student.repository.CartItemRepository;
-import com.javalab.student.repository.CartRepository;
+import com.javalab.student.repository.cartOrder.CartItemRepository;
+import com.javalab.student.repository.cartOrder.CartRepository;
 import com.javalab.student.repository.MemberRepository;
 import com.javalab.student.repository.ProductRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -39,27 +39,22 @@ public class CartService {
      * @return 추가된 장바구니 아이템의 ID
      */
     public Long addCart(CartItemDto cartItemDto, String email) {
-        // 상품과 회원 정보 조회
         Product product = productRepository.findById(cartItemDto.getProductId())
                 .orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다."));
         Member member = memberRepository.findByEmail(email);
 
-        // 회원의 장바구니 조회 또는 생성
         Cart cart = cartRepository.findByMemberId(member.getId());
         if (cart == null) {
             cart = Cart.createCart(member);
             cartRepository.save(cart);
         }
 
-        // 장바구니에 동일 상품이 있는지 확인
         CartItem savedCartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), product.getId());
 
         if (savedCartItem != null) {
-            // 기존 상품이 있으면 수량 증가
             savedCartItem.addQuantity(cartItemDto.getQuantity());
             return savedCartItem.getId();
         } else {
-            // 새 상품이면 장바구니에 추가
             CartItem cartItem = CartItem.createCartItem(cart, product, cartItemDto.getQuantity());
             cartItemRepository.save(cartItem);
             return cartItem.getId();
@@ -74,15 +69,14 @@ public class CartService {
      */
     @Transactional(readOnly = true)
     public List<CartDetailDto> getCartList(String email) {
-        List<CartDetailDto> cartDetailDtoList = new ArrayList<>();
         Member member = memberRepository.findByEmail(email);
-        Cart cart = cartRepository.findByMemberId(member.getId());
+        Cart cart = cartRepository.findByMemberId(member.getId()).orElse(null);
         if (cart == null) {
-            return cartDetailDtoList;
+            return new ArrayList<>();
         }
-        cartDetailDtoList = cartItemRepository.findCartDetailDtoList(cart.getId());
-        return cartDetailDtoList;
+        return cartItemRepository.findCartDetailDtoList(cart.getId());
     }
+
 
     /**
      * 장바구니 아이템의 소유자를 확인합니다.
