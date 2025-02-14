@@ -1,10 +1,9 @@
 package com.javalab.student.controller;
 
-import com.javalab.student.dto.CartItemDto;
-import com.javalab.student.entity.Cart;
-import com.javalab.student.entity.CartItem;
-import com.javalab.student.repository.CartItemRepository;
-import com.javalab.student.repository.CartRepository;
+import com.javalab.student.dto.cartOrder.CartItemDto;
+import com.javalab.student.entity.cartOrder.Cart;
+import com.javalab.student.entity.cartOrder.CartItem;
+import com.javalab.student.repository.cartOrder.CartRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

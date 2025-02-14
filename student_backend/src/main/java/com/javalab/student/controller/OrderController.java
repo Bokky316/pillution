@@ -1,7 +1,7 @@
 package com.javalab.student.controller;
 
-import com.javalab.student.entity.Order;
-import com.javalab.student.service.OrderService;
+import com.javalab.student.entity.cartOrder.Order;
+import com.javalab.student.service.cartOrder.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
