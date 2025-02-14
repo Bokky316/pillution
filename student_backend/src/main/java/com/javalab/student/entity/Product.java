@@ -93,5 +93,21 @@ public class Product {
      */
     @Transient
     private int score;
+
+    /**
+     * 상품명을 반환합니다.
+     * @return 상품명
+     */
+    public String getProductName() {
+        return this.name;
+    }
+
+    /**
+     * 상품 이미지 URL을 반환합니다.
+     * @return 상품 이미지 URL
+     */
+    public String getImageUrl() {
+        return this.mainImageUrl;
+    }
 }
 

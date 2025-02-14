@@ -15,8 +15,7 @@ export const fetchCartItems = createAsyncThunk(
         const errorText = await response.text();
         throw new Error(`Failed to fetch cart items: ${response.status} - ${errorText}`);
       }
-      const data = await response.json();
-      return data;
+      return await response.json();
     } catch (error) {
       console.error('Error fetching cart items:', error);
       return rejectWithValue(error.message);
@@ -44,8 +43,7 @@ export const addToCart = createAsyncThunk(
         const errorText = await response.text();
         throw new Error(`Failed to add item to cart: ${response.status} - ${errorText}`);
       }
-      const data = await response.json();
-      return data;
+      return await response.json();
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -57,25 +55,32 @@ export const addToCart = createAsyncThunk(
  * @param {Object} params - 수정할 장바구니 아이템 정보
  * @param {number} params.cartItemId - 수정할 장바구니 아이템 ID
  * @param {number} params.count - 변경할 수량
- * @returns {Promise<Object>} 수정된 장바구니 아이템 정보
+ * @returns {Promise<number>} 수정된 장바구니 아이템 ID
  */
 export const updateCartItem = createAsyncThunk(
   'cart/updateCartItem',
   async ({ cartItemId, count }, { rejectWithValue }) => {
     try {
+      console.log('Updating cart item:', cartItemId, 'with count:', count);
+
       const response = await fetchWithAuth(`${API_URL}cart/${cartItemId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ count }),
+        body: JSON.stringify({ count }), // 요청 바디에 count 를 담아서 보냄
       });
+
       if (!response.ok) {
-         const errorText = await response.text();
-         throw new Error(`Failed to update cart item: ${response.status} - ${errorText}`);
+        const errorText = await response.text();
+        throw new Error(`Failed to update cart item: ${response.status} - ${errorText}`);
       }
-      return { cartItemId, count };
+
+      const updatedItem = await response.json();
+      console.log('Updated cart item:', updatedItem);
+      return updatedItem;
     } catch (error) {
+      console.error('Error updating cart item:', error);
       return rejectWithValue(error.message);
     }
   }
@@ -90,15 +95,22 @@ export const removeCartItem = createAsyncThunk(
   'cart/removeCartItem',
   async (cartItemId, { rejectWithValue }) => {
     try {
+      console.log('Removing cart item:', cartItemId);
+
       const response = await fetchWithAuth(`${API_URL}cart/${cartItemId}`, {
         method: 'DELETE',
       });
+
       if (!response.ok) {
-         const errorText = await response.text();
-         throw new Error(`Failed to remove cart item: ${response.status} - ${errorText}`);
+        const errorText = await response.text();
+        throw new Error(`Failed to remove cart item: ${response.status} - ${errorText}`);
       }
-      return cartItemId;
+
+      const removedItemId = await response.json();
+      console.log('Removed cart item ID:', removedItemId);
+      return removedItemId;
     } catch (error) {
+      console.error('Error removing cart item:', error);
       return rejectWithValue(error.message);
     }
   }
@@ -131,7 +143,9 @@ export const orderCartItems = createAsyncThunk(
   }
 );
 
-// 장바구니 슬라이스 정의
+/**
+ * 장바구니 슬라이스 정의
+ */
 const cartSlice = createSlice({
   name: 'cart',
   initialState: {
@@ -142,27 +156,45 @@ const cartSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
+      // 장바구니 아이템 불러오기 - 로딩 상태
       .addCase(fetchCartItems.pending, (state) => {
         state.status = 'loading';
       })
+      // 장바구니 아이템 불러오기 - 성공
       .addCase(fetchCartItems.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.items = action.payload;
       })
+      // 장바구니 아이템 불러오기 - 실패
       .addCase(fetchCartItems.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload;
       })
+      // 장바구니에 아이템 추가 - 성공
       .addCase(addToCart.fulfilled, (state, action) => {
         state.items.push(action.payload);
       })
+      // 장바구니 아이템 수량 업데이트 - 성공
       .addCase(updateCartItem.fulfilled, (state, action) => {
-        const { cartItemId, count } = action.payload;
-        const item = state.items.find(item => item.id === cartItemId);
-        if (item) item.quantity = count;
+        console.log('Update action payload:', action.payload);
+        const updatedItem = action.payload;
+        const index = state.items.findIndex(item => item.cartItemId === updatedItem.cartItemId);
+        if (index !== -1) {
+          console.log('Updating item at index:', index);
+          state.items[index] = { ...state.items[index], ...updatedItem };
+        } else {
+          console.log('Item not found in state:', updatedItem);
+        }
       })
+
+      // 장바구니에서 아이템 제거 - 성공
       .addCase(removeCartItem.fulfilled, (state, action) => {
-        state.items = state.items.filter(item => item.id !== action.payload);
+        // action.payload는 삭제된 cartItemId
+        state.items = state.items.filter(item => item.cartItemId !== action.payload);
+      })
+      // 장바구니 아이템 주문 - 성공
+      .addCase(orderCartItems.fulfilled, (state) => {
+        state.items = []; // 주문 완료 후 장바구니 비우기
       });
   },
 });

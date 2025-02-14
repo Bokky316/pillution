@@ -11,13 +11,14 @@
 
 import {SERVER_URL} from "@/utils/constants"; // "/refresh" 요청 시 사용
 console.log('SERVER_URL:', SERVER_URL);
+
 /**
  * 액세스 토큰 갱신 함수
  * - 리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급받는 함수
  * - API_URL/auth/refresh 엔드포인트로 POST 요청을 보내서 새로운 액세스 토큰을 발급받음
  * - 응답이 성공하면 새로운 액세스 토큰을 반환
  *
- * @returns {Promise<null|*>}
+ * @returns {Promise<boolean>} 토큰 갱신 성공 여부
  */
 export const refreshAccessToken = async () => {
     try {
@@ -40,11 +41,9 @@ export const refreshAccessToken = async () => {
 
     } catch (error) {
         console.error("리프레시 토큰 처리 오류:", error.message);
-        return false; // 실패 여부 반환
+        return false; // 실패 시 false 반환
     }
 };
-
-
 
 /**
  * API 요청을 보내는 함수
@@ -55,28 +54,37 @@ export const refreshAccessToken = async () => {
  *   그리고 저장된 정보에서 권한을 조회해서 요청한 메뉴에 대한 권한이 있는지 확인한다.
  * @param {string} url 요청할 URL
  * @param {Object} options fetch API의 두 번째 인자로 전달할 옵션 객체
+ * @returns {Promise<Response>} fetch 응답 객체
  */
 export const fetchWithAuth = async (url, options = {}) => {
-    console.log('Attempting to fetch:', url);
-    const config = {
-        ...options,
-        headers: {
-            "Content-Type": "application/json",
-        },
-        credentials: "include",
-    };
+  console.log('fetchWithAuth called with:', { url, options });
+  const config = {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+    credentials: "include",
+  };
 
-    try {
-        const response = await fetch(url, config);
+  if (config.method) {
+    config.method = config.method.toUpperCase();
+  }
 
-        console.log('Response status:', response.status);
-        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+  console.log('Sending request with config:', config);
 
-        if (response.status === 401) {
-            const errorData = await response.json();
-            console.warn(`401 Error: ${errorData.message}`);
+  try {
+    const response = await fetch(url, config);
+    console.log('Response received:', response);
 
-            if (errorData.message.includes("만료")) {
+            console.log('Response status:', response.status);
+            console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+            if (response.status === 401) {
+                //const errorData = await response.json(); // 이 부분을 제거
+                //console.warn(`401 Error: ${errorData.message}`);
+
+                //if (errorData.message.includes("만료")) { // 이 부분을 수정
                 console.log("fetchWithAuth.js: 액세스 토큰 만료되어 refreshAccessToken() 호출 - 1");
                 const refreshSuccess = await refreshAccessToken();
 
@@ -88,10 +96,11 @@ export const fetchWithAuth = async (url, options = {}) => {
                     console.error("리프레시 토큰 갱신 실패");
                     throw new Error("Unauthorized: 리프레시 토큰 갱신 실패");
                 }
-            } else {
-                throw new Error(`Unauthorized: ${errorData.message}`);
+                //} else {
+                //    throw new Error(`Unauthorized: ${errorData.message}`);
+                //}
             }
-        }
+
 
         return response;
     } catch (error) {
@@ -104,20 +113,26 @@ export const fetchWithAuth = async (url, options = {}) => {
  * 인증이 필요 없는 API 요청을 보내는 함수
  * - JWT 토큰을 포함하지 않고 요청
  * - 예를들면 회원가입, 로그인 등
- * @param url
- * @param options
- * @returns {Promise<Response>}
+ * @param {string} url 요청할 URL
+ * @param {Object} options fetch API의 두 번째 인자로 전달할 옵션 객체
+ * @returns {Promise<Response>} fetch 응답 객체
  */
 export const fetchWithoutAuth = async (url, options = {}) => {
     const config = {
         ...options,
         headers: {
             "Content-Type": "application/json",
+            ...options.headers, // 기존 헤더 유지
         },
         credentials: "include",
     };
-    console.log('Request config:', config);
 
+    // HTTP 메소드를 대문자로 변환
+    if (config.method) {
+        config.method = config.method.toUpperCase();
+    }
+
+    console.log('Request config:', config);
 
     try {
         const response = await fetch(url, config); // 비동기 요청
@@ -132,5 +147,4 @@ export const fetchWithoutAuth = async (url, options = {}) => {
         console.error("Error stack:", error.stack);
         throw error;
     }
-
 };

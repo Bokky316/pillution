@@ -49,14 +49,20 @@ const CartPage = () => {
 
   /**
    * 아이템 수량 변경 처리 함수
-   * @param {number} id - 장바구니 아이템 ID
+   * @param {number} cartItemId - 장바구니 아이템 ID
    * @param {number} change - 변경할 수량
    */
-  const handleQuantityChange = (id, change) => {
-    const item = cartItems.find(item => item.id === id);
+  const handleQuantityChange = async (cartItemId, change) => {
+    const item = cartItems.find(item => item.cartItemId === cartItemId);
     if (item) {
       const newQuantity = Math.max(1, item.quantity + change);
-      dispatch(updateCartItem({ cartItemId: id, count: newQuantity }));
+      try {
+        await dispatch(updateCartItem({ cartItemId, count: newQuantity })).unwrap();
+        // 수량 변경 후 장바구니 목록을 다시 불러옵니다.
+        dispatch(fetchCartItems());
+      } catch (error) {
+        console.error('Failed to update cart item:', error);
+      }
     }
   };
 
@@ -98,7 +104,7 @@ const CartPage = () => {
           ) : (
             cartItems.map((item) => (
               <CartItem
-                key={item.id}
+                key={item.cartItemId}
                 item={item}
                 onSelect={handleItemSelect}
                 onQuantityChange={handleQuantityChange}

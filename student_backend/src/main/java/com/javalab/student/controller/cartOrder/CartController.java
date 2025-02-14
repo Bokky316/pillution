@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 장바구니 관련 API 컨트롤러
@@ -24,7 +25,7 @@ import java.util.List;
 @RequestMapping("/api/cart")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "http://localhost:3000", allowedHeaders = "*", allowCredentials = "true") // 프론트엔드 Origin, 모든 헤더 허용
+//@CrossOrigin(origins = "http://localhost:3000", allowedHeaders = "*", allowCredentials = "true") // 프론트엔드 Origin, 모든 헤더 허용 // <- 이 줄을 주석 처리
 public class CartController {
 
     private final CartService cartService;
@@ -121,14 +122,18 @@ public class CartController {
     /**
      * 장바구니 상품 수량 수정
      * @param cartItemId 장바구니 아이템 ID
-     * @param count 변경할 수량
      * @param principal 사용자 정보
      * @return 수정된 장바구니 아이템 ID
      */
+    @CrossOrigin(origins = "http://localhost:3000", methods = {RequestMethod.PATCH})
     @PatchMapping("/{cartItemId}")
-    public ResponseEntity<?> updateCartItem(@PathVariable("cartItemId") Long cartItemId,
-                                            @RequestParam("count") int count,
-                                            Principal principal) {
+    public ResponseEntity<?> updateCartItem(
+            @PathVariable("cartItemId") Long cartItemId,
+            @RequestBody Map<String, Integer> requestBody, // 요청 바디에서 count 를 받음
+            Principal principal) {
+        log.info("PATCH 요청 수신: cartItemId={}, requestBody={}", cartItemId, requestBody);
+        int count = requestBody.get("count");
+
         log.info("장바구니 상품 수량 수정 요청 - 카트 아이템 ID: {}, 수량: {}", cartItemId, count);
         if (count <= 0 || count > MAX_QUANTITY) {
             return ResponseEntity.badRequest().body("유효하지 않은 수량입니다. 1에서 " + MAX_QUANTITY + " 사이의 값을 입력해주세요.");
@@ -203,4 +208,35 @@ public class CartController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("장바구니 상품 주문에 실패했습니다: " + e.getMessage());
         }
     }
+
+    /**
+     * 특정 장바구니 아이템 조회
+     * @param cartItemId 장바구니 아이템 ID
+     * @param principal 사용자 정보
+     * @return 장바구니 아이템 상세 정보
+     */
+    @GetMapping("/{cartItemId}")
+    public ResponseEntity<?> getCartItem(@PathVariable("cartItemId") Long cartItemId, Principal principal) {
+        log.info("장바구니 아이템 조회 요청 - 카트 아이템 ID: {}", cartItemId);
+        if (!cartService.validateCartItem(cartItemId, principal.getName())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("해당 장바구니 아이템에 접근 권한이 없습니다.");
+        }
+        try {
+            CartDetailDto cartItem = cartService.getCartItemDetail(cartItemId);
+            return ResponseEntity.ok(cartItem);
+        } catch (EntityNotFoundException e) {
+            log.error("장바구니 아이템을 찾을 수 없음", e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("장바구니 아이템을 찾을 수 없습니다.");
+        } catch (Exception e) {
+            log.error("장바구니 아이템 조회 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("장바구니 아이템 조회에 실패했습니다: " + e.getMessage());
+        }
+    }
+
+    @RequestMapping(value = "/**", method = RequestMethod.OPTIONS)
+    public ResponseEntity handleOptions() {
+        return ResponseEntity.ok().build();
+    }
+
+
 }

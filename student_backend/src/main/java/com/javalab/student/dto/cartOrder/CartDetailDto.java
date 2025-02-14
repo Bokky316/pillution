@@ -1,5 +1,6 @@
 package com.javalab.student.dto.cartOrder;
 
+import com.javalab.student.entity.cartOrder.CartItem;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,5 +20,21 @@ public class CartDetailDto {
         this.quantity = quantity;
         this.price = price;
         this.imgUrl = imgUrl;
+    }
+
+    /**
+     * CartItem 엔티티로부터 CartDetailDto 객체를 생성하는 정적 팩토리 메서드
+     *
+     * @param cartItem CartItem 엔티티
+     * @return CartDetailDto 객체
+     */
+    public static CartDetailDto of(CartItem cartItem) {
+        return new CartDetailDto(
+                cartItem.getId(),
+                cartItem.getProduct().getProductName(),
+                cartItem.getQuantity(),
+                cartItem.getProduct().getPrice(),
+                cartItem.getProduct().getImageUrl()
+        );
     }
 }
