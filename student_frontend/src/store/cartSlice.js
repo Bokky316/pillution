@@ -63,8 +63,12 @@ export const updateCartItem = createAsyncThunk(
     try {
       console.log('Updating cart item:', cartItemId, 'with count:', count);
 
-      const response = await fetchWithAuth(`${API_URL}cart/${cartItemId}?count=${count}`, {
+      const response = await fetchWithAuth(`${API_URL}cart/${cartItemId}`, {
         method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ count }), // 요청 바디에 count 를 담아서 보냄
       });
 
       if (!response.ok) {

@@ -200,4 +200,20 @@ public class CartService {
                 .orElseThrow(() -> new EntityNotFoundException("장바구니 아이템을 찾을 수 없습니다."));
         return cartItem.getProduct().getId();
     }
+
+    /**
+     * 특정 장바구니 아이템의 상세 정보를 조회합니다.
+     *
+     * @param cartItemId 장바구니 아이템 ID
+     * @return 장바구니 아이템 상세 정보
+     * @throws EntityNotFoundException 장바구니 아이템을 찾을 수 없는 경우
+     */
+    @Transactional(readOnly = true)
+    public CartDetailDto getCartItemDetail(Long cartItemId) {
+        CartItem cartItem = cartItemRepository.findById(cartItemId)
+                .orElseThrow(() -> new EntityNotFoundException("장바구니 아이템을 찾을 수 없습니다. ID: " + cartItemId));
+
+        return CartDetailDto.of(cartItem);
+    }
+
 }

@@ -57,32 +57,34 @@ export const refreshAccessToken = async () => {
  * @returns {Promise<Response>} fetch 응답 객체
  */
 export const fetchWithAuth = async (url, options = {}) => {
-    console.log('Attempting to fetch:', url);
-    const config = {
-        ...options,
-        headers: {
-            "Content-Type": "application/json",
-            ...options.headers, // 기존 헤더 유지
-        },
-        credentials: "include",
-    };
+  console.log('fetchWithAuth called with:', { url, options });
+  const config = {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+    credentials: "include",
+  };
 
-    // HTTP 메소드를 대문자로 변환
-    if (config.method) {
-        config.method = config.method.toUpperCase();
-    }
+  if (config.method) {
+    config.method = config.method.toUpperCase();
+  }
 
-    try {
-        const response = await fetch(url, config);
+  console.log('Sending request with config:', config);
 
-        console.log('Response status:', response.status);
-        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+  try {
+    const response = await fetch(url, config);
+    console.log('Response received:', response);
 
-        if (response.status === 401) {
-            const errorData = await response.json();
-            console.warn(`401 Error: ${errorData.message}`);
+            console.log('Response status:', response.status);
+            console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
-            if (errorData.message.includes("만료")) {
+            if (response.status === 401) {
+                //const errorData = await response.json(); // 이 부분을 제거
+                //console.warn(`401 Error: ${errorData.message}`);
+
+                //if (errorData.message.includes("만료")) { // 이 부분을 수정
                 console.log("fetchWithAuth.js: 액세스 토큰 만료되어 refreshAccessToken() 호출 - 1");
                 const refreshSuccess = await refreshAccessToken();
 
@@ -94,10 +96,11 @@ export const fetchWithAuth = async (url, options = {}) => {
                     console.error("리프레시 토큰 갱신 실패");
                     throw new Error("Unauthorized: 리프레시 토큰 갱신 실패");
                 }
-            } else {
-                throw new Error(`Unauthorized: ${errorData.message}`);
+                //} else {
+                //    throw new Error(`Unauthorized: ${errorData.message}`);
+                //}
             }
-        }
+
 
         return response;
     } catch (error) {
