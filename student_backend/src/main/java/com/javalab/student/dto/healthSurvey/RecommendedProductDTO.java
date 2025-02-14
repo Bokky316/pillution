@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,4 +18,5 @@ public class RecommendedProductDTO {
     private Double price; // Product 가격
     private String mainImageUrl; // Product 이미지 URL
     private String reason; // 추천 이유
+    private List<String> relatedIngredients; // 관련 영양성분 목록
 }

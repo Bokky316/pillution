@@ -18,7 +18,7 @@ public interface MemberResponseRepository extends JpaRepository<MemberResponse, 
     @Query("SELECT mr FROM MemberResponse mr WHERE mr.member.id = :memberId AND mr.regTime = (SELECT MAX(m.regTime) FROM MemberResponse m WHERE m.member.id = :memberId)")
     List<MemberResponse> findLatestResponsesByMemberId(@Param("memberId") Long memberId);
 
-    @Query("SELECT mr FROM MemberResponse mr WHERE mr.member.id = :memberId AND mr.question.id IN (3, 4, 5)")
+    @Query("SELECT mr FROM MemberResponse mr WHERE mr.member.id = :memberId AND mr.question.id IN (3, 4, 5) AND mr.regTime = (SELECT MAX(m.regTime) FROM MemberResponse m WHERE m.member.id = :memberId AND m.question.id = mr.question.id)")
     List<MemberResponse> findAgeHeightAndWeightResponses(@Param("memberId") Long memberId);
 
     @Query("SELECT mr FROM MemberResponse mr WHERE mr.member.id = :memberId AND mr.question.id = 1 ORDER BY mr.regTime DESC LIMIT 1")

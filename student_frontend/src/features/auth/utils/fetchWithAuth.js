@@ -62,6 +62,7 @@ export const fetchWithAuth = async (url, options = {}) => {
         ...options,
         headers: {
             "Content-Type": "application/json",
+//            "Cache-Control": "no-cache" // 캐시 무시
         },
         credentials: "include",
     };

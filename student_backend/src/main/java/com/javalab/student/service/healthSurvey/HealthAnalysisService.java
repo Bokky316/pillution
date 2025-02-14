@@ -2,12 +2,15 @@ package com.javalab.student.service.healthSurvey;
 
 import com.javalab.student.dto.healthSurvey.HealthAnalysisDTO;
 import com.javalab.student.entity.healthSurvey.MemberResponse;
+import com.javalab.student.entity.healthSurvey.MemberResponseOption;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * 건강 분석 및 평가 생성 서비스
@@ -22,18 +25,28 @@ public class HealthAnalysisService {
     /**
      * 사용자의 건강 상태를 분석합니다.
      *
-     * @param memberId  사용자의 ID
-     * @param age       사용자의 나이
-     * @param bmi       사용자의 BMI
-     * @param responses 사용자의 설문 응답 목록
-     * @param gender    사용자의 성별
+     * @param memberId        사용자의 ID
+     * @param age             사용자의 나이
+     * @param bmi             사용자의 BMI
+     * @param textResponses   사용자의 텍스트 설문 응답 목록
+     * @param optionResponses 사용자의 선택 옵션 설문 응답 목록
+     * @param gender          사용자의 성별
      * @return HealthAnalysisDTO 객체
      */
-    public HealthAnalysisDTO analyzeHealth(Long memberId, int age, double bmi, List<MemberResponse> responses, String gender) {
+    public HealthAnalysisDTO analyzeHealth(Long memberId, int age, double bmi, List<MemberResponse> textResponses, List<MemberResponseOption> optionResponses, String gender) {
         log.info("Analyzing health for memberId: {}, age: {}, bmi: {}, gender: {}", memberId, age, bmi, gender);
 
+        // 텍스트 응답과 선택 옵션 응답을 결합
+        List<Object> combinedResponses = Stream.concat(textResponses.stream(), optionResponses.stream())
+                .collect(Collectors.toList());
+
         // RiskCalculationService를 사용하여 위험도 계산
-        Map<String, String> riskLevels = riskCalculationService.calculateAllRisks(age, bmi, responses);
+        List<MemberResponseOption> memberResponseOptions = combinedResponses.stream()
+                .filter(response -> response instanceof MemberResponseOption)
+                .map(response -> (MemberResponseOption) response)
+                .collect(Collectors.toList());
+
+        Map<String, String> riskLevels = riskCalculationService.calculateAllRisks(age, bmi, memberResponseOptions);
         log.info("Calculated risk levels: {}", riskLevels);
 
         // 전반적인 건강 평가 생성
@@ -43,9 +56,8 @@ public class HealthAnalysisService {
         // HealthAnalysisDTO 생성 및 반환
         HealthAnalysisDTO healthAnalysisDTO = new HealthAnalysisDTO();
         healthAnalysisDTO.setBmi(bmi);
-        healthAnalysisDTO.setRiskLevels(riskLevels);
+        healthAnalysisDTO.setRiskLevels(convertRiskLevelsToString(riskLevels));
         healthAnalysisDTO.setOverallAssessment(overallAssessment);
-        healthAnalysisDTO.setResponses(responses);
         healthAnalysisDTO.setGender(gender);
 
         log.info("Health analysis completed: {}", healthAnalysisDTO);
@@ -85,5 +97,17 @@ public class HealthAnalysisService {
         assessment.append("자세한 건강 관리 방법은 전문의와 상담하시기 바랍니다.");
 
         return assessment.toString();
+    }
+
+    /**
+     * 위험 수준 맵을 문자열로 변환합니다.
+     *
+     * @param riskLevels 위험 수준 맵
+     * @return 위험 수준을 나타내는 문자열
+     */
+    private String convertRiskLevelsToString(Map<String, String> riskLevels) {
+        return riskLevels.entrySet().stream()
+                .map(entry -> entry.getKey() + ":" + entry.getValue())
+                .collect(Collectors.joining(","));
     }
 }

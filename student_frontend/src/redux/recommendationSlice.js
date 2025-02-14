@@ -116,28 +116,41 @@ const recommendationSlice = createSlice({
     cartAddingStatus: 'idle', // 장바구니 상태 추가
   },
 
-  reducers: {},
+  reducers: {
+    /**
+     * 모든 추천 관련 상태를 초기화하는 리듀서
+     * (건강 분석 정보 제외)
+     */
+    resetRecommendationState: (state) => {
+      state.recommendedIngredients = [];
+      state.recommendedProducts = [];
+      state.loading = false;
+      state.error = null;
+      state.cartAddingStatus = 'idle';
+    },
+  },
 
   extraReducers: (builder) => {
     builder
-      // 건강 분석 정보
+      // 건강 분석 정보 (원래 코드 그대로 유지)
       .addCase(fetchHealthAnalysis.pending, (state) => {
-          state.loading = true;
-          state.error = null;
-        })
-        .addCase(fetchHealthAnalysis.fulfilled, (state, action) => {
-          state.loading = false;
-          state.healthAnalysis = action.payload || null; // healthAnalysis 저장
-        })
-        .addCase(fetchHealthAnalysis.rejected, (state, action) => {
-          state.loading = false;
-          state.error = action.payload;
-        })
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchHealthAnalysis.fulfilled, (state, action) => {
+        state.loading = false;
+        state.healthAnalysis = action.payload || null; // healthAnalysis 저장
+      })
+      .addCase(fetchHealthAnalysis.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
 
       // 추천 영양 성분
       .addCase(fetchRecommendedIngredients.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.recommendedIngredients = []; // 요청 시작 시 상태를 빈 배열로 초기화
       })
       .addCase(fetchRecommendedIngredients.fulfilled, (state, action) => {
         state.loading = false;
@@ -152,6 +165,7 @@ const recommendationSlice = createSlice({
       .addCase(fetchRecommendedProducts.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.recommendedProducts = []; // 요청 시작 시 상태를 빈 배열로 초기화
       })
       .addCase(fetchRecommendedProducts.fulfilled, (state, action) => {
         state.loading = false;
@@ -177,4 +191,5 @@ const recommendationSlice = createSlice({
   },
 });
 
+export const { resetRecommendationState } = recommendationSlice.actions;
 export default recommendationSlice.reducer;

@@ -30,4 +30,8 @@ public class MemberResponseOption extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "option_id", nullable = false)
     private QuestionOption option;
+
+    public boolean isSelected() {
+        return true;  // 항상 true를 반환합니다.
+    }
 }
