@@ -162,9 +162,8 @@ function NewsBoardPage() {
                     <Box display="flex" justifyContent="flex-end" mb={2}>
                         <Button
                             variant="contained"
-                            color="primary"
+                            sx={{ backgroundColor: '#4169E1', color: 'white', fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
                             onClick={() => navigate('/post/create', { state: { defaultCategory: '공지사항' } })}
-                            sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
                         >
                             게시글 등록
                         </Button>
@@ -214,7 +213,7 @@ function NewsBoardPage() {
                                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center' }}>
                                                     <Button
                                                         variant="outlined"
-                                                        color="primary"
+                                                        sx={{ borderColor: '#29B6F6', color: '#29B6F6' }}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleEditPost(post.id);
@@ -224,7 +223,7 @@ function NewsBoardPage() {
                                                     </Button>
                                                     <Button
                                                         variant="outlined"
-                                                        color="error"
+                                                        sx={{ borderColor: '#EF5503', color: '#EF5503' }}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleDeleteClick(post.id);
@@ -276,10 +275,12 @@ function NewsBoardPage() {
                         </DialogContentText>
                     </DialogContent>
                     <DialogActions>
-                        <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+                        <Button onClick={handleDeleteConfirm} sx={{ color: '#EF5350' }} autoFocus>
                             삭제
                         </Button>
-                        <Button onClick={handleDeleteCancel}>취소</Button>
+                        <Button onClick={handleDeleteCancel} sx={{ color: '#29B6F6' }}>
+                            취소
+                        </Button>
                     </DialogActions>
                 </Dialog>
             </Box>

@@ -36,7 +36,7 @@ function BoardPage() {
     };
 
     const buttonStyle = (isSelected) => ({
-        color: isSelected ? "primary.main" : "text.secondary",
+        color: isSelected ? "#4169E1" : "text.secondary",
         px: 2,
         py: 0.5,
         fontSize: { xs: '0.9rem', sm: '1rem' },
@@ -55,7 +55,7 @@ function BoardPage() {
             left: 0,
             width: '100%',
             height: isSelected ? '2px' : '0px',
-            backgroundColor: isSelected ? "primary.main" : "transparent",
+            backgroundColor: isSelected ? "#4169E1" : "transparent",
         },
     });
 

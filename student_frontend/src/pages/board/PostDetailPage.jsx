@@ -223,10 +223,9 @@ function PostDetailPage() {
             <Box mt={5} mb={5} display="flex" justifyContent="center">
                 <Button
                     variant="contained"
-                    color="primary"
+                    sx={{ backgroundColor: '#4169E1', color: 'white', mt: 2, px: 4, py: 1 }}
                     size="medium"
                     onClick={() => navigate('/board')}
-                    sx={{ mt: 2, px: 4, py: 1 }}
                 >
                     목록으로 가기
                 </Button>
@@ -234,8 +233,8 @@ function PostDetailPage() {
 
             {userRole === "ADMIN" && (
                 <Box mt={2} display="flex" justifyContent="flex-end" gap={2}>
-                    <Button variant="contained" color="info" onClick={handleEditPost}>수정</Button>
-                    <Button variant="contained" color="error" onClick={handleDeleteClick}>삭제</Button>
+                    <Button variant="contained" sx={{ backgroundColor: '#29B6F6', color: 'white'}} onClick={handleEditPost}>수정</Button>
+                    <Button variant="contained" sx={{ backgroundColor: '#EF5350', color: 'white'}} onClick={handleDeleteClick}>삭제</Button>
                 </Box>
             )}
 
@@ -255,10 +254,10 @@ function PostDetailPage() {
                     </Typography>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+                    <Button onClick={handleDeleteConfirm} sx={{ color: '#EF5350' }}>
                         삭제
                     </Button>
-                    <Button onClick={() => setOpenDeleteDialog(false)} color="primary">
+                    <Button onClick={() => setOpenDeleteDialog(false)} sx={{ color: '#29B6F6' }}>
                         취소
                     </Button>
                 </DialogActions>
