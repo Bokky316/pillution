@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import {
   Box,
   Typography,
@@ -19,6 +19,7 @@ import {
 import { Add as AddIcon, Remove as RemoveIcon, Close as CloseIcon } from "@mui/icons-material";
 import { fetchWithAuth } from "../../features/auth/utils/fetchWithAuth";
 import { API_URL } from "../../constant";
+import { addItem } from "../../redux/cartSlice";
 
 const ProductDetailPage = () => {
   const { productId } = useParams();
@@ -30,6 +31,7 @@ const ProductDetailPage = () => {
   const [isButtonFixed, setIsButtonFixed] = useState(true);
   const containerRef = useRef(null);
   const auth = useSelector((state) => state.auth);
+  const dispatch = useDispatch(); // dispatch 훅 추가
 
   const userRole = auth?.user?.authorities?.some((auth) => auth.authority === "ROLE_ADMIN")
     ? "ADMIN"
@@ -83,6 +85,21 @@ const ProductDetailPage = () => {
   const calculateTotalPrice = () => {
     return product?.price ? product.price * quantity : 0;
   };
+
+  const handleAddToCart = () => {
+      if (product) {
+        const cartItem = {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          quantity: quantity,
+          image: product.mainImageUrl || product.imageUrl,
+        };
+        dispatch(addItem(cartItem)); // addItem 액션 dispatch
+        handleCloseModal();
+        alert("장바구니에 추가되었습니다!");
+      }
+    };
 
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => setOpenModal(false);
@@ -271,6 +288,7 @@ const ProductDetailPage = () => {
               borderRadius: "10px",
               fontSize: "18px"
             }}
+            onClick={handleAddToCart}
           >
             장바구니 담기
           </Button>

@@ -15,6 +15,7 @@ import postEditReducer from "./postEditSlice";
 import snackbarReducer from "./snackbarSlice";
 import messageReducer from "./messageSlice";
 import chatReducer from "./chatSlice"; // ✅ chatSlice 추가
+import cartReducer from './cartSlice'; // ✅ cartSlice 추가
 import productReducer from "./productSlice";
 import sidebarReducer from './sidebarSlice';
 import subscriptionReducer from "./subscriptionSlice";
@@ -30,7 +31,7 @@ import subscriptionReducer from "./subscriptionSlice";
 const persistConfig = {
     key: "root",
     storage,
-    whitelist: ["auth", "survey", "ui", "products", "recommendations", "board", "news", "postDetail", "faq", "postCreate", "postEdit", "snackbar", "chat", "sidebar", "subscription"], // ✅ chat 추가
+    whitelist: ["auth", "survey", "ui", "products", "recommendations", "board", "news", "postDetail", "faq", "postCreate", "postEdit", "snackbar", "chat", "cart", "sidebar", "subscription"], // ✅ chat,cart 추가
 };
 
 /**
@@ -52,6 +53,7 @@ const rootReducer = combineReducers({
     snackbar: snackbarReducer,
     messages: messageReducer,
     chat: chatReducer, // ✅ chat 리듀서 추가
+    cart: cartReducer, // ✅ cart 리듀서 추가
     products: productReducer,
     subscription: subscriptionReducer,
     sidebar: sidebarReducer,

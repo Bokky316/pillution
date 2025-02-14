@@ -113,6 +113,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/categories").permitAll()
                 .requestMatchers("/api/auth/userInfo").permitAll()
                 .requestMatchers("/api/posts/**", "/api/faq/**").permitAll() // 게시물 조회
+                .requestMatchers("/api/cart/**").permitAll()
+
                 .requestMatchers("/api/upload").permitAll()
                 .requestMatchers("/api/subscription/**").permitAll()
 
