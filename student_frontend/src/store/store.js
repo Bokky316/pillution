@@ -18,6 +18,9 @@ import chatReducer from "@/store/chatSlice";
 import productReducer from "@/store/productSlice";
 import sidebarReducer from '@/store/sidebarSlice';
 import subscriptionReducer from "@/store/subscriptionSlice";
+import cartReducer from "@/store/cartSlice";
+import orderReducer from "@/store/orderSlice";
+import paymentReducer from "@/store/paymentSlice";
 
 /**
  * Redux Persist의 설정을 정의합니다.
@@ -29,32 +32,34 @@ import subscriptionReducer from "@/store/subscriptionSlice";
 const persistConfig = {
     key: "root",
     storage,
-    whitelist: ["auth", "survey", "ui", "products", "recommendations", "board", "news", "postDetail", "faq", "postCreate", "postEdit", "snackbar", "chat", "sidebar", "subscription"], // ✅ chat 추가
+    whitelist: ["auth", "survey", "ui", "products", "recommendations", "board", "news", "postDetail", "faq", "postCreate", "postEdit", "snackbar", "chat", "sidebar", "subscription", "cart", "order", "payment"],
 };
 
 /**
  * 루트 리듀서 생성
  * - combineReducers를 사용하여 여러 리듀서를 하나로 병합
- * - authReducer, surveyReducer, uiReducer, recommendationReducer, snackbarReducer, messageReducer, chatReducer를 통합
+ * - authReducer, surveyReducer, uiReducer, recommendationReducer, snackbarReducer, messageReducer, chatReducer, cartReducer, orderReducer, paymentReducer를 통합
  */
 const rootReducer = combineReducers({
     auth: authReducer,
     survey: surveyReducer,
     ui: uiReducer,
     recommendations: recommendationReducer,
-    board: boardReducer, // 게시판 추가 시작
+    board: boardReducer,
     news: newsReducer,
     faq: faqReducer,
     postDetail: postDetailReducer,
     postCreate: postCreateReducer,
-    postEdit: postEditReducer, // 게시판 추가 끝
+    postEdit: postEditReducer,
     snackbar: snackbarReducer,
     messages: messageReducer,
-    chat: chatReducer, // ✅ chat 리듀서 추가
+    chat: chatReducer,
     products: productReducer,
     subscription: subscriptionReducer,
     sidebar: sidebarReducer,
-
+    cart: cartReducer,
+    order: orderReducer,
+    payment: paymentReducer,
 });
 
 /**
