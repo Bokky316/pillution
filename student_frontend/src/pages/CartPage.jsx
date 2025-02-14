@@ -52,13 +52,14 @@ const CartPage = () => {
    * @param {number} id - 장바구니 아이템 ID
    * @param {number} change - 변경할 수량
    */
-  const handleQuantityChange = (id, change) => {
-    const item = cartItems.find(item => item.id === id);
+  const handleQuantityChange = (cartItemId, change) => {
+    const item = cartItems.find(item => item.cartItemId === cartItemId);
     if (item) {
       const newQuantity = Math.max(1, item.quantity + change);
-      dispatch(updateCartItem({ cartItemId: id, count: newQuantity }));
+      dispatch(updateCartItem({ cartItemId, count: newQuantity }));
     }
   };
+
 
   /**
    * 아이템 제거 처리 함수

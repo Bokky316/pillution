@@ -113,10 +113,18 @@ public class CartService {
      * @param cartItemId 장바구니 아이템 ID
      * @param count 변경할 수량
      */
+    @Transactional
     public void updateCartItemCount(Long cartItemId, int count) {
-        CartItem cartItem = cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new EntityNotFoundException("장바구니 아이템을 찾을 수 없습니다."));
-        cartItem.updateQuantity(count);
+        try {
+            CartItem cartItem = cartItemRepository.findById(cartItemId)
+                    .orElseThrow(() -> new EntityNotFoundException("장바구니 아이템을 찾을 수 없습니다."));
+            cartItem.updateQuantity(count);
+            cartItemRepository.save(cartItem);  // 명시적 저장
+            log.info("장바구니 아이템 수량 업데이트 성공 - ID: {}, 새 수량: {}", cartItemId, count);
+        } catch (Exception e) {
+            log.error("장바구니 아이템 수량 업데이트 실패 - ID: {}, 요청 수량: {}", cartItemId, count, e);
+            throw new RuntimeException("장바구니 아이템 수량 업데이트에 실패했습니다.", e);
+        }
     }
 
     /**
