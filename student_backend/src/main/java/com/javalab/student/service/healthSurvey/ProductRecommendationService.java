@@ -1,6 +1,6 @@
 package com.javalab.student.service.healthSurvey;
 
-import com.javalab.student.dto.healthSurvey.RecommendedProductDTO;
+import com.javalab.student.dto.healthSurvey.ProductRecommendationDTO;
 import com.javalab.student.entity.Product;
 import com.javalab.student.entity.ProductIngredient;
 import com.javalab.student.repository.ProductRepository;
@@ -28,21 +28,21 @@ public class ProductRecommendationService {
      * @param ingredientScores       영양 성분별 점수 맵
      * @return 추천 제품 목록 (각 영양 성분별로 그룹화되지 않음)
      */
-    public List<RecommendedProductDTO> recommendProductsByIngredients(List<String> recommendedIngredients, Map<String, Integer> ingredientScores) {
+    public List<ProductRecommendationDTO> recommendProductsByIngredients(List<String> recommendedIngredients, Map<String, Integer> ingredientScores) {
         List<Product> allProducts = productRepository.findAll();
 
         // 모든 제품에 대해 추천 영양 성분 포함 여부를 확인하고 DTO로 변환
-        List<RecommendedProductDTO> recommendedProducts = allProducts.stream()
+        List<ProductRecommendationDTO> recommendedProducts = allProducts.stream()
                 .map(product -> convertToDTO(product, recommendedIngredients, ingredientScores))
                 .filter(dto -> !dto.getRecommendedIngredients().isEmpty()) // 추천 영양 성분을 포함한 제품만 필터링
                 .sorted(Comparator.comparingInt(dto -> -dto.getRecommendedIngredients().size())) // 추천 영양 성분 개수 내림차순 정렬
                 .collect(Collectors.toList());
 
         // 중복 영양 성분을 처리하면서 최종 추천 목록 생성
-        List<RecommendedProductDTO> finalRecommendations = new ArrayList<>();
+        List<ProductRecommendationDTO> finalRecommendations = new ArrayList<>();
         Set<String> coveredIngredients = new HashSet<>();
 
-        for (RecommendedProductDTO product : recommendedProducts) {
+        for (ProductRecommendationDTO product : recommendedProducts) {
             List<String> productIngredients = product.getRecommendedIngredients();
 
             // 아직 커버되지 않은 새로운 영양 성분이 있는 경우에만 추가
@@ -61,16 +61,16 @@ public class ProductRecommendationService {
     }
 
     /**
-     * Product 엔티티를 RecommendedProductDTO로 변환합니다.
+     * Product 엔티티를 ProductRecommendationDTO로 변환합니다.
      * 이 메소드는 제품에 포함된 영양 성분 중 추천된 영양 성분만 필터링하고,
      * 해당 영양 성분의 점수를 함께 저장합니다.
      *
      * @param product               변환할 Product 엔티티
      * @param recommendedIngredients 추천된 영양 성분 목록
      * @param ingredientScores      영양 성분 점수 맵
-     * @return 변환된 RecommendedProductDTO
+     * @return 변환된 ProductRecommendationDTO
      */
-    private RecommendedProductDTO convertToDTO(Product product, List<String> recommendedIngredients, Map<String, Integer> ingredientScores) {
+    private ProductRecommendationDTO convertToDTO(Product product, List<String> recommendedIngredients, Map<String, Integer> ingredientScores) {
         // 제품에 포함된 추천 영양 성분 추출
         List<String> productRecommendedIngredients = product.getIngredients().stream()
                 .map(ProductIngredient::getIngredientName)
@@ -85,7 +85,7 @@ public class ProductRecommendationService {
                         ingredient -> ingredientScores.getOrDefault(ingredient.getIngredientName(), 0)
                 ));
 
-        return new RecommendedProductDTO(
+        return new ProductRecommendationDTO(
                 product.getId(),
                 product.getName(),
                 product.getDescription(),
