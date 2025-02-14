@@ -142,17 +142,21 @@ public class RecommendationService {
                     .map(RecommendedIngredient::getIngredientName)
                     .collect(Collectors.toList());
 
-            healthRecordService.saveHealthRecord(
-                    member,
-                    healthAnalysis,
-                    recommendedIngredientNames,
-                    productRecommendations,
-                    name,
-                    gender,
-                    age
-            );
-
-            log.info("8. HealthRecord 저장 완료");
+            try {
+                healthRecordService.saveHealthRecord(
+                        member,
+                        healthAnalysis,
+                        recommendedIngredientNames,
+                        productRecommendations,
+                        name,
+                        gender,
+                        age
+                );
+                log.info("8. HealthRecord 저장 완료");
+            } catch (Exception e) {
+                log.error("HealthRecord 저장 중 오류 발생", e);
+                throw new RuntimeException("HealthRecord 저장 중 오류 발생", e);
+            }
 
             // 9. 결과 반환 데이터 구성
             Map<String, Object> result = new HashMap<>();
