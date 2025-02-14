@@ -24,4 +24,3 @@ public class HealthAnalysisDTO {
     private String overallAssessment;
     private LocalDateTime recordDate;
 }
-
