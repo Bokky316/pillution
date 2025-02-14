@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import CartItem from "@/features/cart/CartItem";
 import CartSummary from "@/features/cart/CartSummary";
-import { fetchCartItems, updateCartItem, removeCartItem } from "@/store/cartSlice";
+import { fetchCartItems, updateCartItem, removeCartItem, selectCartItem, selectAllCartItems } from "@/store/cartSlice";
 import "@/styles/CartPage.css";
 
 /**
@@ -36,15 +36,18 @@ const CartPage = () => {
   const handleSelectAll = () => {
     const newSelectAll = !selectAll;
     setSelectAll(newSelectAll);
-    // 백엔드에 전체 선택/해제 요청을 보내는 로직 추가 필요
+    dispatch(selectAllCartItems(newSelectAll));
   };
 
   /**
    * 개별 아이템 선택/해제 처리 함수
-   * @param {number} id - 장바구니 아이템 ID
+   * @param {number} cartItemId - 장바구니 아이템 ID
    */
-  const handleItemSelect = (id) => {
-    // 백엔드에 개별 아이템 선택/해제 요청을 보내는 로직 추가 필요
+  const handleItemSelect = (cartItemId) => {
+    const item = cartItems.find(item => item.cartItemId === cartItemId);
+    if (item) {
+      dispatch(selectCartItem({ cartItemId, selected: !item.selected }));
+    }
   };
 
   /**
@@ -106,7 +109,7 @@ const CartPage = () => {
               <CartItem
                 key={item.cartItemId}
                 item={item}
-                onSelect={handleItemSelect}
+                onSelect={() => handleItemSelect(item.cartItemId)}
                 onQuantityChange={handleQuantityChange}
                 onRemove={handleRemoveItem}
               />

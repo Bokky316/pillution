@@ -153,7 +153,21 @@ const cartSlice = createSlice({
     status: 'idle',
     error: null,
   },
-  reducers: {},
+  reducers: {
+      selectCartItem: (state, action) => {
+        const { cartItemId, selected } = action.payload;
+        const item = state.items.find(item => item.cartItemId === cartItemId);
+        if (item) {
+          item.selected = selected;
+        }
+      },
+      selectAllCartItems: (state, action) => {
+        const selected = action.payload;
+        state.items.forEach(item => {
+          item.selected = selected;
+        });
+      },
+    },
   extraReducers: (builder) => {
     builder
       // 장바구니 아이템 불러오기 - 로딩 상태
@@ -199,4 +213,5 @@ const cartSlice = createSlice({
   },
 });
 
+export const { selectCartItem, selectAllCartItems } = cartSlice.actions;
 export default cartSlice.reducer;

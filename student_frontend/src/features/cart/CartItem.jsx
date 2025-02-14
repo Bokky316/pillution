@@ -19,7 +19,7 @@ const CartItem = ({ item, onSelect, onQuantityChange, onRemove }) => (
     <input
       type="checkbox"
       className="item-select"
-      checked={item.selected}
+      checked={item.selected || false}
       onChange={() => onSelect(item.cartItemId)}
     />
     {/* 상품 이미지 */}
