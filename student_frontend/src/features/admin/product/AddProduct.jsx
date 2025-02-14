@@ -25,11 +25,38 @@ const AddProduct = () => {
 
     // 카테고리 목록을 저장할 state
     const [categories, setCategories] = useState([]);
+    const [ingredients, setIngredients] = useState([]);  // 영양성분 목록 저장
+
 
     useEffect(() => {
         // 컴포넌트가 마운트될 때 카테고리 목록을 가져옴
         fetchCategories();
+        fetchIngredients();
     }, []);
+
+    const fetchIngredients = async () => {
+        try {
+            const token = localStorage.getItem('accessToken');
+            const response = await fetch(`${API_URL}ingredients`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? `Bearer ${token}` : '',
+                },
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setIngredients(Array.isArray(data) ? data : []);
+            } else {
+                throw new Error('영양성분 목록을 불러오는 데 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('영양성분 목록을 불러오는 중 오류가 발생했습니다.', error);
+            alert(error.message);
+        }
+    };
 
     const fetchCategories = async () => {
         try {
@@ -54,12 +81,6 @@ const AddProduct = () => {
             alert(error.message);
         }
     };
-
-    const availableIngredients = [
-        { id: 1, name: '성분1' },
-        { id: 2, name: '성분2' },
-        { id: 3, name: '성분3' }
-    ];
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -94,12 +115,52 @@ const AddProduct = () => {
         }));
     };
 
-    const handleIngredientChange = (e) => {
-        const { value } = e.target;
-        setProduct(prev => ({
-            ...prev,
-            ingredientIds: value
-        }));
+    const handleIngredientChange = async (e) => {
+        const selectedIngredients = e.target.value;
+
+        console.log("🔹 선택된 영양성분:", selectedIngredients);
+        setProduct(prev => ({ ...prev, ingredientIds: selectedIngredients }));
+
+        if (selectedIngredients.length === 0) {
+            console.warn("⚠️ 선택된 영양성분이 없습니다!");
+            setProduct(prev => ({ ...prev, categoryIds: [] })); // ✅ 성분이 없으면 카테고리도 초기화
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('accessToken'); // ✅ 토큰 가져오기
+            if (!token) {
+                console.error("🚨 토큰이 없습니다! 로그인 필요!");
+                return;
+            }
+
+            console.log("🚀 카테고리 매핑 API 요청 시작...");
+            const response = await fetch(`${API_URL}ingredients/categories?ingredientIds=${selectedIngredients.join(',')}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                credentials: 'include'
+            });
+
+            console.log("📡 API 요청 보냄:", response.url);
+            if (!response.ok) {
+                throw new Error(`카테고리 자동 매핑 실패: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log("🔹 매핑된 카테고리 응답:", data);
+
+            // ✅ 한 번의 `setProduct` 호출로 상태 업데이트
+            setProduct(prev => ({
+                ...prev,
+                categoryIds: data.map(cat => cat.id),
+                ingredientIds: selectedIngredients
+            }));
+        } catch (error) {
+            console.error('❌ 카테고리 자동 매핑 실패:', error);
+        }
     };
 
     const handleImageChange = (e) => {
@@ -173,15 +234,9 @@ const AddProduct = () => {
             <h2>상품 추가</h2>
             <form onSubmit={handleSubmit}>
                 <FormControl fullWidth margin="normal">
-                    <InputLabel>카테고리</InputLabel>
-                    <Select
-                        name="categoryIds"
-                        value={product.categoryIds}
-                        onChange={handleCategoryChange}
-                        multiple
-                        required
-                    >
-                        {categories.map(cat => (
+                    <InputLabel>카테고리 (자동 설정)</InputLabel>
+                    <Select multiple value={product.categoryIds} readOnly>
+                        {categories.filter(cat => product.categoryIds.includes(cat.id)).map(cat => (
                             <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
                         ))}
                     </Select>
@@ -195,6 +250,18 @@ const AddProduct = () => {
                     required
                     margin="normal"
                 />
+                <FormControl fullWidth margin="normal">
+                    <InputLabel>영양성분</InputLabel>
+                    <Select multiple value={product.ingredientIds} onChange={handleIngredientChange}>
+                        {Array.isArray(ingredients) && ingredients.length > 0 ? (
+                            ingredients.map(ing => (
+                                <MenuItem key={ing.id} value={ing.id}>{ing.ingredientName}</MenuItem>
+                            ))
+                        ) : (
+                            <MenuItem disabled>영양성분을 불러오는 중...</MenuItem>
+                        )}
+                    </Select>
+                </FormControl>
                 <TextField
                     fullWidth
                     label="가격"

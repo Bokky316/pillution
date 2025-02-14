@@ -6,6 +6,7 @@ import com.javalab.student.entity.ProductCategory;
 import com.javalab.student.repository.ProductCategoryRepository;
 import com.javalab.student.repository.ProductRepository;
 import com.javalab.student.service.ProductService;
+import com.javalab.student.entity.ProductIngredient;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * 상품 관리 관련 API를 처리하는 컨트롤러
