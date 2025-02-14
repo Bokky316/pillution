@@ -2,6 +2,7 @@ package com.javalab.student.controller.cartOrder;
 
 import com.javalab.student.dto.cartOrder.*;
 import com.javalab.student.service.cartOrder.CartService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -27,6 +29,46 @@ public class CartController {
 
     private final CartService cartService;
     private static final int MAX_QUANTITY = 10; // 최대 주문 가능 수량
+
+    /**
+     * 장바구니에 여러 상품 추가
+     * @param cartItemDtos 장바구니 아이템 정보 목록
+     * @param principal 사용자 정보
+     * @param bindingResult 유효성 검사 결과
+     * @return 추가된 장바구니 아이템 ID 목록
+     */
+    @PostMapping("/add-multiple")
+    public ResponseEntity<?> addMultipleToCart(@RequestBody @Valid List<CartItemDto> cartItemDtos, Principal principal, BindingResult bindingResult) {
+        log.info("장바구니 상품 추가 요청 - 상품 정보: {}", cartItemDtos);
+
+        if (bindingResult.hasErrors()) {
+            List<FieldError> fieldErrors = bindingResult.getFieldErrors();
+            for (FieldError error : fieldErrors) {
+                log.error("유효성 검사 실패 - 필드: {}, 메시지: {}", error.getField(), error.getDefaultMessage());
+            }
+            return ResponseEntity.badRequest().body("유효성 검사 실패: " + bindingResult.getAllErrors().get(0).getDefaultMessage());
+        }
+
+        try {
+            List<Long> cartItemIds = new ArrayList<>();
+            for (CartItemDto cartItemDto : cartItemDtos) {
+                log.debug("처리 중인 상품 ID: {}, 수량: {}", cartItemDto.getProductId(), cartItemDto.getQuantity());
+                if (!cartService.checkStock(cartItemDto.getProductId(), cartItemDto.getQuantity())) {
+                    return ResponseEntity.badRequest().body("재고가 부족합니다. 상품 ID: " + cartItemDto.getProductId());
+                }
+                Long cartItemId = cartService.addCart(cartItemDto, principal.getName());
+                cartItemIds.add(cartItemId);
+                log.info("장바구니 상품 추가 완료 - 카트 아이템 ID: {}", cartItemId);
+            }
+            return ResponseEntity.ok(cartItemIds);
+        } catch (EntityNotFoundException e) {
+            log.error("상품을 찾을 수 없음", e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("상품을 찾을 수 없습니다: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("장바구니 상품 추가 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("장바구니 상품 추가에 실패했습니다: " + e.getMessage());
+        }
+    }
 
     /**
      * 장바구니에 상품 추가
