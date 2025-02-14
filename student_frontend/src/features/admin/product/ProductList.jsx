@@ -41,28 +41,27 @@ const ProductList = () => {
 
 
     const fetchCategories = () => {
-      fetch(`${API_URL}categories`, {
-          method: 'GET',
-          headers: {
-              'Content-Type': 'application/json',
-              'Authorization': token ? `Bearer ${token}` : ''
-          },
-          credentials: 'include'
-      })
-          .then(response => {
-              if (!response.ok) {
-                  throw new Error('카테고리 조회 실패');
-              }
-              return response.json();
-          })
-          .then(data => {
-              setCategories(Array.isArray(data) ? data : []);
-          })
-          .catch(err => {
-              console.error("카테고리 조회 실패:", err);
-              setCategories([]);
-          });
-
+        fetch(`${API_URL}categories`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token ? `Bearer ${token}` : ''
+            },
+            credentials: 'include'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('카테고리 조회 실패');
+            }
+            return response.json();
+        })
+        .then(data => {
+            setCategories(Array.isArray(data) ? data : []);
+        })
+        .catch(err => {
+            console.error("카테고리 조회 실패:", err);
+            setCategories([]);
+        });
     }
     const fetchProductsData = () => {
         setLoading(true);

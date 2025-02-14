@@ -249,33 +249,32 @@ const EditProduct = () => {
         selectedCategoryIds.forEach(categoryId => formData.append('categoryIds', categoryId));
 
         // ✅ 대표 이미지를 'mainImageFile' 키로 FormData에 추가 (mainImageFile state 사용)
-                if (mainImageFile) { // ✅ mainImageFile 이 있는 경우만 추가
-                    formData.append('mainImageFile', mainImageFile);
-                }
+            if (mainImageFile) { // ✅ mainImageFile 이 있는 경우만 추가
+                formData.append('mainImageFile', mainImageFile);
+            }
 
-                // ✅ 상세 이미지들을 'detailImageFiles' 키로 FormData에 추가 (detailImageFiles state 사용)
-                detailImageFiles.forEach(file => {
-                    if (file) { // ✅ file 이 있는 경우만 추가
-                        formData.append('detailImageFiles', file);
-                    }
+            // ✅ 상세 이미지들을 'detailImageFiles' 키로 FormData에 추가 (detailImageFiles state 사용)
+            detailImageFiles.forEach(file => {
+                if (file) { // ✅ file 이 있는 경우만 추가
+                    formData.append('detailImageFiles', file);
+                }
+            });
+
+            try {
+                const updateProductResponse = await axios.put(`${API_URL}products/${productId}`, formData, {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                        'Authorization': `Bearer ${token}`
+                    },
+                    credentials: 'include'
                 });
 
-
-                try {
-                    const updateProductResponse = await axios.put(`${API_URL}products/${productId}`, formData, {
-                        headers: {
-                            "Content-Type": "multipart/form-data",
-                            'Authorization': `Bearer ${token}`
-                        },
-                        credentials: 'include'
-                    });
-
-                    if (updateProductResponse.status === 200) {
-                        alert("상품이 성공적으로 업데이트되었습니다.");
-                        navigate('/adminpage/products');
-                    } else {
-                        throw new Error(`상품 업데이트 실패: ${updateProductResponse.status}`);
-                    }
+                if (updateProductResponse.status === 200) {
+                    alert("상품이 성공적으로 업데이트되었습니다.");
+                    navigate('/adminpage/products');
+                } else {
+                    throw new Error(`상품 업데이트 실패: ${updateProductResponse.status}`);
+                }
 
                 } catch (error) {
                     console.error("Error updating product:", error);

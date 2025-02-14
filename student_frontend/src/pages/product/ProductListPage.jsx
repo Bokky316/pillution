@@ -201,7 +201,7 @@ export default function ProductListPage() {
               <CardMedia
                 component="img"
                 height="200"
-                image={product.image || "/placeholder.jpg"}
+                image={`http://localhost:8080${product.mainImageUrl}`} // ✅ 절대 URL 사용 (상대경로로 해야하는데,,)
                 alt={product.name}
                 sx={{ objectFit: "cover" }}
               />
