@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button, TextField, Box, Typography, Paper } from "@mui/material";
 import { API_URL } from "@/utils/constants";
@@ -7,8 +7,16 @@ import Payment from "@/features/payment/Payment";
 import { useDispatch, useSelector } from "react-redux";
 import { createOrder } from "@/store/orderSlice";
 
-const OrderDetail = React.memo(() => {
-  // Redux hooks 및 라우터 hooks 설정
+/**
+ * 주문 상세 페이지 컴포넌트
+ *
+ * 사용자가 선택한 상품의 주문 정보를 표시하고, 배송 정보를 입력받아 주문을 생성합니다.
+ * 주문 생성 후 결제 컴포넌트를 렌더링합니다.
+ *
+ * @component
+ * @returns {JSX.Element}
+ */
+const OrderDetail = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -16,14 +24,12 @@ const OrderDetail = React.memo(() => {
   const { currentOrder } = useSelector((state) => state.order);
   const { merchantId } = useSelector((state) => state.payment);
 
-  // location state에서 필요한 데이터 추출
   const { selectedItems, purchaseType, totalAmount } = location.state || {
     selectedItems: [],
     purchaseType: 'oneTime',
     totalAmount: 0
   };
 
-  // 주문 정보 상태 관리
   const [orderId, setOrderId] = useState(null);
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -33,33 +39,37 @@ const OrderDetail = React.memo(() => {
   const [address1, setAddress1] = useState("");
   const [address2, setAddress2] = useState("");
 
-  // IMP 스크립트 로드 및 초기화
-  const [isImpReady, setIsImpReady] = useState(false);
-
+  /**
+   * 컴포넌트 마운트 시 가맹점 ID를 가져옵니다.
+   */
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.iamport.kr/js/iamport.payment-1.2.0.js';
-    script.async = true;
-    script.onload = () => {
-      if (window.IMP) {
-        window.IMP.init(merchantId);
-        setIsImpReady(true);
-        console.log("OrderDetail: IMP 초기화 완료");
-      }
-    };
-    document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, [merchantId]);
+    const id = fetchMerchantId();
+  }, []);
 
-  // 총 주문 금액 계산
-  const calculateTotalPrice = useMemo(() => {
+  /**
+   * 가맹점 UID를 환경 변수에서 가져옵니다.
+   *
+   * @returns {string} 가맹점 UID
+   */
+  const fetchMerchantId = () => {
+    const merchantId = import.meta.env.VITE_PORTONE_MERCHANT_ID;
+    console.log("가맹점 UID:", merchantId);
+    return merchantId;
+  };
+
+  /**
+   * 선택된 상품들의 총 가격을 계산합니다.
+   *
+   * @returns {number} 총 주문 금액
+   */
+  const calculateTotalPrice = () => {
     return selectedItems.reduce((total, item) => total + item.price * item.quantity, 0);
-  }, [selectedItems]);
+  };
 
-  // 주문 생성 핸들러
-  const handleCreateOrder = useCallback(async () => {
+  /**
+   * 주문을 생성하고 백엔드에 전송합니다.
+   */
+  const handleCreateOrder = async () => {
     const orderData = {
       cartOrderItems: selectedItems.map(item => ({
         cartItemId: item.cartItemId,
@@ -81,16 +91,14 @@ const OrderDetail = React.memo(() => {
       console.error("주문 생성 실패:", error);
       alert("주문 생성에 실패했습니다.");
     }
-  }, [selectedItems, name, email, phone, address1, address2, zipCode, purchaseType, dispatch]);
+  };
 
-  // 컴포넌트 렌더링
   return (
     <Box sx={{ maxWidth: 800, margin: "auto", padding: 3 }}>
       <Typography variant="h4" gutterBottom>
         주문서
       </Typography>
       <Paper sx={{ padding: 3 }}>
-        {/* 선택된 상품 목록 렌더링 */}
         {selectedItems.map((item, index) => (
           <Box key={index} display="flex" alignItems="center" mb={2}>
             <img
@@ -107,40 +115,39 @@ const OrderDetail = React.memo(() => {
         ))}
 
         <Typography variant="h6" mt={3}>
-          총 주문 금액: {calculateTotalPrice}원
+          총 주문 금액: {calculateTotalPrice()}원
         </Typography>
 
-        {/* 배송 정보 입력 폼 */}
         <Typography variant="h6" mt={3} gutterBottom>
           배송 정보
         </Typography>
         <TextField
-          label="이름"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          fullWidth
-          margin="normal"
+            label="이름"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            fullWidth
+            margin="normal"
         />
         <TextField
-          label="이메일"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          fullWidth
-          margin="normal"
+            label="이메일"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            fullWidth
+            margin="normal"
         />
         <TextField
-          label="전화번호"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          fullWidth
-          margin="normal"
+            label="전화번호"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            fullWidth
+            margin="normal"
         />
         <TextField
-          label="주소"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          fullWidth
-          margin="normal"
+            label="주소"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            fullWidth
+            margin="normal"
         />
 
         <Typography variant="h6" mt={3} gutterBottom>
@@ -174,7 +181,6 @@ const OrderDetail = React.memo(() => {
           </Button>
         </Box>
       </Paper>
-      {/* 주문 생성 후 Payment 컴포넌트 렌더링 */}
       {orderId && (
         <Payment
           orderId={orderId}
@@ -185,11 +191,10 @@ const OrderDetail = React.memo(() => {
           address1={address1}
           address2={address2}
           purchaseType={purchaseType}
-          isImpReady={isImpReady}
         />
       )}
     </Box>
   );
-});
+};
 
 export default OrderDetail;

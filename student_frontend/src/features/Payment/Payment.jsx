@@ -1,36 +1,49 @@
-import React, { useEffect, useCallback, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Radio, RadioGroup, FormControlLabel, FormControl, Paper, Typography, Box } from "@mui/material";
 import { API_URL } from "@/utils/constants";
 import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
 import { useNavigate, useLocation } from "react-router-dom";
 import "@/styles/Payment.css";
 
-const Payment = React.memo(({ orderId, merchantId, items, totalPrice, zipCode, address1, address2, purchaseType, isImpReady }) => {
+const Payment = ({ orderId, merchantId, items, totalPrice, zipCode, address1, address2, purchaseType }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { selectedItems, totalAmount, user: userData } = location.state || { selectedItems: [], totalAmount: 0, user: {} };
 
-  // 결제 정보 상태 관리
-  const [name, setName] = React.useState(userData?.name || '');
-  const [email, setEmail] = React.useState(userData?.email || '');
-  const [phone, setPhone] = React.useState(userData?.phone || '');
-  const [address, setAddress] = React.useState(userData?.address || '');
-  const [paymentMethod, setPaymentMethod] = React.useState("kakaopay");
+  const [name, setName] = useState(userData?.name || '');
+  const [email, setEmail] = useState(userData?.email || '');
+  const [phone, setPhone] = useState(userData?.phone || '');
+  const [address, setAddress] = useState(userData?.address || '');
+  const [paymentMethod, setPaymentMethod] = useState("kakaopay");
+  const [isImpReady, setIsImpReady] = useState(false);
 
-  // 결제 수단 변경 핸들러
-  const handlePaymentMethodChange = useCallback((event) => {
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://cdn.iamport.kr/js/iamport.payment-1.2.0.js";
+    script.async = true;
+    script.onload = () => {
+      if (window.IMP) {
+        window.IMP.init(merchantId);
+        setIsImpReady(true);
+      }
+    };
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, [merchantId]);
+
+  const handlePaymentMethodChange = (event) => {
     setPaymentMethod(event.target.value);
-  }, []);
+  };
 
-  // 결제 처리 핸들러
-  const handlePayment = useCallback(async () => {
+  const handlePayment = async () => {
     if (!isImpReady) {
-      alert('결제 모듈을 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+      alert("결제 모듈이 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.");
       return;
     }
 
     const IMP = window.IMP;
-    IMP.init(merchantId);  // 결제 직전에 다시 한 번 초기화
 
     let pg = "";
     if (paymentMethod === "kakaopay") {
@@ -43,8 +56,8 @@ const Payment = React.memo(({ orderId, merchantId, items, totalPrice, zipCode, a
       pg: pg,
       pay_method: "card",
       merchant_uid: orderId,
-      name: items[0].name,
-      amount: totalPrice,
+      name: selectedItems[0].name,
+      amount: totalAmount,
       buyer_email: email,
       buyer_name: name,
       buyer_tel: phone,
@@ -66,10 +79,9 @@ const Payment = React.memo(({ orderId, merchantId, items, totalPrice, zipCode, a
         alert(`결제 실패: ${rsp.error_msg}`);
       }
     });
-  }, [isImpReady, merchantId, paymentMethod, orderId, items, totalPrice, email, name, phone, address1, address2, zipCode, navigate]);
+  };
 
-  // 결제 처리 함수
-  const processPayment = useCallback(async (rsp) => {
+  const processPayment = async (rsp) => {
     const paymentRequest = {
       impUid: rsp.imp_uid,
       merchantUid: orderId,
@@ -92,9 +104,8 @@ const Payment = React.memo(({ orderId, merchantId, items, totalPrice, zipCode, a
       },
       body: JSON.stringify(paymentRequest),
     });
-  }, [orderId, purchaseType]);
+  };
 
-  // 컴포넌트 렌더링
   return (
     <Paper elevation={3} className="payment-container">
       <Typography variant="h6" gutterBottom className="payment-title">
@@ -136,6 +147,6 @@ const Payment = React.memo(({ orderId, merchantId, items, totalPrice, zipCode, a
       </Box>
     </Paper>
   );
-});
+};
 
 export default Payment;
