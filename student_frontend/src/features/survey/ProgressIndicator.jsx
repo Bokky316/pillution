@@ -7,6 +7,7 @@ import { Box, IconButton, Typography } from '@mui/material';
 import { ChevronLeft, Close } from '@mui/icons-material';
 import styled from '@emotion/styled';
 
+
 const HeaderContainer = styled(Box)`
   display: flex;
   justify-content: space-between;

@@ -1,17 +1,21 @@
 import React, { useState, useEffect, useRef } from "react";
-import { DataGrid } from "@mui/x-data-grid";
-import { Typography, Box, Chip } from "@mui/material";
+import { Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
-import { API_URL, SERVER_URL } from "@/constant";
+import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
+import { API_URL, SERVER_URL } from "@/utils/constants";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 
+/**
+ * 상담 요청 목록을 표시하는 컴포넌트
+ * @component
+ */
 const ConsultationRequestList = () => {
+    // 기존 상태 관리 코드 유지
     const [chatRooms, setChatRooms] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
-    const stompClientRef = useRef(null); // WebSocket 클라이언트를 관리하기 위한 ref
+    const stompClientRef = useRef(null);
 
     // 채팅방 목록 가져오기
     const fetchChatRooms = async () => {
@@ -182,27 +186,117 @@ const ConsultationRequestList = () => {
         { field: "createdAt", headerName: "생성 날짜", flex: 2 },
     ];
 
-    return (
-        <Box sx={{ padding: 4 }}>
-            <Typography variant="h4" gutterBottom>
-                상담 요청 목록
-            </Typography>
-            <DataGrid
-                rows={chatRooms}
-                columns={columns}
-                pageSizeOptions={[5]}
-                autoHeight
-                loading={loading}
-                getRowId={(row) => row.id}
-                onRowClick={handleRowClick}
-                sx={{
-                    "& .MuiDataGrid-row": {
-                        cursor: "pointer",
-                    },
-                }}
-            />
-        </Box>
-    );
-};
+    useEffect(() => {
+            fetchChatRooms();
+        }, []);
 
-export default ConsultationRequestList;
+        useEffect(() => {
+            if (chatRooms.length > 0) {
+                connectWebSocket();
+            }
+
+            return () => {
+                if (stompClientRef.current && stompClientRef.current.connected) {
+                    stompClientRef.current.deactivate();
+                    stompClientRef.current = null;
+                    console.log("WebSocket 연결 해제");
+                }
+            };
+        }, [chatRooms]);
+
+        /**
+         * 상태에 따른 배경색 반환
+         * @param {string} status - 상담 상태
+         * @returns {string} - 배경색 CSS 값
+         */
+        const getStatusBackgroundColor = (status) => {
+            switch (status) {
+                case "대기중":
+                    return "#e3f2fd";  // 연한 파란색
+                case "진행중":
+                    return "#f5f5f5";  // 연한 회색
+                case "종료":
+                    return "#ffebee";  // 연한 빨간색
+                default:
+                    return "white";
+            }
+        };
+
+        return (
+            <Box sx={{ padding: 3 }}>
+                {/* 상단 필터 영역 */}
+                <Box sx={{
+                    mb: 3,
+                    p: 2,
+                    backgroundColor: '#f5f5f5',
+                    borderRadius: 1,
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 2
+                }}>
+                    <Typography variant="subtitle1" sx={{ mr: 2 }}>
+                        상담시간: 2022.12.11 ~ 2023.06.09
+                    </Typography>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        sx={{ ml: 'auto' }}
+                    >
+                        검색
+                    </Button>
+                </Box>
+
+                {/* 테이블 컨테이너 */}
+                <TableContainer component={Paper} sx={{ boxShadow: 1 }}>
+                    <Table>
+                        <TableHead>
+                            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                                <TableCell>채팅 ID</TableCell>
+                                <TableCell>일임시간</TableCell>
+                                <TableCell>담당자</TableCell>
+                                <TableCell>유저명</TableCell>
+                                <TableCell>상태</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {chatRooms.map((room) => (
+                                <TableRow
+                                    key={room.id}
+                                    onClick={() => handleRowClick({ id: room.id, row: room })}
+                                    sx={{
+                                        cursor: 'pointer',
+                                        backgroundColor: getStatusBackgroundColor(room.statusDisplay),
+                                        '&:hover': {
+                                            backgroundColor: '#fafafa',
+                                        }
+                                    }}
+                                >
+                                    <TableCell>{room.id}</TableCell>
+                                    <TableCell>{room.createdAt}</TableCell>
+                                    <TableCell>{room.manager || '-'}</TableCell>
+                                    <TableCell>{room.userName || '-'}</TableCell>
+                                    <TableCell>{room.statusDisplay}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+
+                {/* 페이지네이션 영역 */}
+                <Box sx={{
+                    mt: 2,
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    alignItems: 'center',
+                    gap: 2
+                }}>
+                    <Typography variant="body2">
+                        10/page
+                    </Typography>
+                </Box>
+            </Box>
+        );
+    };
+
+    export default ConsultationRequestList;
