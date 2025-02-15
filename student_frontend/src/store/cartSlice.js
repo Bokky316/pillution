@@ -119,13 +119,15 @@ export const removeCartItem = createAsyncThunk(
 /**
  * 장바구니 상품을 주문하는 비동기 액션
  * @param {Object} cartOrderRequestDto - 주문할 장바구니 아이템 정보
+ * @param {string} purchaseType - 구매 유형 (일회성 또는 구독)
  * @returns {Promise<number>} 생성된 주문 ID
  */
 export const orderCartItems = createAsyncThunk(
   'cart/orderCartItems',
-  async (cartOrderRequestDto, { rejectWithValue }) => {
+  async ({cartOrderRequestDto, purchaseType}, { rejectWithValue }) => {
     try {
-      const response = await fetchWithAuth(`${API_URL}cart/orders`, {
+      // purchaseType을 쿼리 파라미터로 전달
+      const response = await fetchWithAuth(`${API_URL}cart/orders?purchaseType=${purchaseType}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -133,9 +135,10 @@ export const orderCartItems = createAsyncThunk(
         body: JSON.stringify(cartOrderRequestDto),
       });
       if (!response.ok) {
-         const errorText = await response.text();
-         throw new Error(`Failed to order cart items: ${response.status} - ${errorText}`);
+        const errorText = await response.text();
+        throw new Error(`Failed to order cart items: ${response.status} - ${errorText}`);
       }
+      // 주문 ID 반환
       return await response.json();
     } catch (error) {
       return rejectWithValue(error.message);
@@ -207,8 +210,13 @@ const cartSlice = createSlice({
         state.items = state.items.filter(item => item.cartItemId !== action.payload);
       })
       // 장바구니 아이템 주문 - 성공
-      .addCase(orderCartItems.fulfilled, (state) => {
-        state.items = []; // 주문 완료 후 장바구니 비우기
+       .addCase(orderCartItems.fulfilled, (state, action) => {
+        state.items = state.items.filter(item => !item.selected); // 선택된 아이템 제거
+        return action.payload; // 주문 ID 반환
+      })
+      // 장바구니 아이템 주문 - 실패
+      .addCase(orderCartItems.rejected, (state, action) => {
+          state.error = action.payload;
       });
   },
 });

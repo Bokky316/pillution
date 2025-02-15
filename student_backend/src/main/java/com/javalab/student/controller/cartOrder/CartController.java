@@ -186,13 +186,15 @@ public class CartController {
      */
     @PostMapping("/orders")
     public ResponseEntity<?> orderCartItem(@RequestBody CartOrderRequestDto cartOrderRequestDto,
-                                           @RequestParam String purchaseType,
+                                           @RequestParam("purchaseType") String purchaseType,
                                            Principal principal) {
         log.info("장바구니 상품 주문 요청 - 주문 정보: {}, 구매 유형: {}", cartOrderRequestDto, purchaseType);
+
         List<CartOrderRequestDto.CartOrderItem> cartOrderItems = cartOrderRequestDto.getCartOrderItems();
         if (cartOrderItems == null || cartOrderItems.isEmpty()) {
             return ResponseEntity.badRequest().body("주문할 상품이 없습니다.");
         }
+
         try {
             for (CartOrderRequestDto.CartOrderItem cartOrderItem : cartOrderItems) {
                 if (!cartService.validateCartItem(cartOrderItem.getCartItemId(), principal.getName())) {
@@ -203,9 +205,11 @@ public class CartController {
                     return ResponseEntity.badRequest().body("재고가 부족한 상품이 포함되어 있습니다.");
                 }
             }
+
             Long orderId = cartService.orderCartItem(cartOrderRequestDto, principal.getName(), purchaseType);
             log.info("장바구니 상품 주문 완료 - 주문 ID: {}", orderId);
             return ResponseEntity.ok(orderId);
+
         } catch (Exception e) {
             log.error("장바구니 상품 주문 실패", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("장바구니 상품 주문에 실패했습니다: " + e.getMessage());

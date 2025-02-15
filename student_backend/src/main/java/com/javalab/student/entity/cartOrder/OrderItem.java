@@ -4,6 +4,7 @@ import com.javalab.student.dto.cartOrder.OrderItemDto;
 import com.javalab.student.entity.BaseEntity;
 import com.javalab.student.entity.Product;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -37,6 +38,8 @@ public class OrderItem extends BaseEntity {
     private Order order;
 
     /** 주문 가격 */
+    @NotNull
+    @Column(name = "order_price", nullable = false)
     private BigDecimal orderPrice;
 
     /** 주문 수량 */

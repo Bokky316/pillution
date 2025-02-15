@@ -7,7 +7,8 @@ const TotalPaymentSummary = ({ cartItems, purchaseType }) => {
     let shippingFee = 0;
     let discount = 0;
 
-    cartItems.forEach(item => {
+    // 선택된 상품만 계산에 포함
+    cartItems.filter(item => item.selected).forEach(item => {
       totalPrice += item.price * item.quantity;
     });
 
