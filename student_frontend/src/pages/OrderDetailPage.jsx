@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Button, TextField, Box, Typography, Paper } from "@mui/material";
 import { API_URL } from "@/utils/constants";
 import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
-import Payment from "@/features/payment/Payment";
+import PaymentPage from '@/pages/PaymentPage';
 import { useDispatch, useSelector } from "react-redux";
 import { createOrder } from "@/store/orderSlice";
 
@@ -98,18 +98,19 @@ const OrderDetail = () => {
       //navigate("/payResult", { state: { paymentInfo: response } });
 
       // 결제 컴포넌트로 데이터 전달
-      navigate("/payment", {
+      navigate('/payment', {
         state: {
-          orderId: response.id, // 백엔드에서 생성된 주문 ID
+          orderId: response.id,
           merchantId: merchantId,
           items: selectedItems,
           totalPrice: totalAmount,
           zipCode: zipCode,
           address1: address1,
           address2: address2,
-          purchaseType: purchaseType // 구매 유형 추가
+          purchaseType: purchaseType
         }
       });
+
 
     } catch (error) {
       console.error("주문 생성 실패:", error);
@@ -204,7 +205,7 @@ const OrderDetail = () => {
         {/* 결제 버튼 */}
         <Box mt={3} textAlign="center">
           <Button variant="contained" color="primary" size="large" onClick={handleCreateOrder}>
-            주문 생성
+            결제하기
           </Button>
         </Box>
       </Paper>

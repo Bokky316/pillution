@@ -162,7 +162,7 @@ const handleCheckout = async () => {
 
             const {finalPrice} = calculateTotal(selectedCartItems, selectedPurchaseType);
 
-            // navigate 전에 orderData 정의
+            // orderData 정의
             const orderData = {
                 cartOrderItems: selectedCartItems.map(item => ({
                     cartItemId: item.cartItemId,

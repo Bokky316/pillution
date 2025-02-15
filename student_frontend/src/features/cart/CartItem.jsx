@@ -6,11 +6,11 @@ const CartItem = ({ item, onSelect, onQuantityChange, onRemove }) => {
         <Box display="flex" alignItems="center" mb={2}>
             <input
                 type="checkbox"
-                checked={item.selected}
+                checked={item.selected || false}
                 onChange={() => onSelect(item.cartItemId)}
             />
             <img
-                src={item.imageUrl} // 백엔드에서 제공하는 이미지 URL 사용
+                src={item.imageUrl}
                 alt={item.name}
                 style={{ width: 100, height: 100, marginRight: 20 }}
             />

@@ -5,20 +5,14 @@ import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
 import { useNavigate, useLocation } from "react-router-dom";
 
 /**
- * 결제 컴포넌트
- * - OrderDetail 컴포넌트에서 주문하기 버튼 클릭시 호출되는 컴포넌트입니다.
+ * 결제 페이지 컴포넌트
+ * - OrderDetailPage에서 주문하기 버튼 클릭시 이동하는 페이지 컴포넌트입니다.
  * - 상점id, 상품정보, 수량, 우편번호, 주소1, 주소2를 전달받아 결제를 진행합니다.
  * - 포트원 결제 API를 사용하여 결제를 진행하고, 결제 완료시 백엔드에 결제 데이터를 전송합니다.
  * - 결제 성공후 결제 결과 페이지로 이동합니다.
- * @param merchantId
- * @param item
- * @param quantity
- * @param zipCode
- * @param address1
- * @param address2
  * @returns {JSX.Element}
- * @constructor
  */
+
 const Payment = () => {
   const navigate = useNavigate();
   const location = useLocation();
