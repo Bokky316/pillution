@@ -14,7 +14,6 @@ import { createOrder } from "@/store/orderSlice";
 import { fetchMerchantId, processPayment } from "@/store/paymentSlice";
 import "@/styles/CartPage.css";
 import { useNavigate } from 'react-router-dom';
-import { useFlutterwave, closePaymentModal } from 'flutterwave-react-v3';
 import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
 import { API_URL } from "@/utils/constants";
 
@@ -139,12 +138,16 @@ const CartPage = () => {
         return { totalPrice, shippingFee, discount, finalPrice };
     };
 
-    /**
-     * 결제 처리 함수
-     * 선택된 아이템에 대해 주문을 생성하고 결제를 진행합니다.
-     */
-    const handleCheckout = async () => {
-        if (selectedPurchaseType) {
+/**
+ * 장바구니에서 선택한 상품으로 주문 페이지로 이동하는 함수
+ * @async
+ */
+const handleCheckout = async () => {
+    if (selectedPurchaseType) {
+        try {
+            console.log("CartPage - handleCheckout 시작");
+            await dispatch(fetchCartItems());
+
             const selectedCartItems = cartItems.filter((item) => item.selected);
 
             if (selectedCartItems.length === 0) {
@@ -157,95 +160,71 @@ const CartPage = () => {
                 return;
             }
 
-            const cartOrderRequestDto = {
-                cartOrderItems: selectedCartItems.map((item) => ({
+            const {finalPrice} = calculateTotal(selectedCartItems, selectedPurchaseType);
+
+            // navigate 전에 orderData 정의
+            const orderData = {
+                cartOrderItems: selectedCartItems.map(item => ({
                     cartItemId: item.cartItemId,
                     quantity: item.quantity,
+                    price: item.price
                 })),
                 buyerName: user.name,
                 buyerEmail: user.email,
                 buyerTel: user.phone,
-                buyerAddr: user.address,
+                buyerAddr: user.address, // 주소를 buyerAddr로 설정
+                // 우편번호를 추가해야 함
             };
 
-            try {
-                // fetchWithAuth를 사용하여 백엔드 API 호출
-                const response = await fetchWithAuth(
-                    `${API_URL}orders?purchaseType=${selectedPurchaseType}`,
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(cartOrderRequestDto),
+            console.log("CartPage - createOrder 액션 디스패치:", { orderData, purchaseType: selectedPurchaseType });
+            await dispatch(createOrder({ orderData: orderData, purchaseType: selectedPurchaseType })).unwrap();
+            console.log("CartPage - createOrder 액션 디스패치 완료");
+
+            navigate('/order-detail', {
+                state: {
+                    selectedItems: selectedCartItems.map(item => ({
+                        cartItemId: item.cartItemId,
+                        productId: item.productId,
+                        name: item.name,
+                        price: item.price,
+                        quantity: item.quantity,
+                        imageUrl: item.imageUrl // 백엔드에서 제공하는 이미지 URL 사용
+                    })),
+                    purchaseType: selectedPurchaseType,
+                    totalAmount: finalPrice,
+                    user: {
+                        name: user.name,
+                        email: user.email,
+                        phone: user.phone,
+                        address: user.address
                     }
-                );
-
-                if (!response.ok) {
-                    console.error("주문 생성 실패:", response.status, response.statusText);
-                    throw new Error(`주문 생성 실패: ${response.status} - ${response.statusText}`);
                 }
+            });
 
-                const order = await response.json();
-
-                // 결제 데이터 준비
-                const paymentData = {
-                    amount: selectedCartItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
-                    customer_email: user.email,
-                    currency: 'KRW',
-                    tx_ref: order.id,
-                };
-
-                // Flutterwave 결제 처리
-                handleFlutterPayment({
-                    callback: (response) => {
-                        console.log(response);
-                        closePaymentModal();
-                        navigate(`/order/${order.id}`);
-                    },
-                    onClose: () => {
-                        console.log("결제창이 닫혔습니다.");
-                    },
-                });
-
-            } catch (error) {
-                console.error("Failed to order cart items:", error);
-                alert("주문 실패: " + error);
-            }
-        } else {
-            alert("구매 유형을 선택해주세요.");
+        } catch (error) {
+            console.error("CartPage - 주문 준비 중 오류:", error);
+            alert("주문 준비 중 오류가 발생했습니다: " + error);
         }
-    };
+    } else {
+        alert("구매 유형을 선택해주세요.");
+    }
+};
 
-    // Flutterwave 결제 설정
-    const config = {
-        public_key: 'FLWPUBK_TESTXXXXXXXXXXXXXXXXXXXXXXXXX',
-        tx_ref: Date.now(),
-        amount: cartItems.reduce((sum, item) => sum + (item.selected ? item.price * item.quantity : 0), 0),
-        currency: 'KRW',
-        payment_options: 'card,mobilemoney,ussd',
-        customer: {
-            email: user?.email || 'user@gmail.com',
-            phone_number: user?.phone || '08102909304',
-            name: user?.name || 'john doe',
-        },
-        customizations: {
-            title: 'My Store',
-            description: 'Payment for items in cart',
-            logo: 'https://flutterwave.com/images/logo-colored.svg',
-        },
-    };
-
-    const handleFlutterPayment = useFlutterwave(config);
-
-    if (status === "loading") return <div>Loading...</div>;
-    if (status === "failed") return <div>Error: {error}</div>;
-
+    /**
+     * 렌더링 함수
+     * @returns {JSX.Element}
+     */
     return (
+        <>
+        {/* 장바구니 페이지 전체 컨테이너 */}
         <div className="cart-page">
+            {/* 페이지 제목 */}
             <h2>CART</h2>
+            {/* 장바구니 내용 컨테이너 */}
             <main className="cart-container">
+                {/* 장바구니 아이템 목록 섹션 */}
                 <section className="cart-items">
+                    {/* 전체 선택 체크박스 컨테이너 */}
                     <div className="select-all-container">
                         <input
                             type="checkbox"
@@ -255,9 +234,11 @@ const CartPage = () => {
                         />
                         <label htmlFor="select-all" className="checkbox-label">전체 선택</label>
                     </div>
+                    {/* 장바구니 아이템이 없는 경우 메시지 표시 */}
                     {cartItems.length === 0 ? (
                         <div className="empty-cart-message">장바구니가 비어 있습니다.</div>
                     ) : (
+                        // 장바구니 아이템 목록 표시
                         cartItems.map((item) => (
                             <CartItem
                                 key={item.cartItemId}
@@ -269,17 +250,21 @@ const CartPage = () => {
                         ))
                     )}
                 </section>
+                {/* 총 결제 금액 요약 정보 표시 */}
                 <TotalPaymentSummary
                     cartItems={cartItems}
                     purchaseType={selectedPurchaseType}
                 />
+                {/* 구매 유형 선택 섹션 */}
                 <div className="purchase-type-selection">
+                    {/* 정기 구독 구매 유형 선택 */}
                     <CartSummary
                         cartItems={cartItems}
                         purchaseType="subscription"
                         isSelected={selectedPurchaseType === "subscription"}
                         onSelect={() => handlePurchaseTypeSelect("subscription")}
                     />
+                    {/* 일회성 구매 유형 선택 */}
                     <CartSummary
                         cartItems={cartItems}
                         purchaseType="oneTime"
@@ -287,6 +272,7 @@ const CartPage = () => {
                         onSelect={() => handlePurchaseTypeSelect("oneTime")}
                     />
                 </div>
+                {/* 정기 구독 혜택 정보 표시 */}
                 <div className="subscription-benefits">
                     <h4>정기 구독 혜택</h4>
                     <ul>
@@ -294,6 +280,7 @@ const CartPage = () => {
                         <li>1만원 이상 구매 시 무료 배송</li>
                     </ul>
                 </div>
+                {/* 결제하기 버튼 */}
                 <button
                     className="checkout-btn"
                     onClick={handleCheckout}
@@ -303,6 +290,7 @@ const CartPage = () => {
                 </button>
             </main>
         </div>
+        </>
     );
 };
 

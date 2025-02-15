@@ -15,7 +15,9 @@ export const fetchCartItems = createAsyncThunk(
         const errorText = await response.text();
         throw new Error(`Failed to fetch cart items: ${response.status} - ${errorText}`);
       }
-      return await response.json();
+      const data = await response.json();
+      console.log('fetchCartItems.fulfilled payload:', data); // 추가된 로깅
+      return data;
     } catch (error) {
       console.error('Error fetching cart items:', error);
       return rejectWithValue(error.message);
@@ -43,8 +45,11 @@ export const addToCart = createAsyncThunk(
         const errorText = await response.text();
         throw new Error(`Failed to add item to cart: ${response.status} - ${errorText}`);
       }
-      return await response.json();
+      const data = await response.json();
+       console.log('addToCart.fulfilled payload:', data); // 추가된 로깅
+      return data;
     } catch (error) {
+      console.error('Error adding item to cart:', error);
       return rejectWithValue(error.message);
     }
   }
@@ -76,9 +81,9 @@ export const updateCartItem = createAsyncThunk(
         throw new Error(`Failed to update cart item: ${response.status} - ${errorText}`);
       }
 
-      const updatedItem = await response.json();
-      console.log('Updated cart item:', updatedItem);
-      return updatedItem;
+      const data = await response.json();
+      console.log('updateCartItem.fulfilled payload:', data); // 추가된 로깅
+      return data;
     } catch (error) {
       console.error('Error updating cart item:', error);
       return rejectWithValue(error.message);
@@ -106,9 +111,9 @@ export const removeCartItem = createAsyncThunk(
         throw new Error(`Failed to remove cart item: ${response.status} - ${errorText}`);
       }
 
-      const removedItemId = await response.json();
-      console.log('Removed cart item ID:', removedItemId);
-      return removedItemId;
+      const data = await response.json();
+      console.log('removeCartItem.fulfilled payload:', data); // 추가된 로깅
+      return data;
     } catch (error) {
       console.error('Error removing cart item:', error);
       return rejectWithValue(error.message);
@@ -138,9 +143,12 @@ export const orderCartItems = createAsyncThunk(
         const errorText = await response.text();
         throw new Error(`Failed to order cart items: ${response.status} - ${errorText}`);
       }
+      const data = await response.json();
+      console.log('orderCartItems.fulfilled payload:', data); // 추가된 로깅
       // 주문 ID 반환
-      return await response.json();
+      return data;
     } catch (error) {
+      console.error('Error ordering cart items:', error);
       return rejectWithValue(error.message);
     }
   }
@@ -193,7 +201,7 @@ const cartSlice = createSlice({
       })
       // 장바구니 아이템 수량 업데이트 - 성공
       .addCase(updateCartItem.fulfilled, (state, action) => {
-        console.log('Update action payload:', action.payload);
+        console.log('updateCartItem.fulfilled payload:', action.payload);
         const updatedItem = action.payload;
         const index = state.items.findIndex(item => item.cartItemId === updatedItem.cartItemId);
         if (index !== -1) {
@@ -206,16 +214,19 @@ const cartSlice = createSlice({
 
       // 장바구니에서 아이템 제거 - 성공
       .addCase(removeCartItem.fulfilled, (state, action) => {
+        console.log('removeCartItem.fulfilled payload:', action.payload);
         // action.payload는 삭제된 cartItemId
         state.items = state.items.filter(item => item.cartItemId !== action.payload);
       })
       // 장바구니 아이템 주문 - 성공
        .addCase(orderCartItems.fulfilled, (state, action) => {
+        console.log('orderCartItems.fulfilled payload:', action.payload);
         state.items = state.items.filter(item => !item.selected); // 선택된 아이템 제거
         return action.payload; // 주문 ID 반환
       })
       // 장바구니 아이템 주문 - 실패
       .addCase(orderCartItems.rejected, (state, action) => {
+        console.log('orderCartItems.rejected payload:', action.payload);
           state.error = action.payload;
       });
   },

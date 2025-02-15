@@ -2,7 +2,7 @@ import React from "react";
 import { Button } from "@mui/material";
 import { API_URL } from "@/utils/constants";
 import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 /**
  * 결제 컴포넌트
@@ -19,8 +19,10 @@ import { useNavigate } from "react-router-dom";
  * @returns {JSX.Element}
  * @constructor
  */
-const Payment = ({ merchantId, item, quantity, zipCode, address1, address2 }) => {
+const Payment = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { orderId, merchantId, items, totalPrice, zipCode, address1, address2, purchaseType } = location.state;
 
   // 결제 요청 핸들러
   const handlePayment = async () => {
@@ -34,13 +36,13 @@ const Payment = ({ merchantId, item, quantity, zipCode, address1, address2 }) =>
       pg: "kakaopay",
       pay_method: "card",
       merchant_uid: `${new Date().getTime()}`,  // 결제 고유번호, 거래 번호는 고유해야 함
-      name: item.itemNm,
-      amount: item.price * quantity,
-      buyer_email: "test@portone.io",
-      buyer_name: "홍길동",
-      buyer_tel: "010-1234-5678",
-      buyer_addr: `${address1} ${address2}`,
-      buyer_postcode: zipCode,
+      name: items[0].name, // 대표 상품 이름
+      amount: totalPrice,
+      buyer_email: "test@portone.io", // 사용자 이메일
+      buyer_name: "홍길동", // 사용자 이름
+      buyer_tel: "010-1234-5678", // 사용자 전화번호
+      buyer_addr: `${address1} ${address2}`, // 배송 주소
+      buyer_postcode: zipCode, // 우편번호
       m_redirect_url: "https://localhost:3000/", // 결제 완료 후 리다이렉트할 URL
     };
 
@@ -68,7 +70,7 @@ const Payment = ({ merchantId, item, quantity, zipCode, address1, address2 }) =>
   const processPayment = async (rsp) => {
     const paymentRequest = {
       impUid: rsp.imp_uid,
-      merchantUid: 1, // 실제 주문 테이블에 있는 주문번호로 변경 필요
+      merchantUid: orderId, // 주문 ID로 변경
       paidAmount: rsp.paid_amount,
       name: rsp.name,
       pgProvider: rsp.pg_provider,
@@ -81,8 +83,11 @@ const Payment = ({ merchantId, item, quantity, zipCode, address1, address2 }) =>
       status: "PAYMENT_COMPLETED",
     };
 
-    return fetchWithAuth(`${API_URL}payments/request`, {
+    return fetchWithAuth(`${API_URL}payments/request?purchaseType=${purchaseType}`, {
       method: "POST",
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(paymentRequest),
     });
   };

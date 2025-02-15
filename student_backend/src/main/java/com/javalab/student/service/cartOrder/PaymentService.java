@@ -128,8 +128,20 @@ public class PaymentService {
 
         // 4. 주문 DTO 생성 및 총 주문 금액 계산
         List<OrderDto.OrderItemDto> orderItemDtoList = new ArrayList<>();
-
         for (CartItem cartItem : cartItems) {
+            // CartItem cartItem = cartItems.get(i);
+            PaymentRequestDto.CartOrderItemDto cartOrderItemDto = requestDto.getCartOrderItems().stream()
+                    .filter(itemDto -> itemDto.getCartItemId().equals(cartItem.getId()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("CartItemDto not found for cartItemId: " + cartItem.getId()));
+            OrderDto.OrderItemDto orderItemDto = OrderDto.OrderItemDto.builder()
+                    .productId(cartItem.getProduct().getId())
+                    .productName(cartItem.getProduct().getName())
+                    .count(cartItem.getQuantity())
+                    .orderPrice(cartItem.getProduct().getPrice())
+                    .build();
+            orderItemDtoList.add(orderItemDto);
+
             // 1. **productPrice를 가져오기 전에 product가 null인지 확인합니다.**
             Product product = cartItem.getProduct();
             if (product == null) {
@@ -138,32 +150,13 @@ public class PaymentService {
             }
 
             // 2. **product가 null이 아닌 경우에만 price를 가져옵니다.**
-            BigDecimal productPrice = product.getPrice();
+            BigDecimal productPrice = cartOrderItemDto.getPrice();
             if (productPrice == null) {
                 log.error("Product price is null for product: {}", product);
                 throw new IllegalStateException("Product price cannot be null for product id: " + product.getId());
             }
-
-            OrderDto.OrderItemDto orderItemDto = OrderDto.OrderItemDto.builder()
-                    .productId(product.getId())
-                    .productName(product.getName())
-                    .count(cartItem.getQuantity())
-                    .orderPrice(productPrice)
-                    .build();
-
-            orderItemDtoList.add(orderItemDto);
             totalOrderAmount = totalOrderAmount.add(productPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity())));
         }
-
-// OrderDto 생성
-        OrderDto orderDto = OrderDto.builder()
-                .memberId(member.getId())
-                .orderDate(LocalDateTime.now())
-                .orderStatus(OrderStatus.ORDERED)
-                .amount(totalOrderAmount)
-                .orderItems(orderItemDtoList)
-                .build();
-
 
         // 5. 주문 객체 생성
         Order order = Order.builder()
@@ -176,6 +169,10 @@ public class PaymentService {
         // 6. OrderItem 생성 및 Order에 추가
         List<OrderItem> orderItems = new ArrayList<>();
         for (CartItem cartItem : cartItems) {
+            PaymentRequestDto.CartOrderItemDto cartOrderItemDto = requestDto.getCartOrderItems().stream()
+                    .filter(itemDto -> itemDto.getCartItemId().equals(cartItem.getId()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("CartItemDto not found for cartItemId: " + cartItem.getId()));
             // 1. **product를 가져오기 전에 product가 null인지 확인합니다.**
             Product product = cartItem.getProduct();
             if (product == null) {
@@ -184,7 +181,7 @@ public class PaymentService {
             }
 
             // 2. **product가 null이 아닌 경우에만 price를 가져옵니다.**
-            BigDecimal productPrice = product.getPrice();
+            BigDecimal productPrice = cartOrderItemDto.getPrice();
             if (productPrice == null) {
                 log.error("Product price is null for product: {}", product);
                 throw new IllegalStateException("Product price cannot be null for product id: " + product.getId());

@@ -37,21 +37,21 @@ const TotalPaymentSummary = ({ cartItems, purchaseType }) => {
       <h3>총 결제 금액</h3>
       <div className="summary-row">
         <span>총 상품 금액</span>
-        <span>{totalPrice.toLocaleString()}원</span>
+        <span>{totalPrice?.toLocaleString()}원</span>
       </div>
       <div className="summary-row">
         <span>배송비</span>
-        <span>{shippingFee > 0 ? `+${shippingFee.toLocaleString()}원` : '무료'}</span>
+        <span>{shippingFee > 0 ? `+${shippingFee?.toLocaleString()}원` : '무료'}</span>
       </div>
       {discount > 0 && (
         <div className="summary-row discount">
           <span>할인 금액</span>
-          <span>-{discount.toLocaleString()}원</span>
+          <span>-{discount?.toLocaleString()}원</span>
         </div>
       )}
       <div className="summary-row total">
         <span>최종 결제 금액</span>
-        <span>{finalPrice.toLocaleString()}원</span>
+        <span>{finalPrice?.toLocaleString()}원</span>
       </div>
     </div>
   );

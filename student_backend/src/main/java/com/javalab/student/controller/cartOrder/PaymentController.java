@@ -6,7 +6,6 @@ import com.javalab.student.dto.cartOrder.PaymentRequestDto;
 import com.javalab.student.service.cartOrder.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +13,7 @@ import java.security.Principal;
 import java.util.Map;
 
 import com.javalab.student.entity.cartOrder.Order;
+import org.springframework.http.HttpStatus;
 import jakarta.persistence.EntityNotFoundException;
 import com.javalab.student.dto.cartOrder.OrderDto;
 import java.util.stream.Collectors;
@@ -75,6 +75,8 @@ public class PaymentController {
             @RequestParam("purchaseType") String purchaseType,
             Principal principal) {
         log.info("주문 생성 요청 - 사용자: {}, 요청 정보: {}, 구매 유형: {}", principal.getName(), requestDto, purchaseType);
+        // PaymentRequestDto 내용 로깅
+        log.info("PaymentRequestDto 내용: {}", requestDto);
         try {
             // PaymentService를 사용하여 주문 생성
             Order order = paymentService.createOrder(requestDto, principal.getName(), purchaseType);
@@ -98,7 +100,6 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("주문 생성에 실패했습니다: " + e.getMessage()); // 500 Internal Server Error 반환
         }
     }
-
     // Order 엔티티를 OrderDto로 변환하는 메서드
     private OrderDto convertToDto(Order order) {
         List<OrderDto.OrderItemDto> orderItemDtos = order.getOrderItems().stream()
@@ -112,7 +113,7 @@ public class PaymentController {
                 .collect(Collectors.toList());
 
         return OrderDto.builder()
-                .id(order.getId())  // orderId를 id로 변경
+                .id(order.getId())
                 .memberId(order.getMember().getId())
                 .orderDate(order.getOrderDate())
                 .orderStatus(order.getOrderStatus())

@@ -2,7 +2,6 @@ package com.javalab.student.entity.cartOrder;
 
 import com.javalab.student.constant.OrderStatus;
 import com.javalab.student.dto.cartOrder.OrderDto;
-import com.javalab.student.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.BatchSize;
@@ -26,11 +25,10 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString(exclude = "orderItems")
-public class Order extends BaseEntity {
+public class Order {
 
     /** 주문 ID, Primary Key */
     @Id
-    @Column(name = "order_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -45,10 +43,11 @@ public class Order extends BaseEntity {
 
     /** 주문 상태 */
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private OrderStatus orderStatus;
 
     /** 주문 총액 */
-    @Column(name = "order_amount")
+    @Column(name = "order_amount", nullable = false)
     private BigDecimal amount;
 
     /** 운송장 번호 */
@@ -60,10 +59,9 @@ public class Order extends BaseEntity {
     private String parcelCd;
 
     /** 주문 아이템 목록, OneToMany 관계 */
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL
-            , orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
-    @BatchSize(size = 10) // OrderItem을 즉시 로딩할 때, 지정된 크기만큼 미리 로딩합니다.
+    @BatchSize(size = 10)
     private List<OrderItem> orderItems = new ArrayList<>();
 
     /** 배송 주소, OneToOne 관계 */
@@ -93,21 +91,16 @@ public class Order extends BaseEntity {
      */
     public static Order createOrder(Member member, List<OrderItem> orderItemList) {
         Order order = new Order();
-        order.setMember(member);    // 주문자 정보 세팅
+        order.setMember(member);
 
         BigDecimal totalAmount = BigDecimal.ZERO;
 
-        // 주문Item 갯수만큼 주문Item에 추가
         for (OrderItem orderItem : orderItemList) {
             order.addOrderItem(orderItem);
             totalAmount = totalAmount.add(orderItem.getOrderPrice().multiply(BigDecimal.valueOf(orderItem.getCount())));
         }
-        // 총 주문금액 세팅
         order.setAmount(totalAmount);
-        // 주문상태 세팅(ORDR01 : 주문)
         order.setOrderStatus(OrderStatus.ORDERED);
-
-        // 주문일자를 오늘날짜로 세팅
         order.setOrderDate(LocalDateTime.now());
 
         return order;

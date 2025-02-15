@@ -4,6 +4,7 @@ import com.javalab.student.dto.cartOrder.CartDetailDto;
 import com.javalab.student.dto.cartOrder.CartItemDto;
 import com.javalab.student.entity.Member;
 import com.javalab.student.entity.Product;
+import com.javalab.student.entity.ProductImg;
 import com.javalab.student.entity.cartOrder.Cart;
 import com.javalab.student.entity.cartOrder.CartItem;
 import com.javalab.student.repository.MemberRepository;
@@ -15,10 +16,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+/**
+ * 장바구니 관련 기능을 제공하는 서비스 클래스
+ * 장바구니에 상품 추가, 목록 조회, 수정, 삭제 등의 기능을 수행한다.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -30,7 +37,14 @@ public class CartService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
 
-    // 장바구니에 상품을 추가하는 메서드
+    /**
+     * 장바구니에 상품을 추가하는 메서드
+     *
+     * @param cartItemDto 장바구니에 추가할 상품 정보 DTO
+     * @param email 현재 사용자의 이메일
+     * @return 추가된 장바구니 아이템의 ID
+     * @throws EntityNotFoundException 상품 또는 회원을 찾을 수 없을 경우 발생
+     */
     @Transactional
     public Long addCart(CartItemDto cartItemDto, String email) {
         // 상품과 회원 정보를 조회
@@ -63,7 +77,12 @@ public class CartService {
         }
     }
 
-    // 장바구니 목록을 조회하는 메서드
+    /**
+     * 장바구니 목록을 조회하는 메서드
+     *
+     * @param email 현재 사용자의 이메일
+     * @return 장바구니 상세 정보 DTO 리스트
+     */
     @Transactional(readOnly = true)
     public List<CartDetailDto> getCartList(String email) {
         Member member = memberRepository.findByEmail(email);
@@ -71,10 +90,17 @@ public class CartService {
         if (cart == null) {
             return new ArrayList<>();
         }
-        return cartItemRepository.findCartDetailDtoList(cart.getId());
+        return getCartDetailList(cart.getId());
     }
 
-    // 장바구니 아이템의 소유자를 확인하는 메서드
+    /**
+     * 장바구니 아이템의 소유자를 확인하는 메서드
+     *
+     * @param cartItemId 확인할 장바구니 아이템 ID
+     * @param email 현재 사용자의 이메일
+     * @return 현재 사용자가 장바구니 아이템의 소유자인지 여부
+     * @throws EntityNotFoundException 장바구니 아이템을 찾을 수 없을 경우 발생
+     */
     @Transactional(readOnly = true)
     public boolean validateCartItem(Long cartItemId, String email) {
         Member curMember = memberRepository.findByEmail(email);
@@ -84,7 +110,13 @@ public class CartService {
         return curMember.getEmail().equals(savedMember.getEmail());
     }
 
-    // 장바구니 아이템의 수량을 업데이트하는 메서드
+    /**
+     * 장바구니 아이템의 수량을 업데이트하는 메서드
+     *
+     * @param cartItemId 업데이트할 장바구니 아이템 ID
+     * @param quantity 새로운 수량
+     * @throws EntityNotFoundException 장바구니 아이템을 찾을 수 없을 경우 발생
+     */
     @Transactional
     public void updateCartItemCount(Long cartItemId, int quantity) {
         CartItem cartItem = cartItemRepository.findById(cartItemId)
@@ -93,14 +125,26 @@ public class CartService {
         cartItemRepository.save(cartItem);
     }
 
-    // 장바구니 아이템을 삭제하는 메서드
+    /**
+     * 장바구니 아이템을 삭제하는 메서드
+     *
+     * @param cartItemId 삭제할 장바구니 아이템 ID
+     * @throws EntityNotFoundException 장바구니 아이템을 찾을 수 없을 경우 발생
+     */
     public void deleteCartItem(Long cartItemId) {
         CartItem cartItem = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new EntityNotFoundException("장바구니 아이템을 찾을 수 없습니다."));
         cartItemRepository.delete(cartItem);
     }
 
-    // 상품의 재고를 확인하는 메서드
+    /**
+     * 상품의 재고를 확인하는 메서드
+     *
+     * @param productId 확인할 상품 ID
+     * @param quantity 구매 수량
+     * @return 재고가 충분한지 여부
+     * @throws EntityNotFoundException 상품을 찾을 수 없을 경우 발생
+     */
     @Transactional(readOnly = true)
     public boolean checkStock(Long productId, int quantity) {
         Product product = productRepository.findById(productId)
@@ -108,7 +152,13 @@ public class CartService {
         return product.getStock() >= quantity;
     }
 
-    // 장바구니 아이템 ID로 상품 ID를 조회하는 메서드
+    /**
+     * 장바구니 아이템 ID로 상품 ID를 조회하는 메서드
+     *
+     * @param cartItemId 조회할 장바구니 아이템 ID
+     * @return 상품 ID
+     * @throws EntityNotFoundException 장바구니 아이템을 찾을 수 없을 경우 발생
+     */
     @Transactional(readOnly = true)
     public Long getItemIdByCartItemId(Long cartItemId) {
         CartItem cartItem = cartItemRepository.findById(cartItemId)
@@ -116,14 +166,40 @@ public class CartService {
         return cartItem.getProduct().getId();
     }
 
-    // 장바구니 아이템의 상세 정보를 조회하는 메서드
+    /**
+     * 장바구니 아이템의 상세 정보를 조회하는 메서드
+     *
+     * @param cartItemId 조회할 장바구니 아이템 ID
+     * @return 장바구니 상세 정보 DTO
+     * @throws EntityNotFoundException 장바구니 아이템을 찾을 수 없을 경우 발생
+     */
     @Transactional(readOnly = true)
     public CartDetailDto getCartItemDetail(Long cartItemId) {
-        return cartItemRepository.findCartDetailDto(cartItemId)
+        CartItem cartItem = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new EntityNotFoundException("장바구니 아이템을 찾을 수 없습니다. ID: " + cartItemId));
+
+        Product product = cartItem.getProduct();
+        String imageUrl = product.getProductImgList().stream()
+                .filter(img -> "대표".equals(img.getImageType()))
+                .findFirst()
+                .map(ProductImg::getImageUrl)
+                .orElse(null);
+
+        return CartDetailDto.builder()
+                .cartItemId(cartItem.getId())
+                .name(product.getName())
+                .quantity(cartItem.getQuantity())
+                .price(product.getPrice())
+                .imageUrl(imageUrl)
+                .build();
     }
 
-    // 장바구니를 비우는 메서드
+
+    /**
+     * 장바구니를 비우는 메서드
+     *
+     * @param memberId 비울 장바구니의 회원 ID
+     */
     public void clearCart(Long memberId) {
         Optional<Cart> optionalCart = cartRepository.findByMemberId(memberId);
         if (optionalCart.isPresent()) {
@@ -133,5 +209,33 @@ public class CartService {
         } else {
             log.warn("clearCart - 해당 memberId {} 에 대한 장바구니가 존재하지 않습니다.", memberId);
         }
+    }
+
+    /**
+     * 장바구니 상세 정보 DTO 리스트를 조회하는 메서드
+     *
+     * @param cartId 장바구니 ID
+     * @return 장바구니 상세 정보 DTO 리스트
+     */
+    public List<CartDetailDto> getCartDetailList(Long cartId) {
+        List<CartItem> cartItems = cartItemRepository.findByCartId(cartId);
+        return cartItems.stream()
+                .map(cartItem -> {
+                    Product product = cartItem.getProduct();
+                    String imageUrl = product.getProductImgList().stream()
+                            .filter(img -> "대표".equals(img.getImageType()))
+                            .findFirst()
+                            .map(ProductImg::getImageUrl)
+                            .orElse(null);
+
+                    return CartDetailDto.builder()
+                            .cartItemId(cartItem.getId())
+                            .name(product.getName())
+                            .quantity(cartItem.getQuantity())
+                            .price(product.getPrice())
+                            .imageUrl(imageUrl)
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 }

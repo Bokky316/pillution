@@ -40,7 +40,6 @@ public class CartController {
     @PostMapping("/add-multiple")
     public ResponseEntity<?> addMultipleToCart(@RequestBody @Valid List<CartItemDto> cartItemDtos, Principal principal, BindingResult bindingResult) {
         log.info("장바구니 상품 추가 요청 - 상품 정보: {}", cartItemDtos);
-
         if (bindingResult.hasErrors()) {
             List<FieldError> fieldErrors = bindingResult.getFieldErrors();
             for (FieldError error : fieldErrors) {
@@ -121,6 +120,7 @@ public class CartController {
     /**
      * 장바구니 상품 수량 수정
      * @param cartItemId 장바구니 아이템 ID
+     * @param requestBody 요청 바디 (수정할 수량 정보)
      * @param principal 사용자 정보
      * @return 수정된 장바구니 아이템 ID
      */
@@ -199,10 +199,4 @@ public class CartController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("장바구니 아이템 조회에 실패했습니다: " + e.getMessage());
         }
     }
-    //
-    //    @RequestMapping(value = "/**", method = RequestMethod.OPTIONS)
-    //    public ResponseEntity handleOptions() {
-    //        return ResponseEntity.ok().build();
-    //    }
-    //
 }
