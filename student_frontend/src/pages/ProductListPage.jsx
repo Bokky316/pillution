@@ -195,7 +195,9 @@ export default function ProductListPage() {
               <CardMedia
                 component="img"
                 height="200"
-                image={product.image || "/placeholder.jpg"}
+                // 밑에꺼 쓰려면 .env 파일 생성 후 VITE_PUBLIC_URL=http://localhost:8080 주입
+                image={`http://localhost:8080${product.mainImageUrl}`}
+                //image={`${import.meta.env.VITE_PUBLIC_URL}${product.mainImageUrl}`}
                 alt={product.name}
                 sx={{ objectFit: "cover" }}
               />

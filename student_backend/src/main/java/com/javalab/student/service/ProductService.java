@@ -17,7 +17,7 @@ public interface ProductService {
     ProductDto updateProduct(Long id, ProductFormDto productFormDto);
 
     /** 상품 단건 조회 */
-    ProductDto getProductById(Long id);
+    ProductResponseDTO getProductById(Long id);
 
     /** 상품 활성화/비활성화 */
     void toggleProductActive(Long id);
@@ -33,5 +33,6 @@ public interface ProductService {
     /** 검색 메서드 추가 */
     Page<ProductResponseDTO> searchProducts(String field, String query, Pageable pageable);
 
-
+    /** 상품 이미지 삭제 */
+    void deleteProductImage(Long productId, String imageType, Integer imageIndex);
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, Typography, CircularProgress, Box, styled
+  Button, Typography, CircularProgress, Box, styled, Grid, ImageList, ImageListItem
 } from '@mui/material';
 import { API_URL } from '@/utils/constants';
 import { useNavigate } from 'react-router-dom';
@@ -65,11 +65,17 @@ const ViewProduct = ({ productId, open, onClose }) => {
 
     const handleEdit = () => {
         onClose();
-        navigate(`/adminpage/products/${productId}/edit`);
+        navigate(`/adminPage/products/${productId}/edit`);
+    };
+
+    const getAbsoluteImageUrl = (imageUrl) => {
+        if (!imageUrl) return '';
+        const baseUrl = API_URL.substring(0, API_URL.indexOf('/api'));
+        return imageUrl.startsWith('http') ? imageUrl : `${baseUrl}${imageUrl}`;
     };
 
     return (
-        <StyledDialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+        <StyledDialog open={open} onClose={onClose} maxWidth="md" fullWidth>
             <StyledDialogTitle>상품 상세 정보</StyledDialogTitle>
             <DialogContent dividers>
                 {loading ? (
@@ -77,7 +83,7 @@ const ViewProduct = ({ productId, open, onClose }) => {
                         <CircularProgress />
                     </Box>
                 ) : error ? (
-                    <Typography color="error">Error: {error.message}</Typography>
+                    <Typography color="error">Error: {error}</Typography>
                 ) : product ? (
                     <Box sx={{ width: '100%', textAlign: 'center' }}>
                         <Typography variant="h5" fontWeight="bold" gutterBottom style={{ fontSize: '1.5rem' }}>
@@ -90,7 +96,7 @@ const ViewProduct = ({ productId, open, onClose }) => {
                         )}
                         {product.mainImageUrl && (
                             <ProductImage
-                                src={product.mainImageUrl}
+                                src={getAbsoluteImageUrl(product.mainImageUrl)}
                                 alt={product.name}
                             />
                         )}
@@ -103,6 +109,25 @@ const ViewProduct = ({ productId, open, onClose }) => {
                         <Typography variant="body2" mt={2} style={{ fontSize: '1rem', textAlign: 'left' }}>
                             상품 내용: {product.description}
                         </Typography>
+
+                        {/* 상세 이미지 목록 표시 (Grid 사용) */}
+                        {product.productImgList && product.productImgList.length > 0 && (
+                            <Box mt={3}>
+                                <Typography variant="h6" gutterBottom>상세 이미지</Typography>
+                                <Grid container spacing={2}>
+                                    {product.productImgList.filter(img => img.imageType === '상세').map((img, index) => (
+                                        <Grid item xs={12} sm={6} md={4} key={index}>
+                                            <img
+                                                src={getAbsoluteImageUrl(img.imageUrl)}
+                                                alt={`상세 이미지 ${index + 1}`}
+                                                style={{ width: '100%', borderRadius: '4px' }}
+                                            />
+                                        </Grid>
+                                    ))}
+                                </Grid>
+                            </Box>
+                        )}
+
                     </Box>
                 ) : (
                     <Typography>상품 정보를 불러오는 중입니다...</Typography>
