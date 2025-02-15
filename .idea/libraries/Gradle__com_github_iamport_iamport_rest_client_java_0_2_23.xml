@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="Gradle: com.github.iamport:iamport-rest-client-java:0.2.23" external-system-id="GRADLE">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../../repository/gradle/caches/modules-2/files-2.1/com.github.iamport/iamport-rest-client-java/0.2.23/bf5a52d2da90655bef15ff0fcd76a0f67dc84e9d/iamport-rest-client-java-0.2.23.jar!/" />
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.iamport/iamport-rest-client-java/0.2.23/bf5a52d2da90655bef15ff0fcd76a0f67dc84e9d/iamport-rest-client-java-0.2.23.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
