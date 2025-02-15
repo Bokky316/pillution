@@ -1,4 +1,4 @@
-package com.javalab.student.entity;
+package com.javalab.student.entity.product;
 
 import jakarta.persistence.*;
 import lombok.*;

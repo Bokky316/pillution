@@ -1,4 +1,4 @@
-package com.javalab.student.entity;
+package com.javalab.student.entity.product;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;

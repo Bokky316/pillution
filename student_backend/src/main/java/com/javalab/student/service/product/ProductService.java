@@ -1,6 +1,8 @@
-package com.javalab.student.service;
+package com.javalab.student.service.product;
 
-import com.javalab.student.dto.*;
+import com.javalab.student.dto.product.ProductDto;
+import com.javalab.student.dto.product.ProductFormDto;
+import com.javalab.student.dto.product.ProductResponseDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;

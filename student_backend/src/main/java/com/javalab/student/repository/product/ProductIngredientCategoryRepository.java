@@ -1,7 +1,7 @@
-package com.javalab.student.repository;
+package com.javalab.student.repository.product;
 
-import com.javalab.student.entity.ProductCategory;
-import com.javalab.student.entity.ProductIngredientCategoryMapping;
+import com.javalab.student.entity.product.ProductCategory;
+import com.javalab.student.entity.product.ProductIngredientCategoryMapping;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

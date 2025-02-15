@@ -1,13 +1,15 @@
-package com.javalab.student.service;
+package com.javalab.student.service.product;
 
-import com.javalab.student.dto.*;
-import com.javalab.student.entity.Product;
-import com.javalab.student.entity.ProductCategory;
-import com.javalab.student.entity.ProductIngredient;
-import com.javalab.student.repository.ProductCategoryRepository;
-import com.javalab.student.repository.ProductIngredientCategoryRepository;
-import com.javalab.student.repository.ProductIngredientRepository;
-import com.javalab.student.repository.ProductRepository;
+import com.javalab.student.dto.product.ProductDto;
+import com.javalab.student.dto.product.ProductFormDto;
+import com.javalab.student.dto.product.ProductResponseDTO;
+import com.javalab.student.entity.product.Product;
+import com.javalab.student.entity.product.ProductCategory;
+import com.javalab.student.entity.product.ProductIngredient;
+import com.javalab.student.repository.product.ProductCategoryRepository;
+import com.javalab.student.repository.product.ProductIngredientCategoryRepository;
+import com.javalab.student.repository.product.ProductIngredientRepository;
+import com.javalab.student.repository.product.ProductRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;

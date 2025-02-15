@@ -1,9 +1,9 @@
-package com.javalab.student.controller;
+package com.javalab.student.controller.product;
 
-import com.javalab.student.entity.ProductCategory;
-import com.javalab.student.entity.ProductIngredient;
-import com.javalab.student.repository.ProductIngredientCategoryRepository;
-import com.javalab.student.repository.ProductIngredientRepository;
+import com.javalab.student.entity.product.ProductCategory;
+import com.javalab.student.entity.product.ProductIngredient;
+import com.javalab.student.repository.product.ProductIngredientCategoryRepository;
+import com.javalab.student.repository.product.ProductIngredientRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
