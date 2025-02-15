@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 상품 데이터를 관리하는 Repository 인터페이스
@@ -51,6 +52,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             "WHERE i.id = :ingredientId " +
             "ORDER BY c.name ASC")
     List<Product> findProductsByIngredientAndCategory(@Param("ingredientId") Long ingredientId);
+
+    /**
+     * 상품 ID로 상품 엔티티 조회 (Fetch Join - categories 포함)
+     * - Product 엔티티와 연관된 categories 컬렉션을 함께 로딩 (Eager Loading 효과)
+     */
+    @Query("SELECT p FROM Product p JOIN FETCH p.categories WHERE p.id = :id") // ✅ Fetch Join 쿼리
+    Optional<Product> findProductByIdWithCategories(@Param("id") Long id);
 
     List<Product> findByCategories_Id(Long categoryId);
 

@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
-  Box, Typography, Button, CardMedia, Grid, Divider,
+  Box, Typography, Button,CardMedia, Grid, Divider,
   CircularProgress, IconButton, Chip, Dialog,
-  DialogTitle, DialogContent, DialogActions
+  DialogTitle, DialogContent, DialogActions,
+  ImageList, ImageListItem
 } from "@mui/material";
 import { Add as AddIcon, Remove as RemoveIcon, Close as CloseIcon } from "@mui/icons-material";
 import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
@@ -25,6 +26,28 @@ const ProductDetailPage = () => {
   const userRole = auth?.user?.authorities?.some((auth) => auth.authority === "ROLE_ADMIN")
     ? "ADMIN"
     : "USER";
+
+  const getImageUrl = (product) => {
+    if (product?.productImgList && product.productImgList.length > 0) {
+      const mainImage = product.productImgList.find(img => img.imageType === "대표");
+      if (mainImage) {
+          // 밑에꺼 쓰려면 .env 파일 생성 후 VITE_PUBLIC_URL=http://localhost:8080 주입
+        return `http://localhost:8080${mainImage.imageUrl}`; // ✅ 절대 경로 사용
+        //return `${import.meta.env.VITE_PUBLIC_URL}${mainImage.imageUrl}`;
+      }
+    }
+    return null;
+  };
+
+  // ✅ 상세 이미지 URL들을 추출하는 함수
+  const getDetailImageUrls = (product) => {
+    if (product?.productImgList && product.productImgList.length > 0) {
+      return product.productImgList
+        .filter(img => img.imageType === "상세")
+        .map(img => `http://localhost:8080${img.imageUrl}`); // ✅ 절대 경로 사용
+    }
+    return [];
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -98,14 +121,15 @@ const ProductDetailPage = () => {
         <Grid item xs={12}>
           <CardMedia
             component="img"
-            image={product?.mainImageUrl || product?.imageUrl || "/images/logo.png"}
+            image={getImageUrl(product)} // 수정: getImageUrl 함수 사용
             alt={product?.name || "상품 이미지"}
             sx={{
               borderRadius: "8px",
               boxShadow: 3,
               width: "100%",
               maxWidth: "600px",
-              margin: "0 auto"
+              margin: "0 auto",
+              display: getImageUrl(product) ? 'block' : 'none'
             }}
           />
         </Grid>
@@ -122,6 +146,39 @@ const ProductDetailPage = () => {
           <Typography variant="body1" color="textSecondary" sx={{ marginBottom: 3 }}>
             {product?.description || "상품 설명이 없습니다."}
           </Typography>
+          <Divider sx={{ marginBottom: 1 }} />
+
+          {/* ✅ 상세 이미지 리스트 렌더링 */}
+          <Grid item xs={12} sx={{ mt: 2, mb: 2 }}>
+            <ImageList rowHeight={200} gap={8} sx={{
+                // GridList 스타일 조정 (반응형, 가로 스크롤)
+                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))!important', // 반응형 컬럼
+                overflowX: 'auto', // 가로 스크롤 활성화
+                flexWrap: 'nowrap', // ImageList 가로로 정렬
+                // 스크롤바 숨김 (선택 사항)
+                '::-webkit-scrollbar': { display: 'none' },
+                msOverflowStyle: 'none',
+                scrollbarWidth: 'none',
+            }}>
+              {getDetailImageUrls(product).map((imageUrl, index) => (
+                <ImageListItem key={index} sx={{ width: '200px', height: '200px' }}>
+                  <CardMedia
+                    component="img"
+                    image={imageUrl}
+                    alt={`상세 이미지 ${index + 1}`}
+                    sx={{
+                      borderRadius: "8px",
+                      boxShadow: 2,
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
+                </ImageListItem>
+              ))}
+            </ImageList>
+          </Grid>
+
           <Divider sx={{ marginBottom: 1 }} />
           <Box sx={{ display: "flex", alignItems: "center"}}>
             <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
