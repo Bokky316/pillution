@@ -1,11 +1,13 @@
-package com.javalab.student.controller;
+package com.javalab.student.controller.product;
 
-import com.javalab.student.dto.*;
-import com.javalab.student.entity.Product;
-import com.javalab.student.entity.ProductCategory;
-import com.javalab.student.repository.ProductCategoryRepository;
-import com.javalab.student.repository.ProductRepository;
-import com.javalab.student.service.ProductService;
+import com.javalab.student.dto.product.ProductDto;
+import com.javalab.student.dto.product.ProductFormDto;
+import com.javalab.student.dto.product.ProductResponseDTO;
+import com.javalab.student.entity.product.Product;
+import com.javalab.student.entity.product.ProductCategory;
+import com.javalab.student.repository.product.ProductCategoryRepository;
+import com.javalab.student.repository.product.ProductRepository;
+import com.javalab.student.service.product.ProductService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

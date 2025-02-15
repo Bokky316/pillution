@@ -1,5 +1,6 @@
 /*
-package com.javalab.student.config;
+package com.javalab.student.config.DataInitializer;
+
 
 import com.javalab.student.entity.*;
 import com.javalab.student.repository.*;

@@ -1,9 +1,10 @@
-package com.javalab.student.dto;
+package com.javalab.student.dto.product;
 
-import com.javalab.student.entity.Product;
-import com.javalab.student.entity.ProductCategory;
-import com.javalab.student.entity.ProductImg;
-import com.javalab.student.entity.ProductIngredient;
+
+import com.javalab.student.entity.product.ProductImg;
+import com.javalab.student.entity.product.Product;
+import com.javalab.student.entity.product.ProductCategory;
+import com.javalab.student.entity.product.ProductIngredient;
 import lombok.*;
 
 import java.math.BigDecimal;

@@ -1,5 +1,5 @@
 /*
-package com.javalab.student.config;
+package com.javalab.student.config.DataInitializer;
 
 import com.javalab.student.entity.Board;
 import com.javalab.student.entity.Member;
