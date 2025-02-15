@@ -1,43 +1,36 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import { Button, Radio, RadioGroup, FormControlLabel, FormControl, Paper, Typography, Box } from "@mui/material";
 import { API_URL } from "@/utils/constants";
 import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
 import { useNavigate, useLocation } from "react-router-dom";
 import "@/styles/Payment.css";
 
-const Payment = React.memo(({ orderId, merchantId, items, totalPrice, zipCode, address1, address2, purchaseType }) => {
+const Payment = React.memo(({ orderId, merchantId, items, totalPrice, zipCode, address1, address2, purchaseType, isImpReady }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { selectedItems, totalAmount, user: userData } = location.state || { selectedItems: [], totalAmount: 0, user: {} };
 
+  // 결제 정보 상태 관리
   const [name, setName] = React.useState(userData?.name || '');
   const [email, setEmail] = React.useState(userData?.email || '');
   const [phone, setPhone] = React.useState(userData?.phone || '');
   const [address, setAddress] = React.useState(userData?.address || '');
   const [paymentMethod, setPaymentMethod] = React.useState("kakaopay");
 
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.iamport.kr/js/iamport.payment-1.2.0.js';
-    script.async = true;
-    document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
-
+  // 결제 수단 변경 핸들러
   const handlePaymentMethodChange = useCallback((event) => {
     setPaymentMethod(event.target.value);
   }, []);
 
+  // 결제 처리 핸들러
   const handlePayment = useCallback(async () => {
-    if (!window.IMP) {
+    if (!isImpReady) {
       alert('결제 모듈을 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
       return;
     }
 
     const IMP = window.IMP;
-    IMP.init(merchantId);
+    IMP.init(merchantId);  // 결제 직전에 다시 한 번 초기화
 
     let pg = "";
     if (paymentMethod === "kakaopay") {
@@ -49,13 +42,13 @@ const Payment = React.memo(({ orderId, merchantId, items, totalPrice, zipCode, a
     const paymentData = {
       pg: pg,
       pay_method: "card",
-      merchant_uid: `${new Date().getTime()}`,
-      name: selectedItems[0].name,
-      amount: totalAmount,
+      merchant_uid: orderId,
+      name: items[0].name,
+      amount: totalPrice,
       buyer_email: email,
       buyer_name: name,
       buyer_tel: phone,
-      buyer_addr: address,
+      buyer_addr: `${address1} ${address2}`,
       buyer_postcode: zipCode,
       m_redirect_url: "http://localhost:3000/payResult"
     };
@@ -73,8 +66,9 @@ const Payment = React.memo(({ orderId, merchantId, items, totalPrice, zipCode, a
         alert(`결제 실패: ${rsp.error_msg}`);
       }
     });
-  }, [paymentMethod, merchantId, selectedItems, totalAmount, email, name, phone, address, zipCode, navigate]);
+  }, [isImpReady, merchantId, paymentMethod, orderId, items, totalPrice, email, name, phone, address1, address2, zipCode, navigate]);
 
+  // 결제 처리 함수
   const processPayment = useCallback(async (rsp) => {
     const paymentRequest = {
       impUid: rsp.imp_uid,
@@ -100,6 +94,7 @@ const Payment = React.memo(({ orderId, merchantId, items, totalPrice, zipCode, a
     });
   }, [orderId, purchaseType]);
 
+  // 컴포넌트 렌더링
   return (
     <Paper elevation={3} className="payment-container">
       <Typography variant="h6" gutterBottom className="payment-title">
@@ -129,8 +124,14 @@ const Payment = React.memo(({ orderId, merchantId, items, totalPrice, zipCode, a
       </FormControl>
 
       <Box mt={2} textAlign="center">
-        <Button variant="contained" color="primary" size="large" onClick={handlePayment}>
-          {paymentMethod === 'card' ? '신용카드로 결제하기' : `${paymentMethod}로 결제하기`}
+        <Button
+          variant="contained"
+          color="primary"
+          size="large"
+          onClick={handlePayment}
+          disabled={!isImpReady}
+        >
+          {isImpReady ? (paymentMethod === 'card' ? '신용카드로 결제하기' : `${paymentMethod}로 결제하기`) : '결제 모듈 로딩 중...'}
         </Button>
       </Box>
     </Paper>

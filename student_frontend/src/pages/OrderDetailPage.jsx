@@ -8,6 +8,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { createOrder } from "@/store/orderSlice";
 
 const OrderDetail = React.memo(() => {
+  // Redux hooks 및 라우터 hooks 설정
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -15,12 +16,14 @@ const OrderDetail = React.memo(() => {
   const { currentOrder } = useSelector((state) => state.order);
   const { merchantId } = useSelector((state) => state.payment);
 
+  // location state에서 필요한 데이터 추출
   const { selectedItems, purchaseType, totalAmount } = location.state || {
     selectedItems: [],
     purchaseType: 'oneTime',
     totalAmount: 0
   };
 
+  // 주문 정보 상태 관리
   const [orderId, setOrderId] = useState(null);
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -30,20 +33,32 @@ const OrderDetail = React.memo(() => {
   const [address1, setAddress1] = useState("");
   const [address2, setAddress2] = useState("");
 
+  // IMP 스크립트 로드 및 초기화
+  const [isImpReady, setIsImpReady] = useState(false);
+
   useEffect(() => {
-    const fetchMerchantId = () => {
-      const merchantId = import.meta.env.VITE_PORTONE_MERCHANT_ID;
-      console.log("가맹점 UID:", merchantId);
-      return merchantId;
+    const script = document.createElement('script');
+    script.src = 'https://cdn.iamport.kr/js/iamport.payment-1.2.0.js';
+    script.async = true;
+    script.onload = () => {
+      if (window.IMP) {
+        window.IMP.init(merchantId);
+        setIsImpReady(true);
+        console.log("OrderDetail: IMP 초기화 완료");
+      }
     };
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, [merchantId]);
 
-    const id = fetchMerchantId();
-  }, []);
-
+  // 총 주문 금액 계산
   const calculateTotalPrice = useMemo(() => {
     return selectedItems.reduce((total, item) => total + item.price * item.quantity, 0);
   }, [selectedItems]);
 
+  // 주문 생성 핸들러
   const handleCreateOrder = useCallback(async () => {
     const orderData = {
       cartOrderItems: selectedItems.map(item => ({
@@ -68,12 +83,14 @@ const OrderDetail = React.memo(() => {
     }
   }, [selectedItems, name, email, phone, address1, address2, zipCode, purchaseType, dispatch]);
 
+  // 컴포넌트 렌더링
   return (
     <Box sx={{ maxWidth: 800, margin: "auto", padding: 3 }}>
       <Typography variant="h4" gutterBottom>
         주문서
       </Typography>
       <Paper sx={{ padding: 3 }}>
+        {/* 선택된 상품 목록 렌더링 */}
         {selectedItems.map((item, index) => (
           <Box key={index} display="flex" alignItems="center" mb={2}>
             <img
@@ -93,6 +110,7 @@ const OrderDetail = React.memo(() => {
           총 주문 금액: {calculateTotalPrice}원
         </Typography>
 
+        {/* 배송 정보 입력 폼 */}
         <Typography variant="h6" mt={3} gutterBottom>
           배송 정보
         </Typography>
@@ -156,6 +174,7 @@ const OrderDetail = React.memo(() => {
           </Button>
         </Box>
       </Paper>
+      {/* 주문 생성 후 Payment 컴포넌트 렌더링 */}
       {orderId && (
         <Payment
           orderId={orderId}
@@ -166,6 +185,7 @@ const OrderDetail = React.memo(() => {
           address1={address1}
           address2={address2}
           purchaseType={purchaseType}
+          isImpReady={isImpReady}
         />
       )}
     </Box>
