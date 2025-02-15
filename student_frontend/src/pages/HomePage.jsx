@@ -96,7 +96,7 @@ const HomePage = () => {
             {/* 통계 정보 */}
             <Box sx={{ maxWidth: "100%", width: "100%", margin: "0 auto" }}>
                 <Box sx={{
-                    backgroundColor: "#FFE4E1",
+                    backgroundColor: "#F5F5F5",
                     padding: "40px 20px",
                     height: "auto",
                     minHeight: "360px"
