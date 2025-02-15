@@ -47,6 +47,11 @@ public class Product {
     private boolean active;
 
     /** 상품 이미지 */
+    /**
+     * 대표 이미지를 보여줄 때는, Product 엔티티의 productImgList 에서
+     * imageType이 '대표'인 ProductImg 엔티티를 찾아서 그 imageUrl을 사용합니다.
+     * (mainImageUrl이 필드는 삭제해야함)(아마도)
+     */
     @Column(name = "main_image_url")
     private String mainImageUrl = "";
 
@@ -54,18 +59,6 @@ public class Product {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default // Builder pattern 사용 시 기본값 설정
     private List<ProductImg> productImgList = new ArrayList<>(); // ArrayList 로 초기화
-
-
-
-    /** 대표 이미지 경로 */
-//    private String imgPath;
-//
-//    /** 대표 이미지명 */
-//    private String fileName;
-//
-//    /** 상품에 포함된 여러 이미지 */
-//    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-//    private List<ProductImage> imgList;
 
     /**
      * 상품에 포함된 영양 성분 목록
