@@ -25,9 +25,9 @@ const Layout = ({ children }) => {
         <Box sx={{
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center',
-            minHeight: '100vh',
-            backgroundColor: '#f9f9f9',
+            alignItems: 'center', // 중앙 정렬
+            minHeight: '100vh', // 화면 전체 높이
+            backgroundColor: '#f9f9f9', // 배경색 설정 (선택 사항)
         }}>
             {/* 메인 컨텐츠 영역 */}
             <Box sx={{
