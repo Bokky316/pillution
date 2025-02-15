@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { TextField, Button, Select, MenuItem, FormControl, InputLabel, Box, Grid, IconButton, Typography } from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
-import { API_URL } from '../../../constant';
-import { useNavigate } from 'react-router-dom';
-import './AddProduct.css';
+ import React, { useState, useEffect } from 'react';
+ import { TextField, Button, Select, MenuItem, FormControl, InputLabel, Box } from '@mui/material';
+ import { Close as CloseIcon } from '@mui/icons-material';
+ import { API_URL } from '@/utils/constants';
+ import { useNavigate } from 'react-router-dom';
+ import '@/styles/AddProduct.css';
 
 const AddProduct = () => {
     const [product, setProduct] = useState({
@@ -24,9 +24,12 @@ const AddProduct = () => {
     const [detailImagePreviews, setDetailImagePreviews] = useState(Array(4).fill(null)); // 상세 이미지 미리보기 4개 배열로 초기화
 
     const navigate = useNavigate();
+
+    // 카테고리 목록을 저장할 state
     const [categories, setCategories] = useState([]);
 
     useEffect(() => {
+        // 컴포넌트가 마운트될 때 카테고리 목록을 가져옴
         fetchCategories();
     }, []);
 
@@ -68,6 +71,22 @@ const AddProduct = () => {
         }));
     };
 
+    const uploadImage = async (file) => {
+        const formData = new FormData();
+        formData.append('imageFile', file);
+
+        const response = await fetch(`${API_URL}products/upload`, {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!response.ok) {
+            throw new Error('이미지 업로드에 실패했습니다.');
+        }
+
+        const data = await response.json();
+        return data.imageUrl; // 업로드된 이미지 URL 반환
+    };
 
     const handleCategoryChange = (e) => {
         const { value } = e.target;
@@ -338,7 +357,7 @@ const AddProduct = () => {
                 </FormControl>
                 <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
                     <Button type="submit" variant="contained" color="primary">저장</Button>
-                    <Button variant="outlined" color="secondary" onClick={() => navigate('/adminPage/products')}>취소</Button>
+                    <Button variant="outlined" color="secondary" onClick={() => navigate('/adminpage/products')}>취소</Button>
                 </Box>
             </form>
         </Box>

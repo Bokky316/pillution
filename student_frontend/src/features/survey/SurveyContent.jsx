@@ -1,4 +1,3 @@
-// src/features/survey/SurveyContent.jsx
 import React from 'react';
 import { Typography, Box } from '@mui/material';
 import QuestionComponent from '@/features/survey/QuestionComponent';

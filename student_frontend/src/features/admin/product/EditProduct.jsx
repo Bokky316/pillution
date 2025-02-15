@@ -1,3 +1,4 @@
+// EditProduct.js
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -15,7 +16,7 @@ import {
     Typography
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { API_URL } from "../../../constant";
+import { API_URL } from "@/utils/constants";
 import axios from "axios";
 import './AddProduct.css';
 

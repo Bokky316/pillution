@@ -1,10 +1,9 @@
 import { DataGrid } from '@mui/x-data-grid';
 import { Button, Snackbar, Select, MenuItem, FormControl, InputLabel, TextField } from '@mui/material';
 import { useState, useEffect } from 'react';
-import { API_URL } from "../../../constant";
+import { API_URL } from "@/utils/constants";
 import { useNavigate } from "react-router-dom";
 import ViewProduct from './ViewProduct';
-
 
 const ProductList = () => {
     const [products, setProducts] = useState([]);

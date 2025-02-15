@@ -3,7 +3,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, Typography, CircularProgress, Box, styled, Grid, ImageList, ImageListItem
 } from '@mui/material';
-import { API_URL } from '../../../constant';
+import { API_URL } from '@/utils/constants';
 import { useNavigate } from 'react-router-dom';
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({

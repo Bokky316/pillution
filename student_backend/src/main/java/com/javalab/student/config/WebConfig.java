@@ -2,9 +2,14 @@ package com.javalab.student.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import static io.lettuce.core.KillArgs.Builder.maxAge;
 
 /**
  * WebConfig : 환경설정 파일
@@ -34,7 +39,11 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedOrigins("http://localhost:3000")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                 .allowedHeaders("*")    // 모든 헤더를 허용
-                .allowCredentials(true);    // 쿠키를 주고 받을 수 있게 설정, 세션을 사용할 때는 true로 설정, 왜? 세션은 쿠키를 사용하기 때문, 쿠키에는 사용자의 정보가 담겨있음
+                .exposedHeaders("Authorization")
+                .allowCredentials(true)    // 쿠키를 주고 받을 수 있게 설정, 세션을 사용할 때는 true로 설정, 왜? 세션은 쿠키를 사용하기 때문, 쿠키에는 사용자의 정보가 담겨있음
+                .maxAge(3600L);
+
+
     }
 
 

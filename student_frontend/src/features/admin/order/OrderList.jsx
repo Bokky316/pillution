@@ -1,6 +1,6 @@
 import { DataGrid } from '@mui/x-data-grid';
 import { useState, useEffect } from 'react';
-import { API_URL } from "../../../constant";
+import { API_URL } from "@/utils/constants";
 import { Select, MenuItem } from '@mui/material';
 
 const OrderList = () => {
