@@ -38,26 +38,24 @@
 }
 
 .purchase-type-selection {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: flex; /* Flexbox 레이아웃 사용 */
+  flex-direction: row; /* 가로 방향으로 요소 배치 */
+  justify-content: space-between; /* 요소 사이에 동일한 간격 배치 */
+  gap: 12px; /* 버튼 사이의 간격 */
   margin: 20px 0;
 }
 
 .checkout-btn {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  margin: 0;
+  width: 100%;
   padding: 20px;
   background-color: #ff5c35;
   color: white;
   border: none;
+  border-radius: 8px;
   font-size: 18px;
   font-weight: 500;
   cursor: pointer;
-  z-index: 100;
+  margin-top: 20px;
 }
 
 .checkout-btn:disabled {
@@ -67,8 +65,7 @@
 
 @media (min-width: 768px) {
   .checkout-btn {
-    position: static;
-    border-radius: 8px;
-    margin-top: 20px;
+    max-width: 500px;
+    margin: 20px auto 0;
   }
 }

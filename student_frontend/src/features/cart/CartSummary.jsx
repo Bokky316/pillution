@@ -1,7 +1,8 @@
 import React from "react";
+import "@/styles/CartSummary.css";
 
-const CartSummary = ({ cartItems, purchaseType, onSelect }) => {
-  const calculateTotals = (type) => {
+const CartSummary = ({ cartItems, purchaseType, isSelected, onSelect }) => {
+  const calculateTotals = () => {
     let totalPrice = 0;
     let shippingFee = 0;
     let discount = 0;
@@ -10,11 +11,18 @@ const CartSummary = ({ cartItems, purchaseType, onSelect }) => {
       totalPrice += item.price * item.quantity;
     });
 
-    if (type === 'subscription' && totalPrice >= 30000) {
-      discount = 3000;
+    if (purchaseType === 'oneTime') {
+      shippingFee = 3000;
+    } else if (purchaseType === 'subscription') {
+      if (totalPrice >= 30000) {
+        discount = 3000;
+      }
+      if (totalPrice >= 10000) {
+        shippingFee = 0;
+      } else {
+        shippingFee = 3000;
+      }
     }
-
-    shippingFee = totalPrice >= (type === 'subscription' ? 10000 : 30000) ? 0 : 3000;
 
     return {
       totalPrice,
@@ -24,67 +32,37 @@ const CartSummary = ({ cartItems, purchaseType, onSelect }) => {
     };
   };
 
-  const oneTimeTotals = calculateTotals('oneTime');
-  const subscriptionTotals = calculateTotals('subscription');
+  const { totalPrice, shippingFee, discount, finalPrice } = calculateTotals();
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* 구매 타입 선택 */}
-      <div className="flex gap-4">
-        <div
-          className={`flex-1 p-4 border rounded-lg cursor-pointer ${purchaseType === 'oneTime' ? 'border-red-500 bg-red-50' : 'border-gray-200'}`}
-          onClick={() => onSelect('oneTime')}
-        >
-          <div className="text-center mb-2">일회성 구매</div>
-          <div className="text-center text-lg font-bold">{oneTimeTotals.finalPrice.toLocaleString()}원</div>
-        </div>
-
-        <div
-          className={`flex-1 p-4 border rounded-lg cursor-pointer ${purchaseType === 'subscription' ? 'border-red-500 bg-red-50' : 'border-gray-200'}`}
-          onClick={() => onSelect('subscription')}
-        >
-          <div className="text-center mb-2">정기 구독</div>
-          <div className="text-center text-lg font-bold">{subscriptionTotals.finalPrice.toLocaleString()}원</div>
-        </div>
+    <div className={`type-button ${isSelected ? 'selected' : ''}`} onClick={onSelect}>
+      <div className="total-amount-header">
+        <h3>{purchaseType === 'oneTime' ? '일회성 구매' : '정기 구독'}</h3>
       </div>
 
-      {/* 선택된 옵션의 상세 정보 */}
-      <div className="border rounded-lg p-4">
-        <div className="flex justify-between mb-4">
+      <div className="total-amount-content">
+        <div className="amount-row">
           <span>총 상품 금액</span>
-          <span>{purchaseType === 'oneTime' ? oneTimeTotals.totalPrice.toLocaleString() : subscriptionTotals.totalPrice.toLocaleString()}원</span>
+          <span>{totalPrice.toLocaleString()}원</span>
         </div>
 
-        {(purchaseType === 'oneTime' ? oneTimeTotals.shippingFee : subscriptionTotals.shippingFee) > 0 && (
-          <div className="flex justify-between mb-4">
-            <span>배송비</span>
-            <span>{(purchaseType === 'oneTime' ? oneTimeTotals.shippingFee : subscriptionTotals.shippingFee).toLocaleString()}원</span>
-          </div>
-        )}
+        <div className="amount-row">
+          <span>배송비</span>
+          <span>{shippingFee > 0 ? `+${shippingFee.toLocaleString()}원` : '무료'}</span>
+        </div>
 
-        {(purchaseType === 'oneTime' ? oneTimeTotals.discount : subscriptionTotals.discount) > 0 && (
-          <div className="flex justify-between mb-4">
+        {discount > 0 && (
+          <div className="amount-row discount">
             <span>할인 금액</span>
-            <span>-{(purchaseType === 'oneTime' ? oneTimeTotals.discount : subscriptionTotals.discount).toLocaleString()}원</span>
+            <span>-{discount.toLocaleString()}원</span>
           </div>
         )}
-      </div>
 
-      {/* 결제하기 버튼 */}
-      <button className="w-full bg-red-500 text-white p-4 rounded-lg">
-        {(purchaseType === 'oneTime' ? oneTimeTotals.finalPrice : subscriptionTotals.finalPrice).toLocaleString()}원 | 결제하기
-      </button>
-
-      {/* 정기구독 혜택 안내 */}
-      {purchaseType === 'subscription' && (
-        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-          <h3 className="font-bold mb-2">정기 구독 혜택</h3>
-          <ul className="list-disc pl-5">
-            <li>3만원 이상 구매 시 3,000원 할인</li>
-            <li>1만원 이상 구매 시 무료 배송</li>
-          </ul>
+        <div className="amount-row">
+          <span>결제 예정 금액</span>
+          <span className="price">{finalPrice.toLocaleString()}원</span>
         </div>
-      )}
+      </div>
     </div>
   );
 };

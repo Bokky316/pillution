@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import CartItem from "@/features/cart/CartItem";
 import CartSummary from "@/features/cart/CartSummary";
+import TotalPaymentSummary from '@/features/cart/TotalPaymentSummary';
 import { fetchCartItems, updateCartItem, removeCartItem, selectCartItem, selectAllCartItems } from "@/store/cartSlice";
 import "@/styles/CartPage.css";
 
@@ -14,7 +15,7 @@ const CartPage = () => {
   const dispatch = useDispatch();
   const { items: cartItems, status, error } = useSelector(state => state.cart);
   const [selectAll, setSelectAll] = useState(false);
-  const [selectedPurchaseType, setSelectedPurchaseType] = useState(null);
+  const [selectedPurchaseType, setSelectedPurchaseType] = useState('subscription'); // 기본값을
 
   /**
    * 컴포넌트 마운트 시 장바구니 아이템을 불러옵니다.
@@ -101,7 +102,7 @@ const CartPage = () => {
   if (status === 'loading') return <div>Loading...</div>;
   if (status === 'failed') return <div>Error: {error}</div>;
 
-  return (
+return (
     <div className="cart-page">
       <h2>CART</h2>
       <main className="cart-container">
@@ -137,16 +138,29 @@ const CartPage = () => {
         <div className="purchase-type-selection">
           <CartSummary
             cartItems={cartItems}
-            purchaseType="oneTime"
-            isSelected={selectedPurchaseType === 'oneTime'}
-            onSelect={() => handlePurchaseTypeSelect('oneTime')}
-          />
-          <CartSummary
-            cartItems={cartItems}
             purchaseType="subscription"
             isSelected={selectedPurchaseType === 'subscription'}
             onSelect={() => handlePurchaseTypeSelect('subscription')}
           />
+          <CartSummary
+            cartItems={cartItems}
+            purchaseType="oneTime"
+            isSelected={selectedPurchaseType === 'oneTime'}
+            onSelect={() => handlePurchaseTypeSelect('oneTime')}
+          />
+        </div>
+        {/* 총 결제 금액 요약 */}
+        <TotalPaymentSummary
+          cartItems={cartItems}
+          purchaseType={selectedPurchaseType}
+        />
+        {/* 정기 구독 혜택 정보 (항상 표시) */}
+        <div className="subscription-benefits">
+          <h4>정기 구독 혜택</h4>
+          <ul>
+            <li>3만원 이상 구매 시 3,000원 할인</li>
+            <li>1만원 이상 구매 시 무료 배송</li>
+          </ul>
         </div>
         {/* 결제하기 버튼 */}
         <button
