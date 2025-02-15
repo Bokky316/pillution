@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
-import { API_URL, SERVER_URL } from "@/constant";
+import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
+import { API_URL, SERVER_URL } from "@/utils/constants";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 

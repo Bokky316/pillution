@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { TextField, Button, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
-import { API_URL } from "../../../constant";
+import { API_URL } from "@/utils/constants";
 import { useNavigate, useParams } from "react-router-dom";
-import './EditMember.css';
+import '@/styles/EditMember.css';
 
 const EditMember = () => {
     const [member, setMember] = useState({

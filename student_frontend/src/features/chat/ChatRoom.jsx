@@ -3,9 +3,9 @@ import { Box, Typography, TextField, Button, Paper, MenuItem, Select, Dialog, Di
 import SockJS from "sockjs-client";
 import { useParams } from "react-router-dom";
 import { Client } from "@stomp/stompjs";
-import { API_URL, SERVER_URL } from "@/constant";
-import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
-import useAuth from "@hook/useAuth";
+import { API_URL, SERVER_URL } from "@/utils/constants";
+import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
+import useAuth from "@/hooks/useAuth";
 
 const ChatRoom = () => {
     // 상태 변수 정의

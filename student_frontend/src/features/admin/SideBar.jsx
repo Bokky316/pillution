@@ -1,8 +1,8 @@
 import React, { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux"; // Redux 사용
-import { setActiveMenu } from "../../redux/sidebarSlice"; // 액션 임포트
-import "./SideBar.css";
+import { useDispatch, useSelector } from "react-redux";
+import { setActiveMenu } from "@/store/sidebarSlice";
+import "@/styles/SideBar.css";
 
 const SideBar = () => {
   const location = useLocation();

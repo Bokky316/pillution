@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { TextField, Button, Select, MenuItem, FormControl, InputLabel, Box } from '@mui/material';
-import { API_URL } from '../../../constant';
-import { useNavigate } from 'react-router-dom';
-import './AddProduct.css';
+ import React, { useState, useEffect } from 'react';
+ import { TextField, Button, Select, MenuItem, FormControl, InputLabel, Box } from '@mui/material';
+ import { API_URL } from '@/utils/constants';
+ import { useNavigate } from 'react-router-dom';
+ import '@/styles/AddProduct.css';
 
 const AddProduct = () => {
     const [product, setProduct] = useState({
