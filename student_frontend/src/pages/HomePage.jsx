@@ -8,7 +8,7 @@ const HomePage = () => {
 
 
     return (
-        <Box sx={{ maxWidth: "100%", width: "100%", margin: "0 auto" }}>
+        <Box className="home-page" sx={{ maxWidth: "100%", width: "100%", margin: "0 auto" }}>
             {/* Hero Section */}
             <Box
                 sx={{
