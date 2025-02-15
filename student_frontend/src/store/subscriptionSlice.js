@@ -5,34 +5,6 @@ import { API_URL } from "@utils/constants";
 console.log("🔍 [DEBUG] fetchWithAuth import 확인:", fetchWithAuth);
 
 
-//export const fetchSubscription = createAsyncThunk(
-//    "subscription/fetchSubscription",
-//    async (_, { getState, rejectWithValue }) => {
-//        try {
-//            console.log("🔍 fetchSubscription 호출됨");
-//            const { auth } = getState(); // Redux에서 로그인된 유저 정보 가져오기
-//            if (!auth.user) throw new Error("로그인이 필요합니다.");
-//
-//            const response = await fetchWithAuth(`${API_URL}subscription?memberId=${auth.user.id}`);
-//            const data = await response.json();
-//
-//            if (!response.ok) throw new Error(data.message || "구독 정보를 불러오지 못했습니다.");
-//            console.log("✅ fetchSubscription 성공: ", data);
-//            return data;
-//        } catch (error) {
-//                console.error("❌ fetchSubscription 실패:", error);
-//                return rejectWithValue(error.message);
-//        }
-//    }
-//);
-
-//export const fetchSubscription = createAsyncThunk(
-//  "subscription/fetchSubscription",
-//  async () => {
-//    const response = await fetchWithAuth(`${API_URL}subscription`);
-//    return response.json();
-//  }
-//);
 /**
  * 사용자의 구독 정보 가져오기
  */
@@ -126,35 +98,6 @@ export const cancelSubscription = createAsyncThunk(
     }
 );
 
-//const subscriptionSlice = createSlice({
-//  name: "subscription",
-//  initialState: {
-//    data: null,
-//    loading: false,
-//    error: null,
-//  },
-//  reducers: {},
-//  extraReducers: (builder) => {
-//    builder
-//      .addCase(fetchSubscription.pending, (state) => {
-//        state.loading = true;
-//      })
-//      .addCase(fetchSubscription.fulfilled, (state, action) => {
-//        state.loading = false;
-//        state.data = action.payload;
-//      })
-//      .addCase(fetchSubscription.rejected, (state, action) => {
-//        state.loading = false;
-//        state.error = action.error.message;
-//      })
-//      .addCase(updateSubscription.fulfilled, (state, action) => {
-//        state.data = action.payload;
-//      })
-//      .addCase(cancelSubscription.fulfilled, (state, action) => {
-//        state.data = action.payload;
-//      });
-//  },
-//});
 
 /**
  * 다음 회차 결제 상품 추가/삭제
@@ -215,67 +158,40 @@ export const updateNextSubscriptionItems = createAsyncThunk(
 
 
 
-export const replaceNextSubscriptionItems = createAsyncThunk(
-    'subscription/replaceNextItems',
-    async ({ subscriptionId, updatedItems }, { rejectWithValue }) => {
-        try {
-            console.log("📡 [API 요청] 교체할 상품 목록:", { subscriptionId, updatedItems });
-
-            const response = await fetchWithAuth(`${API_URL}subscription/replace-next-items`, {
-                method: 'POST',
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ subscriptionId, updatedItems }),
-            });
-
-            if (!response.ok) {
-                throw new Error('구독 아이템 교체 실패');
-            }
-
-            const data = await response.json();
-            console.log("✅ [SUCCESS] 구독 아이템 교체 응답:", data);
-
-            return data;  // ✅ Redux 상태 업데이트를 위해 반환
-        } catch (error) {
-            console.error('❌ [ERROR] 구독 아이템 교체 실패:', error);
-            return rejectWithValue(error.message);
-        }
-    }
-);
-
-
-
-
-
-//(async () => {
-//    try {
-//        console.log("🛠️ [테스트] fetchWithAuth 실행 테스트");
-//        const response = await fetchWithAuth("/api/test");
-//        console.log("✅ [테스트] fetchWithAuth 정상 동작:", response);
-//    } catch (error) {
-//        console.error("❌ [테스트] fetchWithAuth 호출 실패:", error);
-//    }
-//})();
-
-
-//export const addNextSubscriptionItem = createAsyncThunk(
-//    "subscription/addNextSubscriptionItem",
-//    async (newItem, { dispatch }) => {
-//        console.log("📡 서버로 보낼 데이터:", newItem);
-//        const response = await fetchWithAuth(`${API_URL}subscription/add-next-item`, {
-//            method: "POST",
-//            body: JSON.stringify(newItem),
-//        });
+//export const replaceNextSubscriptionItems = createAsyncThunk(
+//    'subscription/replaceNextItems',
+//    async ({ subscriptionId, updatedItems }, { rejectWithValue }) => {
+//        try {
+//            console.log("📡 [API 요청] 교체할 상품 목록:", { subscriptionId, updatedItems });
 //
-//        if (!response.ok) {
-//            throw new Error("상품 추가 실패");
+//            const response = await fetchWithAuth(`${API_URL}subscription/replace-next-items`, {
+//                method: 'POST',
+//                headers: {
+//                    "Content-Type": "application/json",
+//                },
+//                body: JSON.stringify({ subscriptionId, updatedItems }),
+//            });
+//
+//            if (!response.ok) {
+//                throw new Error('구독 아이템 교체 실패');
+//            }
+//
+//            const data = await response.json();
+//            console.log("✅ [SUCCESS] 구독 아이템 교체 응답:", data);
+//
+//            return data;  // ✅ Redux 상태 업데이트를 위해 반환
+//        } catch (error) {
+//            console.error('❌ [ERROR] 구독 아이템 교체 실패:', error);
+//            return rejectWithValue(error.message);
 //        }
-//
-//        console.log("✅ 상품 추가 성공");
-//        dispatch(fetchSubscription()); // ✅ 최신 데이터 가져오기
 //    }
 //);
+
+
+
+
+
+
 
 export const addNextSubscriptionItem = createAsyncThunk(
   "subscription/addNextSubscriptionItem",
@@ -311,19 +227,19 @@ export const addNextSubscriptionItem = createAsyncThunk(
 
 
 
-/**
- * 자동 결제 처리
- */
-export const processSubscriptionBilling = createAsyncThunk(
-  "subscription/processBilling",
-  async (subscriptionId) => {
-    const response = await fetchWithAuth(`${API_URL}subscription/process-billing`, {
-      method: "POST",
-      body: JSON.stringify({ subscriptionId }),
-    });
-    return response.json();
-  }
-);
+///**
+// * 자동 결제 처리
+// */
+//export const processSubscriptionBilling = createAsyncThunk(
+//  "subscription/processBilling",
+//  async (subscriptionId) => {
+//    const response = await fetchWithAuth(`${API_URL}subscription/process-billing`, {
+//      method: "POST",
+//      body: JSON.stringify({ subscriptionId }),
+//    });
+//    return response.json();
+//  }
+//);
 
 export const deleteNextSubscriptionItem = createAsyncThunk(
     "subscription/deleteNextSubscriptionItem",
@@ -568,9 +484,9 @@ const subscriptionSlice = createSlice({
             state.loading = false;
             console.error("❌ [ERROR] Redux 상태 업데이트 실패:", action.payload);
         })
-        .addCase(processSubscriptionBilling.fulfilled, (state, action) => {
-            state.data = action.payload;
-        })
+//        .addCase(processSubscriptionBilling.fulfilled, (state, action) => {
+//            state.data = action.payload;
+//        })
         .addCase(fetchProducts.rejected, (state) => {
           state.products = []; // ✅ 실패 시 빈 배열로 초기화
         })
@@ -578,13 +494,13 @@ const subscriptionSlice = createSlice({
             console.log("🔍 Redux 상태 업데이트: fetchProducts.fulfilled 실행됨", action.payload); // ✅ 디버깅 로그 추가
             state.products = action.payload;  // ✅ Redux 상태에 저장
         })
-        .addCase(replaceNextSubscriptionItems.fulfilled, (state, action) => {
-            console.log("✅ [Redux] 구독 아이템 교체 완료:", action.payload);
-            state.data.nextItems = action.payload;  // ✅ 새로운 아이템으로 교체
-        })
-        .addCase(replaceNextSubscriptionItems.rejected, (state, action) => {
-            console.error("❌ [ERROR] 구독 아이템 교체 실패:", action.payload);
-        })
+//        .addCase(replaceNextSubscriptionItems.fulfilled, (state, action) => {
+//            console.log("✅ [Redux] 구독 아이템 교체 완료:", action.payload);
+//            state.data.nextItems = action.payload;  // ✅ 새로운 아이템으로 교체
+//        })
+//        .addCase(replaceNextSubscriptionItems.rejected, (state, action) => {
+//            console.error("❌ [ERROR] 구독 아이템 교체 실패:", action.payload);
+//        })
        .addCase(deleteNextSubscriptionItem.fulfilled, (state, action) => {
            console.log("✅ [Redux] 삭제 완료:", action.payload);
 
