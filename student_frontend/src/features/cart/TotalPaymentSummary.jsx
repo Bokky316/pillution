@@ -9,7 +9,11 @@ const TotalPaymentSummary = ({ cartItems, purchaseType }) => {
 
     // 선택된 상품만 계산에 포함
     cartItems.filter(item => item.selected).forEach(item => {
-      totalPrice += item.price * item.quantity;
+      if (item.price && typeof item.price === 'number') { // price가 유효한 숫자인지 확인
+        totalPrice += item.price * item.quantity;
+      } else {
+        console.error("Invalid price for item:", item);
+      }
     });
 
     if (purchaseType === 'oneTime') {

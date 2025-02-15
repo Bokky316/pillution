@@ -11,7 +11,7 @@ export const createOrder = createAsyncThunk(
   'order/createOrder',
   async (orderDto, { rejectWithValue }) => {
     try {
-      const response = await fetchWithAuth(`${API_URL}/orders`, {
+      const response = await fetchWithAuth(`${API_URL}orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -35,7 +35,7 @@ export const fetchOrderHistory = createAsyncThunk(
   'order/fetchOrderHistory',
   async (page = 0, { rejectWithValue }) => {
     try {
-      const response = await fetchWithAuth(`${API_URL}/orders?page=${page}`);
+      const response = await fetchWithAuth(`${API_URL}orders?page=${page}`);
       if (!response.ok) throw new Error('Failed to fetch order history');
       return await response.json();
     } catch (error) {
@@ -53,7 +53,7 @@ export const cancelOrder = createAsyncThunk(
   'order/cancelOrder',
   async (orderId, { rejectWithValue }) => {
     try {
-      const response = await fetchWithAuth(`${API_URL}/orders/${orderId}/cancel`, {
+      const response = await fetchWithAuth(`${API_URL}orders/${orderId}/cancel`, {
         method: 'POST',
       });
       if (!response.ok) throw new Error('Failed to cancel order');
@@ -112,7 +112,7 @@ const orderSlice = createSlice({
           state.orders[index].status = 'CANCELED';
         }
       })
-      .addCase(cancelOrder.rejected, (state, action) => {
+      .addCase(cancelOrder.rejected, (state) => {
         state.status = 'failed';
         state.error = action.payload;
       });

@@ -27,7 +27,6 @@ import paymentReducer from "@/store/paymentSlice";
  * - key : localStorage에 저장될 키 이름을 지정합니다.
  * - storage: 상태를 저장할 스토리지를 정의합니다. 여기서는 localStorage를 사용합니다.
  * - whitelist: Redux의 어떤 리듀서를 저장할지 결정합니다.
- * @type {{storage, whitelist: string[], version: number, key: string}}
  */
 const persistConfig = {
     key: "root",
@@ -38,7 +37,6 @@ const persistConfig = {
 /**
  * 루트 리듀서 생성
  * - combineReducers를 사용하여 여러 리듀서를 하나로 병합
- * - authReducer, surveyReducer, uiReducer, recommendationReducer, snackbarReducer, messageReducer, chatReducer, cartReducer, orderReducer, paymentReducer를 통합
  */
 const rootReducer = combineReducers({
     auth: authReducer,

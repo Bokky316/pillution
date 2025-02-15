@@ -10,7 +10,7 @@ export const fetchMerchantId = createAsyncThunk(
   'payment/fetchMerchantId',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetchWithAuth(`${API_URL}/payments/merchant-id`);
+      const response = await fetchWithAuth(`${API_URL}payments/merchant-id`);
       if (!response.ok) throw new Error('Failed to fetch merchant ID');
       return await response.json();
     } catch (error) {
@@ -28,7 +28,7 @@ export const processPayment = createAsyncThunk(
   'payment/processPayment',
   async (paymentRequestDto, { rejectWithValue }) => {
     try {
-      const response = await fetchWithAuth(`${API_URL}/payments/request`, {
+      const response = await fetchWithAuth(`${API_URL}payments/request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -61,13 +61,11 @@ const paymentSlice = createSlice({
       .addCase(fetchMerchantId.pending, (state) => {
         state.status = 'loading';
       })
-      .addCase(fetchMerchantId.fulfilled, (state, action) => {
+      .addCase(fetchMerchantId.fulfilled, (state) => {
         state.status = 'succeeded';
-        state.merchantId = action.payload.merchantId;
       })
-      .addCase(fetchMerchantId.rejected, (state, action) => {
+      .addCase(fetchMerchantId.rejected, (state) => {
         state.status = 'failed';
-        state.error = action.payload;
       })
       .addCase(processPayment.pending, (state) => {
         state.status = 'loading';
@@ -76,9 +74,8 @@ const paymentSlice = createSlice({
         state.status = 'succeeded';
         state.paymentResult = action.payload;
       })
-      .addCase(processPayment.rejected, (state, action) => {
+      .addCase(processPayment.rejected, (state) => {
         state.status = 'failed';
-        state.error = action.payload;
       });
   },
 });

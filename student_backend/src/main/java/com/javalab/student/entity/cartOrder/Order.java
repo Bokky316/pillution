@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 주문 정보를 담는 엔티티 클래스.
@@ -139,6 +140,16 @@ public class Order extends BaseEntity {
      * @return OrderDto
      */
     public OrderDto entityToDto() {
+        List<OrderDto.OrderItemDto> orderItemDtos = this.orderItems.stream()
+                .map(orderItem -> OrderDto.OrderItemDto.builder()
+                        .id(orderItem.getId())
+                        .productId(orderItem.getProduct().getId())
+                        .productName(orderItem.getProduct().getName())
+                        .count(orderItem.getCount())
+                        .orderPrice(orderItem.getOrderPrice())
+                        .build())
+                .collect(Collectors.toList());
+
         return OrderDto.builder()
                 .id(this.id)
                 .memberId(this.member.getId())
@@ -147,6 +158,7 @@ public class Order extends BaseEntity {
                 .amount(this.amount)
                 .waybillNum(this.waybillNum)
                 .parcelCd(this.parcelCd)
+                .orderItems(orderItemDtos)
                 .build();
     }
 }

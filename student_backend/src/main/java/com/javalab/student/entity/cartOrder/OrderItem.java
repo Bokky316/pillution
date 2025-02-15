@@ -39,7 +39,7 @@ public class OrderItem extends BaseEntity {
 
     /** 주문 가격 */
     @NotNull
-    @Column(name = "order_price", nullable = false)
+    @Column(name = "order_price", nullable = false, columnDefinition = "DECIMAL(19,2) DEFAULT 0.00")
     private BigDecimal orderPrice;
 
     /** 주문 수량 */

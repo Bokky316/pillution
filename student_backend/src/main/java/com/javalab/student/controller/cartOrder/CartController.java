@@ -1,7 +1,6 @@
 package com.javalab.student.controller.cartOrder;
 
-import com.javalab.student.dto.cartOrder.CartDetailDto;
-import com.javalab.student.dto.cartOrder.CartItemDto;
+import com.javalab.student.dto.cartOrder.*;
 import com.javalab.student.service.cartOrder.CartService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
@@ -14,13 +13,13 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 
 /**
  * 장바구니 관련 API 컨트롤러
- * - 장바구니 담기, 목록 조회, 수정, 삭제 기능 제공
+ * - 장바구니 담기, 목록 조회, 수정, 삭제, 주문 기능 제공
  */
 @RestController
 @RequestMapping("/api/cart")
@@ -176,4 +175,34 @@ public class CartController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("장바구니 상품 삭제에 실패했습니다: " + e.getMessage());
         }
     }
+
+    /**
+     * 특정 장바구니 아이템 조회
+     * @param cartItemId 장바구니 아이템 ID
+     * @param principal 사용자 정보
+     * @return 장바구니 아이템 상세 정보
+     */
+    @GetMapping("/{cartItemId}")
+    public ResponseEntity<?> getCartItem(@PathVariable("cartItemId") Long cartItemId, Principal principal) {
+        log.info("장바구니 아이템 조회 요청 - 카트 아이템 ID: {}", cartItemId);
+        if (!cartService.validateCartItem(cartItemId, principal.getName())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("해당 장바구니 아이템에 접근 권한이 없습니다.");
+        }
+        try {
+            CartDetailDto cartItem = cartService.getCartItemDetail(cartItemId);
+            return ResponseEntity.ok(cartItem);
+        } catch (EntityNotFoundException e) {
+            log.error("장바구니 아이템을 찾을 수 없음", e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("장바구니 아이템을 찾을 수 없습니다.");
+        } catch (Exception e) {
+            log.error("장바구니 아이템 조회 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("장바구니 아이템 조회에 실패했습니다: " + e.getMessage());
+        }
+    }
+    //
+    //    @RequestMapping(value = "/**", method = RequestMethod.OPTIONS)
+    //    public ResponseEntity handleOptions() {
+    //        return ResponseEntity.ok().build();
+    //    }
+    //
 }
