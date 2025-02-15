@@ -9,6 +9,7 @@ import Header from "@/layouts/Header";
 import Footer from "@/layouts/Footer";
 import Layout from "@/layouts/Layout";
 
+import HomePage from "@/pages/HomePage";
 import RecommendationPage from "@/pages/RecommendationPage";
 import SurveyPage from "@/pages/SurveyPage";
 import ProductDetailPage from "@/pages/ProductDetailPage";
@@ -57,7 +58,8 @@ function App() {
             <Layout>
                 <Routes>
                     {/* Routes */}
-                    <Route path="/" element={<ProductListPage />} />
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/products" element={<ProductListPage />} />
                     <Route path="/products/:productId" element={<ProductDetailPage />} />
                     <Route path="/cart" element={<CartPage />} />
                     <Route path="/order/:orderId" element={<OrderDetailPage />} />
