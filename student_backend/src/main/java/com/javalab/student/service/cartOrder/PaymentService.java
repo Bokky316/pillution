@@ -1,17 +1,18 @@
 package com.javalab.student.service.cartOrder;
 
 import com.javalab.student.constant.OrderStatus;
+import com.javalab.student.dto.cartOrder.CartDetailDto;
 import com.javalab.student.dto.cartOrder.OrderDto;
 import com.javalab.student.dto.cartOrder.PaymentRequestDto;
 import com.javalab.student.entity.Member;
-import com.javalab.student.entity.cartOrder.CartItem;
-import com.javalab.student.entity.cartOrder.Order;
-import com.javalab.student.entity.cartOrder.Payment;
+import com.javalab.student.entity.Product;
+import com.javalab.student.entity.cartOrder.*;
 import com.javalab.student.repository.MemberRepository;
+import com.javalab.student.repository.ProductRepository;
 import com.javalab.student.repository.cartOrder.CartItemRepository;
+import com.javalab.student.repository.cartOrder.CartRepository;
 import com.javalab.student.repository.cartOrder.OrderRepository;
 import com.javalab.student.repository.cartOrder.PaymentRepository;
-import com.javalab.student.service.SubscriptionService;
 import com.siot.IamportRestClient.IamportClient;
 import com.siot.IamportRestClient.exception.IamportResponseException;
 import com.siot.IamportRestClient.response.IamportResponse;
@@ -40,9 +41,8 @@ public class PaymentService {
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
     private final CartItemRepository cartItemRepository;
-    private final OrderService orderService;
+    private final CartRepository cartRepository;
     private final MemberRepository memberRepository;
-    private final SubscriptionService subscriptionService;
 
     /**
      * 결제를 처리하고 검증합니다.
@@ -69,7 +69,10 @@ public class PaymentService {
         order.setOrderStatus(OrderStatus.PAYMENT_COMPLETED);
         orderRepository.save(order);
 
-        // 5. 응답 데이터 구성
+        // 5. 장바구니 비우기
+        clearCart(email);
+
+        // 6. 응답 데이터 구성
         return createResponseData(payment);
     }
 
@@ -83,33 +86,24 @@ public class PaymentService {
     @Transactional
     public Order createOrder(PaymentRequestDto requestDto, String email, String purchaseType) {
         Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("멤버를 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("Member not found"));
+
+        Cart cart = cartRepository.findByMemberMemberId(member.getMemberId())
+                .orElseThrow(() -> new EntityNotFoundException("Cart not found"));
+
+        List<CartItem> cartItems = cartItemRepository.findByCartCartId(cart.getCartId());
+        BigDecimal totalOrderAmount = BigDecimal.ZERO;
+
         List<OrderDto> orderDtoList = new ArrayList<>();
-        log.info("이메일"+email);
-        List<CartItem> cartItems = new ArrayList<>();
-
-        BigDecimal totalOrderAmount = BigDecimal.ZERO; //총 가격
-        // 1. CartOrderRequestDto에서 CartOrderItem들을 가져옴
-        List<CartItem> cartItem= cartItemRepository.findAll();
-
-        for (CartItem item : cartItem){
-            if(item.getCart().getMember().getEmail().equals(email)){
-                cartItems.add(item);
-            }
-        }
-
-        // 2. CartOrderItem들을 OrderDto로 변환
-        for (CartItem cartItem1 : cartItems) {
-            log.info("cartItem1"+cartItem1.getProduct().getPrice());
+        for (CartItem cartItem : cartItems) {
             OrderDto orderDto = OrderDto.builder()
-                    .productId(cartItem1.getProduct().getId())
-                    .count(cartItem1.getQuantity())
+                    .productId(cartItem.getProduct().getId())
+                    .count(cartItem.getQuantity())
                     .build();
-            log.info("price"+cartItem1.getProduct().getPrice());
-            totalOrderAmount = totalOrderAmount.add(cartItem1.getProduct().getPrice().multiply(new BigDecimal(cartItem1.getQuantity())));
             orderDtoList.add(orderDto);
+            totalOrderAmount = totalOrderAmount.add(cartItem.getProduct().getPrice()
+                    .multiply(BigDecimal.valueOf(cartItem.getQuantity())));
         }
-        log.info("orderDtoList"+orderDtoList);
 
         Order order = Order.builder()
                 .member(member)
@@ -117,41 +111,33 @@ public class PaymentService {
                 .orderStatus(OrderStatus.ORDERED)
                 .orderAmount(totalOrderAmount)
                 .build();
-        log.info("토탈 오더"+totalOrderAmount);
-        orderRepository.save(order);
 
-        return order;
+        return orderRepository.save(order);
     }
 
     /**
      * 포트원 API를 사용하여 결제 정보를 조회하고 검증합니다.
-     * @param requestDto 결제 요청 정보
-     * @param order 주문 정보
      */
     private void verifyPayment(PaymentRequestDto requestDto, Order order) {
-        IamportResponse<com.siot.IamportRestClient.response.Payment> paymentResponse;
         try {
-            paymentResponse = iamportClient.paymentByImpUid(requestDto.getImpUid());
+            IamportResponse<com.siot.IamportRestClient.response.Payment> paymentResponse =
+                    iamportClient.paymentByImpUid(requestDto.getImpUid());
+
+            if (paymentResponse.getResponse() == null) {
+                throw new IllegalArgumentException("❌ 결제 정보 없음: imp_uid=" + requestDto.getImpUid());
+            }
+
+            BigDecimal paidAmount = paymentResponse.getResponse().getAmount();
+            if (paidAmount.compareTo(requestDto.getPaidAmount()) != 0) {
+                throw new IllegalArgumentException("❌ 결제 금액 불일치: 요청 금액=" + requestDto.getPaidAmount() + ", 실제 결제 금액=" + paidAmount);
+            }
         } catch (IamportResponseException | IOException e) {
             throw new IllegalArgumentException("❌ 포트원 결제 검증 실패: " + e.getMessage());
-        }
-
-        com.siot.IamportRestClient.response.Payment paymentInfo = paymentResponse.getResponse();
-        if (paymentInfo == null) {
-            throw new IllegalArgumentException("❌ 결제 정보 없음: imp_uid=" + requestDto.getImpUid());
-        }
-
-        BigDecimal paidAmount = paymentInfo.getAmount();
-        if (paidAmount.compareTo(requestDto.getPaidAmount()) != 0) {
-            throw new IllegalArgumentException("❌ 결제 금액 불일치: 요청 금액=" + requestDto.getPaidAmount() + ", 실제 결제 금액=" + paidAmount);
         }
     }
 
     /**
      * 결제 정보를 저장합니다.
-     * @param requestDto 결제 요청 정보
-     * @param order 주문 정보
-     * @return Payment 결제 정보
      */
     private Payment createAndSavePayment(PaymentRequestDto requestDto, Order order) {
         Payment payment = Payment.builder()
@@ -173,8 +159,6 @@ public class PaymentService {
 
     /**
      * 응답 데이터를 생성합니다.
-     * @param payment 결제 정보
-     * @return 응답 데이터
      */
     private Map<String, Object> createResponseData(Payment payment) {
         Map<String, Object> response = new HashMap<>();
@@ -186,5 +170,17 @@ public class PaymentService {
         response.put("status", payment.getOrderStatus());
         response.put("paidAt", payment.getPaidAt());
         return response;
+    }
+
+    /**
+     * 장바구니를 비웁니다.
+     */
+    private void clearCart(String email) {
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("해당 이메일로 멤버를 찾을 수 없습니다: " + email));
+        Cart cart = cartRepository.findByMemberMemberId(member.getMemberId())
+                .orElseThrow(() -> new EntityNotFoundException("Cart not found"));
+        List<CartItem> cartItems = cartItemRepository.findByCartCartId(cart.getCartId());
+        cartItemRepository.deleteAll(cartItems);
     }
 }
