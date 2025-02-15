@@ -6,8 +6,10 @@ import com.javalab.student.dto.cartOrder.CartOrderRequestDto;
 import com.javalab.student.dto.cartOrder.OrderDto;
 import com.javalab.student.entity.Member;
 import com.javalab.student.entity.Product;
+import com.javalab.student.entity.Subscription;
 import com.javalab.student.entity.cartOrder.Cart;
 import com.javalab.student.entity.cartOrder.CartItem;
+import com.javalab.student.repository.SubscriptionRepository;
 import com.javalab.student.repository.cartOrder.CartItemRepository;
 import com.javalab.student.repository.cartOrder.CartRepository;
 import com.javalab.student.repository.MemberRepository;
@@ -35,12 +37,13 @@ public class CartService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final OrderService orderService;
+    private final SubscriptionRepository subscriptionRepository;
 
     /**
      * 장바구니에 상품을 추가합니다.
      *
      * @param cartItemDto 장바구니에 추가할 상품 정보
-     * @param email 사용자 이메일
+     * @param email       사용자 이메일
      * @return 추가된 장바구니 아이템의 ID
      */
     @Transactional
@@ -216,4 +219,19 @@ public class CartService {
         return CartDetailDto.of(cartItem);
     }
 
+    /**
+     * 사용자의 구독 상태를 확인합니다.
+     *
+     * @param email 사용자 이메일
+     * @return 구독 중인지 여부
+     */
+    @Transactional(readOnly = true)
+    public boolean isUserSubscribed(String email) {
+        Member member = memberRepository.findByEmail(email);
+        if (member == null) {
+            throw new EntityNotFoundException("회원을 찾을 수 없습니다. Email: " + email);
+        }
+        List<Subscription> activeSubscriptions = subscriptionRepository.findByMemberIdAndStatus(member.getId(), "active");
+        return !activeSubscriptions.isEmpty();
+    }
 }

@@ -1,36 +1,44 @@
 import React from "react";
-import "@/styles/CartItem.css";
+import "@/styles/CartSummary.css";
 
 /**
  * 장바구니 요약 컴포넌트
  * 장바구니 아이템들의 총 금액, 배송비, 할인, 최종 결제 금액을 계산하고 표시합니다.
+ * 일반 구매와 정기 구독 중 하나를 선택할 수 있는 옵션을 제공합니다.
  *
  * @param {Object} props - 컴포넌트 props
  * @param {Array} props.cartItems - 장바구니 아이템 배열
  * @param {string} props.purchaseType - 구매 유형 ('oneTime' 또는 'subscription')
- * @param {boolean} props.isSelected - 현재 선택된 구매 유형인지 여부
  * @param {function} props.onSelect - 구매 유형 선택 핸들러
  * @returns {JSX.Element} 장바구니 요약 컴포넌트
  */
-const CartSummary = ({ cartItems, purchaseType, isSelected, onSelect }) => {
-  const calculateTotals = () => {
+const CartSummary = ({ cartItems, purchaseType, onSelect }) => {
+  /**
+   * 총액, 할인, 배송비를 계산하는 함수
+   * @param {string} type - 계산할 구매 유형
+   * @returns {Object} 계산된 총액, 할인, 배송비, 최종 가격
+   */
+  const calculateTotals = (type) => {
     let totalPrice = 0;
-    let shippingFee = 0;
     let discount = 0;
+    let shippingFee = 3000; // 기본 배송비
 
     cartItems.forEach(item => {
-      const itemTotal = item.price * item.quantity;
-      totalPrice += itemTotal;
+      if (item.selected) {
+        totalPrice += item.price * item.quantity;
+      }
     });
 
-    if (purchaseType === 'oneTime') {
-      shippingFee = 3000; // 일회성 구매는 항상 배송비 3000원
-    } else if (purchaseType === 'subscription') {
+    if (type === 'subscription') {
       if (totalPrice >= 30000) {
-        discount += 3000; // 3만원 이상 구독 시 3000원 할인
+        discount += 3000;
       }
       if (totalPrice >= 10000) {
-        shippingFee = 0; // 1만원 이상 구독 시 무료 배송
+        shippingFee = 0;
+      }
+    } else {
+      if (totalPrice >= 30000) {
+        shippingFee = 0;
       }
     }
 
@@ -39,39 +47,81 @@ const CartSummary = ({ cartItems, purchaseType, isSelected, onSelect }) => {
     return { totalPrice, shippingFee, discount, finalPrice };
   };
 
-  const { totalPrice, shippingFee, discount, finalPrice } = calculateTotals();
+  const oneTimeTotals = calculateTotals('oneTime');
+  const subscriptionTotals = calculateTotals('subscription');
+
+  /**
+   * 구매 유형 옵션을 렌더링하는 함수
+   * @param {string} type - 렌더링할 구매 유형
+   * @returns {JSX.Element} 구매 유형 옵션 컴포넌트
+   */
+  const renderPurchaseOption = (type) => {
+    const isOneTime = type === 'oneTime';
+    const totals = isOneTime ? oneTimeTotals : subscriptionTotals;
+
+    return (
+      <div
+        className={`purchase-type-option ${purchaseType === type ? 'selected' : ''}`}
+        onClick={() => onSelect(type)}
+      >
+        <div className="option-header">
+          <span className="option-title">{isOneTime ? '일반 구매' : '정기 구독'}</span>
+          <span className="option-price">{totals.finalPrice.toLocaleString()}원</span>
+        </div>
+        <div className="option-benefits">
+          {isOneTime ? (
+            <>
+              <div className="benefit-item">3만원 이상 무료배송</div>
+              <div className="benefit-item">5% 할인 쿠폰 사용 가능</div>
+            </>
+          ) : (
+            <>
+              <div className="benefit-item highlight">3만원 이상 구매시 3,000원 할인</div>
+              <div className="benefit-item">1만원 이상 무료배송</div>
+              <div className="benefit-item">구독 회차 할인 적용</div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const selectedTotals = purchaseType === 'oneTime' ? oneTimeTotals : subscriptionTotals;
 
   return (
-    <div className={`cart-summary ${isSelected ? 'selected' : ''}`} onClick={onSelect}>
-      <h3>{purchaseType === 'oneTime' ? '일회성 구매' : '정기 구독'}</h3>
-      <div className="summary-row">
-        <span>총 상품 금액</span>
-        <span>{totalPrice.toLocaleString()}원</span>
+    <>
+      <div className="purchase-type-selection">
+        {renderPurchaseOption('oneTime')}
+        {renderPurchaseOption('subscription')}
       </div>
-      <div className="summary-row">
-        <span>배송비</span>
-        <span>{shippingFee > 0 ? `+ ${shippingFee.toLocaleString()}원` : '무료'}</span>
-      </div>
-      {discount > 0 && (
-        <div className="summary-row discount">
-          <span>할인 금액</span>
-          <span>- {discount.toLocaleString()}원</span>
+
+      <div className="total-amount-section">
+        <div className="total-amount-header">
+          <h3>전체 금액</h3>
+          <span>{selectedTotals.finalPrice.toLocaleString()}원</span>
         </div>
-      )}
-      <div className="summary-row total">
-        <span>결제 예정 금액</span>
-        <span>{finalPrice.toLocaleString()}원</span>
-      </div>
-      {purchaseType === 'subscription' && (
-        <div className="subscription-benefits">
-          <h4>정기 구독 혜택</h4>
-          <ul>
-            <li>3만원 이상 구매 시 3,000원 할인</li>
-            <li>1만원 이상 구매 시 무료 배송</li>
-          </ul>
+        <div className="total-amount-content">
+          <div className="amount-row">
+            <span>총 제품금액</span>
+            <span>{selectedTotals.totalPrice.toLocaleString()}원</span>
+          </div>
+          {selectedTotals.discount > 0 && (
+            <div className="amount-row highlight">
+              <span>제품 할인금액</span>
+              <span>-{selectedTotals.discount.toLocaleString()}원</span>
+            </div>
+          )}
+          <div className="amount-row">
+            <span>기본 배송비</span>
+            <span>
+              {selectedTotals.shippingFee > 0
+                ? `+${selectedTotals.shippingFee.toLocaleString()}원`
+                : '무료'}
+            </span>
+          </div>
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 };
 

@@ -232,11 +232,11 @@ public class CartController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("장바구니 아이템 조회에 실패했습니다: " + e.getMessage());
         }
     }
-
-    @RequestMapping(value = "/**", method = RequestMethod.OPTIONS)
-    public ResponseEntity handleOptions() {
-        return ResponseEntity.ok().build();
-    }
-
+//
+//    @RequestMapping(value = "/**", method = RequestMethod.OPTIONS)
+//    public ResponseEntity handleOptions() {
+//        return ResponseEntity.ok().build();
+//    }
+//
 
 }

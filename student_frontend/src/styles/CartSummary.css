@@ -1,20 +1,118 @@
-.cart-summary {
-  background-color: #f8f8f8;
-  padding: 20px;
-  border-radius: 5px;
-}
-
-.summary-row {
+/* 구매 유형 선택 섹션 스타일 */
+.purchase-type-selection {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 10px;
+  gap: 16px;
+  margin: 20px 0;
 }
 
-.total {
+.purchase-type-option {
+  flex: 1;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.purchase-type-option.selected {
+  border-color: #ff5c35;
+  background-color: #fff4f1;
+}
+
+.option-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.option-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
+.option-price {
+  font-size: 18px;
   font-weight: bold;
+  color: #333;
 }
 
-.checkout-btn {
-  width: calc(100% - 20px);
-  padding: 10px;
+.option-benefits {
+  margin-top: 12px;
+}
+
+.benefit-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.benefit-item.highlight {
+  color: #ff5c35;
+}
+
+/* 전체 금액 섹션 스타일 */
+.total-amount-section {
+  background: #fff;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #eee;
+}
+
+.total-amount-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.total-amount-header h3 {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
+.total-amount-content {
+  padding: 16px;
+}
+
+.purchase-benefits {
+  margin-top: 16px;
+  padding: 16px;
+  background: #f8f8f8;
+  border-radius: 8px;
+}
+
+.benefits-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ff5c35;
+  margin-bottom: 8px;
+}
+
+.benefits-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.benefits-list li {
+  margin-bottom: 4px;
+  padding-left: 16px;
+  position: relative;
+}
+
+.benefits-list li:before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #ff5c35;
 }
