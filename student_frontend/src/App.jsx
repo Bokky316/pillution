@@ -23,7 +23,7 @@ import PostEditPage from "@/pages/PostEditPage";
 import AdminPage from "@/pages/AdminPage";
 import SubscriptionPage from "@/pages/SubscriptionManagement";
 import OrderDetailPage from "@/pages/OrderDetailPage";
-import PaymentPage from '@/pages/PaymentPage';
+// import PaymentPage from '@/pages/PaymentPage';
 
 import Login from "@/features/auth/Login";
 import MyPage from "@/features/auth/MyPage";
@@ -62,7 +62,7 @@ function App() {
                     <Route path="/products/:productId" element={<ProductDetailPage />} />
                     <Route path="/cart" element={<CartPage />} />
                     <Route path="/order-detail" element={<OrderDetailPage />} /> {/* OrderDetailPage Route 추가 */}
-                    <Route path="/payment" element={<PaymentPage />} />
+{/*                     <Route path="/payment" element={<PaymentPage />} /> */}
                     <Route path="/recommendation" element={<RecommendationPage />} />
                     <Route path="/survey" element={<SurveyPage />} />
 

@@ -1,0 +1,17 @@
+.payment-container {
+    padding: 20px;
+    margin-top: 20px;
+  }
+
+  .payment-title {
+    margin-bottom: 15px;
+    text-align: center;
+  }
+
+  .order-info {
+    margin-bottom: 10px;
+  }
+
+  .payment-method-select {
+    margin-top: 20px;
+  }
