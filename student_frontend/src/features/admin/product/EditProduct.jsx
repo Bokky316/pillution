@@ -8,15 +8,19 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    Checkbox,
-    ListItemText
 } from '@mui/material';
 import { API_URL } from "@/utils/constants";
 import axios from "axios";
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchCategoriesByIngredient } from '@features/product/productApi';
+import { clearSelectedCategories } from '@/store/productSlice';
+import '@/styles/AddProduct.css';
 
 const EditProduct = () => {
     const { productId } = useParams();
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const selectedCategories = useSelector((state) => state.products.selectedCategories) || [];
     const token = localStorage.getItem('accessToken');
 
     const [product, setProduct] = useState({
@@ -26,53 +30,61 @@ const EditProduct = () => {
         stock: '',
         active: true,
         mainImageUrl: '',
+        categoryIds: [],
+        ingredientIds: [],
     });
 
     const [imageFile, setImageFile] = useState(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState('');
     const [categories, setCategories] = useState([]);
-    const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
+    const [ingredients, setIngredients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // 이미지 URL을 절대 경로로 변환하는 함수
     const getAbsoluteImageUrl = (imageUrl) => {
         if (!imageUrl) return '';
         const baseUrl = API_URL.substring(0, API_URL.indexOf('/api'));
         return imageUrl.startsWith('http') ? imageUrl : `${baseUrl}${imageUrl}`;
     };
 
+    const fetchIngredients = async () => {
+        try {
+            const response = await fetch(`${API_URL}ingredients`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('영양성분 목록을 불러오는 데 실패했습니다.');
+
+            const data = await response.json();
+            setIngredients(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.error("영양성분 데이터 로딩 실패:", error);
+            setError(error.message);
+        }
+    };
+
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [categoriesResponse, productResponse] = await Promise.all([
-                    fetch(`${API_URL}categories`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        },
-                        credentials: 'include'
-                    }),
-                    fetch(`${API_URL}products/${productId}/dto`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        },
-                        credentials: 'include'
-                    })
-                ]);
+                await fetchIngredients();
 
-                if (!categoriesResponse.ok) {
-                    const errorData = await categoriesResponse.json();
-                    throw new Error(errorData.message || '카테고리 정보를 가져오는데 실패했습니다.');
-                }
+                const productResponse = await fetch(`${API_URL}products/${productId}/dto`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    credentials: 'include'
+                });
+
                 if (!productResponse.ok) {
                     const errorData = await productResponse.json();
-                    throw new Error(errorData.message || `제품 정보를 가져오는데 실패했습니다. (상태 코드: ${productResponse.status})`);
+                    throw new Error(errorData.message || `제품 정보를 가져오는데 실패했습니다.`);
                 }
 
-                const categoriesData = await categoriesResponse.json();
                 const productData = await productResponse.json();
-
-                setCategories(categoriesData);
 
                 setProduct({
                     name: productData.name || '',
@@ -81,20 +93,18 @@ const EditProduct = () => {
                     stock: productData.stock || '',
                     active: productData.active !== undefined ? productData.active : true,
                     mainImageUrl: productData.mainImageUrl || '',
+                    categoryIds: productData.categories ? productData.categories.map(cat => cat.id) : [],
+                    ingredientIds: productData.ingredients ? productData.ingredients.map(ing => ing.id) : [],
                 });
 
-                const categoryIds = productData.categories
-                    ? productData.categories.map((catName) => {
-                          const category = categoriesData.find(c => c.name === catName);
-                          return category ? category.id : null;
-                      })
-                    : [];
-
-                setSelectedCategoryIds(categoryIds.filter(id => id !== null));
-
-                // 기존 이미지가 있으면 절대 URL로 변환하여 미리보기 설정
                 if (productData.mainImageUrl) {
                     setImagePreviewUrl(getAbsoluteImageUrl(productData.mainImageUrl));
+                }
+
+                // 영양성분에 따른 카테고리 불러오기
+                if (productData.ingredients && productData.ingredients.length > 0) {
+                    const ingredientIds = productData.ingredients.map(ing => ing.id);
+                    dispatch(fetchCategoriesByIngredient(ingredientIds));
                 }
 
             } catch (error) {
@@ -106,13 +116,22 @@ const EditProduct = () => {
         };
 
         fetchData();
-    }, [productId, token]);
+    }, [productId, token, dispatch]);
+
+    useEffect(() => {
+        if (selectedCategories?.length > 0) {
+            setProduct(prev => ({
+                ...prev,
+                categoryIds: selectedCategories.map(cat => cat.id),
+            }));
+        }
+    }, [selectedCategories]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setProduct(prev => ({
             ...prev,
-            [name]: name === 'active' ? value : value,
+            [name]: (name === 'price' || name === 'stock') ? Number(value) : value,
         }));
     };
 
@@ -129,14 +148,22 @@ const EditProduct = () => {
         }
     };
 
+    const handleIngredientChange = (e) => {
+        const selectedIngredients = e.target.value;
+        setProduct(prev => ({ ...prev, ingredientIds: selectedIngredients }));
+
+        if (selectedIngredients.length === 0) {
+            dispatch(clearSelectedCategories());
+            return;
+        }
+
+        dispatch(fetchCategoriesByIngredient(selectedIngredients));
+    };
+
     const handleImageDelete = () => {
         setImageFile(null);
         setImagePreviewUrl('');
         setProduct(prev => ({ ...prev, mainImageUrl: '' }));
-    };
-
-    const handleCategoryChange = (e) => {
-        setSelectedCategoryIds(e.target.value);
     };
 
     const uploadImage = async () => {
@@ -171,18 +198,14 @@ const EditProduct = () => {
             }
         }
 
-        const categoryIds = selectedCategoryIds.map(id => Number(id));
-        const price = Number(product.price);
-        const stock = parseInt(product.stock, 10);
-
         const updateData = {
             name: product.name,
             description: product.description,
-            price: price,
-            stock: stock,
+            price: Number(product.price),
+            stock: parseInt(product.stock, 10),
             active: product.active,
             mainImageUrl: uploadedImageUrl,
-            // 카테고리 정보는 별도로 처리
+            ingredientIds: product.ingredientIds,
         };
 
         try {
@@ -195,14 +218,17 @@ const EditProduct = () => {
             });
 
             if (updateProductResponse.status === 200) {
-                // 상품 수정 후 카테고리 업데이트 API 호출
-                const updateCategoryResponse = await axios.put(`${API_URL}products/${productId}/categories`, categoryIds, {
-                    headers: {
-                        "Content-Type": "application/json",
-                        'Authorization': `Bearer ${token}`
-                    },
-                    credentials: 'include'
-                });
+                const updateCategoryResponse = await axios.put(
+                    `${API_URL}products/${productId}/categories`,
+                    product.categoryIds,
+                    {
+                        headers: {
+                            "Content-Type": "application/json",
+                            'Authorization': `Bearer ${token}`
+                        },
+                        credentials: 'include'
+                    }
+                );
 
                 if (updateCategoryResponse.status === 200) {
                     alert("상품이 성공적으로 업데이트되었습니다.");
@@ -224,73 +250,141 @@ const EditProduct = () => {
     if (error) return <div>Error: {error}</div>;
 
     return (
-        <Box sx={{ maxWidth: '600px', margin: '50px auto', padding: '20px', backgroundColor: '#fff', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', borderRadius: '8px' }}>
-            <h2 className="edit-product-title">상품 수정</h2>
-            <form className="edit-product-form" onSubmit={handleSubmit}>
+        <Box sx={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
+            <h2>상품 수정</h2>
+            <form onSubmit={handleSubmit}>
+                <TextField
+                    fullWidth
+                    label="상품명"
+                    name="name"
+                    value={product.name}
+                    onChange={handleInputChange}
+                    required
+                    margin="normal"
+                />
+
                 <FormControl fullWidth margin="normal">
-                    <InputLabel id="multiple-checkbox-label">카테고리</InputLabel>
+                    <InputLabel>영양성분</InputLabel>
                     <Select
-                        labelId="multiple-checkbox-label"
-                        id="multiple-checkbox"
                         multiple
-                        value={selectedCategoryIds}
-                        onChange={handleCategoryChange}
-                        renderValue={(selected) => {
-                            return categories
-                                .filter((category) => selected.includes(category.id))
-                                .map((category) => category.name)
-                                .join(', ');
-                        }}
+                        value={product.ingredientIds}
+                        onChange={handleIngredientChange}
                     >
-                        {categories.map((category) => (
-                            <MenuItem key={category.id} value={category.id}>
-                                <Checkbox checked={selectedCategoryIds.includes(category.id)} />
-                                <ListItemText primary={category.name} />
-                            </MenuItem>
-                        ))}
+                        {Array.isArray(ingredients) && ingredients.length > 0 ? (
+                            ingredients.map(ing => (
+                                <MenuItem key={ing.id} value={ing.id}>
+                                    {ing.ingredientName}
+                                </MenuItem>
+                            ))
+                        ) : (
+                            <MenuItem disabled>영양성분을 불러오는 중...</MenuItem>
+                        )}
                     </Select>
                 </FormControl>
 
-                <TextField fullWidth label="상품명" name="name" value={product.name} onChange={handleInputChange} required margin="normal" />
-                <TextField fullWidth label="가격" name="price" type="number" value={product.price} onChange={handleInputChange} required margin="normal" />
-                <TextField fullWidth label="재고" name="stock" type="number" value={product.stock} onChange={handleInputChange} required margin="normal" />
-                <TextField fullWidth label="상품 상세 내용" name="description" value={product.description} onChange={handleInputChange} required multiline rows={4} margin="normal" />
+                <h3>선택된 카테고리</h3>
+                {selectedCategories.length > 0 ? (
+                    <ul>
+                        {selectedCategories.map((category, index) => (
+                            <li key={index}>{category.name}</li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p>선택된 카테고리가 없습니다.</p>
+                )}
+
+                <TextField
+                    fullWidth
+                    label="가격"
+                    name="price"
+                    type="number"
+                    value={product.price}
+                    onChange={handleInputChange}
+                    required
+                    margin="normal"
+                />
+
+                <TextField
+                    fullWidth
+                    label="재고"
+                    name="stock"
+                    type="number"
+                    value={product.stock}
+                    onChange={handleInputChange}
+                    required
+                    margin="normal"
+                />
+
+                <TextField
+                    fullWidth
+                    label="상품 상세 내용"
+                    name="description"
+                    value={product.description}
+                    onChange={handleInputChange}
+                    required
+                    multiline
+                    rows={4}
+                    margin="normal"
+                />
+
+                <Box sx={{ mt: 2 }}>
+                    <InputLabel sx={{ mb: 1 }}>상품 이미지</InputLabel>
+                    <div className="image-upload-container">
+                        <div className="image-upload-box">
+                            {imagePreviewUrl ? (
+                                <>
+                                    <img
+                                        className="image-preview"
+                                        src={imagePreviewUrl}
+                                        alt="상품 이미지 미리보기"
+                                    />
+                                    <Button
+                                        variant="outlined"
+                                        color="secondary"
+                                        onClick={handleImageDelete}
+                                        sx={{ mt: 2 }}
+                                    >
+                                        이미지 삭제
+                                    </Button>
+                                </>
+                            ) : (
+                                <>
+                                    <input
+                                        className="file-input"
+                                        type="file"
+                                        onChange={handleImageChange}
+                                        accept="image/*"
+                                    />
+                                    <span>상품 이미지 선택</span>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </Box>
 
                 <FormControl fullWidth margin="normal">
-                    <InputLabel id="active-checkbox-label">활성 상태</InputLabel>
+                    <InputLabel>활성 상태</InputLabel>
                     <Select
-                        labelId="active-checkbox-label"
-                        id="active-checkbox"
                         name="active"
                         value={product.active}
                         onChange={handleInputChange}
                     >
-                        <MenuItem value={true}>활성</MenuItem>
-                        <MenuItem value={false}>비활성</MenuItem>
+                        <MenuItem value={true}>활성화</MenuItem>
+                        <MenuItem value={false}>비활성화</MenuItem>
                     </Select>
                 </FormControl>
 
-                {/* 이미지 업로드 및 미리보기 */}
-                <Box margin="normal">
-                    {imagePreviewUrl ? (
-                        <Box>
-                            <img src={imagePreviewUrl} alt="상품 이미지 미리보기" style={{ width: '100%', height: 'auto', maxHeight: '300px', objectFit: 'cover' }} />
-                            <Button variant="outlined" color="secondary" onClick={handleImageDelete} sx={{ mt: 2 }}>이미지 삭제</Button>
-                        </Box>
-                    ) : (
-                        <TextField
-                            fullWidth
-                            margin="normal"
-                            type="file"
-                            onChange={handleImageChange}
-                            InputLabelProps={{ shrink: true }}
-                        />
-                    )}
-                </Box>
-
                 <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
-                    <Button type="submit" variant="contained" color="primary" sx={{ width: '48%' }}>저장</Button>
-                    <Button variant="outlined" color="secondary" sx={{ width: '48%' }} onClick={() => navigate('/adminpage/products')}>취소</Button>
+                    <Button type="submit" variant="contained" color="primary">
+                        저장
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        color="secondary"
+                        onClick={() => navigate('/adminpage/products')}
+                    >
+                        취소
+                    </Button>
                 </Box>
             </form>
         </Box>
