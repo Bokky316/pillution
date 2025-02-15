@@ -27,7 +27,7 @@ public class ProductImg {
     private String imageUrl;
 
     @Column(length = 50)
-    private String imageType; // "대표", "상세", "썸네일" 등
+    private String imageType; // "대표", "상세" 등
 
     @Column(name = "`order`") // 백틱 유지 또는 imageOrder 로 변경
     private Integer order;

@@ -46,6 +46,10 @@ public class Product {
     @Column(nullable = false)
     private boolean active;
 
+    /** 상품 이미지 */
+    @Column(name = "main_image_url")
+    private String mainImageUrl = "";
+
     /** 상품 이미지 목록 */
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default // Builder pattern 사용 시 기본값 설정

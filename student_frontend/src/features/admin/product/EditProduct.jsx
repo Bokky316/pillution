@@ -18,7 +18,6 @@ import {
 import { Close as CloseIcon } from '@mui/icons-material';
 import { API_URL } from "@/utils/constants";
 import axios from "axios";
-import './AddProduct.css';
 
 const EditProduct = () => {
     const { productId } = useParams();
