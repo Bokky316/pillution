@@ -8,6 +8,7 @@ import {
     InputLabel,
     Select,
     MenuItem,
+    Chip, Stack
 } from '@mui/material';
 import { API_URL } from "@/utils/constants";
 import axios from "axios";
@@ -284,11 +285,11 @@ const EditProduct = () => {
 
                 <h3>선택된 카테고리</h3>
                 {selectedCategories.length > 0 ? (
-                    <ul>
+                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
                         {selectedCategories.map((category, index) => (
-                            <li key={index}>{category.name}</li>
+                            <Chip key={index} label={category.name} variant="outlined" />
                         ))}
-                    </ul>
+                    </Stack>
                 ) : (
                     <p>선택된 카테고리가 없습니다.</p>
                 )}

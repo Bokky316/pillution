@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TextField, Button, Select, MenuItem, FormControl, InputLabel, Box } from '@mui/material';
+import { TextField, Button, Select, MenuItem, FormControl, InputLabel, Box, Chip, Stack  } from '@mui/material';
 import { API_URL } from "@/utils/constants";
 import { useNavigate } from 'react-router-dom';
 import '@/styles/AddProduct.css';
@@ -236,12 +236,12 @@ const AddProduct = () => {
                     </Select>
                 </FormControl>
                 <h3>선택된 카테고리</h3>
-                {selectedCategories.length > 0 ? (  // ✅ undefined 방지
-                    <ul>
+                {selectedCategories.length > 0 ? (
+                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
                         {selectedCategories.map((category, index) => (
-                            <li key={index}>{category.name}</li>
+                            <Chip key={index} label={category.name} variant="outlined" />
                         ))}
-                    </ul>
+                    </Stack>
                 ) : (
                     <p>선택된 카테고리가 없습니다.</p>
                 )}
