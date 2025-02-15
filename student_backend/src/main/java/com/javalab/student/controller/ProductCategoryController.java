@@ -18,7 +18,7 @@ public class ProductCategoryController {
 
     @GetMapping
     public ResponseEntity<List<ProductCategory>> getCategories() {
-        List<ProductCategory> categories = categoryRepository.findAll();
+        List<ProductCategory> categories = categoryRepository.findAllByOrderByIdAsc();
         return ResponseEntity.ok(categories);
     }
 }

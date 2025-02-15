@@ -3,8 +3,15 @@ import { TextField, Button, Select, MenuItem, FormControl, InputLabel, Box } fro
 import { API_URL } from '../../../constant';
 import { useNavigate } from 'react-router-dom';
 import './AddProduct.css';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchCategoriesByIngredient } from '@features/product/productApi';
+import { clearSelectedCategories } from '@/redux/productSlice';
 
 const AddProduct = () => {
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const selectedCategories = useSelector((state) => state.products.selectedCategories) || [];
+
     const [product, setProduct] = useState({
         categoryIds: [],
         ingredientIds: [],
@@ -21,22 +28,30 @@ const AddProduct = () => {
     const [imagePreviews, setImagePreviews] = useState({
         mainImage: null,
     });
-    const navigate = useNavigate();
-
     // 카테고리 목록을 저장할 state
     const [categories, setCategories] = useState([]);
     const [ingredients, setIngredients] = useState([]);  // 영양성분 목록 저장
 
 
     useEffect(() => {
-        // 컴포넌트가 마운트될 때 카테고리 목록을 가져옴
-        fetchCategories();
+        if (selectedCategories?.length > 0) { // ✅ undefined 방지
+            setProduct(prev => ({
+                ...prev,
+                categoryIds: selectedCategories.map(cat => cat.id),
+            }));
+        }
+    }, [selectedCategories]);
+
+    useEffect(() => {
+        console.log("🔍 [DEBUG] fetchIngredients 실행!");
         fetchIngredients();
     }, []);
 
     const fetchIngredients = async () => {
         try {
             const token = localStorage.getItem('accessToken');
+            console.log("🔍 [DEBUG] 요청 URL:", `${API_URL}ingredients`);
+
             const response = await fetch(`${API_URL}ingredients`, {
                 method: 'GET',
                 headers: {
@@ -46,14 +61,16 @@ const AddProduct = () => {
                 credentials: 'include'
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                setIngredients(Array.isArray(data) ? data : []);
-            } else {
-                throw new Error('영양성분 목록을 불러오는 데 실패했습니다.');
-            }
+            if (!response.ok) throw new Error('영양성분 목록을 불러오는 데 실패했습니다.');
+
+            const data = await response.json();
+            console.log("✅ [DEBUG] API 응답 데이터:", data);
+
+            setIngredients(Array.isArray(data) ? data : []);
+            console.log("✅ [DEBUG] 저장된 영양성분:", ingredients);  // ⚠️ 주의: 상태 업데이트 직후에는 반영 안 될 수도 있음!
+
         } catch (error) {
-            console.error('영양성분 목록을 불러오는 중 오류가 발생했습니다.', error);
+            console.error("❌ [ERROR] 영양성분 데이터 로딩 실패:", error);
             alert(error.message);
         }
     };
@@ -115,53 +132,17 @@ const AddProduct = () => {
         }));
     };
 
-    const handleIngredientChange = async (e) => {
-        const selectedIngredients = e.target.value;
+    const handleIngredientChange = (e) => {
+            const selectedIngredients = e.target.value;
+            setProduct(prev => ({ ...prev, ingredientIds: selectedIngredients }));
 
-        console.log("🔹 선택된 영양성분:", selectedIngredients);
-        setProduct(prev => ({ ...prev, ingredientIds: selectedIngredients }));
-
-        if (selectedIngredients.length === 0) {
-            console.warn("⚠️ 선택된 영양성분이 없습니다!");
-            setProduct(prev => ({ ...prev, categoryIds: [] })); // ✅ 성분이 없으면 카테고리도 초기화
-            return;
-        }
-
-        try {
-            const token = localStorage.getItem('accessToken'); // ✅ 토큰 가져오기
-            if (!token) {
-                console.error("🚨 토큰이 없습니다! 로그인 필요!");
+            if (selectedIngredients.length === 0) {
+                dispatch(clearSelectedCategories()); // 선택된 카테고리 초기화
                 return;
             }
 
-            console.log("🚀 카테고리 매핑 API 요청 시작...");
-            const response = await fetch(`${API_URL}ingredients/categories?ingredientIds=${selectedIngredients.join(',')}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                credentials: 'include'
-            });
-
-            console.log("📡 API 요청 보냄:", response.url);
-            if (!response.ok) {
-                throw new Error(`카테고리 자동 매핑 실패: ${response.status}`);
-            }
-
-            const data = await response.json();
-            console.log("🔹 매핑된 카테고리 응답:", data);
-
-            // ✅ 한 번의 `setProduct` 호출로 상태 업데이트
-            setProduct(prev => ({
-                ...prev,
-                categoryIds: data.map(cat => cat.id),
-                ingredientIds: selectedIngredients
-            }));
-        } catch (error) {
-            console.error('❌ 카테고리 자동 매핑 실패:', error);
-        }
-    };
+            dispatch(fetchCategoriesByIngredient(selectedIngredients)); // API 요청
+        };
 
     const handleImageChange = (e) => {
         const { name, files } = e.target;
@@ -233,14 +214,6 @@ const AddProduct = () => {
         <Box sx={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
             <h2>상품 추가</h2>
             <form onSubmit={handleSubmit}>
-                <FormControl fullWidth margin="normal">
-                    <InputLabel>카테고리 (자동 설정)</InputLabel>
-                    <Select multiple value={product.categoryIds} readOnly>
-                        {categories.filter(cat => product.categoryIds.includes(cat.id)).map(cat => (
-                            <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
                 <TextField
                     fullWidth
                     label="상품명"
@@ -262,6 +235,16 @@ const AddProduct = () => {
                         )}
                     </Select>
                 </FormControl>
+                <h3>선택된 카테고리</h3>
+                {selectedCategories.length > 0 ? (  // ✅ undefined 방지
+                    <ul>
+                        {selectedCategories.map((category, index) => (
+                            <li key={index}>{category.name}</li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p>선택된 카테고리가 없습니다.</p>
+                )}
                 <TextField
                     fullWidth
                     label="가격"
