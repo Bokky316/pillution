@@ -142,7 +142,7 @@ const HomePage = () => {
                                 <Typography sx={{ marginBottom: "18px", fontSize: "13px", letterSpacing: "-1px" }}>
                                     제품 만족도
                                 </Typography>
-                                <Typography sx={{ fontSize: "14px", color: "#666", lineHeight: 1.5 }}>
+                                <Typography sx={{ fontSize: "14px", color: "#666", lineHeight: 1.5, letterSpacing: "-0.5px" }}>
                                     나에게 꼭 맞는 영양제를<br /> 추천해주기에 만족하고 있어요!
                                 </Typography>
                             </Box>
@@ -161,7 +161,7 @@ const HomePage = () => {
                                 <Typography sx={{ marginBottom: "18px", fontSize: "13px", letterSpacing: "-1px" }}>
                                     건강습관 형성
                                 </Typography>
-                                <Typography sx={{ fontSize: "14px", color: "#666", lineHeight: 1.5 }}>
+                                <Typography sx={{ fontSize: "14px", color: "#666", lineHeight: 1.5, letterSpacing: "-0.5px" }}>
                                     꾸준한 습관이 건강을 만들어요.<br /> 올바른 습관 형성을 돕는 필루션케어
                                 </Typography>
                             </Box>
@@ -180,7 +180,7 @@ const HomePage = () => {
                                 <Typography sx={{ marginBottom: "18px", fontSize: "13px", letterSpacing: "-1px" }}>
                                     건강에 도움
                                 </Typography>
-                                <Typography sx={{ fontSize: "14px", color: "#666", lineHeight: 1.5, letterSpacing: "-1px" }}>
+                                <Typography sx={{ fontSize: "14px", color: "#666", lineHeight: 1.5, letterSpacing: "-0.5px" }}>
                                     먹을 때와 안 먹을 때의 차이<br /> 이미 많은 분들이 도움받고 있어요
                                 </Typography>
                             </Box>
@@ -199,7 +199,7 @@ const HomePage = () => {
                                 <Typography sx={{ marginBottom: "18px", fontSize: "13px", letterSpacing: "-1px" }}>
                                     지속 섭취 기간
                                 </Typography>
-                                <Typography sx={{ fontSize: "14px", color: "#666", lineHeight: 1.5 }}>
+                                <Typography sx={{ fontSize: "14px", color: "#666", lineHeight: 1.5, letterSpacing: "-0.5px" }}>
                                     1년, 12개월, 꾸준하기 힘든 기간!<br /> 필루션과 함께라면 할 수 있어요.
                                 </Typography>
                             </Box>
