@@ -24,7 +24,7 @@
                             <option name="models">
                               <list>
                                 <GrepModel>
-                                  <option name="expression" value="상품 등록" />
+                                  <option name="expression" value="error" />
                                 </GrepModel>
                               </list>
                             </option>

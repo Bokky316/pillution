@@ -20,5 +20,6 @@ public class ProductDto {
     private int stock;
     private boolean active;
     private String mainImageUrl;
+
 }
 

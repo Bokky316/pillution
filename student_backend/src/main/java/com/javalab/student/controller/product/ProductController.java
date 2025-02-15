@@ -69,14 +69,16 @@ public class ProductController {
     }
 
     /** 상품 등록 */
-    @PostMapping
-    public ResponseEntity<ProductDto> createProduct(@Valid ProductFormDto productFormDto,
-                                                    @RequestParam(value = "mainImageFile", required = false) MultipartFile mainImageFile, // ✅ 대표 이미지
-                                                    @RequestParam(value = "detailImageFiles", required = false) List<MultipartFile> detailImageFiles) { // ✅ 상세 이미지들
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductDto> createProduct(
+            @RequestPart("product") @Valid ProductFormDto productFormDto, // ✅ JSON 데이터를 받는 부분
+            @RequestPart(value = "mainImageFile", required = false) MultipartFile mainImageFile, // ✅ 대표 이미지
+            @RequestPart(value = "detailImageFiles", required = false) List<MultipartFile> detailImageFiles) { // ✅ 상세 이미지들
+
         log.info("상품 등록 요청 수신: {}", productFormDto);
         try {
-            productFormDto.setMainImageFile(mainImageFile); // ProductFormDto 에 대표 이미지 파일 설정
-            productFormDto.setDetailImageFiles(detailImageFiles); // ProductFormDto 에 상세 이미지 파일 리스트 설정
+            productFormDto.setMainImageFile(mainImageFile);
+            productFormDto.setDetailImageFiles(detailImageFiles);
             ProductDto savedProduct = productService.createProduct(productFormDto);
             log.info("상품 등록 성공: {}", savedProduct);
             return ResponseEntity.ok(savedProduct);
@@ -87,15 +89,18 @@ public class ProductController {
     }
 
     /** 상품 수정 */
-    @PutMapping("/{id}")
-    public ResponseEntity<ProductDto> updateProduct(@PathVariable("id") Long id,
-                                                    @Valid ProductFormDto productFormDto,
-                                                    @RequestParam(value = "mainImageFile", required = false) MultipartFile mainImageFile, // ✅ 대표 이미지
-                                                    @RequestParam(value = "detailImageFiles", required = false) List<MultipartFile> detailImageFiles) { // ✅ 상세 이미지들
-        productFormDto.setMainImageFile(mainImageFile); // ProductFormDto 에 대표 이미지 파일 설정
-        productFormDto.setDetailImageFiles(detailImageFiles); // ProductFormDto 에 상세 이미지 파일 리스트 설정
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductDto> updateProduct(
+            @PathVariable("id") Long id,
+            @RequestPart("product") @Valid ProductFormDto productFormDto, // ✅ JSON 데이터를 받는 부분
+            @RequestPart(value = "mainImageFile", required = false) MultipartFile mainImageFile, // ✅ 대표 이미지
+            @RequestPart(value = "detailImageFiles", required = false) List<MultipartFile> detailImageFiles) { // ✅ 상세 이미지들
+
+        productFormDto.setMainImageFile(mainImageFile);
+        productFormDto.setDetailImageFiles(detailImageFiles);
         return ResponseEntity.ok(productService.updateProduct(id, productFormDto));
     }
+
 
     /** 이미지 업로드 핸들러  */
     @PostMapping("/upload")

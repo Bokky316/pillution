@@ -66,7 +66,6 @@ const AddProduct = () => {
             const response = await fetch(`${API_URL}ingredients`, {
                 method: 'GET',
                 headers: {
-                    'Content-Type': 'application/json',
                     'Authorization': token ? `Bearer ${token}` : '',
                 },
                 credentials: 'include'
@@ -159,13 +158,16 @@ const AddProduct = () => {
             price: product.price,
             stock: product.stock,
             active: product.active,
-            ingredientIds: product.ingredientIds
+            ingredientIds: product.ingredientIds,
+            categoryIds: product.categoryIds
         };
         formData.append('product', new Blob([JSON.stringify(productData)], { type: 'application/json' }));
 
-        // ✅ 대표 이미지 추가 (있을 경우만)
+        // ✅ 대표 이미지 추가
         if (mainImageFile) {
             formData.append('mainImageFile', mainImageFile);
+        } else {
+            formData.append('mainImageFile', new Blob([], { type: 'image/png' }));  // 빈 파일 추가
         }
 
         // ✅ 상세 이미지 추가
@@ -177,8 +179,8 @@ const AddProduct = () => {
 
         try {
             const token = localStorage.getItem('accessToken');
-            const response = await fetch(`${API_URL}products/${productId}`, {
-                method: 'PUT', // 등록은 'POST', 수정은 'PUT'
+            const response = await fetch(`${API_URL}products`, {
+                method: 'POST', // 등록은 'POST', 수정은 'PUT'
                 headers: {
                     'Authorization': `Bearer ${token}`
                 },
