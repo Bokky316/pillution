@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -34,11 +35,21 @@ public class OrderController {
      * @param principal 사용자 정보
      * @return 주문 ID
      */
+    /**
+     * 주문을 생성합니다.
+     *
+     * @param orderDtoList 주문 정보 리스트
+     * @param purchaseType 구매 유형 (일회성 또는 구독)
+     * @param principal 현재 인증된 사용자 정보
+     * @return 생성된 주문 ID
+     */
     @PostMapping
-    public ResponseEntity<Object> order(@RequestBody @Valid OrderDto orderDto, Principal principal) {
-        log.info("주문 생성 요청 - 주문 정보: {}", orderDto);
+    public ResponseEntity<Object> createOrder(@RequestBody @Valid List<OrderDto> orderDtoList,
+                                              @RequestParam String purchaseType,
+                                              Principal principal) {
+        log.info("주문 생성 요청 - 주문 정보: {}, 구매 유형: {}", orderDtoList, purchaseType);
         try {
-            Long orderId = orderService.order(orderDto, principal.getName());
+            Long orderId = orderService.orders(orderDtoList, principal.getName(), purchaseType);
             log.info("주문 생성 완료 - 주문 ID: {}", orderId);
             return ResponseEntity.ok(orderId);
         } catch (Exception e) {
@@ -46,6 +57,7 @@ public class OrderController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
 
     /**
      * 주문 내역 조회

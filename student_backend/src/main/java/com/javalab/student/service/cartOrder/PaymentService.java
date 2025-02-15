@@ -115,7 +115,7 @@ public class PaymentService {
      * @return 생성된 주문의 ID
      */
     @Transactional
-    public Long orderCartItem(CartOrderRequestDto cartOrderRequestDto, String email) {
+    public Long orderCartItem(CartOrderRequestDto cartOrderRequestDto, String email, String purchaseType) {
         List<OrderDto> orderDtoList = new ArrayList<>();
         for (CartOrderRequestDto.CartOrderItem cartOrderItem : cartOrderRequestDto.getCartOrderItems()) {
             CartItem cartItem = cartItemRepository
@@ -127,7 +127,7 @@ public class PaymentService {
             orderDtoList.add(orderDto);
         }
 
-        Long orderId = orderService.orders(orderDtoList, email);
+        Long orderId = orderService.orders(orderDtoList, email, purchaseType);
 
         for (CartOrderRequestDto.CartOrderItem cartOrderItem : cartOrderRequestDto.getCartOrderItems()) {
             CartItem cartItem = cartItemRepository

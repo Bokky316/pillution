@@ -1,6 +1,7 @@
 package com.javalab.student.controller.cartOrder;
 
 import com.javalab.student.config.portone.PortOneProperties;
+import com.javalab.student.dto.cartOrder.CartOrderRequestDto;
 import com.javalab.student.dto.cartOrder.PaymentRequestDto;
 import com.javalab.student.service.cartOrder.PaymentService;
 import lombok.RequiredArgsConstructor;
@@ -8,12 +9,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.Map;
 
 /**
- * 결제 관련 API 컨트롤러
- * - 1차 결제 요청 후 2차 검증을 수행하고 DB에 저장
- * - 포트원의 API Key와 Merchant UID를 백엔드에서 관리하여 보안 강화
+ * 결제 관련 API를 처리하는 컨트롤러
+ * 결제 요청, 검증, 장바구니 주문 처리 등의 기능을 제공합니다.
  */
 @RestController
 @RequestMapping("/api/payments")
@@ -25,8 +26,9 @@ public class PaymentController {
     private final PortOneProperties portOneProperties;
 
     /**
-     * 프론트엔드에서 포트원 가맹점 UID를 조회할 수 있도록 제공
-     * @return merchantUid 정보
+     * 가맹점 UID를 조회합니다.
+     *
+     * @return 가맹점 UID를 포함한 ResponseEntity
      */
     @GetMapping("/merchant-id")
     public ResponseEntity<Map<String, String>> getMerchantId() {
@@ -35,9 +37,10 @@ public class PaymentController {
     }
 
     /**
-     * 결제 요청 및 2차 검증 후 데이터 저장
-     * @param requestDto 결제 요청 정보 (상품명, 금액, 사용자 정보 포함)
-     * @return 결제 요청 결과
+     * 결제를 처리하고 검증합니다.
+     *
+     * @param requestDto 결제 요청 정보
+     * @return 처리된 결제 정보를 포함한 ResponseEntity
      */
     @PostMapping("/request")
     public ResponseEntity<Map<String, Object>> processPayment(@RequestBody PaymentRequestDto requestDto) {
@@ -45,5 +48,23 @@ public class PaymentController {
         Map<String, Object> response = paymentService.processPayment(requestDto);
         log.info("결제 처리 완료: {}", response);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 장바구니 아이템들을 주문으로 처리합니다.
+     *
+     * @param cartOrderRequestDto 장바구니 주문 요청 정보
+     * @param purchaseType 구매 유형 (일회성 또는 구독)
+     * @param principal 현재 인증된 사용자 정보
+     * @return 생성된 주문 ID를 포함한 ResponseEntity
+     */
+    @PostMapping("/cart-order")
+    public ResponseEntity<Long> orderCartItems(@RequestBody CartOrderRequestDto cartOrderRequestDto,
+                                               @RequestParam String purchaseType,
+                                               Principal principal) {
+        log.info("장바구니 주문 요청 - 구매 유형: {}", purchaseType);
+        Long orderId = paymentService.orderCartItem(cartOrderRequestDto, principal.getName(), purchaseType);
+        log.info("장바구니 주문 완료 - 주문 ID: {}", orderId);
+        return ResponseEntity.ok(orderId);
     }
 }

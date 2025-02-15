@@ -5,11 +5,15 @@ import com.javalab.student.dto.cartOrder.OrderHistDto;
 import com.javalab.student.dto.cartOrder.OrderItemDto;
 import com.javalab.student.entity.Member;
 import com.javalab.student.entity.Product;
+import com.javalab.student.entity.Subscription;
+import com.javalab.student.entity.SubscriptionNextItem;
 import com.javalab.student.entity.cartOrder.Order;
 import com.javalab.student.entity.cartOrder.OrderItem;
 import com.javalab.student.repository.MemberRepository;
-import com.javalab.student.repository.cartOrder.OrderRepository;
 import com.javalab.student.repository.ProductRepository;
+import com.javalab.student.repository.SubscriptionRepository;
+import com.javalab.student.repository.SubscriptionNextItemRepository;
+import com.javalab.student.repository.cartOrder.OrderRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -32,28 +36,97 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final MemberRepository memberRepository;
+    private final SubscriptionRepository subscriptionRepository;
+    private final SubscriptionNextItemRepository subscriptionNextItemRepository;
 
     /**
-     * 주문을 생성합니다.
+     * 여러 상품을 한 번에 주문합니다.
      *
-     * @param orderDto 주문 정보
+     * @param orderDtoList 주문할 상품 목록
      * @param email 주문자 이메일
+     * @param purchaseType 구매 유형 ('oneTime' 또는 'subscription')
      * @return 생성된 주문의 ID
      */
-    public Long order(OrderDto orderDto, String email) {
-        Product product = productRepository.findById(orderDto.getProductId())
-                .orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다."));
+    public Long orders(List<OrderDto> orderDtoList, String email, String purchaseType) {
         Member member = memberRepository.findByEmail(email);
+        if (member == null) {
+            throw new EntityNotFoundException("회원을 찾을 수 없습니다.");
+        }
 
         List<OrderItem> orderItemList = new ArrayList<>();
-        OrderItem orderItem = OrderItem.createOrderItem(product, orderDto.getCount());
-        orderItemList.add(orderItem);
+
+        for (OrderDto orderDto : orderDtoList) {
+            Product product = productRepository.findById(orderDto.getProductId())
+                    .orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다."));
+
+            OrderItem orderItem = OrderItem.createOrderItem(product, orderDto.getCount());
+            orderItemList.add(orderItem);
+        }
 
         Order order = Order.createOrder(member, orderItemList);
-        orderRepository.save(order);
 
+        if ("subscription".equals(purchaseType)) {
+            processSubscriptionOrder(order, member);
+        } else {
+            processOneTimeOrder(order);
+        }
+
+        orderRepository.save(order);
         return order.getId();
     }
+
+    /**
+     * 구독 주문을 처리합니다.
+     *
+     * @param order 주문 정보
+     * @param member 회원 정보
+     */
+    private void processSubscriptionOrder(Order order, Member member) {
+        Subscription activeSubscription = subscriptionRepository.findByMemberIdAndStatus(member.getId(), "active")
+                .stream().findFirst().orElse(null);
+
+        if (activeSubscription != null) {
+            // 기존 구독자인 경우
+            for (OrderItem orderItem : order.getOrderItems()) {
+                SubscriptionNextItem nextItem = SubscriptionNextItem.builder()
+                        .subscription(activeSubscription)
+                        .product(orderItem.getProduct())
+                        .nextMonthQuantity(orderItem.getCount())
+                        .nextMonthPrice(orderItem.getOrderPrice().doubleValue())
+                        .build();
+                subscriptionNextItemRepository.save(nextItem);
+            }
+        } else {
+            // 새로운 구독자인 경우
+            Subscription newSubscription = Subscription.builder()
+                    .member(member)
+                    .status("active")
+                    // 기타 필요한 구독 정보 설정
+                    .build();
+            subscriptionRepository.save(newSubscription);
+
+            for (OrderItem orderItem : order.getOrderItems()) {
+                SubscriptionNextItem nextItem = SubscriptionNextItem.builder()
+                        .subscription(newSubscription)
+                        .product(orderItem.getProduct())
+                        .nextMonthQuantity(orderItem.getCount())
+                        .nextMonthPrice(orderItem.getOrderPrice().doubleValue())
+                        .build();
+                subscriptionNextItemRepository.save(nextItem);
+            }
+        }
+    }
+
+    /**
+     * 일회성 주문을 처리합니다.
+     *
+     * @param order 주문 정보
+     */
+    private void processOneTimeOrder(Order order) {
+        // 일회성 주문에 대한 추가 처리가 필요한 경우 여기에 구현
+    }
+
+    // 기존의 다른 메서드들은 그대로 유지...
 
     /**
      * 사용자의 주문 목록을 조회합니다.
@@ -107,30 +180,5 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("주문을 찾을 수 없습니다."));
         order.cancelOrder();
-    }
-
-    /**
-     * 여러 상품을 한 번에 주문합니다.
-     *
-     * @param orderDtoList 주문할 상품 목록
-     * @param email 주문자 이메일
-     * @return 생성된 주문의 ID
-     */
-    public Long orders(List<OrderDto> orderDtoList, String email) {
-        Member member = memberRepository.findByEmail(email);
-        List<OrderItem> orderItemList = new ArrayList<>();
-
-        for (OrderDto orderDto : orderDtoList) {
-            Product product = productRepository.findById(orderDto.getProductId())
-                    .orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다."));
-
-            OrderItem orderItem = OrderItem.createOrderItem(product, orderDto.getCount());
-            orderItemList.add(orderItem);
-        }
-
-        Order order = Order.createOrder(member, orderItemList);
-        orderRepository.save(order);
-
-        return order.getId();
     }
 }

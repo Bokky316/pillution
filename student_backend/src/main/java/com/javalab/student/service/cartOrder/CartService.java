@@ -146,25 +146,27 @@ public class CartService {
      *
      * @param cartOrderRequestDto 장바구니 주문 요청 정보
      * @param email 사용자 이메일
+     * @param purchaseType 구매 유형 ('oneTime' 또는 'subscription')
      * @return 생성된 주문의 ID
      */
-    public Long orderCartItem(CartOrderRequestDto cartOrderRequestDto, String email) {
+    @Transactional
+    public Long orderCartItem(CartOrderRequestDto cartOrderRequestDto, String email, String purchaseType) {
         List<OrderDto> orderDtoList = new ArrayList<>();
-
         for (CartOrderRequestDto.CartOrderItem cartOrderItem : cartOrderRequestDto.getCartOrderItems()) {
-            CartItem cartItem = cartItemRepository.findById(cartOrderItem.getCartItemId())
+            CartItem cartItem = cartItemRepository
+                    .findById(cartOrderItem.getCartItemId())
                     .orElseThrow(() -> new EntityNotFoundException("장바구니 아이템을 찾을 수 없습니다."));
-
             OrderDto orderDto = new OrderDto();
             orderDto.setProductId(cartItem.getProduct().getId());
-            orderDto.setCount(cartItem.getQuantity());
+            orderDto.setCount(cartOrderItem.getQuantity());
             orderDtoList.add(orderDto);
         }
 
-        Long orderId = orderService.orders(orderDtoList, email);
+        Long orderId = orderService.orders(orderDtoList, email, purchaseType);
 
         for (CartOrderRequestDto.CartOrderItem cartOrderItem : cartOrderRequestDto.getCartOrderItems()) {
-            CartItem cartItem = cartItemRepository.findById(cartOrderItem.getCartItemId())
+            CartItem cartItem = cartItemRepository
+                    .findById(cartOrderItem.getCartItemId())
                     .orElseThrow(() -> new EntityNotFoundException("장바구니 아이템을 찾을 수 없습니다."));
             cartItemRepository.delete(cartItem);
         }

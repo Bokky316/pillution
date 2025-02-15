@@ -1,67 +1,15 @@
-/* 구매 유형 선택 섹션 스타일 */
-.purchase-type-selection {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  margin: 20px 0;
-}
-
-.purchase-type-option {
-  flex: 1;
+.cart-summary-container {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
   padding: 20px;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  cursor: pointer;
 }
 
-.purchase-type-option.selected {
-  border-color: #ff5c35;
-  background-color: #fff4f1;
-}
-
-.option-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.option-title {
-  font-size: 16px;
-  font-weight: 500;
-  color: #333;
-}
-
-.option-price {
-  font-size: 18px;
-  font-weight: bold;
-  color: #333;
-}
-
-.option-benefits {
-  margin-top: 12px;
-}
-
-.benefit-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  font-size: 14px;
-  color: #666;
-}
-
-.benefit-item.highlight {
-  color: #ff5c35;
-}
-
-/* 전체 금액 섹션 스타일 */
 .total-amount-section {
   background: #fff;
+  border: 1px solid #eee;
   border-radius: 8px;
   margin-bottom: 20px;
-  border: 1px solid #eee;
 }
 
 .total-amount-header {
@@ -76,41 +24,94 @@
   font-size: 16px;
   font-weight: 500;
   color: #333;
+  margin: 0;
 }
 
 .total-amount-content {
   padding: 16px;
 }
 
-.purchase-benefits {
-  margin-top: 16px;
-  padding: 16px;
-  background: #f8f8f8;
-  border-radius: 8px;
-}
-
-.benefits-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: #ff5c35;
+.amount-row {
+  display: flex;
+  justify-content: space-between;
   margin-bottom: 8px;
-}
-
-.benefits-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   color: #666;
 }
 
-.benefits-list li {
+.amount-row.discount {
+  color: #ff5c35;
+}
+
+.type-buttons {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.type-button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.type-button.selected {
+  border-color: #ff5c35;
+  background-color: #fff4f1;
+}
+
+.type-button .price {
+  font-weight: 500;
+  color: #ff5c35;
+}
+
+.payment-button {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 8px;
+  background: #ff5c35;
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.subscription-benefits {
+  margin-top: 16px;
+  padding: 16px;
+  background: #fff4f1;
+  border-radius: 8px;
+}
+
+.subscription-benefits h4 {
+  color: #ff5c35;
+  font-size: 14px;
+  margin: 0 0 8px 0;
+}
+
+.subscription-benefits ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.subscription-benefits li {
+  font-size: 13px;
+  color: #666;
   margin-bottom: 4px;
   padding-left: 16px;
   position: relative;
 }
 
-.benefits-list li:before {
+.subscription-benefits li:before {
   content: "•";
   position: absolute;
   left: 0;
