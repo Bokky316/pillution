@@ -3,72 +3,54 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Button, TextField, Box, Typography, Paper } from "@mui/material";
 import { API_URL } from "@/utils/constants";
 import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
-import Payment from "@/features/payment/Payment";
 import { useDispatch, useSelector } from "react-redux";
 import { createOrder } from "@/store/orderSlice";
 
-/**
- * 주문 상세 페이지 컴포넌트
- *
- * 사용자가 선택한 상품의 주문 정보를 표시하고, 배송 정보를 입력받아 주문을 생성합니다.
- * 주문 생성 후 결제 컴포넌트를 렌더링합니다.
- *
- * @component
- * @returns {JSX.Element}
- */
 const OrderDetail = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
-  const { currentOrder } = useSelector((state) => state.order);
-  const { merchantId } = useSelector((state) => state.payment);
 
-  const { selectedItems, purchaseType, totalAmount } = location.state || {
-    selectedItems: [],
-    purchaseType: 'oneTime',
-    totalAmount: 0
-  };
+  const { selectedItems, purchaseType, totalAmount, user: userData } = location.state
+    ? location.state
+    : { selectedItems: [], purchaseType: 'oneTime', totalAmount: 0, user: {} };
 
-  const [orderId, setOrderId] = useState(null);
-  const [name, setName] = useState(user?.name || '');
-  const [email, setEmail] = useState(user?.email || '');
-  const [phone, setPhone] = useState(user?.phone || '');
-  const [address, setAddress] = useState(user?.address || '');
+  const [name, setName] = useState(userData?.name || '');
+  const [email, setEmail] = useState(userData?.email || '');
+  const [phone, setPhone] = useState(userData?.phone || '');
+  const [address, setAddress] = useState(userData?.address || '');
   const [zipCode, setZipCode] = useState("");
   const [address1, setAddress1] = useState("");
   const [address2, setAddress2] = useState("");
+  const [merchantId, setMerchantId] = useState("");
+  const [order, setOrder] = useState(null);
+  const [isImpReady, setIsImpReady] = useState(false);
 
-  /**
-   * 컴포넌트 마운트 시 가맹점 ID를 가져옵니다.
-   */
   useEffect(() => {
     const id = fetchMerchantId();
+    setMerchantId(id);
+
+    const script = document.createElement("script");
+    script.src = "https://cdn.iamport.kr/js/iamport.payment-1.2.0.js";
+    script.async = true;
+    script.onload = () => setIsImpReady(true);
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
   }, []);
 
-  /**
-   * 가맹점 UID를 환경 변수에서 가져옵니다.
-   *
-   * @returns {string} 가맹점 UID
-   */
   const fetchMerchantId = () => {
     const merchantId = import.meta.env.VITE_PORTONE_MERCHANT_ID;
     console.log("가맹점 UID:", merchantId);
     return merchantId;
   };
 
-  /**
-   * 선택된 상품들의 총 가격을 계산합니다.
-   *
-   * @returns {number} 총 주문 금액
-   */
   const calculateTotalPrice = () => {
     return selectedItems.reduce((total, item) => total + item.price * item.quantity, 0);
   };
 
-  /**
-   * 주문을 생성하고 백엔드에 전송합니다.
-   */
   const handleCreateOrder = async () => {
     const orderData = {
       cartOrderItems: selectedItems.map(item => ({
@@ -86,11 +68,79 @@ const OrderDetail = () => {
     try {
       const response = await dispatch(createOrder({ orderData, purchaseType })).unwrap();
       console.log("주문 생성 성공:", response);
-      setOrderId(response.id);
+      setOrder({
+        ...response,
+        items: selectedItems,
+        totalAmount: totalAmount,
+        purchaseType: purchaseType
+      });
     } catch (error) {
       console.error("주문 생성 실패:", error);
       alert("주문 생성에 실패했습니다.");
     }
+  };
+
+  const handlePayment = async () => {
+    if (!isImpReady || !order) {
+      alert("결제 모듈이 아직 로드되지 않았거나 주문이 생성되지 않았습니다.");
+      return;
+    }
+
+    const IMP = window.IMP;
+    IMP.init(merchantId);
+
+    const paymentData = {
+      pg: "kakaopay",
+      pay_method: "card",
+      merchant_uid: order.id,
+      name: order.items[0].name,
+      amount: order.totalAmount,
+      buyer_email: order.buyerEmail,
+      buyer_name: order.buyerName,
+      buyer_tel: order.buyerTel,
+      buyer_addr: order.buyerAddr,
+      buyer_postcode: order.buyerPostcode,
+      m_redirect_url: "http://localhost:3000/payResult",
+    };
+
+    IMP.request_pay(paymentData, async (rsp) => {
+      if (rsp.success) {
+        alert("결제가 완료되었습니다!");
+        console.log("결제 완료 응답:", rsp);
+        const response = await processPayment(rsp);
+        if (response.ok) {
+          const data = await response.json();
+          navigate("/payResult", { state: { paymentInfo: data } });
+        }
+      } else {
+        alert(`결제 실패: ${rsp.error_msg}`);
+      }
+    });
+  };
+
+  const processPayment = async (rsp) => {
+    const paymentRequest = {
+      impUid: rsp.imp_uid,
+      merchantUid: order.id,
+      paidAmount: rsp.paid_amount,
+      name: rsp.name,
+      pgProvider: rsp.pg_provider,
+      buyerEmail: rsp.buyer_email,
+      buyerName: rsp.buyer_name,
+      buyTel: rsp.buyer_tel,
+      buyerAddr: rsp.buyer_addr,
+      buyerPostcode: rsp.buyer_postcode,
+      paidAt: rsp.paid_at,
+      status: "PAYMENT_COMPLETED",
+    };
+
+    return fetchWithAuth(`${API_URL}payments/request?purchaseType=${order.purchaseType}`, {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(paymentRequest),
+    });
   };
 
   return (
@@ -102,7 +152,7 @@ const OrderDetail = () => {
         {selectedItems.map((item, index) => (
           <Box key={index} display="flex" alignItems="center" mb={2}>
             <img
-              src={item.image}
+              src={item.imageUrl}
               alt={item.name}
               style={{ width: 100, height: 100, marginRight: 20 }}
             />
@@ -122,32 +172,32 @@ const OrderDetail = () => {
           배송 정보
         </Typography>
         <TextField
-            label="이름"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            fullWidth
-            margin="normal"
+          label="이름"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          fullWidth
+          margin="normal"
         />
         <TextField
-            label="이메일"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            fullWidth
-            margin="normal"
+          label="이메일"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          fullWidth
+          margin="normal"
         />
         <TextField
-            label="전화번호"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            fullWidth
-            margin="normal"
+          label="전화번호"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          fullWidth
+          margin="normal"
         />
         <TextField
-            label="주소"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            fullWidth
-            margin="normal"
+          label="주소"
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          fullWidth
+          margin="normal"
         />
 
         <Typography variant="h6" mt={3} gutterBottom>
@@ -181,20 +231,28 @@ const OrderDetail = () => {
           </Button>
         </Box>
       </Paper>
-      {orderId && (
-        <Payment
-          orderId={orderId}
-          merchantId={merchantId}
-          items={selectedItems}
-          totalPrice={totalAmount}
-          zipCode={zipCode}
-          address1={address1}
-          address2={address2}
-          purchaseType={purchaseType}
-        />
+
+      {order && (
+        <Paper sx={{ padding: 3, marginTop: 3 }}>
+          <Typography variant="h5" gutterBottom>
+            결제 정보
+          </Typography>
+          <p>주문 번호: {order.id}</p>
+          <p>총 결제 금액: {order.totalAmount}원</p>
+          <Button
+            variant="contained"
+            color="primary"
+            size="large"
+            onClick={handlePayment}
+            disabled={!isImpReady}
+          >
+            결제하기
+          </Button>
+        </Paper>
       )}
     </Box>
   );
+
 };
 
 export default OrderDetail;
