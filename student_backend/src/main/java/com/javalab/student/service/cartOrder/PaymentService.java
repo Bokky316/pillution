@@ -2,11 +2,15 @@ package com.javalab.student.service.cartOrder;
 
 import com.javalab.student.constant.OrderStatus;
 import com.javalab.student.dto.cartOrder.CartDetailDto;
+import com.javalab.student.dto.cartOrder.CartItemDto;
 import com.javalab.student.dto.cartOrder.OrderDto;
 import com.javalab.student.dto.cartOrder.PaymentRequestDto;
 import com.javalab.student.entity.Member;
 import com.javalab.student.entity.Product;
-import com.javalab.student.entity.cartOrder.*;
+import com.javalab.student.entity.cartOrder.Cart;
+import com.javalab.student.entity.cartOrder.CartItem;
+import com.javalab.student.entity.cartOrder.Order;
+import com.javalab.student.entity.cartOrder.OrderItem;
 import com.javalab.student.repository.MemberRepository;
 import com.javalab.student.repository.ProductRepository;
 import com.javalab.student.repository.cartOrder.CartItemRepository;
@@ -63,7 +67,7 @@ public class PaymentService {
         verifyPayment(requestDto, order);
 
         // 3. Payment 엔티티 생성 및 저장
-        Payment payment = createAndSavePayment(requestDto, order);
+        com.javalab.student.entity.cartOrder.Payment payment = createAndSavePayment(requestDto, order);
 
         // 4. 주문 상태 업데이트
         order.setOrderStatus(OrderStatus.PAYMENT_COMPLETED);
@@ -73,7 +77,15 @@ public class PaymentService {
         clearCart(email);
 
         // 6. 응답 데이터 구성
-        return createResponseData(payment);
+        Map<String, Object> response = new HashMap<>();
+        response.put("paymentId", payment.getId());
+        response.put("impUid", payment.getImpUid());
+        response.put("merchantUid", payment.getOrder().getId());
+        response.put("amount", payment.getAmount());
+        response.put("paymentMethod", payment.getPaymentMethod());
+        response.put("status", payment.getOrderStatus());
+        response.put("paidAt", payment.getPaidAt());
+        return response;
     }
 
     /**
@@ -109,7 +121,7 @@ public class PaymentService {
                 .member(member)
                 .orderDate(java.time.LocalDateTime.now())
                 .orderStatus(OrderStatus.ORDERED)
-                .orderAmount(totalOrderAmount)
+                .amount(totalOrderAmount)
                 .build();
 
         return orderRepository.save(order);
@@ -117,6 +129,8 @@ public class PaymentService {
 
     /**
      * 포트원 API를 사용하여 결제 정보를 조회하고 검증합니다.
+     * @param requestDto 결제 요청 정보
+     * @param order 주문 정보
      */
     private void verifyPayment(PaymentRequestDto requestDto, Order order) {
         try {
@@ -138,9 +152,12 @@ public class PaymentService {
 
     /**
      * 결제 정보를 저장합니다.
+     * @param requestDto 결제 요청 정보
+     * @param order 주문 정보
+     * @return Payment 결제 정보
      */
-    private Payment createAndSavePayment(PaymentRequestDto requestDto, Order order) {
-        Payment payment = Payment.builder()
+    private com.javalab.student.entity.cartOrder.Payment createAndSavePayment(PaymentRequestDto requestDto, Order order) {
+        com.javalab.student.entity.cartOrder.Payment payment = com.javalab.student.entity.cartOrder.Payment.builder()
                 .order(order)
                 .impUid(requestDto.getImpUid())
                 .itemNm(requestDto.getName())
@@ -159,8 +176,10 @@ public class PaymentService {
 
     /**
      * 응답 데이터를 생성합니다.
+     * @param payment 결제 정보
+     * @return 응답 데이터
      */
-    private Map<String, Object> createResponseData(Payment payment) {
+    private Map<String, Object> createResponseData(com.javalab.student.entity.cartOrder.Payment payment) {
         Map<String, Object> response = new HashMap<>();
         response.put("paymentId", payment.getId());
         response.put("impUid", payment.getImpUid());
