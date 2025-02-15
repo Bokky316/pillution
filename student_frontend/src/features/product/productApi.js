@@ -1,6 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
-import { API_URL } from '@/constant';
+import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
+import { API_URL } from '@/utils/constants';
 
 // 모든 상품 가져오기
 export const fetchProducts = createAsyncThunk(

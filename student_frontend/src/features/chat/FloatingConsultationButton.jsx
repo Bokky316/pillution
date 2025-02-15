@@ -2,9 +2,9 @@ import React from "react";
 import { Fab } from "@mui/material";
 import ChatIcon from "@mui/icons-material/Chat";
 import { useNavigate } from "react-router-dom";
-import { fetchWithAuth } from "@features/auth/utils/fetchWithAuth";
-import { API_URL } from "@/constant";
-import useAuth from "@hook/useAuth";
+import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
+import { API_URL } from "@/utils/constants";
+import useAuth from "@/hooks/useAuth";
 
 const FloatingConsultationButton = () => {
     const navigate = useNavigate();

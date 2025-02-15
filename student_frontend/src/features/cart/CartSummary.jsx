@@ -1,7 +1,6 @@
 import React from "react";
-import Button from "@components/common/Button";
-import "@styles/CartSummary.css";
-
+import Button from "@/components/Button";
+import "@/styles/CartItem.css";
 
 const CartSummary = ({ totalPrice, shippingFee }) => {
   const totalPayment = totalPrice + shippingFee;

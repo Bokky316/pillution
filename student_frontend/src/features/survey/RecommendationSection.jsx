@@ -1,6 +1,6 @@
 import React from 'react';
-import { Typography, Box } from '@mui/material';
-import ProductCard from '@/features/survey/RecommendationProductCard';
+import { Card, CardContent, CardMedia, Typography, Button, Box } from '@mui/material';
+import { Link } from 'react-router-dom';
 
 /**
  * 추천 섹션 컴포넌트
