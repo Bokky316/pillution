@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { TextField, Button, Select, MenuItem, FormControl, InputLabel, Box } from '@mui/material';
-import { API_URL } from '../../../constant';
+import { API_URL } from "@/utils/constants";
 import { useNavigate } from 'react-router-dom';
 import '@/styles/AddProduct.css';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchCategoriesByIngredient } from '@features/product/productApi';
-import { clearSelectedCategories } from '@/redux/productSlice';
+import { clearSelectedCategories } from '@/store/productSlice';
 
 const AddProduct = () => {
     const navigate = useNavigate();
