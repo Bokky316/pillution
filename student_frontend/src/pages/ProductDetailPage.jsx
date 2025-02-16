@@ -148,38 +148,6 @@ const ProductDetailPage = () => {
           </Typography>
           <Divider sx={{ marginBottom: 1 }} />
 
-          {/* ✅ 상세 이미지 리스트 렌더링 */}
-          <Grid item xs={12} sx={{ mt: 2, mb: 2 }}>
-            <ImageList rowHeight={200} gap={8} sx={{
-                // GridList 스타일 조정 (반응형, 가로 스크롤)
-                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))!important', // 반응형 컬럼
-                overflowX: 'auto', // 가로 스크롤 활성화
-                flexWrap: 'nowrap', // ImageList 가로로 정렬
-                // 스크롤바 숨김 (선택 사항)
-                '::-webkit-scrollbar': { display: 'none' },
-                msOverflowStyle: 'none',
-                scrollbarWidth: 'none',
-            }}>
-              {getDetailImageUrls(product).map((imageUrl, index) => (
-                <ImageListItem key={index} sx={{ width: '200px', height: '200px' }}>
-                  <CardMedia
-                    component="img"
-                    image={imageUrl}
-                    alt={`상세 이미지 ${index + 1}`}
-                    sx={{
-                      borderRadius: "8px",
-                      boxShadow: 2,
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }}
-                  />
-                </ImageListItem>
-              ))}
-            </ImageList>
-          </Grid>
-
-          <Divider sx={{ marginBottom: 1 }} />
           <Box sx={{ display: "flex", alignItems: "center"}}>
             <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
               <Typography variant="body2" sx={{ minWidth: "60px", mt: "-40px", fontSize: 15 }}>
@@ -198,6 +166,37 @@ const ProductDetailPage = () => {
               </Box>
             </Box>
           </Box>
+          <Divider sx={{ marginBottom: 1 }} />
+
+          {/* ✅ 상세 이미지 리스트 렌더링 */}
+          <Grid item xs={12} sx={{ mt: 2, mb: 2 }}>
+            <ImageList gap={8} sx={{
+                // GridList 스타일 조정 (반응형, 가로 스크롤)
+                gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))!important', // 반응형 컬럼
+                overflowX: 'auto', // 가로 스크롤 활성화
+                flexWrap: 'nowrap', // ImageList 가로로 정렬
+                // 스크롤바 숨김 (선택 사항)
+                '::-webkit-scrollbar': { display: 'none' },
+                msOverflowStyle: 'none',
+                scrollbarWidth: 'none',
+            }}>
+              {getDetailImageUrls(product).map((imageUrl, index) => (
+                <ImageListItem key={index}>
+                  <CardMedia
+                    component="img"
+                    image={imageUrl}
+                    alt={`상세 이미지 ${index + 1}`}
+                    sx={{
+                      boxShadow: 2,
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
+                </ImageListItem>
+              ))}
+            </ImageList>
+          </Grid>
         </Grid>
       </Grid>
 
