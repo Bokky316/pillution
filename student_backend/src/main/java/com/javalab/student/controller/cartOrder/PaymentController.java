@@ -22,6 +22,7 @@ import com.javalab.student.dto.cartOrder.OrderDto;
 import java.util.stream.Collectors;
 import java.util.List;
 import com.javalab.student.dto.SubscriptionUpdateNextItemDto;
+import com.javalab.student.dto.cartOrder.OrderItemDto;
 
 /**
  * 결제 관련 API를 처리하는 컨트롤러
@@ -121,7 +122,6 @@ public class PaymentController {
         } catch (EntityNotFoundException e) {
             log.error("결제 처리 중 EntityNotFoundException 발생", e);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "관련 정보를 찾을 수 없습니다: " + e.getMessage()));
-
         } catch (Exception e) {
             log.error("결제 처리 중 예외 발생", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
