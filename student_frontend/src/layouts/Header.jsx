@@ -171,11 +171,12 @@ const Header = () => {
                                                  "& .MuiPaper-root": {
                                                      backgroundColor: "#ffffff", // ✅ 배경 흰색
                                                      borderRadius: "12px", // ✅ 모서리 둥글게
-                                                     boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.2)", // ✅ 부드러운 그림자
+                                                     boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.5)", // ✅ 부드러운 그림자
                                                      padding: "8px 0",
                                                      minWidth: "150px",
                                                      top: "70px !important",
                                                      left: "1218px !important",
+                                                     transition: "none !important"
                                                  },
                                             }}
                                         >
