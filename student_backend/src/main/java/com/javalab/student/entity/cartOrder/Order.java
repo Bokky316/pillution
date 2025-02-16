@@ -50,6 +50,10 @@ public class Order {
     @Column(name = "order_amount", nullable = false)
     private BigDecimal amount;
 
+    /** 결제 방법 */
+    @Column(name = "payment_method")
+    private String paymentMethod;
+
     /** 운송장 번호 */
     @Column(name = "waybill_num")
     private String waybillNum;
