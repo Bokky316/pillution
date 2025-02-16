@@ -4,19 +4,13 @@ import com.javalab.student.constant.OrderStatus;
 import com.javalab.student.dto.cartOrder.OrderDto;
 import com.javalab.student.dto.cartOrder.PaymentRequestDto;
 import com.javalab.student.entity.Member;
-import com.javalab.student.entity.Subscription;
-import com.javalab.student.entity.SubscriptionNextItem;
 import com.javalab.student.entity.cartOrder.*;
 import com.javalab.student.entity.product.Product;
 import com.javalab.student.repository.MemberRepository;
-import com.javalab.student.repository.SubscriptionNextItemRepository;
-import com.javalab.student.repository.SubscriptionRepository;
 import com.javalab.student.repository.cartOrder.CartItemRepository;
 import com.javalab.student.repository.cartOrder.CartRepository;
-import com.javalab.student.repository.cartOrder.OrderItemRepository;
 import com.javalab.student.repository.cartOrder.OrderRepository;
 import com.javalab.student.repository.cartOrder.PaymentRepository;
-import com.javalab.student.service.SubscriptionService;
 import com.siot.IamportRestClient.IamportClient;
 import com.siot.IamportRestClient.exception.IamportResponseException;
 import com.siot.IamportRestClient.response.IamportResponse;
@@ -28,14 +22,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.*;
 
 /**
  * 결제 서비스 (포트원 SDK 적용)
- * <p>
+ *
  * 포트원(Iamport) SDK를 사용하여 결제 처리 및 검증을 수행하는 서비스입니다.
- * 주문 생성, 결제 검증, 결제 정보 저장, 장바구니 비우기, 구독 처리 등의 기능을 제공합니다.
+ * 주문 생성, 결제 검증, 결제 정보 저장, 장바구니 비우기 등의 기능을 제공합니다.
  */
 @Service
 @RequiredArgsConstructor
@@ -48,10 +41,6 @@ public class PaymentService {
     private final CartItemRepository cartItemRepository;
     private final CartRepository cartRepository;
     private final MemberRepository memberRepository;
-    private final SubscriptionService subscriptionService;
-    private final SubscriptionRepository subscriptionRepository;
-    private final OrderItemRepository orderItemRepository;
-    private final SubscriptionNextItemRepository subscriptionNextItemRepository;
 
     /**
      * 결제를 처리하고 검증합니다.
@@ -76,25 +65,13 @@ public class PaymentService {
         com.javalab.student.entity.cartOrder.Payment payment = createAndSavePayment(requestDto, order);
 
         // 4. 주문 상태 업데이트
-        if(order != null) {
-            order.setOrderStatus(OrderStatus.PAYMENT_COMPLETED);
-            orderRepository.save(order);
-        } else {
-            log.error("Order is null, cannot update order status.");
-            throw new IllegalStateException("Order cannot be null after creation.");
-        }
+        order.setOrderStatus(OrderStatus.PAYMENT_COMPLETED);
+        orderRepository.save(order);
 
-
-        // 5. 구독 처리 (구독 결제인 경우)
-        if ("subscription".equals(purchaseType)) {
-            log.info("정기구독 결제입니다. SubscriptionService를 호출하여 구독을 처리합니다.");
-            processSubscription(order, email);
-        }
-
-        // 6. 장바구니 비우기
+        // 5. 장바구니 비우기
         clearCart(email);
 
-        // 7. 응답 데이터 구성
+        // 6. 응답 데이터 구성
         Map<String, Object> response = new HashMap<>();
         response.put("paymentId", payment.getId());
         response.put("impUid", payment.getImpUid());
@@ -109,8 +86,8 @@ public class PaymentService {
     /**
      * 장바구니 상품들을 주문으로 변환하고 처리합니다.
      *
-     * @param requestDto   결제 요청 정보 (PaymentRequestDto)
-     * @param email        사용자 이메일
+     * @param requestDto 결제 요청 정보 (PaymentRequestDto)
+     * @param email 사용자 이메일
      * @param purchaseType 구매 유형 ('oneTime' 또는 'subscription')
      * @return 주문 객체 (Order)
      * @throws EntityNotFoundException 해당 이메일로 멤버를 찾을 수 없거나, 장바구니를 찾을 수 없을 경우 예외 발생
@@ -134,7 +111,6 @@ public class PaymentService {
         // 4. 주문 DTO 생성 및 총 주문 금액 계산
         List<OrderDto.OrderItemDto> orderItemDtoList = new ArrayList<>();
         for (CartItem cartItem : cartItems) {
-            // CartItem cartItem = cartItems.get(i);
             PaymentRequestDto.CartOrderItemDto cartOrderItemDto = requestDto.getCartOrderItems().stream()
                     .filter(itemDto -> itemDto.getCartItemId().equals(cartItem.getId()))
                     .findFirst()
@@ -147,14 +123,12 @@ public class PaymentService {
                     .build();
             orderItemDtoList.add(orderItemDto);
 
-            // 1. **productPrice를 가져오기 전에 product가 null인지 확인합니다.**
             Product product = cartItem.getProduct();
             if (product == null) {
                 log.error("Product is null for cartItem: {}", cartItem);
                 throw new IllegalStateException("Product cannot be null for cart item id: " + cartItem.getId());
             }
 
-            // 2. **product가 null이 아닌 경우에만 price를 가져옵니다.**
             BigDecimal productPrice = cartOrderItemDto.getPrice();
             if (productPrice == null) {
                 log.error("Product price is null for product: {}", product);
@@ -178,14 +152,12 @@ public class PaymentService {
                     .filter(itemDto -> itemDto.getCartItemId().equals(cartItem.getId()))
                     .findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("CartItemDto not found for cartItemId: " + cartItem.getId()));
-            // 1. **product를 가져오기 전에 product가 null인지 확인합니다.**
             Product product = cartItem.getProduct();
             if (product == null) {
                 log.error("Product is null for cartItem: {}", cartItem);
                 throw new IllegalStateException("Product cannot be null for cart item id: " + cartItem.getId());
             }
 
-            // 2. **product가 null이 아닌 경우에만 price를 가져옵니다.**
             BigDecimal productPrice = cartOrderItemDto.getPrice();
             if (productPrice == null) {
                 log.error("Product price is null for product: {}", product);
@@ -194,7 +166,7 @@ public class PaymentService {
             OrderItem orderItem = OrderItem.builder()
                     .order(order)
                     .product(product)
-                    .orderPrice(productPrice)  // 이 부분이 핵심: 가격 설정
+                    .orderPrice(productPrice)
                     .count(cartItem.getQuantity())
                     .build();
             orderItems.add(orderItem);
@@ -208,7 +180,7 @@ public class PaymentService {
      * 포트원 API를 사용하여 결제 정보를 조회하고 검증합니다.
      *
      * @param requestDto 결제 요청 정보 (PaymentRequestDto)
-     * @param order      주문 정보 (Order)
+     * @param order 주문 정보 (Order)
      * @throws IllegalArgumentException 포트원 결제 검증 실패, 결제 정보 없음, 결제 금액 불일치 시 예외 발생
      */
     private void verifyPayment(PaymentRequestDto requestDto, Order order) {
@@ -234,7 +206,7 @@ public class PaymentService {
      * 결제 정보를 저장합니다.
      *
      * @param requestDto 결제 요청 정보 (PaymentRequestDto)
-     * @param order      주문 정보 (Order)
+     * @param order 주문 정보 (Order)
      * @return Payment 결제 정보 (Payment)
      */
     private com.javalab.student.entity.cartOrder.Payment createAndSavePayment(PaymentRequestDto requestDto, Order order) {
@@ -277,55 +249,5 @@ public class PaymentService {
 
         // 4. 장바구니 아이템 삭제
         cartItemRepository.deleteAll(cartItems);
-    }
-
-    /**
-     * 구독을 처리합니다 (신규 구독 또는 기존 구독 갱신).
-     *
-     * @param order 주문 정보
-     * @param email 사용자 이메일
-     * @throws EntityNotFoundException 해당 이메일로 멤버를 찾을 수 없을 경우 예외 발생
-     */
-    @Transactional
-    public void processSubscription(Order order, String email) {
-        // 1. 사용자 정보 조회
-        Member member = memberRepository.findByEmail(email);
-        if (member == null) {
-            throw new EntityNotFoundException("해당 이메일로 멤버를 찾을 수 없습니다: " + email);
-        }
-
-        // 2. 기존 구독자인지 확인 로직
-        Optional<Subscription> activeSubscription = subscriptionRepository.findFirstByMemberIdAndStatusOrderByCurrentCycleDesc(member.getId(), "ACTIVE");
-
-        if (activeSubscription.isPresent()) {
-            log.info("기존 구독자입니다.");
-            // ✅ 1. SubscriptionNextItem에 추가
-            Subscription subscription = activeSubscription.get();
-            for (OrderItem orderItem : order.getOrderItems()) {
-                SubscriptionNextItem nextItem = SubscriptionNextItem.builder()
-                        .subscription(subscription)
-                        .product(orderItem.getProduct())
-                        .nextMonthQuantity(orderItem.getCount())
-                        .nextMonthPrice(orderItem.getOrderPrice().doubleValue())
-                        .build();
-                subscriptionNextItemRepository.save(nextItem);
-            }
-        } else {
-            log.info("신규 구독자입니다.");
-            Subscription newSubscription = Subscription.builder()
-                    .member(member)
-                    .startDate(java.time.LocalDate.now())
-                    .lastBillingDate(java.time.LocalDate.now())
-                    .nextBillingDate(java.time.LocalDate.now().plusMonths(1))
-                    .status("ACTIVE")
-                    .paymentMethod("card") // 기본 결제 수단 설정
-                    .roadAddress("test 주소") // 예시 주소
-                    .postalCode("12345") // 예시 우편번호
-                    .detailAddress("상세 주소") // 예시 상세 주소
-                    .currentCycle(1)
-                    .build();
-
-            subscriptionRepository.save(newSubscription);
-        }
     }
 }
