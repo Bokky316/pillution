@@ -10,12 +10,18 @@ import {
     InputLabel,
     Select,
     MenuItem,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle
 } from "@mui/material";
 import { API_URL } from "@/utils/constants";
 import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
 import { useDispatch, useSelector } from "react-redux";
 import { createOrder } from "@/store/orderSlice";
 import { processPayment } from "@/store/paymentSlice";
+import { saveDeliveryInfo } from "@/store/deliverySlice"; // 배송 정보 저장 액션 import
 
 /**
  * OrderDetail 컴포넌트
@@ -49,7 +55,11 @@ const OrderDetail = () => {
     const [customDeliveryMessage, setCustomDeliveryMessage] = useState(""); // 직접 입력 배송 메시지 상태 추가
     const [savedAddresses, setSavedAddresses] = useState([]);// 저장된 배송지 목록
     const [selectedSavedAddressId, setSelectedSavedAddressId] = useState('');// 선택된 배송지 ID
-        /**
+    const [openDialog, setOpenDialog] = useState(false); // 다이얼로그 상태
+    const [isDefault, setIsDefault] = useState(false); // 기본 배송지 설정 여부
+    const [deliveryInfoName, setDeliveryInfoName] = useState(""); // 배송 정보 이름
+
+    /**
      * 저장된 배송지 선택 핸들러
      * @param {Event} event - 이벤트 객체
      */
@@ -77,7 +87,7 @@ const OrderDetail = () => {
         // 저장된 배송지 목록 불러오기
         const fetchSavedAddresses = async () => {
             try {
-                const response = await fetchWithAuth(`${API_URL}/saved-addresses`, {
+                const response = await fetchWithAuth(`${API_URL}/api/delivery-info`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -276,40 +286,62 @@ const OrderDetail = () => {
     };
 
     /**
-     * 배송 정보를 저장합니다.
+     * 배송 정보 저장 다이얼로그 열기
      */
-    const handleSaveDeliveryInfo = async () => {
+    const handleSaveDeliveryInfo = () => {
+        setOpenDialog(true);
+    };
+
+    /**
+     * 배송 정보 저장 다이얼로그 닫기
+     */
+    const handleCloseDialog = () => {
+        setOpenDialog(false);
+        setIsDefault(false);
+        setDeliveryInfoName("");
+    };
+
+    /**
+     * 배송 정보 저장 확인 핸들러
+     */
+    const handleConfirmSave = async () => {
         const deliveryInfo = {
-            deliveryName: deliveryName,
-            deliveryPhone: deliveryPhone,
-            deliveryEmail: deliveryEmail,
-            zipCode: zipCode,
-            address1: address1,
-            address2: address2,
+            deliveryName: deliveryInfoName,
+            recipientName: deliveryName, // deliveryName을 recipientName으로 사용
+            recipientPhone: deliveryPhone,
+            postalCode: zipCode,
+            roadAddress: address1,
+            detailAddress: address2,
+            deliveryMemo: deliveryMessage === 'custom' ? customDeliveryMessage : deliveryMessage,
+            isDefault: isDefault
         };
 
         try {
-            // API 호출
-            const response = await fetchWithAuth(`${API_URL}/delivery-info`, {
-                method: "POST",
+            // 배송 정보 저장 액션 dispatch
+            await dispatch(saveDeliveryInfo(deliveryInfo)).unwrap();
+            alert("배송 정보가 저장되었습니다.");
+           // 저장된 배송지 목록을 업데이트
+            const response = await fetchWithAuth(`${API_URL}/api/delivery-info`, {
+                method: 'GET',
                 headers: {
-                    "Content-Type": "application/json",
+                    'Content-Type': 'application/json',
+                    // 필요한 경우 다른 헤더도 추가
                 },
-                body: JSON.stringify(deliveryInfo),
             });
-
-            if (response.ok) {
-                alert("배송 정보가 저장되었습니다.");
-            } else {
-                alert("배송 정보 저장에 실패했습니다.");
+            if (!response.ok) {
+                throw new Error('Failed to fetch saved addresses');
             }
+            const data = await response.json();
+            setSavedAddresses(data);
         } catch (error) {
             console.error("배송 정보 저장 중 오류:", error);
             alert("배송 정보 저장 중 오류가 발생했습니다.");
         }
+
+        handleCloseDialog();
     };
 
-    return (
+   return (
         <Box sx={{ maxWidth: 800, margin: "auto", padding: 3 }}>
             <Typography variant="h4" gutterBottom>
                 주문서
@@ -413,15 +445,6 @@ const OrderDetail = () => {
                     margin="normal"
                 />
 
-                {/* 배송 정보 - 이메일 */}
-                <TextField
-                    label="이메일"
-                    value={deliveryEmail}
-                    onChange={(e) => setDeliveryEmail(e.target.value)}
-                    fullWidth
-                    margin="normal"
-                />
-
                 {/* 배송 정보 - 주소 */}
                 <Box display="flex" alignItems="center" mb={2}>
                     <TextField
@@ -448,6 +471,7 @@ const OrderDetail = () => {
                     fullWidth
                     margin="normal"
                 />
+
                 {/* 배송 메시지 선택 */}
                 <FormControl fullWidth margin="normal">
                     <InputLabel id="delivery-message-label">배송 메시지</InputLabel>
@@ -515,6 +539,35 @@ const OrderDetail = () => {
                     </Button>
                 </Paper>
             )}
+
+            {/* 배송 정보 저장 다이얼로그 */}
+            <Dialog open={openDialog} onClose={handleCloseDialog}>
+                <DialogTitle>배송 정보 저장</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        이 배송 정보를 기본 배송 정보로 설정하시겠습니까?
+                    </DialogContentText>
+                    <Box display="flex" justifyContent="space-around">
+                        <Button onClick={() => setIsDefault(true)}>예</Button>
+                        <Button onClick={() => setIsDefault(false)}>아니오</Button>
+                    </Box>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        id="deliveryInfoName"
+                        label="배송 정보 이름"
+                        type="text"
+                        fullWidth
+                        variant="standard"
+                        value={deliveryInfoName}
+                        onChange={(e) => setDeliveryInfoName(e.target.value)}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseDialog}>취소</Button>
+                    <Button onClick={handleConfirmSave}>저장</Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };
