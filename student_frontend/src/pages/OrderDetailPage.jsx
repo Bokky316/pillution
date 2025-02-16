@@ -87,7 +87,7 @@ const OrderDetail = () => {
         // 저장된 배송지 목록 불러오기
         const fetchSavedAddresses = async () => {
             try {
-                const response = await fetchWithAuth(`${API_URL}/api/delivery-info`, {
+                const response = await fetchWithAuth(`${API_URL}delivery-info`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -321,7 +321,7 @@ const OrderDetail = () => {
             await dispatch(saveDeliveryInfo(deliveryInfo)).unwrap();
             alert("배송 정보가 저장되었습니다.");
            // 저장된 배송지 목록을 업데이트
-            const response = await fetchWithAuth(`${API_URL}/api/delivery-info`, {
+            const response = await fetchWithAuth(`${API_URL}delivery-info`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
