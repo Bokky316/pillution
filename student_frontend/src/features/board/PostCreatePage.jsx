@@ -142,7 +142,7 @@ function PostCreatePage() {
 
             console.log('생성 결과:', result);
 
-            setSnackbarMessage("게시물이 등록되었습니다.");
+            setSnackbarMessage("게시물이 성공적으로 등록되었습니다.");
             setSnackbarOpen(true);
 
             setTimeout(() => {
@@ -184,11 +184,8 @@ function PostCreatePage() {
 
     // 취소 버튼 처리
     const handleCancelClick = () => {
-        if (formData.title.trim() || formData.content.trim()) {
-            dispatch(setOpenCancelDialog(true));
-        } else {
-            navigate("/board");
-        }
+        // 제목 또는 내용 둘 다 비어있을 때도 다이얼로그를 띄움
+        dispatch(setOpenCancelDialog(true));
     };
 
     // 취소 확인
@@ -211,11 +208,11 @@ function PostCreatePage() {
     if (!isLoggedIn || !user?.authorities?.some(auth => auth === "ROLE_ADMIN" || auth.authority === "ROLE_ADMIN")) {
         return (
             <Box maxWidth="md" mx="auto" p={3}>
-                <Typography variant="h6" color="error" align="center">
+                <Typography variant="h6" sx={{ color: '#EF5350' }} align="center">
                     관리자만 게시글을 등록할 수 있습니다.
                 </Typography>
                 <Box display="flex" justifyContent="center" mt={2}>
-                    <Button variant="contained" color="primary" onClick={() => navigate("/board")}>
+                    <Button variant="contained" sx={{ color: '#4169E1' }} onClick={() => navigate("/board")}>
                         목록으로 돌아가기
                     </Button>
                 </Box>
@@ -299,7 +296,7 @@ function PostCreatePage() {
                 <Box display="flex" justifyContent="flex-end" gap={1}>
                     <Button
                         variant="contained"
-                        color="primary"
+                        sx={{ backgroundColor: '#29B6F6', color: '#fff' }}
                         type="submit"
                         disabled={loading}
                     >
@@ -307,7 +304,7 @@ function PostCreatePage() {
                     </Button>
                     <Button
                         variant="contained"
-                        color="error"
+                        sx={{ backgroundColor: '#EF5350', color: '#fff' }}
                         onClick={handleCancelClick}
                         disabled={loading}
                     >
@@ -325,10 +322,10 @@ function PostCreatePage() {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleConfirmCancel} color="primary">
+                    <Button onClick={handleConfirmCancel} sx={{ color: '#29B6F6' }}>
                         네
                     </Button>
-                    <Button onClick={() => handleCloseDialog('cancel')} color="error">
+                    <Button onClick={() => handleCloseDialog('cancel')} sx={{ color: '#EF5350' }}>
                         아니요
                     </Button>
                 </DialogActions>
@@ -343,10 +340,10 @@ function PostCreatePage() {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleConfirmSubmit} color="primary">
+                    <Button onClick={handleConfirmSubmit} sx={{ color: '#29B6F6' }}>
                         네
                     </Button>
-                    <Button onClick={() => handleCloseDialog('submit')} color="error">
+                    <Button onClick={() => handleCloseDialog('submit')} sx={{ color: '#EF5350' }}>
                         아니요
                     </Button>
                 </DialogActions>

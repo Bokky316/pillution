@@ -18,9 +18,6 @@ import CartPage from "@/pages/CartPage";
 import BoardPage from "@/pages/BoardPage";
 import NewsBoardPage from "@/pages/NewsBoardPage";
 import FAQBoardPage from "@/pages/FAQBoardPage";
-import PostDetailPage from "@/pages/PostDetailPage";
-import PostCreatePage from "@/pages/PostCreatePage";
-import PostEditPage from "@/pages/PostEditPage";
 import AdminPage from "@/pages/AdminPage";
 import SubscriptionPage from "@/pages/SubscriptionManagement";
 import OrderDetailPage from "@/pages/OrderDetailPage";
@@ -32,6 +29,10 @@ import UnauthorizedPage from "@/features/auth/UnAuthorizedPage";
 import OAuth2RedirectHandler from '@/features/auth/OAuth2RedirectHandler';
 import MessageList from "@/features/auth/MessageList";
 import KakaoAddressSearch from "@/features/auth/KakaoAddressSearch";
+
+import PostDetailPage from "@/features/board/PostDetailPage";
+import PostCreatePage from "@/features/board/PostCreatePage";
+import PostEditPage from "@/features/board/PostEditPage";
 
 import ConsultationRequestList from "@/features/chat/ConsultationRequestList";
 import FloatingConsultationButton from "@/features/chat/FloatingConsultationButton";

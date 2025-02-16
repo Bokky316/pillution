@@ -1,9 +1,9 @@
-package com.javalab.student.service;
+package com.javalab.student.service.board;
 
-import com.javalab.student.dto.BoardDto;
-import com.javalab.student.entity.Board;
+import com.javalab.student.dto.board.BoardDto;
+import com.javalab.student.entity.board.Board;
 import com.javalab.student.exception.EntityNotFoundException;
-import com.javalab.student.repository.BoardRepository;
+import com.javalab.student.repository.board.BoardRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

@@ -132,7 +132,7 @@ function PostEditPage() {
     };
 
     if (loading) return <Typography align="center" variant="h6">로딩 중...</Typography>;
-    if (error) return <Typography align="center" color="error" variant="h6">{error}</Typography>;
+    if (error) return <Typography align="center" sx={{ color: '#EF5350' }} variant="h6">{error}</Typography>;
 
     return (
         <Box maxWidth="md" mx="auto" p={3}>
@@ -203,10 +203,10 @@ function PostEditPage() {
                 </Box>
 
                 <Box display="flex" justifyContent="flex-end" gap={1}>
-                    <Button variant="contained" color="primary" type="submit">
+                    <Button variant="contained" sx={{ backgroundColor: '#29B6F6', color: '#fff' }} type="submit">
                         수정하기
                     </Button>
-                    <Button variant="contained" color="error" onClick={handleCancelClick}>
+                    <Button variant="contained" sx={{ backgroundColor: '#EF5350', color: '#fff' }} onClick={handleCancelClick}>
                         취소
                     </Button>
                 </Box>
@@ -220,10 +220,10 @@ function PostEditPage() {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleConfirmCancel} color="primary">
+                    <Button onClick={handleConfirmCancel} sx={{ color: '#29B6F6' }}>
                         네
                     </Button>
-                    <Button onClick={handleCloseCancelDialog} color="error">
+                    <Button onClick={handleCloseCancelDialog} sx={{ color: '#EF5350' }}>
                         아니요
                     </Button>
                 </DialogActions>
@@ -237,10 +237,10 @@ function PostEditPage() {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleConfirmEdit} color="primary">
+                    <Button onClick={handleConfirmEdit} sx={{ color: '#29B6F6' }}>
                         네
                     </Button>
-                    <Button onClick={handleCloseEditDialog} color="error">
+                    <Button onClick={handleCloseEditDialog} sx={{ color: '#EF5350' }}>
                         아니요
                     </Button>
                 </DialogActions>

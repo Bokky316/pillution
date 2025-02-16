@@ -1,6 +1,6 @@
-package com.javalab.student.dto;
+package com.javalab.student.dto.board;
 
-import com.javalab.student.entity.Post;
+import com.javalab.student.entity.board.Post;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
