@@ -180,8 +180,9 @@ const OrderDetail = () => {
 
     /**
      * 결제 프로세스를 시작합니다.
+     * @param {string} paymentMethod - 결제 수단 (kakaopay, payco, tosspay)
      */
-    const handlePayment = async () => {
+    const handlePayment = async (paymentMethod) => {
         if (!isImpReady || !order) {
             alert("결제 모듈이 아직 로드되지 않았거나 주문이 생성되지 않았습니다.");
             return;
@@ -191,16 +192,16 @@ const OrderDetail = () => {
         IMP.init(merchantId);
 
         const paymentData = {
-            pg: "kakaopay",
-            pay_method: "card",
+            pg: getPgProvider(paymentMethod),
+            pay_method: getPayMethod(paymentMethod),
             merchant_uid: `${order.id}_${new Date().getTime()}`,
             name: order.items[0].name,
             amount: order.totalAmount,
-            buyer_email: order.buyerEmail,
-            buyer_name: order.buyerName,
-            buyer_tel: order.buyerTel,
-            buyer_addr: order.buyerAddr,
-            buyer_postcode: order.buyerPostcode,
+            buyer_email: email,
+            buyer_name: name,
+            buyer_tel: phone,
+            buyer_addr: `${userAddress1} ${userAddress2}`,
+            buyer_postcode: userZipCode,
         };
 
         IMP.request_pay(paymentData, async (rsp) => {
@@ -253,6 +254,42 @@ const OrderDetail = () => {
     };
 
     /**
+     * PG사 제공자를 가져옵니다.
+     * @param {string} method - 결제 수단 (kakaopay, payco, tosspay)
+     * @returns {string} PG사 제공자
+     */
+    const getPgProvider = (method) => {
+        switch (method) {
+            case 'kakaopay':
+                return 'kakaopay';
+            case 'payco':
+                return 'payco';
+            case 'tosspay':
+                return 'tosspayments';
+            default:
+                return 'kakaopay'; // 기본값은 카카오페이
+        }
+    };
+
+    /**
+     * 결제 방식을 가져옵니다.
+     * @param {string} method - 결제 수단 (kakaopay, payco, tosspay)
+     * @returns {string} 결제 방식
+     */
+    const getPayMethod = (method) => {
+        switch (method) {
+            case 'kakaopay':
+                return 'card';
+            case 'payco':
+                return 'payco';
+            case 'tosspay':
+                return 'card'; // 토스페이는 card로 처리
+            default:
+                return 'card'; // 기본값은 카드
+        }
+    };
+
+    /**
      * 카카오 주소 검색 API를 호출합니다.
      */
     const handleAddressSearch = () => {
@@ -279,7 +316,7 @@ const OrderDetail = () => {
 
     /**
      * 배송 메시지 선택 핸들러
-     * @param {Event} event}
+     * @param {Event} event - 이벤트 객체
      */
     const handleDeliveryMessageChange = (event) => {
         setDeliveryMessage(event.target.value);
@@ -402,10 +439,19 @@ const OrderDetail = () => {
                     <Button variant="contained" color="primary" size="large" onClick={handleCreateOrder}>
                         주문 생성
                     </Button>
+                    <Button variant="contained" color="primary" size="large" onClick={() => handlePayment('kakaopay')}>
+                        카카오페이 결제
+                    </Button>
+                    <Button variant="contained" color="primary" size="large" onClick={() => handlePayment('payco')}>
+                        페이코 결제
+                    </Button>
+                    <Button variant="contained" color="primary" size="large" onClick={() => handlePayment('tosspay')}>
+                        토스 결제
+                    </Button>
                 </Box>
             </Paper>
 
-            <PaymentSummary order={order} isImpReady={isImpReady} handlePayment={handlePayment} />
+            <PaymentSummary order={order} isImpReady={isImpReady} />
         </Box>
     );
 };
