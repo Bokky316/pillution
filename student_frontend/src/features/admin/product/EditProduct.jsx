@@ -108,6 +108,7 @@ const EditProduct = () => {
                     active: productData.active !== undefined ? productData.active : true,
                     categoryIds: productData.categories ? productData.categories.map(cat => cat.id) : [],
                     ingredientIds: productData.ingredients ? productData.ingredients.map(ing => ing.id) : [],
+                    ingredients: productData.ingredients || []
                 });
 
                 // 영양성분에 따른 카테고리 불러오기
@@ -336,6 +337,17 @@ const EditProduct = () => {
             <h2 className="edit-product-title">상품 수정</h2>
             <form className="edit-product-form" onSubmit={handleSubmit}>
                 <TextField fullWidth label="상품명" name="name" value={product.name} onChange={handleInputChange} required margin="normal" />
+                {/* ✅ 기존 상품이 가지고 있던 영양성분을 텍스트로 출력 */}
+                {product.ingredients && product.ingredients.length > 0 ? (
+                    <p style={{ marginTop: "10px", fontSize: "14px", color: "#666" }}>
+                        기존 영양성분: {product.ingredients.join(", ")}
+                    </p>
+                ) : (
+                    <p style={{ marginTop: "10px", fontSize: "14px", color: "#999" }}>
+                        기존 영양성분이 없습니다.
+                    </p>
+                )}
+
                 <FormControl fullWidth margin="normal">
                     <InputLabel>영양성분</InputLabel>
                     <Select
