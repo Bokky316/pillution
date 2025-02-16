@@ -5,6 +5,7 @@ import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button, TextField, Typography } from "@mui/material";
+import KakaoAddressSearch from "@/features/auth/KakaoAddressSearch"; // ✅ 카카오 주소 검색 추가
 
 export default function MyPage() {
     const dispatch = useDispatch(); // Redux 디스패치 가져오기
@@ -20,10 +21,11 @@ export default function MyPage() {
         name: "",
         email: "",
         phone: "",
-        address: "",
+        postalCode: "",
+        roadAddress: "",
+        detailAddress: "",
         birthDate: "",
         gender: "",
-        points: "",
     });
 
     /**
@@ -54,7 +56,9 @@ export default function MyPage() {
                     name: userData.name,
                     email: userData.email,
                     phone: userData.phone,
-                    address: userData.address,
+                    postalCode: userData.postalCode, // ✅ 우편번호
+                    roadAddress: userData.roadAddress, // ✅ 도로명 주소
+                    detailAddress: userData.detailAddress, // ✅ 상세 주소
                     birthDate: userData.birthDate,
                     gender: userData.gender,
                     points: userData.points,
@@ -117,6 +121,17 @@ export default function MyPage() {
         setMember({ ...member, [event.target.name]: event.target.value });
     };
 
+    // ✅ 카카오 주소 검색 후 선택된 주소 저장하는 함수
+    const handleAddressSelect = (data) => {
+        console.log("[DEBUG] 선택된 주소 데이터:", data);
+
+        setMember({
+            ...member,
+            postalCode: data.zonecode,  // 우편번호
+            roadAddress: data.roadAddress,  // 도로명 주소
+        });
+    };
+
     return (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "20px" }}>
             <Typography variant="h4" style={{ marginBottom: "20px", fontWeight: "bold" }}>
@@ -125,7 +140,17 @@ export default function MyPage() {
             <TextField label="Name" name="name" value={member.name} onChange={handleInputChange} style={{ width: "400px", marginBottom: "10px" }} />
             <TextField label="Email" name="email" value={member.email} disabled style={{ width: "400px", marginBottom: "10px" }} />
             <TextField label="Phone" name="phone" value={member.phone} onChange={handleInputChange} style={{ width: "400px", marginBottom: "10px" }} />
-            <TextField label="Address" name="address" value={member.address} onChange={handleInputChange} style={{ width: "400px", marginBottom: "10px" }} />
+
+            {/* ✅ 우편번호 검색 필드 */}
+            <div style={{ display: "flex", width: "400px", marginBottom: "10px" }}>
+                <TextField label="우편번호" name="postalCode" value={member.postalCode} style={{ flex: 1, marginRight: "10px" }} disabled />
+                <KakaoAddressSearch onAddressSelect={handleAddressSelect} />
+            </div>
+
+            <TextField label="도로명 주소" name="roadAddress" value={member.roadAddress} style={{ width: "400px", marginBottom: "10px" }} disabled />
+            <TextField label="상세 주소" name="detailAddress" value={member.detailAddress} onChange={handleInputChange} style={{ width: "400px", marginBottom: "10px" }} />
+
+
             <TextField
                 label="Birth Date"
                 name="birthDate"

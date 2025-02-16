@@ -47,7 +47,6 @@ public class Member extends BaseEntity{
 
     private String phone;
 
-    private String address;
 
     // 생년월일 (DB: birth_date DATE)
     private LocalDate birthDate;
@@ -77,6 +76,12 @@ public class Member extends BaseEntity{
     // 마지막 로그인 날짜 (로그인 성공 시 업데이트)
     private LocalDateTime lastLoginAt;
 
+    // 주소 관련 필드 추가
+    private String postalCode;   // 우편번호
+    private String roadAddress;  // 도로명 주소
+    private String detailAddress; // 상세 주소
+
+
 
 
     @Builder
@@ -103,13 +108,15 @@ public class Member extends BaseEntity{
         member.setEmail(memberFormDto.getEmail());
         String password = passwordEncoder.encode(memberFormDto.getPassword()); // 비밀번호 암호화
         member.setPassword(password);
-        member.setAddress(memberFormDto.getAddress());
         member.setPhone(memberFormDto.getPhone());
         member.setSocial(false); // 일반 회원가입이므로 소셜 로그인 여부는 false
         member.setRole(memberFormDto.getRole());  // 회원가입 시 사용자의 권한 : USER [수정]
         member.setActivate(true); // 기본값: 활성 상태
         member.setBirthDate(memberFormDto.getBirthDate()); // 생년월일 추가
         member.setGender(memberFormDto.getGender()); // 성별 추가
+        member.setPostalCode(memberFormDto.getPostalCode()); // 우편번호 추가
+        member.setRoadAddress(memberFormDto.getRoadAddress()); // 도로명 주소 추가
+        member.setDetailAddress(memberFormDto.getDetailAddress()); // 상세 주소 추가
         return member;
     }
 
