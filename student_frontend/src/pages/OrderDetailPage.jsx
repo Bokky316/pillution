@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Button, TextField, Box, Typography, Paper } from "@mui/material";
+import {
+    Button,
+    TextField,
+    Box,
+    Typography,
+    Paper,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+} from "@mui/material";
 import { API_URL } from "@/utils/constants";
 import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
 import { useDispatch, useSelector } from "react-redux";
@@ -29,9 +39,14 @@ const OrderDetail = () => {
     const [zipCode, setZipCode] = useState("");
     const [address1, setAddress1] = useState("");
     const [address2, setAddress2] = useState("");
+    const [deliveryName, setDeliveryName] = useState(''); // 배송 정보 이름 상태 추가, 초기값 빈 문자열
+    const [deliveryPhone, setDeliveryPhone] = useState(''); // 배송 정보 전화번호 상태 추가, 초기값 빈 문자열
+    const [deliveryEmail, setDeliveryEmail] = useState(''); // 배송 정보 이메일 상태 추가, 초기값 빈 문자열
     const [merchantId, setMerchantId] = useState("");
     const [order, setOrder] = useState(null);
     const [isImpReady, setIsImpReady] = useState(false);
+    const [deliveryMessage, setDeliveryMessage] = useState(""); // 배송 메시지 상태 추가, 기본값 "선택 안 함"
+    const [customDeliveryMessage, setCustomDeliveryMessage] = useState(""); // 직접 입력 배송 메시지 상태 추가
 
     useEffect(() => {
         const id = fetchMerchantId();
@@ -87,6 +102,7 @@ const OrderDetail = () => {
             buyerTel: phone,
             buyerAddr: `${address1} ${address2}`,
             buyerPostcode: zipCode,
+            deliveryMessage: deliveryMessage === 'custom' ? customDeliveryMessage : deliveryMessage, // 배송 메시지 추가
         };
 
         try {
@@ -182,124 +198,233 @@ const OrderDetail = () => {
         });
     };
 
-  /**
-   * 카카오 주소 검색 API를 호출합니다.
-   */
-  const handleAddressSearch = () => {
-    new window.daum.Postcode({
-      oncomplete: function(data) {
-        setZipCode(data.zonecode);
-        setAddress1(data.address);
-        setAddress2(''); // 상세 주소 초기화
-      }
-    }).open();
-  };
+    /**
+     * 카카오 주소 검색 API를 호출합니다.
+     */
+    const handleAddressSearch = () => {
+        new window.daum.Postcode({
+            oncomplete: function (data) {
+                setZipCode(data.zonecode);
+                setAddress1(data.address);
+                setAddress2(''); // 상세 주소 초기화
+            }
+        }).open();
+    };
 
-  return (
-    <Box sx={{ maxWidth: 800, margin: "auto", padding: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        주문서
-      </Typography>
-      <Paper sx={{ padding: 3 }}>
-        {selectedItems.map((item, index) => (
-          <Box key={index} display="flex" alignItems="center" mb={2}>
-            <img
-              src={item.imageUrl}
-              alt={item.name}
-              style={{ width: 100, height: 100, marginRight: 20 }}
-            />
-            <Box>
-              <Typography variant="h6">{item.name}</Typography>
-              <Typography variant="body1">가격: {item.price}원</Typography>
-              <Typography variant="body1">수량: {item.quantity}</Typography>
-            </Box>
-          </Box>
-        ))}
+    /**
+     * 사용자 정보 탭에서 주문 정보 탭으로 정보 복사
+     */
+    const handleUseUserInfo = () => {
+        setName(userData?.name || '');
+        setEmail(userData?.email || '');
+        setPhone(userData?.phone || '');
+    };
 
-        <Typography variant="h6" mt={3}>
-          총 주문 금액: {calculateTotalPrice()}원
-        </Typography>
+    /**
+     * 배송 메시지 선택 핸들러
+     * @param {Event} event - 이벤트 객체
+     */
+    const handleDeliveryMessageChange = (event) => {
+        setDeliveryMessage(event.target.value);
+        if (event.target.value !== 'custom') {
+            setCustomDeliveryMessage(""); // 직접 입력 메시지 초기화
+        }
+    };
 
-        <Typography variant="h6" mt={3} gutterBottom>
-          배송 정보
-        </Typography>
-        <TextField
-          label="이름"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          fullWidth
-          margin="normal"
-        />
-        <TextField
-          label="이메일"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          fullWidth
-          margin="normal"
-        />
-        <TextField
-          label="전화번호"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          fullWidth
-          margin="normal"
-        />
-        <Typography variant="h6" mt={3} gutterBottom>
-          배송지 정보
-        </Typography>
-        <Box display="flex" alignItems="center" mb={2}>
-          <TextField
-            label="우편번호"
-            value={zipCode}
-            readOnly
-            sx={{ width: '150px', marginRight: 2 }}
-          />
-          <Button variant="outlined" onClick={handleAddressSearch}>
-            주소 검색
-          </Button>
+    /**
+     * 배송지 정보를 사용자 정보와 동일하게 설정합니다.
+     */
+    const handleUseUserInfoForDelivery = () => {
+        setDeliveryName(name);
+        setDeliveryPhone(phone);
+        setDeliveryEmail(email);
+        setZipCode(zipCode);
+        setAddress1(address1);
+        setAddress2(address2);
+    };
+
+    return (
+        <Box sx={{ maxWidth: 800, margin: "auto", padding: 3 }}>
+            <Typography variant="h4" gutterBottom>
+                주문서
+            </Typography>
+            <Paper sx={{ padding: 3 }}>
+                {/* 주문 정보 */}
+                <Typography variant="h6" gutterBottom>
+                    주문 정보
+                </Typography>
+                {selectedItems.map((item, index) => (
+                    <Box key={index} display="flex" alignItems="center" mb={2}>
+                        <img
+                            src={item.imageUrl}
+                            alt={item.name}
+                            style={{ width: 100, height: 100, marginRight: 20 }}
+                        />
+                        <Box>
+                            <Typography variant="h6">{item.name}</Typography>
+                            <Typography variant="body1">가격: {item.price}원</Typography>
+                            <Typography variant="body1">수량: {item.quantity}</Typography>
+                        </Box>
+                    </Box>
+                ))}
+
+                <Typography variant="h6" mt={3}>
+                    총 주문 금액: {calculateTotalPrice()}원
+                </Typography>
+
+                {/* 사용자 정보 */}
+                <Typography variant="h6" mt={3} gutterBottom>
+                    사용자 정보
+                </Typography>
+                <TextField
+                    label="이름"
+                    value={name}
+                    InputProps={{ readOnly: true }}
+                    fullWidth
+                    margin="normal"
+                />
+                <TextField
+                    label="이메일"
+                    value={email}
+                    InputProps={{ readOnly: true }}
+                    fullWidth
+                    margin="normal"
+                />
+                <TextField
+                    label="전화번호"
+                    value={phone}
+                    InputProps={{ readOnly: true }}
+                    fullWidth
+                    margin="normal"
+                />
+                <TextField
+                    label="주소"
+                    value={`${address1} ${address2}`}
+                    InputProps={{ readOnly: true }}
+                    fullWidth
+                    margin="normal"
+                />
+
+                {/* 배송 정보 */}
+                <Typography variant="h6" mt={3} gutterBottom>
+                    배송 정보
+                </Typography>
+
+                {/* 배송 정보 - 이름 */}
+                <TextField
+                    label="이름"
+                    value={deliveryName}
+                    onChange={(e) => setDeliveryName(e.target.value)}
+                    fullWidth
+                    margin="normal"
+                />
+
+                {/* 배송 정보 - 전화번호 */}
+                <TextField
+                    label="전화번호"
+                    value={deliveryPhone}
+                    onChange={(e) => setDeliveryPhone(e.target.value)}
+                    fullWidth
+                    margin="normal"
+                />
+
+                {/* 배송 정보 - 이메일 */}
+                <TextField
+                    label="이메일"
+                    value={deliveryEmail}
+                    onChange={(e) => setDeliveryEmail(e.target.value)}
+                    fullWidth
+                    margin="normal"
+                />
+
+                {/* 배송 정보 - 주소 */}
+                <Box display="flex" alignItems="center" mb={2}>
+                    <TextField
+                        label="우편번호"
+                        value={zipCode}
+                        readOnly
+                        sx={{ width: '150px', marginRight: 2 }}
+                    />
+                    <Button variant="outlined" onClick={handleAddressSearch}>
+                        주소 검색
+                    </Button>
+                </Box>
+                <TextField
+                    label="주소"
+                    value={address1}
+                    readOnly
+                    fullWidth
+                    margin="normal"
+                />
+                <TextField
+                    label="상세주소"
+                    value={address2}
+                    onChange={(e) => setAddress2(e.target.value)}
+                    fullWidth
+                    margin="normal"
+                />
+                {/* 배송 메모 선택 */}
+                <FormControl fullWidth margin="normal">
+                    <InputLabel id="delivery-message-label">배송 메모</InputLabel>
+                    <Select
+                        labelId="delivery-message-label"
+                        id="delivery-message"
+                        value={deliveryMessage}
+                        onChange={handleDeliveryMessageChange}
+                        label="배송 메모"
+                    >
+                        <MenuItem value="선택 안 함">선택 안 함</MenuItem>
+                        <MenuItem value="문 앞에 놓아주세요">문 앞에 놓아주세요</MenuItem>
+                        <MenuItem value="부재 시 연락 부탁드려요">부재 시 연락 부탁드려요</MenuItem>
+                        <MenuItem value="배송 전 미리 연락해 주세요">배송 전 미리 연락해 주세요</MenuItem>
+                        <MenuItem value="custom">직접 입력하기</MenuItem>
+                    </Select>
+                    {deliveryMessage === 'custom' && (
+                        <TextField
+                            label="배송 메시지 직접 입력"
+                            value={customDeliveryMessage}
+                            onChange={(e) => setCustomDeliveryMessage(e.target.value)}
+                            fullWidth
+                            margin="normal"
+                        />
+                    )}
+                </FormControl>
+
+                {/* 배송 정보 - 사용자 정보 이용 버튼 */}
+                <Box mt={2}>
+                    <Button variant="contained" color="primary" onClick={handleUseUserInfoForDelivery}>
+                        사용자 정보와 동일하게
+                    </Button>
+                </Box>
+
+                <Box mt={3} textAlign="center">
+                    <Button variant="contained" color="primary" size="large" onClick={handleCreateOrder}>
+                        주문 생성
+                    </Button>
+                </Box>
+            </Paper>
+
+            {/* 결제 정보 */}
+            {order && (
+                <Paper sx={{ padding: 3, marginTop: 3 }}>
+                    <Typography variant="h5" gutterBottom>
+                        결제 정보
+                    </Typography>
+                    <p>주문 번호: {order.id}</p>
+                    <p>총 결제 금액: {order.totalAmount}원</p>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        size="large"
+                        onClick={handlePayment}
+                        disabled={!isImpReady}
+                    >
+                        결제하기
+                    </Button>
+                </Paper>
+            )}
         </Box>
-        <TextField
-          label="주소"
-          value={address1}
-          readOnly
-          fullWidth
-          margin="normal"
-        />
-        <TextField
-          label="상세주소"
-          value={address2}
-          onChange={(e) => setAddress2(e.target.value)}
-          fullWidth
-          margin="normal"
-        />
-
-        <Box mt={3} textAlign="center">
-          <Button variant="contained" color="primary" size="large" onClick={handleCreateOrder}>
-            주문 생성
-          </Button>
-        </Box>
-      </Paper>
-
-      {order && (
-        <Paper sx={{ padding: 3, marginTop: 3 }}>
-          <Typography variant="h5" gutterBottom>
-            결제 정보
-          </Typography>
-          <p>주문 번호: {order.id}</p>
-          <p>총 결제 금액: {order.totalAmount}원</p>
-          <Button
-            variant="contained"
-            color="primary"
-            size="large"
-            onClick={handlePayment}
-            disabled={!isImpReady}
-          >
-            결제하기
-          </Button>
-        </Paper>
-      )}
-    </Box>
-  );
+    );
 };
 
 export default OrderDetail;
