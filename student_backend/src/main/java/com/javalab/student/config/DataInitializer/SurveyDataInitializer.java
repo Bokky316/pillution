@@ -4,12 +4,10 @@
 package com.javalab.student.config.DataInitializer;
 
 
-import com.javalab.student.entity.*;
 import com.javalab.student.entity.healthSurvey.QuestionOption;
 import com.javalab.student.entity.healthSurvey.SurveyCategory;
 import com.javalab.student.entity.healthSurvey.SurveyQuestion;
 import com.javalab.student.entity.healthSurvey.SurveySubCategory;
-import com.javalab.student.repository.*;
 import com.javalab.student.repository.healthSurvey.QuestionOptionRepository;
 import com.javalab.student.repository.healthSurvey.SurveyCategoryRepository;
 import com.javalab.student.repository.healthSurvey.SurveyQuestionRepository;
@@ -25,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @RequiredArgsConstructor
-public class DataInitializer implements CommandLineRunner {
+public class SurveyDataInitializer implements CommandLineRunner {
 
     private final SurveyCategoryRepository categoryRepository;
     private final SurveySubCategoryRepository subCategoryRepository;
