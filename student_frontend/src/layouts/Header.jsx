@@ -182,6 +182,8 @@ const Header = () => {
                                         >
                                             <MenuItem className="menu-item-centered" onClick={() => { handleUserMenuClose(); navigate("/messages"); }}>메시지 목록</MenuItem>
                                             <MenuItem className="menu-item-centered" onClick={() => { handleUserMenuClose(); navigate("/mypage"); }}>마이페이지</MenuItem>
+                                            <MenuItem className="menu-item-centered" onClick={() => { handleUserMenuClose(); navigate("/subscription"); }}>구독관리</MenuItem>
+                                            <MenuItem className="menu-item-centered" onClick={() => { handleUserMenuClose(); navigate("/recommendation"); }}>추천결과</MenuItem>
                                             {user.role === "CS_AGENT" && (
                                                 <MenuItem className="menu-item-centered" onClick={() => { handleUserMenuClose(); navigate("/consultation-list"); }}>상담 목록</MenuItem>
                                             )}
