@@ -76,8 +76,14 @@ public class PaymentService {
         com.javalab.student.entity.cartOrder.Payment payment = createAndSavePayment(requestDto, order);
 
         // 4. 주문 상태 업데이트
-        order.setOrderStatus(OrderStatus.PAYMENT_COMPLETED);
-        orderRepository.save(order);
+        if(order != null) {
+            order.setOrderStatus(OrderStatus.PAYMENT_COMPLETED);
+            orderRepository.save(order);
+        } else {
+            log.error("Order is null, cannot update order status.");
+            throw new IllegalStateException("Order cannot be null after creation.");
+        }
+
 
         // 5. 구독 처리 (구독 결제인 경우)
         if ("subscription".equals(purchaseType)) {
