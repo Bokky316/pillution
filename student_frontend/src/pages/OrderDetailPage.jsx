@@ -47,6 +47,15 @@ const OrderDetail = () => {
     const [isImpReady, setIsImpReady] = useState(false);
     const [deliveryMessage, setDeliveryMessage] = useState(""); // 배송 메시지 상태 추가, 기본값 "선택 안 함"
     const [customDeliveryMessage, setCustomDeliveryMessage] = useState(""); // 직접 입력 배송 메시지 상태 추가
+    const [savedAddresses, setSavedAddresses] = useState([]);// 저장된 배송지 목록
+    const [selectedSavedAddressId, setSelectedSavedAddressId] = useState('');// 선택된 배송지 ID
+        /**
+     * 저장된 배송지 선택 핸들러
+     * @param {Event} event - 이벤트 객체
+     */
+    const handleSavedAddressChange = (event) => {
+        setSelectedSavedAddressId(event.target.value);
+    };
 
     useEffect(() => {
         const id = fetchMerchantId();
@@ -64,6 +73,28 @@ const OrderDetail = () => {
         kakaoScript.src = "//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
         kakaoScript.async = true;
         document.body.appendChild(kakaoScript);
+
+        // 저장된 배송지 목록 불러오기
+        const fetchSavedAddresses = async () => {
+            try {
+                const response = await fetchWithAuth(`${API_URL}/saved-addresses`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // 필요한 경우 다른 헤더도 추가
+                    },
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to fetch saved addresses');
+                }
+                const data = await response.json();
+                setSavedAddresses(data);
+            } catch (error) {
+                console.error('Error fetching saved addresses:', error);
+                alert('Failed to fetch saved addresses');
+            }
+        };
+        fetchSavedAddresses();
 
         return () => {
             document.body.removeChild(impScript);
@@ -103,6 +134,7 @@ const OrderDetail = () => {
             buyerAddr: `${address1} ${address2}`,
             buyerPostcode: zipCode,
             deliveryMessage: deliveryMessage === 'custom' ? customDeliveryMessage : deliveryMessage, // 배송 메시지 추가
+             savedAddressId: selectedSavedAddressId, // 선택된 배송지 ID 추가
         };
 
         try {
@@ -243,6 +275,40 @@ const OrderDetail = () => {
         setAddress2(address2);
     };
 
+    /**
+     * 배송 정보를 저장합니다.
+     */
+    const handleSaveDeliveryInfo = async () => {
+        const deliveryInfo = {
+            deliveryName: deliveryName,
+            deliveryPhone: deliveryPhone,
+            deliveryEmail: deliveryEmail,
+            zipCode: zipCode,
+            address1: address1,
+            address2: address2,
+        };
+
+        try {
+            // API 호출
+            const response = await fetchWithAuth(`${API_URL}/delivery-info`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(deliveryInfo),
+            });
+
+            if (response.ok) {
+                alert("배송 정보가 저장되었습니다.");
+            } else {
+                alert("배송 정보 저장에 실패했습니다.");
+            }
+        } catch (error) {
+            console.error("배송 정보 저장 중 오류:", error);
+            alert("배송 정보 저장 중 오류가 발생했습니다.");
+        }
+    };
+
     return (
         <Box sx={{ maxWidth: 800, margin: "auto", padding: 3 }}>
             <Typography variant="h4" gutterBottom>
@@ -310,6 +376,25 @@ const OrderDetail = () => {
                     배송 정보
                 </Typography>
 
+                {/* 저장된 배송지 선택 */}
+                <FormControl fullWidth margin="normal">
+                    <InputLabel id="saved-address-label">저장된 배송지</InputLabel>
+                    <Select
+                        labelId="saved-address-label"
+                        id="saved-address"
+                        value={selectedSavedAddressId}
+                        onChange={handleSavedAddressChange}
+                        label="저장된 배송지"
+                    >
+                        <MenuItem value="">선택 안 함</MenuItem>
+                        {savedAddresses.map(address => (
+                            <MenuItem key={address.id} value={address.id}>
+                                {address.recipientName} - {address.roadAddress}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+
                 {/* 배송 정보 - 이름 */}
                 <TextField
                     label="이름"
@@ -363,17 +448,17 @@ const OrderDetail = () => {
                     fullWidth
                     margin="normal"
                 />
-                {/* 배송 메모 선택 */}
+                {/* 배송 메시지 선택 */}
                 <FormControl fullWidth margin="normal">
-                    <InputLabel id="delivery-message-label">배송 메모</InputLabel>
+                    <InputLabel id="delivery-message-label">배송 메시지</InputLabel>
                     <Select
                         labelId="delivery-message-label"
                         id="delivery-message"
                         value={deliveryMessage}
                         onChange={handleDeliveryMessageChange}
-                        label="배송 메모"
+                        label="배송 메시지"
                     >
-                        <MenuItem value="선택 안 함">선택 안 함</MenuItem>
+                        <MenuItem value="">선택 안 함</MenuItem>
                         <MenuItem value="문 앞에 놓아주세요">문 앞에 놓아주세요</MenuItem>
                         <MenuItem value="부재 시 연락 부탁드려요">부재 시 연락 부탁드려요</MenuItem>
                         <MenuItem value="배송 전 미리 연락해 주세요">배송 전 미리 연락해 주세요</MenuItem>
@@ -394,6 +479,13 @@ const OrderDetail = () => {
                 <Box mt={2}>
                     <Button variant="contained" color="primary" onClick={handleUseUserInfoForDelivery}>
                         사용자 정보와 동일하게
+                    </Button>
+                </Box>
+
+                {/* 배송 정보 - 배송 정보 기억하기 버튼 */}
+                <Box mt={2}>
+                    <Button variant="contained" color="secondary" onClick={handleSaveDeliveryInfo}>
+                        배송 정보 기억하기
                     </Button>
                 </Box>
 

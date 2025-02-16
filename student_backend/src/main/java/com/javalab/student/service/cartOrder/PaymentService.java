@@ -3,7 +3,7 @@ package com.javalab.student.service.cartOrder;
 import com.javalab.student.constant.OrderStatus;
 import com.javalab.student.dto.cartOrder.OrderDto;
 import com.javalab.student.dto.cartOrder.PaymentRequestDto;
-import com.javalab.student.dto.cartOrder.OrderItemDto;
+import com.javalab.student.dto.cartOrder.DeliveryInfoDto;
 import com.javalab.student.entity.Member;
 import com.javalab.student.entity.Subscription;
 import com.javalab.student.entity.SubscriptionNextItem;
@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * 결제 서비스 (포트원 SDK 적용)
@@ -50,6 +49,8 @@ public class PaymentService {
     private final SubscriptionRepository subscriptionRepository;
     private final OrderItemRepository orderItemRepository;
     private final SubscriptionNextItemRepository subscriptionNextItemRepository;
+    // SavedAddressService 추가
+    private final SavedAddressService savedAddressService;
 
     /**
      * 결제를 처리하고 검증합니다.
@@ -115,15 +116,39 @@ public class PaymentService {
             throw new EntityNotFoundException("해당 이메일로 멤버를 찾을 수 없습니다: " + email);
         }
 
-        // 2. 사용자 장바구니 조회
+        // 2. 배송지 정보 조회 (SavedAddress 활용)
+        DeliveryInfoDto savedAddress = null;
+        if (requestDto.getSavedAddressId() != null) {
+            savedAddress = savedAddressService.getSavedAddress(requestDto.getSavedAddressId());
+            if (savedAddress == null || !savedAddress.getMember().equals(member)) {
+                throw new IllegalArgumentException("유효하지 않은 배송지 정보입니다.");
+            }
+        }
+
+        String deliveryName = requestDto.getBuyerName();
+        String deliveryPhone = requestDto.getBuyerTel();
+        String postalCode = requestDto.getBuyerPostcode();
+        String roadAddress = requestDto.getBuyerAddr();
+        String detailAddress = requestDto.getBuyerAddr(); // 상세주소가 별도로 없다면 도로명주소로 사용
+
+        // SavedAddress가 있다면 해당 정보로 배송지 정보 설정
+        if (savedAddress != null) {
+            deliveryName = savedAddress.getRecipientName();
+            deliveryPhone = savedAddress.getRecipientPhone();
+            postalCode = savedAddress.getPostalCode();
+            roadAddress = savedAddress.getRoadAddress();
+            detailAddress = savedAddress.getDetailAddress();
+        }
+
+        // 3. 사용자 장바구니 조회
         Cart cart = cartRepository.findByMemberId(member.getId())
                 .orElseThrow(() -> new EntityNotFoundException("Cart not found for member id: " + member.getId()));
 
-        // 3. 장바구니 아이템 조회
+        // 4. 장바구니 아이템 조회
         List<CartItem> cartItems = cartItemRepository.findByCartId(cart.getId());
         BigDecimal totalOrderAmount = BigDecimal.ZERO;
 
-        // 4. 주문 DTO 생성 및 총 주문 금액 계산
+        // 5. 주문 DTO 생성 및 총 주문 금액 계산
         List<OrderDto.OrderItemDto> orderItemDtoList = new ArrayList<>();
         for (CartItem cartItem : cartItems) {
             PaymentRequestDto.CartOrderItemDto cartOrderItemDto = requestDto.getCartOrderItems().stream()
@@ -154,7 +179,7 @@ public class PaymentService {
             totalOrderAmount = totalOrderAmount.add(productPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity())));
         }
 
-        // 5. 주문 객체 생성
+        // 6. 주문 객체 생성
         Order order = Order.builder()
                 .member(member)
                 .orderDate(LocalDateTime.now())
@@ -163,7 +188,7 @@ public class PaymentService {
                 .paymentMethod(requestDto.getPayMethod())
                 .build();
 
-        // 6. OrderItem 생성 및 Order에 추가
+        // 7. OrderItem 생성 및 Order에 추가
         List<OrderItem> orderItems = new ArrayList<>();
         for (CartItem cartItem : cartItems) {
             PaymentRequestDto.CartOrderItemDto cartOrderItemDto = requestDto.getCartOrderItems().stream()
