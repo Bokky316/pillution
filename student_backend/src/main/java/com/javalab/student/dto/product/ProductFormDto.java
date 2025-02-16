@@ -1,7 +1,8 @@
-package com.javalab.student.dto;
+package com.javalab.student.dto.product;
 
 import jakarta.validation.constraints.*;
 import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -30,7 +31,9 @@ public class ProductFormDto {
 
     private boolean active;
 
-    private String mainImageUrl;
+    private MultipartFile mainImageFile; // ✅ 대표 이미지 파일 필드 추가
+
+    private List<MultipartFile> detailImageFiles; // ✅ 상세 이미지 파일 리스트 필드 추가
 
     /** 추가된 필드: 영양 성분 ID 리스트 */
     private List<Long> ingredientIds;

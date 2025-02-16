@@ -5,7 +5,8 @@ import com.javalab.student.dto.healthSurvey.RecommendationDTO;
 import com.javalab.student.dto.healthSurvey.RecommendedIngredientDTO;
 import com.javalab.student.dto.healthSurvey.RecommendedProductDTO;
 import com.javalab.student.entity.Member;
-import com.javalab.student.entity.Product;
+import com.javalab.student.entity.product.ProductImg;
+import com.javalab.student.entity.product.Product;
 import com.javalab.student.entity.healthSurvey.HealthRecord;
 import com.javalab.student.entity.healthSurvey.Recommendation;
 import com.javalab.student.entity.healthSurvey.RecommendedIngredient;
@@ -24,7 +25,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -125,7 +125,13 @@ public class RecommendationController {
                         dto.setProductId(product.getId());
                         dto.setProductName(product.getName());
                         dto.setPrice(product.getPrice().doubleValue());
-                        dto.setMainImageUrl(product.getMainImageUrl());
+                        //dto.setMainImageUrl(product.getMainImageUrl());
+                        String mainImageUrl = product.getProductImgList().stream()
+                                .filter(img -> "대표".equals(img.getImageType()))
+                                .findFirst()
+                                .map(ProductImg::getImageUrl)
+                                .orElse(null);
+                        dto.setMainImageUrl(mainImageUrl); // 이미지 URL 추가
                         dto.setReason(recommendedProduct.getReason());
                         dto.setRelatedIngredients(recommendedProduct.getRelatedIngredients());
 

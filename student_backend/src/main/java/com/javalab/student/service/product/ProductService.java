@@ -1,6 +1,8 @@
-package com.javalab.student.service;
+package com.javalab.student.service.product;
 
-import com.javalab.student.dto.*;
+import com.javalab.student.dto.product.ProductDto;
+import com.javalab.student.dto.product.ProductFormDto;
+import com.javalab.student.dto.product.ProductResponseDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -17,7 +19,7 @@ public interface ProductService {
     ProductDto updateProduct(Long id, ProductFormDto productFormDto);
 
     /** 상품 단건 조회 */
-    ProductDto getProductById(Long id);
+    ProductResponseDTO getProductById(Long id);
 
     /** 상품 활성화/비활성화 */
     void toggleProductActive(Long id);
@@ -33,5 +35,6 @@ public interface ProductService {
     /** 검색 메서드 추가 */
     Page<ProductResponseDTO> searchProducts(String field, String query, Pageable pageable);
 
-
+    /** 상품 이미지 삭제 */
+    void deleteProductImage(Long productId, String imageType, Integer imageIndex);
 }

@@ -40,28 +40,27 @@ const ProductList = () => {
 
 
     const fetchCategories = () => {
-      fetch(`${API_URL}categories`, {
-          method: 'GET',
-          headers: {
-              'Content-Type': 'application/json',
-              'Authorization': token ? `Bearer ${token}` : ''
-          },
-          credentials: 'include'
-      })
-          .then(response => {
-              if (!response.ok) {
-                  throw new Error('카테고리 조회 실패');
-              }
-              return response.json();
-          })
-          .then(data => {
-              setCategories(Array.isArray(data) ? data : []);
-          })
-          .catch(err => {
-              console.error("카테고리 조회 실패:", err);
-              setCategories([]);
-          });
-
+        fetch(`${API_URL}categories`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token ? `Bearer ${token}` : ''
+            },
+            credentials: 'include'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('카테고리 조회 실패');
+            }
+            return response.json();
+        })
+        .then(data => {
+            setCategories(Array.isArray(data) ? data : []);
+        })
+        .catch(err => {
+            console.error("카테고리 조회 실패:", err);
+            setCategories([]);
+        });
     }
     const fetchProductsData = () => {
         setLoading(true);
@@ -210,7 +209,7 @@ const ProductList = () => {
             headerName: '수정',
             flex: 1,
             renderCell: (params) => (
-                <Button variant="contained" color="primary" onClick={() => navigate(`/adminpage/products/${params.row.id}/edit`)}>
+                <Button variant="contained" color="primary" onClick={() => navigate(`/adminPage/products/${params.row.id}/edit`)}>
                     수정
                 </Button>
             )
@@ -238,7 +237,7 @@ const ProductList = () => {
         <div style={{ width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h3>상품 관리</h3>
-                <Button variant="contained" color="primary" onClick={() => navigate('/adminpage/products/add')}>
+                <Button variant="contained" color="primary" onClick={() => navigate('/adminPage/products/add')}>
                     상품 등록
                 </Button>
             </div>

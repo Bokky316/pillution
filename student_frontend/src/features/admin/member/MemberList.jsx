@@ -22,15 +22,39 @@ const MemberList = () => {
 
 
     const fetchMembersData = () => {
-      const { page, pageSize } = paginationModel;
-      const statusQuery = statusFilter ? `&status=${statusFilter}` : '';
-      // 검색어가 비어있으면 검색 API 호출 안함
-      if (!searchInput) {
-          fetch(`${API_URL}members?page=${page}&size=${pageSize}${statusQuery}`, {
+        const { page, pageSize } = paginationModel;
+        const statusQuery = statusFilter ? `&status=${statusFilter}` : '';
+        // 검색어가 비어있으면 검색 API 호출 안함
+        if (!searchInput) {
+            fetch(`${API_URL}members?page=${page}&size=${pageSize}${statusQuery}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem("accToken")}`,
+                },
+                credentials: 'include',
+            })
+            .then((response) => response.json())
+            .then((data) => {
+              setMembers(data.dtoList || []);
+              setTotalRows(data.total || 0);
+            })
+            .catch((error) => {
+                console.error('Error fetching data:', error);
+                setSnackbarMessage('회원 정보를 가져오는 데 실패했습니다.');
+                setSnackbarOpen(true);
+            });
+            return; // 검색어가 없으면 여기서 종료
+        }
+
+        const encodedSearchInput = encodeURIComponent(searchInput);
+        const searchQuery = `&searchType=${searchType}&keyword=${encodedSearchInput}`;
+
+        fetch(`${API_URL}members?page=${page}&size=${pageSize}${statusQuery}${searchQuery}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem("accToken")}`,
+              'Authorization': `Bearer ${localStorage.getItem("accToken")}`,
             },
             credentials: 'include',
         })
@@ -41,33 +65,9 @@ const MemberList = () => {
         })
         .catch((error) => {
             console.error('Error fetching data:', error);
-            setSnackbarMessage('회원 정보를 가져오는 데 실패했습니다.');
-            setSnackbarOpen(true);
+          setSnackbarMessage('회원 정보를 가져오는 데 실패했습니다.');
+          setSnackbarOpen(true);
         });
-        return; // 검색어가 없으면 여기서 종료
-      }
-
-      const encodedSearchInput = encodeURIComponent(searchInput);
-      const searchQuery = `&searchType=${searchType}&keyword=${encodedSearchInput}`;
-
-      fetch(`${API_URL}members?page=${page}&size=${pageSize}${statusQuery}${searchQuery}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem("accToken")}`,
-        },
-        credentials: 'include',
-    })
-    .then((response) => response.json())
-    .then((data) => {
-      setMembers(data.dtoList || []);
-      setTotalRows(data.total || 0);
-    })
-    .catch((error) => {
-        console.error('Error fetching data:', error);
-      setSnackbarMessage('회원 정보를 가져오는 데 실패했습니다.');
-      setSnackbarOpen(true);
-    });
     };
 
 

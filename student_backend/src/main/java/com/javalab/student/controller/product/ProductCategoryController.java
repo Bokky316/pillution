@@ -1,7 +1,7 @@
-package com.javalab.student.controller;
+package com.javalab.student.controller.product;
 
-import com.javalab.student.entity.ProductCategory;
-import com.javalab.student.repository.ProductCategoryRepository;
+import com.javalab.student.entity.product.ProductCategory;
+import com.javalab.student.repository.product.ProductCategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,7 +18,7 @@ public class ProductCategoryController {
 
     @GetMapping
     public ResponseEntity<List<ProductCategory>> getCategories() {
-        List<ProductCategory> categories = categoryRepository.findAll();
+        List<ProductCategory> categories = categoryRepository.findAllByOrderByIdAsc();
         return ResponseEntity.ok(categories);
     }
 }
