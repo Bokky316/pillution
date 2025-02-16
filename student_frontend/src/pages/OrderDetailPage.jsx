@@ -279,7 +279,7 @@ const OrderDetail = () => {
 
     /**
      * 배송 메시지 선택 핸들러
-     * @param {Event} event - 이벤트 객체
+     * @param {Event} event}
      */
     const handleDeliveryMessageChange = (event) => {
         setDeliveryMessage(event.target.value);
