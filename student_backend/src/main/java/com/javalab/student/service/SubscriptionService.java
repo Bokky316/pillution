@@ -90,6 +90,25 @@ public class SubscriptionService {
     }
 
     /**
+     * 배송 요청사항 업데이트
+     */
+    @Transactional
+    public void updateDeliveryRequest(Long subscriptionId, String deliveryRequest) {
+        log.info("📡 [서비스 호출] 배송 요청 업데이트 - 구독 ID: {}", subscriptionId);
+
+        Subscription subscription = subscriptionRepository.findById(subscriptionId)
+                .orElseThrow(() -> new IllegalArgumentException("❌ 존재하지 않는 구독 ID: " + subscriptionId));
+
+        log.info("✅ [DB 조회] 구독 정보 찾음 - 구독 ID: {}", subscription.getId());
+
+        subscription.setDeliveryRequest(deliveryRequest);
+        subscriptionRepository.save(subscription);
+
+        log.info("✅ [DB 업데이트 완료] 배송 요청 저장됨 - 구독 ID: {}", subscriptionId);
+    }
+
+
+    /**
      * 결제일 업데이트
      */
     @Transactional

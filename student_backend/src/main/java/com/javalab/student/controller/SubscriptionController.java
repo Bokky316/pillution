@@ -1,5 +1,6 @@
 package com.javalab.student.controller;
 
+import com.javalab.student.dto.SubscriptionResponseDto;
 import com.javalab.student.dto.SubscriptionUpdateNextItemDto;
 import com.javalab.student.dto.SubscriptionUpdateNextItemRequestDto;
 import com.javalab.student.dto.SubscriptionUpdateNextItemRequestDto;
@@ -42,11 +43,17 @@ public class SubscriptionController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "memberId가 필요합니다."));
         }
         try {
-            return ResponseEntity.ok(subscriptionService.getSubscription(memberId));
+            SubscriptionResponseDto subscriptionResponse = subscriptionService.getSubscription(memberId);
+            log.info("📡 [API 응답] 구독 정보 조회 - 구독 ID: {}, 배송 요청사항: {}",
+                    subscriptionResponse.getId(),
+                    subscriptionResponse.getDeliveryRequest() != null ? subscriptionResponse.getDeliveryRequest() : "없음");
+
+            return ResponseEntity.ok(subscriptionResponse);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
         }
     }
+
 
     /**
      * 새로운 구독 생성 API
@@ -60,6 +67,36 @@ public class SubscriptionController {
             @RequestParam String detailAddress) {
         return ResponseEntity.ok(subscriptionService.createSubscription(memberId, paymentMethod, postalCode, roadAddress, detailAddress));
     }
+
+    /**
+     * 배송 요청사항 업데이트 API
+     */
+    @PutMapping("/{subscriptionId}/delivery-request")
+    public ResponseEntity<?> updateDeliveryRequest(
+            @PathVariable Long subscriptionId,
+            @RequestBody Map<String, String> requestBody) {
+
+        log.info("📡 [DEBUG] 배송 요청사항 업데이트 요청 - 구독 ID: {}, 요청 데이터: {}", subscriptionId, requestBody);
+
+        if (!requestBody.containsKey("deliveryRequest")) {
+            log.error("❌ [ERROR] requestBody에 'deliveryRequest' 키가 없음: {}", requestBody);
+            return ResponseEntity.badRequest().body(Map.of("message", "deliveryRequest 값이 필요합니다."));
+        }
+
+        String deliveryRequest = requestBody.get("deliveryRequest");
+        log.info("📦 [INFO] 저장할 배송 요청사항: {}", deliveryRequest);
+
+        subscriptionService.updateDeliveryRequest(subscriptionId, deliveryRequest);
+
+        log.info("✅ [SUCCESS] 배송 요청 업데이트 완료 - 구독 ID: {}", subscriptionId);
+
+        return ResponseEntity.ok(Map.of("message", "배송 요청사항이 업데이트되었습니다.", "deliveryRequest", deliveryRequest));
+    }
+
+
+
+
+
 
     /**
      * 결제일 업데이트 API
@@ -112,31 +149,29 @@ public class SubscriptionController {
     /**
      * 배송정보 변경 API
      */
-    @PutMapping("/update-delivery")
-    public ResponseEntity<?> updateDeliveryAddress(@RequestBody Map<String, String> request) {
-        try {
-            Long subscriptionId = Long.parseLong(request.get("subscriptionId"));
-            String postalCode = request.get("postalCode");
-            String roadAddress = request.get("roadAddress");
-            String detailAddress = request.get("detailAddress");
+    @PutMapping("/update-delivery-request")
+    public ResponseEntity<?> updateDeliveryRequest(@RequestBody Map<String, String> request) {
+        log.info("📡 [DEBUG] 배송 요청사항 업데이트 요청: {}", request);
 
-            boolean updated = subscriptionService.updateDeliveryAddress(subscriptionId, postalCode, roadAddress, detailAddress);
-
-            if (updated) {
-                return ResponseEntity.ok(Map.of(
-                        "message", "✅ 배송 주소가 성공적으로 업데이트되었습니다!",
-                        "postalCode", postalCode,
-                        "roadAddress", roadAddress,
-                        "detailAddress", detailAddress
-                ));
-            } else {
-                return ResponseEntity.badRequest().body(Map.of("message", "❌ 배송 주소 업데이트 실패"));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "서버 오류 발생: " + e.getMessage()));
+        if (!request.containsKey("subscriptionId") || !request.containsKey("deliveryRequest")) {
+            log.error("❌ [ERROR] requestBody에 필요한 데이터 없음: {}", request);
+            return ResponseEntity.badRequest().body(Map.of("message", "subscriptionId 및 deliveryRequest 값이 필요합니다."));
         }
+
+        Long subscriptionId = Long.parseLong(request.get("subscriptionId"));
+        String deliveryRequest = request.get("deliveryRequest");
+
+        log.info("📦 [INFO] 구독 ID: {}, 저장할 배송 요청사항: {}", subscriptionId, deliveryRequest);
+        subscriptionService.updateDeliveryRequest(subscriptionId, deliveryRequest);
+
+        log.info("✅ [SUCCESS] 배송 요청 업데이트 완료 - 구독 ID: {}", subscriptionId);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "배송 요청사항이 업데이트되었습니다.",
+                "deliveryRequest", deliveryRequest
+        ));
     }
+
 
 
 

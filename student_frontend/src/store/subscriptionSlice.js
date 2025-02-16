@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { fetchWithAuth } from "@features/auth/fetchWithAuth";
 import { API_URL } from "@utils/constants";
+import axios from "axios";
 
 console.log("🔍 [DEBUG] fetchWithAuth import 확인:", fetchWithAuth);
 
@@ -97,6 +98,33 @@ export const cancelSubscription = createAsyncThunk(
         }
     }
 );
+
+
+export const updateDeliveryRequest = createAsyncThunk(
+    "subscription/updateDeliveryRequest",
+    async ({ subscriptionId, deliveryRequest }, { rejectWithValue }) => {
+        try {
+            console.log("📡 [API 요청] 배송 요청 업데이트:", `/api/subscription/${subscriptionId}/delivery-request`, deliveryRequest);
+
+            const response = await fetchWithAuth(`${API_URL}subscription/update-delivery-request`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ subscriptionId, deliveryRequest }),
+            });
+
+            console.log("✅ 성공적으로 저장됨:", response.data);
+            return { subscriptionId, deliveryRequest };  // ✅ Redux 상태 업데이트용 반환값
+        } catch (error) {
+            console.error("❌ 저장 실패:", error);
+
+            // ❗ `rejectWithValue`를 사용하여 Redux에서 오류 처리 가능하게 함.
+            return rejectWithValue(error.response?.data || "배송 요청 저장 실패");
+        }
+    }
+);
+
+
+
 
 
 /**
@@ -436,6 +464,9 @@ const subscriptionSlice = createSlice({
             state.loading = false;
             state.data = action.payload || { nextItems: [], items: [] };
 
+            // ✅ deliveryRequest가 정상적으로 들어오는지 확인
+            console.log("📦 [INFO] Redux 업데이트 - 배송 요청사항:", action.payload.deliveryRequest);
+
             // ✅ nextItems에서 productId 설정 유지
             if (state.data.nextItems) {
                 state.data.nextItems = state.data.nextItems.map(item => {
@@ -457,8 +488,9 @@ const subscriptionSlice = createSlice({
             state.data.postalCode = action.payload.postalCode || "";
             state.data.roadAddress = action.payload.roadAddress || "";
             state.data.detailAddress = action.payload.detailAddress || "";
+            state.data.deliveryRequest = action.payload.deliveryRequest || ""; // ✅ 배송 요청사항 저장
 
-            console.log("🛠 Redux 업데이트된 배송정보:", state.data.postalCode, state.data.roadAddress, state.data.detailAddress);
+            console.log("🛠 Redux 업데이트된 배송정보:", state.data.postalCode, state.data.roadAddress, state.data.detailAddress, state.data.deliveryRequest);
 
             state.error = null;
         })
@@ -551,6 +583,11 @@ const subscriptionSlice = createSlice({
            if (state.data.id === action.payload.subscriptionId) {
                state.data.status = "CANCELLED";
                state.data.endDate = new Date().toISOString().split("T")[0]; // ✅ endDate를 현재 날짜로 설정
+           }
+       })
+       .addCase(updateDeliveryRequest.fulfilled, (state, action) => {
+           if (state.subscription && state.subscription.id === action.payload.subscriptionId) {
+               state.subscription.deliveryRequest = action.payload.deliveryRequest;
            }
        })
     },
