@@ -1,6 +1,6 @@
-package com.javalab.student.repository;
+package com.javalab.student.repository.product;
 
-import com.javalab.student.entity.ProductImg;
+import com.javalab.student.entity.product.ProductImg;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

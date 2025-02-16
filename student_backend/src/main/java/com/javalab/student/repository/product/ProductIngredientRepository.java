@@ -1,7 +1,7 @@
-package com.javalab.student.repository;
+package com.javalab.student.repository.product;
 
-import com.javalab.student.entity.ProductIngredient;
-import com.javalab.student.entity.Product;
+import com.javalab.student.entity.product.ProductIngredient;
+import com.javalab.student.entity.product.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

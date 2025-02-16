@@ -1,10 +1,17 @@
-package com.javalab.student.service;
+package com.javalab.student.service.product;
 
-import com.javalab.student.dto.*;
-import com.javalab.student.entity.Product;
-import com.javalab.student.entity.ProductImg;
-import com.javalab.student.repository.ProductImgRepository;
-import com.javalab.student.repository.ProductRepository;
+import com.javalab.student.dto.product.ProductFormDto;
+import com.javalab.student.entity.product.ProductImg;
+import com.javalab.student.repository.product.ProductImgRepository;
+import com.javalab.student.dto.product.ProductDto;
+import com.javalab.student.dto.product.ProductResponseDTO;
+import com.javalab.student.entity.product.Product;
+import com.javalab.student.entity.product.ProductCategory;
+import com.javalab.student.entity.product.ProductIngredient;
+import com.javalab.student.repository.product.ProductCategoryRepository;
+import com.javalab.student.repository.product.ProductIngredientCategoryRepository;
+import com.javalab.student.repository.product.ProductIngredientRepository;
+import com.javalab.student.repository.product.ProductRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,24 +27,37 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
+@Slf4j
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final ProductImgRepository productImgRepository; // ProductImgRepository 주입
+    private final ProductCategoryRepository categoryRepository;
+    private final ProductIngredientRepository ingredientRepository;
+    private final ProductIngredientCategoryRepository ingredientCategoryRepository;
     private final ModelMapper modelMapper;
+
 
     @Value("${itemImgLocation}")
     private String itemImgLocation;
 
-    public ProductServiceImpl(ProductRepository productRepository, ProductImgRepository productImgRepository, ModelMapper modelMapper) {
+    public ProductServiceImpl(ProductRepository productRepository,
+                              ProductImgRepository productImgRepository,
+                              ProductCategoryRepository categoryRepository,
+                              ProductIngredientRepository ingredientRepository,
+                              ProductIngredientCategoryRepository ingredientCategoryRepository,
+                              ModelMapper modelMapper) {
         this.productRepository = productRepository;
         this.productImgRepository = productImgRepository;
+        this.categoryRepository = categoryRepository;
+        this.ingredientRepository = ingredientRepository;
+        this.ingredientCategoryRepository = ingredientCategoryRepository;
         this.modelMapper = modelMapper;
     }
 
@@ -45,7 +65,33 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public ProductDto createProduct(ProductFormDto productFormDto) {
-        Product product = modelMapper.map(productFormDto, Product.class);
+        log.info("Creating product with ingredients: {}", productFormDto.getIngredientIds());
+
+        // ✅ null 체크 추가 (ingredientIds, categoryIds가 null이면 빈 리스트로 설정)
+        if (productFormDto.getIngredientIds() == null) {
+            productFormDto.setIngredientIds(new ArrayList<>());
+        }
+        if (productFormDto.getCategoryIds() == null) {
+            productFormDto.setCategoryIds(new ArrayList<>());
+        }
+
+        // ✅ ModelMapper 대신 직접 매핑
+        Product product = new Product();
+        product.setName(productFormDto.getName());
+        product.setDescription(productFormDto.getDescription());
+        product.setPrice(productFormDto.getPrice());
+        product.setStock(productFormDto.getStock());
+        product.setActive(productFormDto.isActive());
+
+        // ✅ 영양 성분 매핑
+        List<ProductIngredient> ingredients = ingredientRepository.findAllById(productFormDto.getIngredientIds());
+        product.setIngredients(ingredients);
+
+        // ✅ 카테고리 매핑
+        List<ProductCategory> categories = categoryRepository.findAllById(productFormDto.getCategoryIds());
+        product.setCategories(categories);
+
+        // ✅ 상품 저장
         Product savedProduct = productRepository.save(product);
 
         // ✅ 대표 이미지 저장
@@ -56,8 +102,8 @@ public class ProductServiceImpl implements ProductService {
                 ProductImg productImg = ProductImg.builder()
                         .product(savedProduct)
                         .imageUrl(imageUrl)
-                        .imageType("대표") // ✅ imageType "대표" 로 설정
-                        .order(0) // 대표 이미지는 order 0으로 설정 (필요하다면)
+                        .imageType("대표")
+                        .order(0)
                         .build();
                 productImgRepository.save(productImg);
             } catch (IOException e) {
@@ -65,17 +111,17 @@ public class ProductServiceImpl implements ProductService {
             }
         }
 
-        // ✅ 상세 이미지들 저장
+        // ✅ 상세 이미지 저장
         if (productFormDto.getDetailImageFiles() != null && !productFormDto.getDetailImageFiles().isEmpty()) {
             List<MultipartFile> detailImageFiles = productFormDto.getDetailImageFiles();
-            for (int order = 1; order <= detailImageFiles.size(); order++) { // order 1부터 시작 (대표 이미지 order 0)
+            for (int order = 1; order <= detailImageFiles.size(); order++) {
                 MultipartFile detailImageFile = detailImageFiles.get(order - 1);
                 try {
                     String imageUrl = saveImage(detailImageFile);
                     ProductImg productImg = ProductImg.builder()
                             .product(savedProduct)
                             .imageUrl(imageUrl)
-                            .imageType("상세") // ✅ imageType "상세" 로 설정
+                            .imageType("상세")
                             .order(order)
                             .build();
                     productImgRepository.save(productImg);
@@ -85,33 +131,50 @@ public class ProductServiceImpl implements ProductService {
             }
         }
 
-        return getProductDtoWithMainImage(savedProduct);
+        // ✅ DTO 반환
+        return new ProductDto(savedProduct.getId(), savedProduct.getName(), savedProduct.getDescription(),
+                savedProduct.getPrice(), savedProduct.getStock(), savedProduct.isActive(), null);
     }
 
-    /** 상품 정보 수정 */
+    /** 상품 수정 메서드 */
     @Override
     @Transactional
     public ProductDto updateProduct(Long id, ProductFormDto productFormDto) {
+        // ✅ 기존 상품 조회 (없으면 예외 발생)
         Product existingProduct = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        // ProductFormDto 필드를 Product 엔티티에 직접 업데이트 (이미지 관련 필드 제외)
+        // ✅ 직접 매핑하여 상품 정보 수정 (이미지, 카테고리는 따로 처리)
         existingProduct.setName(productFormDto.getName());
         existingProduct.setDescription(productFormDto.getDescription());
         existingProduct.setPrice(productFormDto.getPrice());
         existingProduct.setStock(productFormDto.getStock());
         existingProduct.setActive(productFormDto.isActive());
 
-        Product updatedProduct = productRepository.save(existingProduct); // 이미지 정보 제외하고 먼저 저장
+        // ✅ 영양 성분 수정
+        List<ProductIngredient> newIngredients = ingredientRepository.findAllById(productFormDto.getIngredientIds());
+        existingProduct.setIngredients(newIngredients);
 
-        // ✅ 대표 이미지 처리 (수정된 경우 기존 대표 이미지 삭제 후 새로운 대표 이미지 저장)
+        // ✅ 카테고리 자동 재설정
+        List<ProductCategory> updatedCategories = new ArrayList<>();
+        for (ProductIngredient ingredient : newIngredients) {
+            List<ProductCategory> mappedCategories = ingredientCategoryRepository.findCategoriesByIngredientId(ingredient.getId());
+            updatedCategories.addAll(mappedCategories);
+        }
+        existingProduct.setCategories(updatedCategories.stream().distinct().collect(Collectors.toList()));
+
+        // ✅ 변경된 상품 정보 저장
+        Product updatedProduct = productRepository.save(existingProduct);
+
+        // ✅ 대표 이미지 처리 (새로운 이미지가 제공된 경우만 업데이트)
         if (productFormDto.getMainImageFile() != null) {
-            // 기존 대표 이미지 삭제 (ProductImg 테이블에서, 파일 시스템에서도 삭제)
+            // 기존 대표 이미지 삭제
             ProductImg existingMainImage = productImgRepository.findFirstByProductIdAndImageTypeOrderByOrderAsc(id, "대표");
             if (existingMainImage != null) {
                 deleteImageFile(existingMainImage.getImageUrl()); // 파일 시스템에서 삭제
-                productImgRepository.delete(existingMainImage); // DB 에서 삭제
+                productImgRepository.delete(existingMainImage); // DB에서 삭제
             }
+
             // 새로운 대표 이미지 저장
             MultipartFile mainImageFile = productFormDto.getMainImageFile();
             try {
@@ -128,11 +191,8 @@ public class ProductServiceImpl implements ProductService {
             }
         }
 
-        // ✅ 상세 이미지 처리 (기존 상세 이미지 삭제 후 새로운 상세 이미지들 저장)
-        // 수정: 기존 상세 이미지 삭제 ->  새로운 상세 이미지만 추가 (기존 상세 이미지 유지)
+        // ✅ 상세 이미지 처리 (기존 상세 이미지는 유지하고 새로운 상세 이미지만 추가)
         if (productFormDto.getDetailImageFiles() != null && !productFormDto.getDetailImageFiles().isEmpty()) {
-
-            // 새로운 상세 이미지들 저장
             List<MultipartFile> detailImageFiles = productFormDto.getDetailImageFiles();
             for (int order = 1; order <= detailImageFiles.size(); order++) {
                 MultipartFile detailImageFile = detailImageFiles.get(order - 1);
@@ -151,8 +211,12 @@ public class ProductServiceImpl implements ProductService {
             }
         }
 
-        return getProductDtoWithMainImage(updatedProduct);
+        // ✅ 직접 DTO 반환
+        return new ProductDto(updatedProduct.getId(), updatedProduct.getName(), updatedProduct.getDescription(),
+                updatedProduct.getPrice(), updatedProduct.getStock(), updatedProduct.isActive(), null);
     }
+
+
 
 
     /** 상품 단건 조회 */

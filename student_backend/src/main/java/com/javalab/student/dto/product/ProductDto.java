@@ -1,4 +1,4 @@
-package com.javalab.student.dto;
+package com.javalab.student.dto.product;
 
 import lombok.*;
 
@@ -20,5 +20,6 @@ public class ProductDto {
     private int stock;
     private boolean active;
     private String mainImageUrl;
+
 }
 

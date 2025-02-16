@@ -1,6 +1,6 @@
-package com.javalab.student.dto;
+package com.javalab.student.dto.product;
 
-import com.javalab.student.entity.ProductImg;
+import com.javalab.student.entity.product.ProductImg;
 import lombok.*;
 
 import java.time.LocalDateTime;
