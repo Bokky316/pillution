@@ -21,7 +21,6 @@ import FAQBoardPage from "@/pages/FAQBoardPage";
 import AdminPage from "@/pages/AdminPage";
 import SubscriptionPage from "@/pages/SubscriptionManagement";
 import OrderDetailPage from "@/pages/OrderDetailPage";
-// import PaymentPage from '@/pages/PaymentPage';
 
 import Login from "@/features/auth/Login";
 import MyPage from "@/features/auth/MyPage";
@@ -30,7 +29,7 @@ import UnauthorizedPage from "@/features/auth/UnAuthorizedPage";
 import OAuth2RedirectHandler from '@/features/auth/OAuth2RedirectHandler';
 import MessageList from "@/features/auth/MessageList";
 import KakaoAddressSearch from "@/features/auth/KakaoAddressSearch";
-
+import PayResult from "@/features/Payment/PayResult";
 import PostDetailPage from "@/features/board/PostDetailPage";
 import PostCreatePage from "@/features/board/PostCreatePage";
 import PostEditPage from "@/features/board/PostEditPage";
@@ -64,8 +63,8 @@ function App() {
                     <Route path="/products" element={<ProductListPage />} />
                     <Route path="/products/:productId" element={<ProductDetailPage />} />
                     <Route path="/cart" element={<CartPage />} />
-                    <Route path="/order-detail" element={<OrderDetailPage />} /> {/* OrderDetailPage Route 추가 */}
-{/*                     <Route path="/payment" element={<PaymentPage />} /> */}
+                    <Route path="/order-detail" element={<OrderDetailPage />} />
+                    <Route path="/payResult" element={<PayResult />} />
                     <Route path="/recommendation" element={<RecommendationPage />} />
                     <Route path="/survey" element={<SurveyPage />} />
 

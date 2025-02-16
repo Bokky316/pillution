@@ -1,11 +1,39 @@
-import React from "react";
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from "react-router-dom";
 import { Box, Typography, Paper, Button } from "@mui/material";
 
+
+/**
+ * PayResult 컴포넌트
+ * 결제 결과를 표시하고 확인 버튼을 통해 메인 페이지로 이동합니다.
+ */
 const PayResult = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const paymentInfo = location.state?.paymentInfo || null;
+    const [paymentInfo, setPaymentInfo] = useState(location.state?.paymentInfo || null);
+
+    useEffect(() => {
+        const handleMessage = (event) => {
+            if (event.data.type === 'PAYMENT_INFO') {
+                setPaymentInfo(event.data.paymentInfo);
+            }
+        };
+
+        window.addEventListener('message', handleMessage);
+
+        return () => {
+            window.removeEventListener('message', handleMessage);
+        };
+    }, []);
+
+    const handleClose = () => {
+        window.close();
+        if (window.opener) {
+            window.opener.location.href = "/";
+        } else {
+            navigate("/");
+        }
+    };
 
     return (
         <Box sx={{ maxWidth: 600, margin: "auto", padding: 3 }}>
@@ -24,8 +52,8 @@ const PayResult = () => {
                     <Typography>결제 시각: {new Date(paymentInfo.paidAt * 1000).toLocaleString()}</Typography>
 
                     <Box mt={3}>
-                        <Button variant="contained" color="primary" fullWidth onClick={() => navigate("/")}>
-                            홈으로 돌아가기
+                        <Button variant="contained" color="primary" fullWidth onClick={handleClose}>
+                            확인
                         </Button>
                     </Box>
                 </Paper>

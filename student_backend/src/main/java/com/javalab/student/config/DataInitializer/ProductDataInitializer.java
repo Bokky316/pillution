@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -56,7 +57,10 @@ public class ProductDataInitializer implements CommandLineRunner {
                 "오메가-3", "코엔자임Q10", "비타민B군", "비타민C", "철분",
                 "아연", "마그네슘", "비오틴", "루테인", "인지질(PS)",
                 "GABA", "칼슘", "비타민D", "크랜베리 추출물", "글루타민",
-                "콜라겐", "엽산", "감마리놀렌산(GLA)", "쏘팔메토", "아르기닌"
+                "콜라겐", "엽산", "감마리놀렌산(GLA)", "쏘팔메토", "아르기닌",
+                "구리", "크롬", "비타민A", "비타민B12", "비타민B2",
+                "비타민B5", "비타민B6", "비타민E", "밀크씨슬", "아미노산",
+                "식이섬유", "전해질", "프로바이오틱스", "단백질", "종합비타민"
         );
 
         ingredients.forEach(ingredient -> {
@@ -275,6 +279,66 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stream().findFirst()
                 .orElseThrow(() -> new RuntimeException("Ingredient not found: 아르기닌"));
 
+        ProductIngredient 구리 = productIngredientRepository.findByIngredientName("구리")
+                .stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("Ingredient not found: 구리"));
+
+        ProductIngredient 크롬 = productIngredientRepository.findByIngredientName("크롬")
+                .stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("Ingredient not found: 크롬"));
+
+        ProductIngredient 비타민A = productIngredientRepository.findByIngredientName("비타민A")
+                .stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("Ingredient not found: 비타민A"));
+
+        ProductIngredient 비타민B12 = productIngredientRepository.findByIngredientName("비타민B12")
+                .stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("Ingredient not found: 비타민B12"));
+
+        ProductIngredient 비타민B2 = productIngredientRepository.findByIngredientName("비타민B2")
+                .stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("Ingredient not found: 비타민B2"));
+
+        ProductIngredient 비타민B5 = productIngredientRepository.findByIngredientName("비타민B5")
+                .stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("Ingredient not found: 비타민B5"));
+
+        ProductIngredient 비타민B6 = productIngredientRepository.findByIngredientName("비타민B6")
+                .stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("Ingredient not found: 비타민B6"));
+
+        ProductIngredient 비타민E = productIngredientRepository.findByIngredientName("비타민E")
+                .stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("Ingredient not found: 비타민E"));
+
+        ProductIngredient 밀크씨슬 = productIngredientRepository.findByIngredientName("밀크씨슬")
+                .stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("Ingredient not found: 밀크씨슬"));
+
+        ProductIngredient 아미노산 = productIngredientRepository.findByIngredientName("아미노산")
+                .stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("Ingredient not found: 아미노산"));
+
+        ProductIngredient 식이섬유 = productIngredientRepository.findByIngredientName("식이섬유")
+                .stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("Ingredient not found: 식이섬유"));
+
+        ProductIngredient 전해질 = productIngredientRepository.findByIngredientName("전해질")
+                .stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("Ingredient not found: 전해질"));
+
+        ProductIngredient 프로바이오틱스 = productIngredientRepository.findByIngredientName("프로바이오틱스")
+                .stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("Ingredient not found: 프로바이오틱스"));
+
+        ProductIngredient 단백질 = productIngredientRepository.findByIngredientName("단백질")
+                .stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("Ingredient not found: 단백질"));
+
+        ProductIngredient 종합비타민 = productIngredientRepository.findByIngredientName("종합비타민")
+                .stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("Ingredient not found: 종합비타민"));
+
         List<Product> products = Arrays.asList(
                 Product.builder()
                         .name("종근당 황후의봄")
@@ -283,7 +347,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .stock(50)
                         .active(true)
                         .categories(List.of(여성건강))
-                        .ingredients(List.of(감마리놀렌산))
+                        .ingredients(List.of(감마리놀렌산, 비타민E, 엽산, 철분))
                         .build(),
                 Product.builder()
                         .name("뉴트라라이프 보라지 오일")
@@ -292,7 +356,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .stock(40)
                         .active(true)
                         .categories(List.of(여성건강))
-                        .ingredients(List.of(감마리놀렌산))
+                        .ingredients(List.of(감마리놀렌산, 비타민B6, 비타민B군))
                         .build(),
                 Product.builder()
                         .name("솔가 엽산 400mcg")
@@ -301,7 +365,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .stock(100)
                         .active(true)
                         .categories(List.of(여성건강))
-                        .ingredients(List.of(엽산))
+                        .ingredients(List.of(엽산, 비타민B12, 철분))
                         .build(),
                 Product.builder()
                         .name("페로글로빈 철분 시럽")
@@ -310,7 +374,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .stock(60)
                         .active(true)
                         .categories(List.of(빈혈))
-                        .ingredients(List.of(철분))
+                        .ingredients(List.of(철분, 비타민C, 엽산))
                         .build(),
                 Product.builder()
                         .name("센트룸 칼슘+D3")
@@ -319,7 +383,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .stock(100)
                         .active(true)
                         .categories(List.of(관절뼈))
-                        .ingredients(List.of(칼슘, 비타민D))
+                        .ingredients(List.of(칼슘, 비타민D, 마그네슘, 비타민A))
                         .build(),
                 Product.builder()
                         .name("나우푸드 GABA 500mg")
@@ -328,7 +392,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .stock(90)
                         .active(true)
                         .categories(List.of(수면))
-                        .ingredients(List.of(GABA))
+                        .ingredients(List.of(GABA, 마그네슘, 비타민B6))
                         .build(),
                 Product.builder()
                         .name("솔가 비타민 B6 100mg")
@@ -337,7 +401,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .stock(100)
                         .active(true)
                         .categories(List.of(여성건강, 피로활력))
-                        .ingredients(List.of(비타민B군))
+                        .ingredients(List.of(비타민B군, 비타민B6, 마그네슘))
                         .build(),
                 Product.builder()
                         .name("닥터스베스트 고흡수 마그네슘")
@@ -346,7 +410,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .stock(100)
                         .active(true)
                         .categories(List.of(수면, 관절뼈))
-                        .ingredients(List.of(마그네슘))
+                        .ingredients(List.of(마그네슘, 칼슘, 비타민D))
                         .build(),
                 Product.builder()
                         .name("얼라이브 비타민 C 1000mg")
@@ -355,7 +419,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .stock(150)
                         .active(true)
                         .categories(List.of(구강관리, 면역력))
-                        .ingredients(List.of(비타민C))
+                        .ingredients(List.of(비타민C, 아연, 프로바이오틱스))
                         .build(),
                 Product.builder()
                         .name("나우푸드 CoQ10 100mg")
@@ -364,7 +428,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .stock(90)
                         .active(true)
                         .categories(List.of(노화항산화, 만성질환))
-                        .ingredients(List.of(코엔자임Q10))
+                        .ingredients(List.of(코엔자임Q10, 오메가3, 비타민E))
                         .build(),
                 Product.builder()
                         .name("네이처메이드 오메가-3")
@@ -373,7 +437,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .stock(85)
                         .active(true)
                         .categories(List.of(노화항산화, 간건강))
-                        .ingredients(List.of(오메가3))
+                        .ingredients(List.of(오메가3, 비타민D, 밀크씨슬))
                         .build(),
                 Product.builder()
                         .name("닥터스베스트 루테인")
@@ -382,7 +446,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .stock(90)
                         .active(true)
                         .categories(List.of(눈건강))
-                        .ingredients(List.of(루테인))
+                        .ingredients(List.of(루테인, 비타민A, 아미노산))
                         .build(),
                 Product.builder()
                         .name("네오셀 슈퍼 콜라겐+C")
@@ -391,7 +455,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .stock(75)
                         .active(true)
                         .categories(List.of(피부))
-                        .ingredients(List.of(콜라겐, 비타민C))
+                        .ingredients(List.of(콜라겐, 비타민C, 비오틴, 식이섬유))
                         .build(),
                 Product.builder()
                         .name("닥터스베스트 포스파티딜세린")
@@ -400,7 +464,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .stock(60)
                         .active(true)
                         .categories(List.of(만성질환))
-                        .ingredients(List.of(인지질))
+                        .ingredients(List.of(인지질, 오메가3, 전해질))
                         .build(),
                 Product.builder()
                         .name("닥터스베스트 칼슘 마그네슘 비타민D")
@@ -409,7 +473,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .stock(100)
                         .active(true)
                         .categories(List.of(관절뼈, 피로활력, 수면))
-                        .ingredients(List.of(칼슘, 마그네슘, 비타민D))
+                        .ingredients(List.of(칼슘, 마그네슘, 비타민D, 아연, 프로바이오틱스))
                         .build(),
                 Product.builder()
                         .name("솔가 아연 50mg")
@@ -418,7 +482,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .stock(120)
                         .active(true)
                         .categories(List.of(면역력, 피부))
-                        .ingredients(List.of(아연))
+                        .ingredients(List.of(아연, 비타민C, 단백질, 비타민B5))
                         .build(),
                 Product.builder()
                         .name("나우푸드 글루타민 1000mg")
@@ -427,7 +491,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .stock(80)
                         .active(true)
                         .categories(List.of(장건강, 면역력))
-                        .ingredients(List.of(글루타민))
+                        .ingredients(List.of(글루타민, 프로바이오틱스, 크롬))
                         .build(),
                 Product.builder()
                         .name("재로우 쏘팔메토")
@@ -436,7 +500,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .stock(70)
                         .active(true)
                         .categories(List.of(만성질환))
-                        .ingredients(List.of(쏘팔메토))
+                        .ingredients(List.of(쏘팔메토, 아연, 비타민A))
                         .build(),
                 Product.builder()
                         .name("NOW 아르기닌 1000mg")
@@ -445,7 +509,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .stock(95)
                         .active(true)
                         .categories(List.of(피로활력))
-                        .ingredients(List.of(아르기닌))
+                        .ingredients(List.of(아르기닌, 마그네슘, 비타민B2))
                         .build(),
                 Product.builder()
                         .name("네이처스바운티 비오틴 5000mcg")
@@ -454,10 +518,12 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .stock(110)
                         .active(true)
                         .categories(List.of(피부))
-                        .ingredients(List.of(비오틴))
+                        .ingredients(List.of(비오틴, 콜라겐, 구리, 종합비타민))
                         .build()
         );
 
         productRepository.saveAll(products);
+
     }
-}*/
+}
+*/
