@@ -1,27 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import {
-    Button,
-    TextField,
-    Box,
-    Typography,
-    Paper,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle
-} from "@mui/material";
+import { Button, Box, Typography, Paper } from "@mui/material";
 import { API_URL } from "@/utils/constants";
 import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
 import { useDispatch } from "react-redux";
 import { createOrder } from "@/store/orderSlice";
 import { processPayment } from "@/store/paymentSlice";
 import { saveDeliveryInfo } from "@/store/deliverySlice";
+
+import OrderItems from "@features/payment/OrderItems";
+import UserInfo from "@features/payment/UserInfo";
+import DeliveryInfo from "@features/payment/DeliveryInfo";
+import PaymentSummary from "@features/payment/PaymentSummary";
 
 /**
  * OrderDetail 컴포넌트
@@ -41,10 +31,12 @@ const OrderDetail = () => {
     const [name, setName] = useState(userData?.name || '');
     const [email, setEmail] = useState(userData?.email || '');
     const [phone, setPhone] = useState(userData?.phone || '');
-    const [address, setAddress] = useState(userData?.address || '');
-    const [zipCode, setZipCode] = useState("");
-    const [address1, setAddress1] = useState("");
-    const [address2, setAddress2] = useState("");
+    const [zipCode, setZipCode] = useState("");  // 배송지 우편번호
+    const [address1, setAddress1] = useState(""); // 배송지 주소
+    const [address2, setAddress2] = useState(""); // 배송지 상세주소
+    const [userZipCode, setUserZipCode] = useState(""); // 사용자 우편번호
+    const [userAddress1, setUserAddress1] = useState(""); // 사용자 주소
+    const [userAddress2, setUserAddress2] = useState(""); // 사용자 상세주소
     const [deliveryName, setDeliveryName] = useState('');
     const [deliveryPhone, setDeliveryPhone] = useState('');
     const [merchantId, setMerchantId] = useState("");
@@ -94,35 +86,40 @@ const OrderDetail = () => {
 
         // 저장된 배송지 목록 불러오기
         const fetchSavedAddresses = async () => {
-            try {
-                const response = await fetchWithAuth(`${API_URL}delivery-info`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                });
-                if (!response.ok) {
-                    throw new Error('Failed to fetch saved addresses');
-                }
-                const data = await response.json();
-                setSavedAddresses(data);
-                // 저장된 배송지 목록을 불러온 후, isDefault 값이 true인 배송지를 선택된 배송지로 설정
-                const defaultDeliveryInfo = data.find(info => info.isDefault === true);
-                if (defaultDeliveryInfo) {
-                    setSelectedSavedAddressId(defaultDeliveryInfo.id);
-                    setDeliveryName(defaultDeliveryInfo.recipientName);
-                    setDeliveryPhone(defaultDeliveryInfo.recipientPhone);
-                    setZipCode(defaultDeliveryInfo.postalCode);
-                    setAddress1(defaultDeliveryInfo.roadAddress);
-                    setAddress2(defaultDeliveryInfo.detailAddress);
-                    setDeliveryMessage(defaultDeliveryInfo.deliveryMemo);
-                }
-            } catch (error) {
-                console.error('Error fetching saved addresses:', error);
-                alert('Failed to fetch saved addresses');
+          try {
+            const response = await fetchWithAuth(`${API_URL}delivery-info`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+            if (!response.ok) {
+              throw new Error('Failed to fetch saved addresses');
             }
+            const data = await response.json();
+            setSavedAddresses(data);
+            const defaultDeliveryInfo = data.find(info => info.isDefault === true);
+            if (defaultDeliveryInfo) {
+              setSelectedSavedAddressId(String(defaultDeliveryInfo.id));
+              setDeliveryName(defaultDeliveryInfo.recipientName);
+              setDeliveryPhone(defaultDeliveryInfo.recipientPhone);
+              setZipCode(defaultDeliveryInfo.postalCode);
+              setAddress1(defaultDeliveryInfo.roadAddress);
+              setAddress2(defaultDeliveryInfo.detailAddress);
+              setDeliveryMessage(defaultDeliveryInfo.deliveryMemo);
+            }
+          } catch (error) {
+            console.error('Error fetching saved addresses:', error);
+            alert('Failed to fetch saved addresses');
+          }
         };
         fetchSavedAddresses();
+
+        if (userData) {
+            setUserZipCode(userData.zipCode || "");
+            setUserAddress1(userData.address1 || "");
+            setUserAddress2(userData.address2 || "");
+        }
 
         return () => {
             document.body.removeChild(impScript);
@@ -159,8 +156,8 @@ const OrderDetail = () => {
             buyerName: name,
             buyerEmail: email,
             buyerTel: phone,
-            buyerAddr: `${address1} ${address2}`,
-            buyerPostcode: zipCode,
+            buyerAddr: `${userAddress1} ${userAddress2}`,
+            buyerPostcode: userZipCode,
             deliveryMessage: deliveryMessage === 'custom' ? customDeliveryMessage : deliveryMessage,
             savedAddressId: selectedSavedAddressId,
         };
@@ -170,6 +167,7 @@ const OrderDetail = () => {
             console.log("주문 생성 성공:", response);
             setOrder({
                 ...response,
+                id: String(response.id), // order.id를 문자열로 변환
                 items: selectedItems,
                 totalAmount: totalAmount,
                 purchaseType: purchaseType
@@ -231,7 +229,6 @@ const OrderDetail = () => {
 
                 try {
                     const result = await dispatch(processPayment({ paymentRequestDto: paymentRequest, purchaseType: purchaseType })).unwrap();
-
                     if (result) {
                         const paymentInfo = {
                             amount: rsp.paid_amount,
@@ -275,6 +272,9 @@ const OrderDetail = () => {
         setName(userData?.name || '');
         setEmail(userData?.email || '');
         setPhone(userData?.phone || '');
+        setZipCode(userZipCode);
+        setAddress1(userAddress1);
+        setAddress2(userAddress2);
     };
 
     /**
@@ -362,172 +362,42 @@ const OrderDetail = () => {
                 주문서
             </Typography>
             <Paper sx={{ padding: 3 }}>
-                {/* 주문 정보 */}
-                <Typography variant="h6" gutterBottom>
-                    주문 정보
-                </Typography>
-                {selectedItems.map((item, index) => (
-                    <Box key={index} display="flex" alignItems="center" mb={2}>
-                        <img
-                            src={item.imageUrl}
-                            alt={item.name}
-                            style={{ width: 100, height: 100, marginRight: 20 }}
-                        />
-                        <Box>
-                            <Typography variant="h6">{item.name}</Typography>
-                            <Typography variant="body1">가격: {item.price}원</Typography>
-                            <Typography variant="body1">수량: {item.quantity}</Typography>
-                        </Box>
-                    </Box>
-                ))}
-
-                <Typography variant="h6" mt={3}>
-                    총 주문 금액: {calculateTotalPrice()}원
-                </Typography>
-
-                {/* 사용자 정보 */}
-                <Typography variant="h6" mt={3} gutterBottom>
-                    사용자 정보
-                </Typography>
-                <TextField
-                    label="이름"
-                    value={name}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                    margin="normal"
+                <OrderItems selectedItems={selectedItems} />
+                <UserInfo
+                    name={name}
+                    email={email}
+                    phone={phone}
+                    zipCode={userZipCode}
+                    address1={userAddress1}
+                    address2={userAddress2}
+                    handleUseUserInfo={handleUseUserInfo}
                 />
-                <TextField
-                    label="이메일"
-                    value={email}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                    margin="normal"
+                <DeliveryInfo
+                    deliveryName={deliveryName}
+                    deliveryPhone={deliveryPhone}
+                    zipCode={zipCode}
+                    address1={address1}
+                    address2={address2}
+                    deliveryMessage={deliveryMessage}
+                    customDeliveryMessage={customDeliveryMessage}
+                    savedAddresses={savedAddresses}
+                    selectedSavedAddressId={selectedSavedAddressId}
+                    openDialog={openDialog}
+                    deliveryInfoName={deliveryInfoName}
+                    handleSavedAddressChange={handleSavedAddressChange}
+                    handleAddressSearch={handleAddressSearch}
+                    handleDeliveryMessageChange={handleDeliveryMessageChange}
+                    handleUseUserInfoForDelivery={handleUseUserInfoForDelivery}
+                    handleSaveDeliveryInfo={handleSaveDeliveryInfo}
+                    handleCloseDialog={handleCloseDialog}
+                    handleConfirmSave={handleConfirmSave}
+                    setDeliveryName={setDeliveryName}
+                    setDeliveryPhone={setDeliveryPhone}
+                    setAddress2={setAddress2}
+                    setCustomDeliveryMessage={setCustomDeliveryMessage}
+                    setIsDefault={setIsDefault}
+                    setDeliveryInfoName={setDeliveryInfoName}
                 />
-                <TextField
-                    label="전화번호"
-                    value={phone}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                    margin="normal"
-                />
-                <TextField
-                    label="주소"
-                    value={`${address1} ${address2}`}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                    margin="normal"
-                />
-
-                {/* 배송 정보 */}
-                <Typography variant="h6" mt={3} gutterBottom>
-                    배송 정보
-                </Typography>
-
-                {/* 저장된 배송지 선택 */}
-                <FormControl fullWidth margin="normal">
-                    <InputLabel id="saved-address-label">저장된 배송지</InputLabel>
-                    <Select
-                        labelId="saved-address-label"
-                        id="saved-address"
-                        value={selectedSavedAddressId}
-                        onChange={handleSavedAddressChange}
-                        label="저장된 배송지"
-                    >
-                        <MenuItem value="">선택 안 함</MenuItem>
-                        {savedAddresses.map(address => (
-                            <MenuItem key={address.id} value={address.id}>
-                                {address.deliveryName} - {address.recipientName}, {address.roadAddress}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-
-                {/* 배송 정보 - 이름 */}
-                <TextField
-                    label="이름"
-                    value={deliveryName}
-                    onChange={(e) => setDeliveryName(e.target.value)}
-                    fullWidth
-                    margin="normal"
-                />
-
-                {/* 배송 정보 - 전화번호 */}
-                <TextField
-                    label="전화번호"
-                    value={deliveryPhone}
-                    onChange={(e) => setDeliveryPhone(e.target.value)}
-                    fullWidth
-                    margin="normal"
-                />
-
-                {/* 배송 정보 - 주소 */}
-                <Box display="flex" alignItems="center" mb={2}>
-                    <TextField
-                        label="우편번호"
-                        value={zipCode}
-                        readOnly
-                        sx={{ width: '150px', marginRight: 2 }}
-                    />
-                    <Button variant="outlined" onClick={handleAddressSearch}>
-                        주소 검색
-                    </Button>
-                </Box>
-                <TextField
-                    label="주소"
-                    value={address1}
-                    readOnly
-                    fullWidth
-                    margin="normal"
-                />
-                <TextField
-                    label="상세주소"
-                    value={address2}
-                    onChange={(e) => setAddress2(e.target.value)}
-                    fullWidth
-                    margin="normal"
-                />
-
-                {/* 배송 메시지 선택 */}
-                <FormControl fullWidth margin="normal">
-                    <InputLabel id="delivery-message-label">배송 메시지</InputLabel>
-                    <Select
-                        labelId="delivery-message-label"
-                        id="delivery-message"
-                        value={deliveryMessage}
-                        onChange={handleDeliveryMessageChange}
-                        label="배송 메시지"
-                    >
-                        <MenuItem value="">선택 안 함</MenuItem>
-                        <MenuItem value="문 앞에 놓아주세요">문 앞에 놓아주세요</MenuItem>
-                        <MenuItem value="부재 시 연락 부탁드려요">부재 시 연락 부탁드려요</MenuItem>
-                        <MenuItem value="배송 전 미리 연락해 주세요">배송 전 미리 연락해 주세요</MenuItem>
-                        <MenuItem value="custom">직접 입력하기</MenuItem>
-                    </Select>
-                    {deliveryMessage === 'custom' && (
-                        <TextField
-                            label="배송 메시지 직접 입력"
-                            value={customDeliveryMessage}
-                            onChange={(e) => setCustomDeliveryMessage(e.target.value)}
-                            fullWidth
-                            margin="normal"
-                        />
-                    )}
-                </FormControl>
-
-                {/* 배송 정보 - 사용자 정보 이용 버튼 */}
-                <Box mt={2}>
-                    <Button variant="contained" color="primary" onClick={handleUseUserInfoForDelivery}>
-                        사용자 정보와 동일하게
-                    </Button>
-                </Box>
-
-                {/* 배송 정보 - 배송 정보 기억하기 버튼 */}
-                <Box mt={2}>
-                    <Button variant="contained" color="secondary" onClick={handleSaveDeliveryInfo}>
-                        배송 정보 기억하기
-                    </Button>
-                </Box>
-
                 <Box mt={3} textAlign="center">
                     <Button variant="contained" color="primary" size="large" onClick={handleCreateOrder}>
                         주문 생성
@@ -535,59 +405,9 @@ const OrderDetail = () => {
                 </Box>
             </Paper>
 
-            {/* 결제 정보 */}
-            {order && (
-                <Paper sx={{ padding: 3, marginTop: 3 }}>
-                    <Typography variant="h5" gutterBottom>
-                        결제 정보
-                    </Typography>
-                    <p>주문 번호: {order.id}</p>
-                    <p>총 결제 금액: {order.totalAmount}원</p>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        size="large"
-                        onClick={handlePayment}
-                        disabled={!isImpReady}
-                    >
-                        결제하기
-                    </Button>
-                </Paper>
-            )}
-
-            {/* 배송 정보 저장 다이얼로그 */}
-            <Dialog open={openDialog} onClose={handleCloseDialog}>
-                <DialogTitle>배송 정보 저장</DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        이 배송 정보를 기본 배송 정보로 설정하시겠습니까?
-                    </DialogContentText>
-                    <Box display="flex" justifyContent="space-around">
-                        <Button onClick={() => setIsDefault(true)}>예</Button>
-                        <Button onClick={() => setIsDefault(false)}>아니오</Button>
-                    </Box>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        id="deliveryInfoName"
-                        label="배송 정보 이름"
-                        type="text"
-                        fullWidth
-                        variant="standard"
-                        value={deliveryInfoName}
-                        onChange={(e) => setDeliveryInfoName(e.target.value)}
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseDialog}>취소</Button>
-                    <Button onClick={handleConfirmSave}>저장</Button>
-                </DialogActions>
-            </Dialog>
+            <PaymentSummary order={order} isImpReady={isImpReady} handlePayment={handlePayment} />
         </Box>
     );
-    };
+};
 
-    export default OrderDetail;
-
-
-
+export default OrderDetail;
