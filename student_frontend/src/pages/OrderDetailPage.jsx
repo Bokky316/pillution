@@ -18,10 +18,10 @@ import {
 } from "@mui/material";
 import { API_URL } from "@/utils/constants";
 import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { createOrder } from "@/store/orderSlice";
 import { processPayment } from "@/store/paymentSlice";
-import { saveDeliveryInfo } from "@/store/deliverySlice"; // 배송 정보 저장 액션 import
+import { saveDeliveryInfo } from "@/store/deliverySlice";
 
 /**
  * OrderDetail 컴포넌트
@@ -45,19 +45,18 @@ const OrderDetail = () => {
     const [zipCode, setZipCode] = useState("");
     const [address1, setAddress1] = useState("");
     const [address2, setAddress2] = useState("");
-    const [deliveryName, setDeliveryName] = useState(''); // 배송 정보 이름 상태 추가, 초기값 빈 문자열
-    const [deliveryPhone, setDeliveryPhone] = useState(''); // 배송 정보 전화번호 상태 추가, 초기값 빈 문자열
-    const [deliveryEmail, setDeliveryEmail] = useState(''); // 배송 정보 이메일 상태 추가, 초기값 빈 문자열
+    const [deliveryName, setDeliveryName] = useState('');
+    const [deliveryPhone, setDeliveryPhone] = useState('');
     const [merchantId, setMerchantId] = useState("");
     const [order, setOrder] = useState(null);
     const [isImpReady, setIsImpReady] = useState(false);
-    const [deliveryMessage, setDeliveryMessage] = useState(""); // 배송 메시지 상태 추가, 기본값 "선택 안 함"
-    const [customDeliveryMessage, setCustomDeliveryMessage] = useState(""); // 직접 입력 배송 메시지 상태 추가
-    const [savedAddresses, setSavedAddresses] = useState([]);// 저장된 배송지 목록
-    const [selectedSavedAddressId, setSelectedSavedAddressId] = useState('');// 선택된 배송지 ID
-    const [openDialog, setOpenDialog] = useState(false); // 다이얼로그 상태
-    const [isDefault, setIsDefault] = useState(false); // 기본 배송지 설정 여부
-    const [deliveryInfoName, setDeliveryInfoName] = useState(""); // 배송 정보 이름
+    const [deliveryMessage, setDeliveryMessage] = useState("");
+    const [customDeliveryMessage, setCustomDeliveryMessage] = useState("");
+    const [savedAddresses, setSavedAddresses] = useState([]);
+    const [selectedSavedAddressId, setSelectedSavedAddressId] = useState('');
+    const [openDialog, setOpenDialog] = useState(false);
+    const [isDefault, setIsDefault] = useState(false);
+    const [deliveryInfoName, setDeliveryInfoName] = useState("");
 
     /**
      * 저장된 배송지 선택 핸들러
@@ -65,6 +64,15 @@ const OrderDetail = () => {
      */
     const handleSavedAddressChange = (event) => {
         setSelectedSavedAddressId(event.target.value);
+        const selectedAddress = savedAddresses.find(address => address.id === event.target.value);
+        if (selectedAddress) {
+            setDeliveryName(selectedAddress.recipientName);
+            setDeliveryPhone(selectedAddress.recipientPhone);
+            setZipCode(selectedAddress.postalCode);
+            setAddress1(selectedAddress.roadAddress);
+            setAddress2(selectedAddress.detailAddress);
+            setDeliveryMessage(selectedAddress.deliveryMemo);
+        }
     };
 
     useEffect(() => {
@@ -91,7 +99,6 @@ const OrderDetail = () => {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        // 필요한 경우 다른 헤더도 추가
                     },
                 });
                 if (!response.ok) {
@@ -99,6 +106,17 @@ const OrderDetail = () => {
                 }
                 const data = await response.json();
                 setSavedAddresses(data);
+                // 저장된 배송지 목록을 불러온 후, isDefault 값이 true인 배송지를 선택된 배송지로 설정
+                const defaultDeliveryInfo = data.find(info => info.isDefault === true);
+                if (defaultDeliveryInfo) {
+                    setSelectedSavedAddressId(defaultDeliveryInfo.id);
+                    setDeliveryName(defaultDeliveryInfo.recipientName);
+                    setDeliveryPhone(defaultDeliveryInfo.recipientPhone);
+                    setZipCode(defaultDeliveryInfo.postalCode);
+                    setAddress1(defaultDeliveryInfo.roadAddress);
+                    setAddress2(defaultDeliveryInfo.detailAddress);
+                    setDeliveryMessage(defaultDeliveryInfo.deliveryMemo);
+                }
             } catch (error) {
                 console.error('Error fetching saved addresses:', error);
                 alert('Failed to fetch saved addresses');
@@ -143,8 +161,8 @@ const OrderDetail = () => {
             buyerTel: phone,
             buyerAddr: `${address1} ${address2}`,
             buyerPostcode: zipCode,
-            deliveryMessage: deliveryMessage === 'custom' ? customDeliveryMessage : deliveryMessage, // 배송 메시지 추가
-             savedAddressId: selectedSavedAddressId, // 선택된 배송지 ID 추가
+            deliveryMessage: deliveryMessage === 'custom' ? customDeliveryMessage : deliveryMessage,
+            savedAddressId: selectedSavedAddressId,
         };
 
         try {
@@ -177,7 +195,7 @@ const OrderDetail = () => {
         const paymentData = {
             pg: "kakaopay",
             pay_method: "card",
-            merchant_uid: `${order.id}_${new Date().getTime()}`, // 여기를 수정
+            merchant_uid: `${order.id}_${new Date().getTime()}`,
             name: order.items[0].name,
             amount: order.totalAmount,
             buyer_email: order.buyerEmail,
@@ -191,7 +209,6 @@ const OrderDetail = () => {
             if (rsp.success) {
                 console.log("결제 완료 응답:", rsp);
 
-                // PaymentRequestDto 객체 생성
                 const paymentRequest = {
                     impUid: rsp.imp_uid,
                     merchantUid: order.id,
@@ -205,7 +222,7 @@ const OrderDetail = () => {
                     buyerPostcode: rsp.buyerPostcode,
                     paidAt: rsp.paid_at,
                     status: "PAYMENT_COMPLETED",
-                    cartOrderItems: selectedItems.map(item => ({ // cartOrderItems 추가
+                    cartOrderItems: selectedItems.map(item => ({
                         cartItemId: item.cartItemId,
                         quantity: item.quantity,
                         price: item.price
@@ -213,7 +230,6 @@ const OrderDetail = () => {
                 };
 
                 try {
-                    // processPayment 액션 호출
                     const result = await dispatch(processPayment({ paymentRequestDto: paymentRequest, purchaseType: purchaseType })).unwrap();
 
                     if (result) {
@@ -225,7 +241,6 @@ const OrderDetail = () => {
                             status: rsp.status,
                             paidAt: rsp.paid_at,
                         };
-                        // PayResult 페이지로 이동
                         navigate("/payResult", { state: { paymentInfo: paymentInfo } });
                     } else {
                         alert(`결제 실패: ${rsp.error_msg}`);
@@ -248,7 +263,7 @@ const OrderDetail = () => {
             oncomplete: function (data) {
                 setZipCode(data.zonecode);
                 setAddress1(data.address);
-                setAddress2(''); // 상세 주소 초기화
+                setAddress2('');
             }
         }).open();
     };
@@ -269,7 +284,7 @@ const OrderDetail = () => {
     const handleDeliveryMessageChange = (event) => {
         setDeliveryMessage(event.target.value);
         if (event.target.value !== 'custom') {
-            setCustomDeliveryMessage(""); // 직접 입력 메시지 초기화
+            setCustomDeliveryMessage("");
         }
     };
 
@@ -279,7 +294,6 @@ const OrderDetail = () => {
     const handleUseUserInfoForDelivery = () => {
         setDeliveryName(name);
         setDeliveryPhone(phone);
-        setDeliveryEmail(email);
         setZipCode(zipCode);
         setAddress1(address1);
         setAddress2(address2);
@@ -307,7 +321,7 @@ const OrderDetail = () => {
     const handleConfirmSave = async () => {
         const deliveryInfo = {
             deliveryName: deliveryInfoName,
-            recipientName: deliveryName, // deliveryName을 recipientName으로 사용
+            recipientName: deliveryName,
             recipientPhone: deliveryPhone,
             postalCode: zipCode,
             roadAddress: address1,
@@ -317,15 +331,12 @@ const OrderDetail = () => {
         };
 
         try {
-            // 배송 정보 저장 액션 dispatch
             await dispatch(saveDeliveryInfo(deliveryInfo)).unwrap();
             alert("배송 정보가 저장되었습니다.");
-           // 저장된 배송지 목록을 업데이트
             const response = await fetchWithAuth(`${API_URL}delivery-info`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    // 필요한 경우 다른 헤더도 추가
                 },
             });
             if (!response.ok) {
@@ -333,6 +344,10 @@ const OrderDetail = () => {
             }
             const data = await response.json();
             setSavedAddresses(data);
+            const defaultDeliveryInfo = data.find(info => info.isDefault === true);
+            if (defaultDeliveryInfo) {
+                setSelectedSavedAddressId(defaultDeliveryInfo.id);
+            }
         } catch (error) {
             console.error("배송 정보 저장 중 오류:", error);
             alert("배송 정보 저장 중 오류가 발생했습니다.");
@@ -341,7 +356,7 @@ const OrderDetail = () => {
         handleCloseDialog();
     };
 
-   return (
+    return (
         <Box sx={{ maxWidth: 800, margin: "auto", padding: 3 }}>
             <Typography variant="h4" gutterBottom>
                 주문서
@@ -421,7 +436,7 @@ const OrderDetail = () => {
                         <MenuItem value="">선택 안 함</MenuItem>
                         {savedAddresses.map(address => (
                             <MenuItem key={address.id} value={address.id}>
-                                {address.recipientName} - {address.roadAddress}
+                                {address.deliveryName} - {address.recipientName}, {address.roadAddress}
                             </MenuItem>
                         ))}
                     </Select>
@@ -570,6 +585,9 @@ const OrderDetail = () => {
             </Dialog>
         </Box>
     );
-};
+    };
 
-export default OrderDetail;
+    export default OrderDetail;
+
+
+
