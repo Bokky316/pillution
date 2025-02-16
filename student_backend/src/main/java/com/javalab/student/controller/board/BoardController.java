@@ -1,7 +1,7 @@
-package com.javalab.student.controller;
+package com.javalab.student.controller.board;
 
-import com.javalab.student.dto.BoardDto;
-import com.javalab.student.service.BoardService;
+import com.javalab.student.dto.board.BoardDto;
+import com.javalab.student.service.board.BoardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

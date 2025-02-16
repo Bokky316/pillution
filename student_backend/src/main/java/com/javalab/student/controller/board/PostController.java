@@ -1,20 +1,13 @@
-package com.javalab.student.controller;
+package com.javalab.student.controller.board;
 
 import com.javalab.student.dto.PageRequestDTO;
 import com.javalab.student.dto.PageResponseDTO;
-import com.javalab.student.dto.PostDto;
-import com.javalab.student.dto.PostNeighborsDTO;
-import com.javalab.student.entity.Post;
-import com.javalab.student.service.PostService;
+import com.javalab.student.dto.board.PostDto;
+import com.javalab.student.dto.board.PostNeighborsDTO;
+import com.javalab.student.service.board.PostService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

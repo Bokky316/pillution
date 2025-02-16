@@ -1,12 +1,12 @@
 /*
 package com.javalab.student.config.DataInitializer;
 
-import com.javalab.student.entity.Board;
+import com.javalab.student.entity.board.Board;
 import com.javalab.student.entity.Member;
-import com.javalab.student.entity.Post;
-import com.javalab.student.repository.BoardRepository;
+import com.javalab.student.entity.board.Post;
+import com.javalab.student.repository.board.BoardRepository;
 import com.javalab.student.repository.MemberRepository;
-import com.javalab.student.repository.PostRepository;
+import com.javalab.student.repository.board.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;

@@ -1,6 +1,6 @@
-package com.javalab.student.repository;
+package com.javalab.student.repository.board;
 
-import com.javalab.student.entity.Post;
+import com.javalab.student.entity.board.Post;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
