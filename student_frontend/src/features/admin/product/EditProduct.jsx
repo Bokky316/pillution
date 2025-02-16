@@ -166,6 +166,16 @@ const EditProduct = () => {
         }
     }, [selectedCategories]);
 
+    useEffect(() => {
+        if (product.ingredients && ingredients.length > 0) {
+            // `product.ingredients`에는 영양성분 이름이 들어있다고 가정
+            const selectedIds = ingredients
+                .filter(ing => product.ingredients.includes(ing.ingredientName))
+                .map(ing => ing.id);
+            setProduct(prev => ({ ...prev, ingredientIds: selectedIds }));
+        }
+    }, [product.ingredients, ingredients]);
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setProduct(prev => ({
@@ -337,27 +347,23 @@ const EditProduct = () => {
             <h2 className="edit-product-title">상품 수정</h2>
             <form className="edit-product-form" onSubmit={handleSubmit}>
                 <TextField fullWidth label="상품명" name="name" value={product.name} onChange={handleInputChange} required margin="normal" />
-                {/* ✅ 기존 상품이 가지고 있던 영양성분을 텍스트로 출력 */}
-                {product.ingredients && product.ingredients.length > 0 ? (
-                    <p style={{ marginTop: "10px", fontSize: "14px", color: "#666" }}>
-                        기존 영양성분: {product.ingredients.join(", ")}
-                    </p>
-                ) : (
-                    <p style={{ marginTop: "10px", fontSize: "14px", color: "#999" }}>
-                        기존 영양성분이 없습니다.
-                    </p>
-                )}
-
                 <FormControl fullWidth margin="normal">
                     <InputLabel>영양성분</InputLabel>
                     <Select
                         multiple
-                        value={product.ingredientIds}
+                        value={product.ingredientIds || []} // 기본값이 없을 경우 빈 배열로 처리
                         onChange={handleIngredientChange}
+                        renderValue={(selected) =>
+                            ingredients
+                                .filter(ing => selected.includes(ing.id))
+                                .map(ing => ing.ingredientName)
+                                .join(', ')
+                        }
                     >
                         {Array.isArray(ingredients) && ingredients.length > 0 ? (
                             ingredients.map(ing => (
                                 <MenuItem key={ing.id} value={ing.id}>
+                                    <Checkbox checked={product.ingredientIds.includes(ing.id)} />
                                     {ing.ingredientName}
                                 </MenuItem>
                             ))
