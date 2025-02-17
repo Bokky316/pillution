@@ -14,4 +14,13 @@ import java.util.List;
 public class SubscriptionUpdateNextItemRequestDto {
     private Long subscriptionId;  // ✅ 구독 ID 포함
     private List<SubscriptionUpdateNextItemDto> updatedItems;  // 수정할 아이템 목록
+    private String deliveryRequest;
+
+    @Override
+    public String toString() {
+        return "SubscriptionUpdateNextItemRequestDto{" +
+                "subscriptionId=" + subscriptionId +
+                ", deliveryRequest='" + deliveryRequest + '\'' +
+                '}';
+    }
 }

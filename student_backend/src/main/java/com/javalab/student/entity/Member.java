@@ -4,6 +4,9 @@ import com.javalab.student.constant.Role;
 import com.javalab.student.dto.MemberFormDto;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,6 +19,9 @@ import java.time.LocalDate;
 /**
  * 회원 엔티티
  * - 회원 정보를 저장하는 엔티티 클래스
+ * - 회원 정보를 저장하는 테이블과 매핑된다.
+ * - 주로 서비스 레이어와 리포지토리 레이어에서 사용된다.
+ * - 화면에서 데이터를 전달받는 용도로는 사용하지 않는게 관례이다.
  */
 @Entity
 @Table(name = "member")
@@ -33,6 +39,7 @@ public class Member extends BaseEntity{
 
     private String name;
 
+    // 이메일은 중복될 수 없다. unique = true
     @Column(unique = true, nullable = false)
     private String email;
 
@@ -40,7 +47,6 @@ public class Member extends BaseEntity{
 
     private String phone;
 
-    private String address;
 
     // 생년월일 (DB: birth_date DATE)
     private LocalDate birthDate;
@@ -72,6 +78,13 @@ public class Member extends BaseEntity{
 
     // 추가: 현재 구독 중인지 여부를 나타내는 필드
     private boolean isSubscribing = false; // 기본값 false
+    // 주소 관련 필드 추가
+    private String postalCode;   // 우편번호
+    private String roadAddress;  // 도로명 주소
+    private String detailAddress; // 상세 주소
+
+
+
 
     @Builder
     public Member(String email, String password, String auth) {
@@ -81,9 +94,15 @@ public class Member extends BaseEntity{
     }
 
     /*
-     * 회원 엔티티 생성 정적 메서드
-     * - MemberFormDto의 값들이 -> Member 엔티티로 이동
-     * - 회원가입 폼 DTO를 전달받아 회원 엔티티를 생성하는 역할을 한다.
+        * 회원 엔티티 생성 정적 메서드
+        * - MemberFormDto의 값들이 -> Member 엔티티로 이동
+        * - 회원가입 폼 DTO를 전달받아 회원 엔티티를 생성하는 역할을 한다.
+        * - Member 객체 생성 로직을 엔티티 내부에 숨기고, 외부에서는 이 메서드를 통해 객체를 생성하도록 한다.
+        * - 이 메소드를 만들어 두면 외부에서 이 엔티티 객체를 생성하고 값을 할당하는 코드를 중복으로 작성할 필요가 없다.
+        * - 정적 메소드이기 때문에 외부에 객체 생성없이 바로 호출이 가능하다는 장점이 있다.
+        * - Member 엔티티의 속성이 변화된다고 할지라도 여기서만 바꿔주면 된다.
+        * - passwordEncoder.encode : 비밀번호 암호화 함수
+        * - 사용자가 입력한 암호는 "평문"이다. 즉 암호화가 안된 문자열이다.
      */
     public static Member createMember(MemberFormDto memberFormDto, PasswordEncoder passwordEncoder) {
         Member member = new Member();
@@ -91,13 +110,15 @@ public class Member extends BaseEntity{
         member.setEmail(memberFormDto.getEmail());
         String password = passwordEncoder.encode(memberFormDto.getPassword()); // 비밀번호 암호화
         member.setPassword(password);
-        member.setAddress(memberFormDto.getAddress());
         member.setPhone(memberFormDto.getPhone());
         member.setSocial(false); // 일반 회원가입이므로 소셜 로그인 여부는 false
         member.setRole(memberFormDto.getRole());  // 회원가입 시 사용자의 권한 : USER [수정]
         member.setActivate(true); // 기본값: 활성 상태
         member.setBirthDate(memberFormDto.getBirthDate()); // 생년월일 추가
         member.setGender(memberFormDto.getGender()); // 성별 추가
+        member.setPostalCode(memberFormDto.getPostalCode()); // 우편번호 추가
+        member.setRoadAddress(memberFormDto.getRoadAddress()); // 도로명 주소 추가
+        member.setDetailAddress(memberFormDto.getDetailAddress()); // 상세 주소 추가
         return member;
     }
 

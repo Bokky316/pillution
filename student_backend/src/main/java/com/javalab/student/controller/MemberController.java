@@ -43,16 +43,21 @@ public class MemberController {
      */
     @PostMapping("/register")
     public ResponseEntity<String> registerMember(@Valid @RequestBody MemberFormDto memberFormDto) {
-        //  이메일 인증 여부 확인 (인증되지 않은 경우 회원가입 불가)
+        // 이메일 인증 확인
         if (!emailVerificationService.isVerified(memberFormDto.getEmail())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("이메일 인증이 필요합니다.");
         }
 
         try {
-            // 회원가입 진행
+            // ✅ 비밀번호 확인 검증 추가
+            if (memberFormDto.getConfirmPassword() == null || !memberFormDto.getPassword().equals(memberFormDto.getConfirmPassword())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("비밀번호가 일치하지 않습니다.");
+            }
+
+            // 회원가입 처리
             memberService.registerMember(memberFormDto);
 
-            //  회원가입 완료 후 인증 정보 삭제 (재사용 방지)
+            // 인증 정보 삭제 (재사용 방지)
             emailVerificationService.removeVerified(memberFormDto.getEmail());
 
             return ResponseEntity.ok("회원가입이 완료되었습니다.");
@@ -60,6 +65,7 @@ public class MemberController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
+
 
     /**
      * ID로 사용자 정보 조회

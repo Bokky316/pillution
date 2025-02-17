@@ -1,5 +1,7 @@
 package com.javalab.student.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.javalab.student.constant.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -38,8 +40,8 @@ public class MemberFormDto {
     @Length(min = 4, max = 16, message = "비밀번호는 4자 이상 16자 이하로 입력해주세요.")
     private String password;
 
-    @NotBlank(message = "주소를 입력해주세요.")
-    private String address;
+    @JsonInclude(JsonInclude.Include.NON_NULL) // ✅ null인 경우에도 직렬화해서 포함
+    private String confirmPassword;
 
     @NotBlank(message = "연락처를 입력하세요.") // 공백도 안되고 null도 안됨
     @Pattern(
@@ -65,17 +67,29 @@ public class MemberFormDto {
     @Builder.Default
     private Role role = Role.USER; // 기본값 USER로 설정  -> 이유 : 권한 없을경우 로그인 안됨
 
+    // 주소 관련 필드 추가
+    @NotBlank(message = "우편번호를 입력해주세요.")
+    private String postalCode;
+
+    @NotBlank(message = "도로명 주소를 입력해주세요.")
+    private String roadAddress;
+
+    @NotBlank(message = "상세 주소를 입력해주세요.")
+    private String detailAddress;
+
     /**
      * 정보 수정 전용 DTO에서 MemberFormDto로 변환
      */
     public static MemberFormDto forUpdate(MemberFormDto formDto) {
         MemberFormDto updateDto = new MemberFormDto();
         updateDto.setName(formDto.getName());
-        updateDto.setAddress(formDto.getAddress());
         updateDto.setPhone(formDto.getPhone());
         updateDto.setBirthDate(formDto.getBirthDate());
         updateDto.setGender(formDto.getGender());
         updateDto.setPoints(formDto.getPoints());
+        updateDto.setPostalCode(formDto.getPostalCode());  // 추가된 필드 반영
+        updateDto.setRoadAddress(formDto.getRoadAddress());
+        updateDto.setDetailAddress(formDto.getDetailAddress());
         return updateDto;
     }
 

@@ -44,6 +44,9 @@ public class Subscription {
     private String postalCode;   // 우편번호
     private String detailAddress; // 상세주소 (사용자가 입력)
 
+    @Column(name = "delivery_request")  // ✅ 매핑 확인!!
+    private String deliveryRequest; // 배송요청사항
+
     @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties("subscription")
     private List<SubscriptionItem> items;
