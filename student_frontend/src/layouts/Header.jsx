@@ -175,6 +175,7 @@ const Header = () => {
                                             anchorEl={userMenuAnchorEl}
                                             open={Boolean(userMenuAnchorEl)}
                                             onClose={handleUserMenuClose}
+                                            disableScrollLock={true}
                                             sx={{
                                                  "& .MuiPaper-root": {
                                                      backgroundColor: "#ffffff", // ✅ 배경 흰색
@@ -216,7 +217,7 @@ const Header = () => {
             </AppBar>
 
             {/* 모달 메뉴 */}
-            <Modal open={open} onClose={handleClose}>
+            <Modal open={open} onClose={handleClose}  disableScrollLock={true}>
                         <Box
                             sx={{
                                 width: "100%",
