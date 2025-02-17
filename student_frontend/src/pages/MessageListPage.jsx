@@ -6,7 +6,7 @@ import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
 import "@/styles/MessageList.css";
 import { showSnackbar } from "@/store/snackbarSlice";
 import useWebSocket from "@/hooks/useWebSocket";
-import { setMessages, setSentMessages } from "@/store/messageSlice";
+import { setMessages, setSentMessages, fetchSentMessages } from "@/store/messageSlice";
 import ReceivedMessages from "@/features/message/ReceivedMessages";
 import SentMessages from "@/features/message/SentMessages";
 import MessageDetailModal from "@/features/modal/MessageDetailModal";
@@ -34,11 +34,9 @@ const MessageListPage = () => {
     useEffect(() => {
         if (user) {
             fetchMessages();
-            if (isAdmin) {
-                fetchSentMessages();
-            }
+            dispatch(fetchSentMessages(user.id));
         }
-    }, [user]);
+    }, [user, dispatch]);
 
     /**
      * 받은 메시지 목록을 가져오는 함수
@@ -56,21 +54,6 @@ const MessageListPage = () => {
     };
 
     /**
-     * 보낸 메시지 목록을 가져오는 함수
-     */
-    const fetchSentMessages = async () => {
-        try {
-            const response = await fetchWithAuth(`${API_URL}messages/sent/${user.id}`);
-            if (response.ok) {
-                const data = await response.json();
-                dispatch(setSentMessages(data));
-            }
-        } catch (error) {
-            console.error("🚨 보낸 메시지 목록 조회 실패:", error.message);
-        }
-    };
-
-    /**
      * 메시지 상세 보기 모달을 여는 함수
      * @param {Object} message - 선택된 메시지 객체
      */
@@ -79,8 +62,11 @@ const MessageListPage = () => {
         setOpenMessageDetailModal(true);
     };
 
+    // 관리자 또는 상담사 권한 확인
+    const isAdminOrCSAgent = user && (user.role === 'ADMIN' || user.role === 'CS_AGENT');
+
     // 관리자 권한 확인
-    const isAdmin = user && user.authorities && user.authorities.some(auth => auth.authority === 'ROLE_ADMIN');
+    const isAdmin = user && user.role === 'ADMIN';
 
     return (
         <div className="data-grid-container">
@@ -91,9 +77,11 @@ const MessageListPage = () => {
             </Box>
 
             <Box display="flex" justifyContent="flex-end" width="100%" mb={1}>
-                <Button variant="contained" color="primary" onClick={() => setOpenSendMessageModal(true)}>
-                    메시지 보내기
-                </Button>
+                {isAdminOrCSAgent && (
+                    <Button variant="contained" color="primary" onClick={() => setOpenSendMessageModal(true)}>
+                        메시지 보내기
+                    </Button>
+                )}
 
                 {isAdmin && (
                     <Button
@@ -109,14 +97,14 @@ const MessageListPage = () => {
 
             <Tabs value={currentTab} onChange={(e, newValue) => setCurrentTab(newValue)}>
                 <Tab label="받은 메시지" />
-                {isAdmin && <Tab label="보낸 메시지" />}
+                {isAdminOrCSAgent && <Tab label="보낸 메시지" />}
             </Tabs>
 
             {currentTab === 0 && (
                 <ReceivedMessages onOpenMessage={handleOpenMessage} />
             )}
 
-            {currentTab === 1 && isAdmin && (
+            {currentTab === 1 && isAdminOrCSAgent && (
                 <SentMessages onOpenMessage={handleOpenMessage} />
             )}
 
@@ -134,11 +122,13 @@ const MessageListPage = () => {
                 onSend={fetchMessages}
             />
 
-            <AdminMessageModal
-                open={openAdminMessageModal}
-                onClose={() => setOpenAdminMessageModal(false)}
-                onSend={fetchMessages}
-            />
+            {isAdmin && (
+                <AdminMessageModal
+                    open={openAdminMessageModal}
+                    onClose={() => setOpenAdminMessageModal(false)}
+                    onSend={fetchMessages}
+                />
+            )}
         </div>
     );
 };

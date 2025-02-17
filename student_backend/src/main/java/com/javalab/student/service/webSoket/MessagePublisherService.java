@@ -21,8 +21,10 @@ public class MessagePublisherService {
     private static final String CHANNEL_NAME = "chat_channel";
 
     /**
-     * ✅ 생성자 주입 시 @Qualifier 적용 (redisStringTemplate 사용)
+     * 생성자 주입 시 @Qualifier 적용 (redisStringTemplate 사용)
      * RedisTemplate이라는 클래스가 두개의 빈으로 만들어지기 때문에 특정 하나의 빈을 선택하기 위해 @Qualifier 사용
+     * @param redisTemplate RedisTemplate
+     * @param objectMapper ObjectMapper
      */
     public MessagePublisherService(
             @Qualifier("redisStringTemplate") RedisTemplate redisTemplate,
@@ -32,7 +34,8 @@ public class MessagePublisherService {
     }
 
     /**
-     * ✅ 메시지를 Redis Pub/Sub으로 발행하는 메서드 (DB 저장 X)
+     * 메시지를 Redis Pub/Sub으로 발행하는 메서드 (DB 저장 X)
+     * @param requestDto 메시지 요청 DTO
      */
     public void publishMessage(MessageRequestDto requestDto) {
         log.info("📨 Redis 메시지 발행 요청 - senderId={}, receiverId={}, content={}",
@@ -43,9 +46,9 @@ public class MessagePublisherService {
         }
 
         try {
-            // ✅ JSON 문자열로 변환 후 Redis Pub/Sub으로 발행
+            // JSON 문자열로 변환 후 Redis Pub/Sub으로 발행
             String jsonMessage = objectMapper.writeValueAsString(requestDto);
-            // - Redis Pub/Sub으로 메세지 발행 즉, 채널에 메시지 전송
+            // Redis Pub/Sub으로 메세지 발행 즉, 채널에 메시지 전송
             redisTemplate.convertAndSend(CHANNEL_NAME, jsonMessage);
             log.info("📩 Redis 메시지 발행 완료! senderId={}, receiverId={}, content={}",
                     requestDto.getSenderId(), requestDto.getReceiverId(), requestDto.getContent());
@@ -56,7 +59,7 @@ public class MessagePublisherService {
     }
 
     /**
-     * ✅ 관리자 메시지를 Redis Pub/Sub으로 발행하는 메서드
+     * 관리자 메시지를 Redis Pub/Sub으로 발행하는 메서드
      * @param requestDto 관리자 메시지 요청 DTO
      */
     public void publishAdminMessage(MessageRequestDto requestDto) {
@@ -64,9 +67,9 @@ public class MessagePublisherService {
                 requestDto.getSenderId(), requestDto.getReceiverId(), requestDto.getContent());
 
         try {
-            // ✅ JSON 문자열로 변환 후 Redis Pub/Sub으로 발행
+            // JSON 문자열로 변환 후 Redis Pub/Sub으로 발행
             String jsonMessage = objectMapper.writeValueAsString(requestDto);
-            // - Redis Pub/Sub으로 메세지 발행 즉, 채널에 메시지 전송
+            // Redis Pub/Sub으로 메세지 발행 즉, 채널에 메시지 전송
             redisTemplate.convertAndSend(CHANNEL_NAME, jsonMessage);
             log.info("📩 관리자 Redis 메시지 발행 완료! senderId={}, receiverId={}, content={}",
                     requestDto.getSenderId(), requestDto.getReceiverId(), requestDto.getContent());

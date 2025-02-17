@@ -21,10 +21,11 @@ public class MessageSubscriberService implements org.springframework.data.redis.
     private final ObjectMapper objectMapper;
 
     /**
-     *  Redis 메시지 수신
-     *  - Redis에서 메시지를 수신하는 역할.
-     *  - 이 역할을 수행한 후, 구독 중인 WebSocket 클라이언트에게 메시지를 전송하면 된다.
-     *    메시지를 수신하고 WebSocket을 통해 클라이언트에게 보냅니다.
+     * Redis 메시지 수신
+     * - Redis에서 메시지를 수신하는 역할.
+     * - 이 역할을 수행한 후, 구독 중인 WebSocket 클라이언트에게 메시지를 전송하면 된다.
+     * @param redisMessage Redis 메시지
+     * @param pattern 패턴
      */
     @Override
     public void onMessage(Message redisMessage, byte[] pattern) {

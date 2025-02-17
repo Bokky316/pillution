@@ -33,6 +33,8 @@ public class MessageController {
 
     /**
      * ✅ 사용자가 보낸 메시지 조회
+     * @param userId 사용자 ID
+     * @return ResponseEntity<List<Message>>
      */
     @GetMapping("/sent/{userId}")
     public ResponseEntity<List<Message>> getSentMessages(@PathVariable("userId") Long userId) {
@@ -41,6 +43,8 @@ public class MessageController {
 
     /**
      * ✅ 사용자가 받은 메시지 조회
+     * @param userId 사용자 ID
+     * @return ResponseEntity<List<Message>>
      */
     @GetMapping("/received/{userId}")
     public ResponseEntity<List<Message>> getReceivedMessages(@PathVariable("userId") Long userId) {
@@ -49,6 +53,8 @@ public class MessageController {
 
     /**
      * ✅ 사용자의 읽지 않은 메시지 개수 조회
+     * @param userId 사용자 ID
+     * @return ResponseEntity<Integer>
      */
     @GetMapping("/unread/{userId}")
     public ResponseEntity<Integer> getUnreadMessageCount(@PathVariable("userId") Long userId) {
@@ -57,6 +63,8 @@ public class MessageController {
 
     /**
      * ✅ 메시지를 읽음 처리
+     * @param messageId 메시지 ID
+     * @return ResponseEntity<Void>
      */
     @PostMapping("/read/{messageId}")
     public ResponseEntity<Void> markMessageAsRead(@PathVariable("messageId") Long messageId) {
@@ -66,6 +74,8 @@ public class MessageController {
 
     /**
      * ✅ 메시지 전송 (DB 저장 + Redis Pub/Sub 발행)
+     * @param requestDto 메시지 요청 DTO
+     * @return ResponseEntity<Void>
      */
     @PostMapping("/send")
     public ResponseEntity<Void> sendMessage(@RequestBody MessageRequestDto requestDto) {
@@ -87,6 +97,8 @@ public class MessageController {
 
     /**
      * ✅ 사용자가 받은 모든 메시지 조회 (MessageResponseDto 반환)
+     * @param userId 사용자 ID
+     * @return ResponseEntity<List<MessageResponseDto>>
      */
     @GetMapping("/{userId}")
     public ResponseEntity<List<MessageResponseDto>> getMessages(@PathVariable("userId") Long userId) {
@@ -96,9 +108,8 @@ public class MessageController {
 
     /**
      * ✅ 관리자 메시지 전송 (DB 저장 + Redis Pub/Sub 발행)
-     */
-    /**
-     * ✅ 관리자 메시지 전송 (DB 저장 + Redis Pub/Sub 발행)
+     * @param requestDto 메시지 요청 DTO
+     * @return ResponseEntity<Void>
      */
     @PostMapping("/admin/send")
     @PreAuthorize("hasRole('ADMIN')")
