@@ -1,7 +1,7 @@
 package com.javalab.student.controller.message;
 
-import com.javalab.student.dto.MessageRequestDto;
-import com.javalab.student.dto.MessageResponseDto;
+import com.javalab.student.dto.message.MessageRequestDto;
+import com.javalab.student.dto.message.MessageResponseDto;
 import com.javalab.student.entity.message.Message;
 import com.javalab.student.service.webSoket.MessagePublisherService;
 import com.javalab.student.service.webSoket.MessageService;

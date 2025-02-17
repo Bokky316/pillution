@@ -22,6 +22,8 @@ const MessageListPage = () => {
     const { user } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
     const unreadCount = useSelector(state => state.messages.unreadMessages.length);
+    const sentMessages = useSelector(state => state.messages.sentMessages);
+    const loading = useSelector(state => state.messages.loading);
 
     const [currentTab, setCurrentTab] = useState(0);
     const [openSendMessageModal, setOpenSendMessageModal] = useState(false);
@@ -34,7 +36,15 @@ const MessageListPage = () => {
     useEffect(() => {
         if (user) {
             fetchMessages();
-            dispatch(fetchSentMessages(user.id));
+            // fetchSentMessages 액션을 디스패치하고 결과를 처리
+            dispatch(fetchSentMessages(user.id))
+                .then(() => {
+                    console.log("보낸 메시지를 성공적으로 가져왔습니다.");
+                })
+                .catch((error) => {
+                    console.error("보낸 메시지 가져오기 실패:", error);
+                    dispatch(showSnackbar("보낸 메시지를 가져오는데 실패했습니다."));
+                });
         }
     }, [user, dispatch]);
 
@@ -47,9 +57,12 @@ const MessageListPage = () => {
             if (response.ok) {
                 const data = await response.json();
                 dispatch(setMessages(data));
+            } else {
+                throw new Error("서버 응답이 실패했습니다.");
             }
         } catch (error) {
             console.error("🚨 메시지 목록 조회 실패:", error.message);
+            dispatch(showSnackbar("메시지 목록을 가져오는데 실패했습니다."));
         }
     };
 
@@ -105,7 +118,11 @@ const MessageListPage = () => {
             )}
 
             {currentTab === 1 && isAdminOrCSAgent && (
-                <SentMessages onOpenMessage={handleOpenMessage} />
+                loading ? (
+                    <div>로딩 중...</div>
+                ) : (
+                    <SentMessages onOpenMessage={handleOpenMessage} sentMessages={sentMessages} />
+                )
             )}
 
             <MessageDetailModal

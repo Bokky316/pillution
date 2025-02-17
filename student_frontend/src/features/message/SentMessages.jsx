@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { DataGrid } from "@mui/x-data-grid";
 import { TextField, Button } from "@mui/material";
@@ -13,6 +13,11 @@ import { TextField, Button } from "@mui/material";
 const SentMessages = ({ onOpenMessage }) => {
     const sentMessages = useSelector(state => state.messages.sentMessages);
     const [searchTerm, setSearchTerm] = useState("");
+
+    useEffect(() => {
+        console.log("SentMessages 컴포넌트 마운트됨");
+        console.log("sentMessages:", sentMessages);
+    }, [sentMessages]);
 
     const columns = [
         {
@@ -44,7 +49,7 @@ const SentMessages = ({ onOpenMessage }) => {
             field: "isNotice",
             headerName: "공지여부",
             flex: 1,
-            renderCell: (params) => params.value ? "공지" : "-"
+            renderCell: (params) => params.row.isNotice ? "공지" : "-"
         }
     ];
 

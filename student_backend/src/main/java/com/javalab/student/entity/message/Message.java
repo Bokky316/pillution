@@ -53,4 +53,8 @@ public class Message extends BaseEntity {
     // 메시지를 수신자가 삭제했는지 여부
     @Column(name = "deleted_by_receiver", nullable = false)
     private boolean deletedByReceiver = false;  // 기본값은 false (삭제하지 않음)
+
+    // 공지 여부
+    @Column(name = "is_notice", nullable = false)
+    private boolean notice = false;  // 기본값은 false (공지아님)
 }

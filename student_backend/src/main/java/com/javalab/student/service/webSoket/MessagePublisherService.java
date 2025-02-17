@@ -1,7 +1,7 @@
 package com.javalab.student.service.webSoket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.javalab.student.dto.MessageRequestDto;
+import com.javalab.student.dto.message.MessageRequestDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * Redis Publisher 역할을 하는 서비스 클래스
- * - 사용자로부터 받은 메세지를 WebSocket으로 전송하기 위해 Redis Pub 클래스
+ * - 사용자로부터 받은 메시지를 WebSocket으로 전송하기 위해 Redis Pub 클래스
  * - CHANNEL_NAME : Redis Pub/Sub 에서 발행하는 채널 이름
  */
 @Slf4j
@@ -59,20 +59,19 @@ public class MessagePublisherService {
     }
 
     /**
-     * 관리자 메시지를 Redis Pub/Sub으로 발행하는 메서드
+     * ✅ 관리자 메시지를 Redis Pub/Sub으로 발행하는 메서드
      * @param requestDto 관리자 메시지 요청 DTO
      */
     public void publishAdminMessage(MessageRequestDto requestDto) {
-        log.info("📨 관리자 Redis 메시지 발행 요청 - senderId={}, receiverId={}, content={}",
-                requestDto.getSenderId(), requestDto.getReceiverId(), requestDto.getContent());
-
+        log.info("📨 관리자 Redis 메시지 발행 요청 - senderId={}, receiverType={}, receiverId={}, content={}",
+                requestDto.getSenderId(), requestDto.getReceiverType(), requestDto.getContent());
         try {
             // JSON 문자열로 변환 후 Redis Pub/Sub으로 발행
             String jsonMessage = objectMapper.writeValueAsString(requestDto);
             // Redis Pub/Sub으로 메세지 발행 즉, 채널에 메시지 전송
             redisTemplate.convertAndSend(CHANNEL_NAME, jsonMessage);
-            log.info("📩 관리자 Redis 메시지 발행 완료! senderId={}, receiverId={}, content={}",
-                    requestDto.getSenderId(), requestDto.getReceiverId(), requestDto.getContent());
+            log.info("📩 관리자 Redis 메시지 발행 완료! senderId={}, receiverType={}, receiverId={}, content={}",
+                    requestDto.getSenderId(), requestDto.getReceiverType(), requestDto.getContent());
         } catch (Exception e) {
             log.error("❌ 관리자 메시지 발행 중 오류 발생", e);
             throw new RuntimeException("관리자 메시지 발행 실패", e);

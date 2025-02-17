@@ -1,7 +1,7 @@
 package com.javalab.student.service.webSoket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.javalab.student.dto.MessageRequestDto;
+import com.javalab.student.dto.message.MessageRequestDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
