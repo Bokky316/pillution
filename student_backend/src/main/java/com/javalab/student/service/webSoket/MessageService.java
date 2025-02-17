@@ -169,4 +169,8 @@ public class MessageService {
             messageRepository.save(message);
         }
     }
+
+    public List<Member> searchUsers(String query) {
+        return memberRepository.findByNameContainingIgnoreCase(query);
+    }
 }

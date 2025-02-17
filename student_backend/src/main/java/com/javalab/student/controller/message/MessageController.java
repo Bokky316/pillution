@@ -2,6 +2,7 @@ package com.javalab.student.controller.message;
 
 import com.javalab.student.dto.message.MessageRequestDto;
 import com.javalab.student.dto.message.MessageResponseDto;
+import com.javalab.student.entity.Member;
 import com.javalab.student.entity.message.Message;
 import com.javalab.student.service.webSoket.MessagePublisherService;
 import com.javalab.student.service.webSoket.MessageService;
@@ -129,5 +130,16 @@ public class MessageController {
             log.error("❌ 관리자 메시지 전송 중 오류 발생", e);
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    /**
+     * 사용자 검색
+     * @param query
+     * @return
+     */
+    @GetMapping("/search-users")
+    public ResponseEntity<List<Member>> searchUsers(@RequestParam String query) {
+        List<Member> users = messageService.searchUsers(query);
+        return ResponseEntity.ok(users);
     }
 }
