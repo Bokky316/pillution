@@ -135,10 +135,10 @@ function FAQBoardPage() {
                          onClick={() => dispatch(setSelectedCategory(category))}
                          sx={{
                              cursor: 'pointer',
-                             margin: { xs: '0.5px', sm: '2px' },
-                             fontSize: { xs: '0.75rem', sm: '0.85rem' },
-                             padding: { xs: '2px 4px', sm: '3px 8px' },
-                             minWidth: { xs: 'auto', sm: '50px' },
+                             margin: { xs: '2px', sm: '2px' },
+                             fontSize: { xs: '0.85rem', sm: '0.85rem' },
+                             padding: { xs: '3px 8px', sm: '3px 8px' },
+                             minWidth: { xs: '50px', sm: '50px' },
                              fontWeight: 'bold',
                              textDecoration: 'none',
                              color: selectedCategory === category ? '#4169E1' : 'grey',
