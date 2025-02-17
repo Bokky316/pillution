@@ -87,30 +87,38 @@ public class RecommendationService {
             Map<String, Integer> ingredientScores = nutrientScoreService.calculateIngredientScores(optionResponses, age, bmi, gender);
             log.info("4. 추천 영양 성분 점수 계산 완료. 점수 수: {}", ingredientScores.size());
 
-            // 5. 추천 엔티티 생성 및 저장
-            log.info("5. 추천 엔티티 생성 시작");
+            // 5. 추천 영양 성분 목록 가져오기
+            log.info("5. 추천 영양 성분 목록 가져오기 시작");
+            List<Map<String, Object>> recommendedIngredientsList = nutrientScoreService.getRecommendedIngredients(optionResponses, ingredientScores, age, bmi);
+            log.info("5. 추천 영양 성분 목록 가져오기 완료. 추천 성분 수: {}", recommendedIngredientsList.size());
+
+            // 6. 추천 엔티티 생성 및 저장
+            log.info("6. 추천 엔티티 생성 시작");
             Recommendation recommendation = new Recommendation();
             recommendation.setMemberId(member.getId());
             recommendation.setCreatedAt(LocalDateTime.now());
             recommendation = recommendationRepository.saveAndFlush(recommendation); // saveAndFlush 사용
-            log.info("5. 추천 엔티티 저장 완료. ID: {}", recommendation.getId());
+            log.info("6. 추천 엔티티 저장 완료. ID: {}", recommendation.getId());
 
-            // 6. 추천 영양 성분 저장
-            log.info("6. 추천 영양 성분 저장 시작");
+            // 7. 추천 영양 성분 저장
+            log.info("7. 추천 영양 성분 저장 시작");
             List<RecommendedIngredient> recommendedIngredients = new ArrayList<>();
-            for (Map.Entry<String, Integer> entry : ingredientScores.entrySet()) {
+            for (Map<String, Object> ingredientMap : recommendedIngredientsList) {
+                String ingredientName = (String) ingredientMap.get("name");
+                Integer score = (Integer) ingredientMap.get("score");
+
                 RecommendedIngredient ingredient = new RecommendedIngredient();
                 ingredient.setRecommendation(recommendation);
-                ingredient.setIngredientName(entry.getKey());
-                ingredient.setScore(entry.getValue());
+                ingredient.setIngredientName(ingredientName);
+                ingredient.setScore(score); // 점수 설정
                 recommendedIngredients.add(ingredient);
             }
             recommendedIngredients = recommendedIngredientRepository.saveAll(recommendedIngredients);
             recommendedIngredientRepository.flush();
-            log.info("6. 추천 영양 성분 저장 완료. 저장된 개수: {}", recommendedIngredients.size());
+            log.info("7. 추천 영양 성분 저장 완료. 저장된 개수: {}", recommendedIngredients.size());
 
-            // 7. 추천 제품 생성 및 저장
-            log.info("7. 추천 제품 생성 시작");
+            // 8. 추천 제품 생성 및 저장
+            log.info("8. 추천 제품 생성 시작");
             List<ProductRecommendationDTO> productRecommendations = productRecommendationService.recommendProductsByIngredients(
                     new ArrayList<>(ingredientScores.keySet()), ingredientScores);
             List<RecommendedProduct> recommendedProducts = new ArrayList<>();
@@ -132,10 +140,10 @@ public class RecommendationService {
             }
             recommendedProducts = recommendedProductRepository.saveAll(recommendedProducts);
             recommendedProductRepository.flush();
-            log.info("7. 추천 제품 저장 완료. 저장된 개수: {}", recommendedProducts.size());
+            log.info("8. 추천 제품 저장 완료. 저장된 개수: {}", recommendedProducts.size());
 
-            // 8. HealthRecord 저장
-            log.info("8. HealthRecord 저장 시작");
+            // 9. HealthRecord 저장
+            log.info("9. HealthRecord 저장 시작");
 
             List<String> recommendedIngredientNames = recommendedIngredients.stream()
                     .map(RecommendedIngredient::getIngredientName)
@@ -151,19 +159,19 @@ public class RecommendationService {
                         gender,
                         age
                 );
-                log.info("8. HealthRecord 저장 완료");
+                log.info("9. HealthRecord 저장 완료");
             } catch (Exception e) {
                 log.error("HealthRecord 저장 중 오류 발생", e);
                 throw new RuntimeException("HealthRecord 저장 중 오류 발생", e);
             }
 
-            // 9. 결과 반환 데이터 구성
+            // 10. 결과 반환 데이터 구성
             Map<String, Object> result = new HashMap<>();
             result.put("healthAnalysis", healthAnalysis);
             result.put("recommendedIngredients", recommendedIngredients);
             result.put("recommendations", recommendedProducts);
 
-            log.info("9. 결과 데이터 구성 완료");
+            log.info("10. 결과 데이터 구성 완료");
 
             return result;
 
@@ -172,7 +180,6 @@ public class RecommendationService {
             throw new RuntimeException("건강 분석 및 추천 생성 중 오류가 발생했습니다.", e);
         }
     }
-
 
     /**
      * 현재 로그인한 사용자의 건강 기록 히스토리를 조회합니다.
