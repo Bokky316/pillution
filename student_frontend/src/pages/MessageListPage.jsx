@@ -38,7 +38,7 @@ const MessageListPage = () => {
             fetchMessages();
             fetchSentMessages(user.id);
         }
-    }, [user]);
+    }, [user, dispatch]);
 
     /**
      * 받은 메시지 목록을 가져오는 함수
@@ -57,6 +57,9 @@ const MessageListPage = () => {
         }
     };
 
+    /**
+     * 보낸 메시지 목록을 가져오는 함수
+     */
     const fetchSentMessages = async (userId) => {
         try {
             const response = await fetchWithAuth(`${API_URL}messages/sent/${userId}`);
