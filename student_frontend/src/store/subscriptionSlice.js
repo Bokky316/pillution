@@ -347,21 +347,24 @@ export const updateBillingDate = createAsyncThunk(
 export const updateNextPaymentMethod = createAsyncThunk(
     "subscription/updateNextPaymentMethod",
     async ({ subscriptionId, nextPaymentMethod }, { rejectWithValue }) => {
-        try {
-            console.log("📡 [API 요청] 다음 회차 결제수단 업데이트:", { subscriptionId, nextPaymentMethod });
+        if (!nextPaymentMethod) {
+            return rejectWithValue("❌ [ERROR] nextPaymentMethod가 유효하지 않음!");
+        }
 
+        console.log("📡 [API 요청] 다음 회차 결제수단 업데이트:", { subscriptionId, nextPaymentMethod });
+
+        try {
             const response = await fetchWithAuth(`${API_URL}subscription/update-next-payment-method`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ subscriptionId, nextPaymentMethod }),
             });
 
-            const data = await response.json();
-
             if (!response.ok) {
                 throw new Error(data.message || "결제수단 업데이트 실패");
             }
 
+            const data = await response.json();
             console.log("✅ [SUCCESS] 다음 회차 결제수단 업데이트 성공:", data);
             return data; // ✅ Redux 상태 업데이트를 위해 반환
         } catch (error) {
@@ -407,7 +410,7 @@ export const updateDeliveryAddress = createAsyncThunk(
 const subscriptionSlice = createSlice({
     name: "subscription",
     initialState: {
-        data: { nextItems: [], items: [], postalCode: "", roadAddress: "", detailAddress: ""  }, // ✅ 기본값 설정
+        data: { nextItems: [], items: [], postalCode: "", roadAddress: "", detailAddress: "", nextPaymentMethod: ""  }, // ✅ 기본값 설정
         loading: false,
         error: null,
         products: [], // ✅ 상품 리스트
@@ -429,6 +432,10 @@ const subscriptionSlice = createSlice({
         },
         updateDetailAddress: (state, action) => {
             state.data.detailAddress = action.payload;
+        },
+         setNextPaymentMethod: (state, action) => {
+            console.log("🔄 Redux 상태 업데이트: ", action.payload);
+            state.nextPaymentMethod = action.payload;
         },
     },
     extraReducers: (builder) => {
@@ -470,6 +477,7 @@ const subscriptionSlice = createSlice({
 
             // ✅ deliveryRequest가 정상적으로 들어오는지 확인
             console.log("📦 [INFO] Redux 업데이트 - 배송 요청사항:", action.payload.deliveryRequest);
+            console.log("📦 [INFO] Redux 업데이트 - 다음 회차 결제수단:", action.payload.nextPaymentMethod);
 
             // ✅ nextItems에서 productId 설정 유지
             if (state.data.nextItems) {
@@ -489,6 +497,7 @@ const subscriptionSlice = createSlice({
             }
 
             // ✅ Redux 상태에 배송 주소 정보 저장 추가
+            state.data.nextPaymentMethod = action.payload.nextPaymentMethod || ""; // ✅ nextPaymentMethod 추가
             state.data.postalCode = action.payload.postalCode || "";
             state.data.roadAddress = action.payload.roadAddress || "";
             state.data.detailAddress = action.payload.detailAddress || "";
@@ -556,7 +565,12 @@ const subscriptionSlice = createSlice({
         // 다음 회차 결제수단 업데이트
        .addCase(updateNextPaymentMethod.fulfilled, (state, action) => {
            console.log("✅ [Redux] 다음 회차 결제수단 업데이트 완료:", action.payload);
-           state.data.nextPaymentMethod = action.payload.nextPaymentMethod;
+
+           if (state.data) {
+               state.data.nextPaymentMethod = action.payload.nextPaymentMethod;
+           } else {
+               console.error("❌ [ERROR] Redux 상태가 정의되지 않음!", state);
+           }
        })
        .addCase(updateNextPaymentMethod.rejected, (state, action) => {
            console.error("❌ [ERROR] Redux 상태 업데이트 실패:", action.payload);
