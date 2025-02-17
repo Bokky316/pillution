@@ -1,6 +1,8 @@
 /*
 package com.javalab.student.config.DataInitializer;
 
+import com.javalab.student.constant.Role;
+import com.javalab.student.dto.MemberFormDto;
 import com.javalab.student.entity.board.Board;
 import com.javalab.student.entity.board.Post;
 import com.javalab.student.entity.healthSurvey.QuestionOption;
@@ -31,6 +33,7 @@ import com.javalab.student.repository.SubscriptionNextItemRepository;
 import com.javalab.student.repository.SubscriptionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,12 +44,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-*/
-/**
- * 애플리케이션 시작 시 초기 데이터를 설정하는 클래스입니다.
- * Product, Survey, Board, Subscription 데이터 이니셜라이저를 통합 관리합니다.
- *//*
-
+//애플리케이션 시작 시 초기 데이터를 설정하는 클래스입니다.
+//Product, Survey, Board, Subscription 데이터 이니셜라이저를 통합 관리합니다.
 
 @Component
 @RequiredArgsConstructor
@@ -66,21 +65,70 @@ public class TotalDataInitializer implements CommandLineRunner {
     private final SubscriptionRepository subscriptionRepository;
     private final SubscriptionItemRepository subscriptionItemRepository;
     private final SubscriptionNextItemRepository subscriptionNextItemRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
     public void run(String... args) throws Exception {
         initializeProductData();
+        initializeProductIngredients();
+        initializeIngredientCategoryMappings();
+        initializeMemberData();
         initializeSurveyData();
         initializeBoardData();
+        initializeProducts();
+        initializePosts();
         initializeSubscriptionData();
     }
 
-*/
-/**
- * Product 데이터 초기화 메서드
-*//*
 
+//    Member 데이터 초기화 메서드
+private void initializeMemberData() {
+    if (memberRepository.count() > 0) {
+        System.out.println("✅ Member 데이터가 이미 존재합니다. 초기화를 건너뜁니다.");
+        return;
+    }
+
+    try {
+        createMemberIfNotExist(memberRepository, passwordEncoder, "test2@example.com", "일반회원", Role.USER);
+        createMemberIfNotExist(memberRepository, passwordEncoder, "test@example.com", "관리자", Role.ADMIN);
+        createMemberIfNotExist(memberRepository, passwordEncoder, "test1@example.com", "상담사", Role.CS_AGENT);
+        System.out.println("✅ Member 데이터 초기화 완료");
+    } catch (Exception e) {
+        System.out.println("❌ Member 데이터 초기화 중 오류 발생: " + e.getMessage());
+    }
+}
+
+    @Transactional
+    public void createMemberIfNotExist(MemberRepository memberRepository, PasswordEncoder passwordEncoder,
+                                       String email, String name, Role role) {
+        Member existingMember = memberRepository.findByEmail(email);
+        if (existingMember != null) {
+            System.out.println("Member already exists: " + email);
+            return;
+        }
+
+        try {
+            MemberFormDto memberFormDto = MemberFormDto.builder()
+                    .email(email)
+                    .name(name)
+                    .postalCode("06234")
+                    .roadAddress("서울특별시 강남구 테헤란로 123")
+                    .detailAddress("삼성빌딩 5층")
+                    .password("1234")
+                    .phone("010-1234-5678")
+                    .role(role)
+                    .build();
+
+            Member member = Member.createMember(memberFormDto, passwordEncoder);
+            memberRepository.save(member);
+            System.out.println("Test member created: " + member.getEmail() + " (Role: " + role + ")");
+        } catch (Exception e) {
+            System.out.println("Error creating member: " + email + " - " + e.getMessage());
+        }
+    }
+
+//  Product 데이터 초기화 메서드
 
     private void initializeProductData() throws Exception {
         List<String> categories = Arrays.asList(
@@ -573,11 +621,9 @@ public class TotalDataInitializer implements CommandLineRunner {
 
     }
 
-    */
-/*
-    *
-    * Survey 데이터 초기화 메서드
-    *//*
+    
+//     Survey 데이터 초기화 메서드
+    
 
 
     private void initializeSurveyData() throws Exception {
@@ -1026,10 +1072,9 @@ public class TotalDataInitializer implements CommandLineRunner {
         ));
     }
 
-    */
-/**
-     * Board 데이터 초기화 메서드
-     *//*
+
+//      Board 데이터 초기화 메서드
+     
 
 
     private void initializeBoardData() {
@@ -1201,10 +1246,9 @@ public class TotalDataInitializer implements CommandLineRunner {
     }
 
 
-    */
-/**
-     * 구독 DataInitializer
-     *//*
+
+//      구독 DataInitializer
+     
 
 
     private void initializeSubscriptionData() {
@@ -1272,14 +1316,14 @@ public class TotalDataInitializer implements CommandLineRunner {
         createSubscriptionNextItem(pastSubscription2, productD, 1, 21000);
     }
 //
-//*
-//     * ✅ 구독 생성 메서드
-//     * @param member       구독 사용자
-//     * @param cycle        현재 회차
-//     * @param status       구독 상태 (ACTIVE / EXPIRED)
-//     * @param startDate    최초 구독 시작일
-//     * @param lastBillingDate 최근 결제일 (lastBillingDate)
-//     * @return 생성된 Subscription 객체
+//
+//      ✅ 구독 생성 메서드
+//      @param member       구독 사용자
+//      @param cycle        현재 회차
+//      @param status       구독 상태 (ACTIVE / EXPIRED)
+//      @param startDate    최초 구독 시작일
+//      @param lastBillingDate 최근 결제일 (lastBillingDate)
+//      @return 생성된 Subscription 객체
 //
 
     private Subscription createSubscription(Member member, int cycle, String status, LocalDate startDate, LocalDate lastBillingDate, String prevNextPaymentMethod) {

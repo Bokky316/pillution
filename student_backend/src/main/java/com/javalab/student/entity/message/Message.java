@@ -1,6 +1,8 @@
-package com.javalab.student.entity;
+package com.javalab.student.entity.message;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.javalab.student.entity.BaseEntity;
+import com.javalab.student.entity.Member;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

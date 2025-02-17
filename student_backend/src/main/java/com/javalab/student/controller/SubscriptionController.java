@@ -44,6 +44,11 @@ public class SubscriptionController {
         }
         try {
             SubscriptionResponseDto subscriptionResponse = subscriptionService.getSubscription(memberId);
+
+            if (subscriptionResponse == null) {
+                return ResponseEntity.ok(Map.of("message", "현재 활성화된 구독이 없습니다."));
+            }
+
             log.info("📡 [API 응답] 구독 정보 조회 - 구독 ID: {}, 배송 요청사항: {}",
                     subscriptionResponse.getId(),
                     subscriptionResponse.getDeliveryRequest() != null ? subscriptionResponse.getDeliveryRequest() : "없음",
