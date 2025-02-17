@@ -86,6 +86,9 @@ const HomePage = () => {
                             width: '120px', // 버튼의 고정 너비 설정 (필요에 따라 조정)
                             minWidth: 'unset', // Material UI 기본 최소 너비 해제
                             letterSpacing: '-0.5px', // 글자 간격 좁게 설정
+                            "&:hover": {
+                                backgroundColor: "transparent", // 마우스 올렸을 때 배경색을 투명하게 설정
+                            }
                         }}
                     >
                         모든 제품 보기
