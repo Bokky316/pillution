@@ -1,7 +1,24 @@
 import { DataGrid } from '@mui/x-data-grid';
 import { useState, useEffect } from 'react';
 import { API_URL } from '@/utils/constants';
-import { Button, Dialog, DialogTitle, DialogContent, DialogActions, Typography, Tooltip, TextField, Box } from '@mui/material'; // Box 컴포넌트 import
+import {
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Typography,
+  Tooltip,
+  TextField,
+  Box,
+  Paper,
+  Snackbar,
+  Alert,
+  Card,
+  CardContent,
+  Divider
+} from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 
 const OrderList = () => {
   const [orders, setOrders] = useState([]);
@@ -9,17 +26,21 @@ const OrderList = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   useEffect(() => {
-    fetchOrders(); // 컴포넌트가 처음 나타날 때 주문 목록 불러오기
-  }, []); // 빈 배열을 넣어 의존성 목록을 비워서, 처음 한 번만 실행되도록 함
+    fetchOrders();
+  }, []);
 
   const fetchOrders = () => {
-      let apiUrl = `${API_URL}admin/orders?page=0&size=10`;
-          if (searchKeyword) { // 검색어가 있으면 파라미터 추가
-            apiUrl += `&memberName=${searchKeyword}`;
-          }
-    fetch(apiUrl, { // 수정된 apiUrl 사용
+    let apiUrl = `${API_URL}admin/orders?page=0&size=10`;
+    if (searchKeyword.trim() !== "") {
+      apiUrl += `&memberName=${encodeURIComponent(searchKeyword)}`;
+    }
+    setLoading(true);
+    fetch(apiUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -34,10 +55,16 @@ const OrderList = () => {
       .then(data => {
         setOrders(data.content);
       })
-      .catch(error => console.error('에러 발생:', error));
+      .catch(error => {
+        console.error('에러 발생:', error);
+        setSnackbarMessage("주문 정보를 가져오는 데 실패했습니다.");
+        setSnackbarOpen(true);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
-  // 주문 상태를 한국어로 변환하는 함수 (기존과 동일)
   const getOrderStatusKorean = (status) => {
     const statusMap = {
       'ORDERED': '주문',
@@ -53,21 +80,21 @@ const OrderList = () => {
     return statusMap[status] || status;
   };
 
-  const handleSearchChange = (event) => { // 검색어 입력 칸 내용 변경 시 호출되는 함수 (기존과 동일)
-      setSearchKeyword(event.target.value); // 검색어 상태 업데이트만 함
-    };
-
-  const handleSearchButtonClick = () => { // "검색" 버튼 클릭 시 호출되는 함수 (새로 추가)
-      fetchOrders(); // 주문 목록 불러오는 함수 호출
+  const handleSearchChange = (event) => {
+    setSearchKeyword(event.target.value);
   };
 
-  const handleCancelClick = (order) => { // 주문 취소 버튼 클릭 시 (기존과 동일)
+  const handleSearchButtonClick = () => {
+    fetchOrders();
+  };
+
+  const handleCancelClick = (order) => {
     setSelectedOrder(order);
     setErrorMessage("");
     setDialogOpen(true);
   };
 
-  const handleCancelConfirm = () => { // 주문 취소 확인 다이얼로그에서 "확인" 버튼 클릭 시 (기존과 동일)
+  const handleCancelConfirm = () => {
     if (!selectedOrder) return;
 
     fetch(`${API_URL}admin/orders/${selectedOrder.orderId}/cancel`, {
@@ -78,64 +105,61 @@ const OrderList = () => {
       },
       credentials: 'include'
     })
-    .then(response => {
-      if (!response.ok) {
-        return response.text().then(text => {
-          if (response.status === 500) {
-            if (text.includes("이미 취소된") || text.includes("배송 시작 이후")) {
-              throw new Error(text);
-            } else {
-              throw new Error(`서버 내부 오류가 발생했습니다. 상세: ${text}`);
-            }
-          } else {
-            throw new Error(`요청 처리 중 오류가 발생했습니다 (${response.status}): ${text}`);
-          }
-        });
-      }
-      return response.text();
-    })
-    .then(data => {
-      alert(data);
-      setDialogOpen(false);
-      fetchOrders(); // 주문 취소 후 주문 목록 다시 불러오기
-    })
-    .catch(error => {
-      console.error('주문 취소 에러:', error);
-      setErrorMessage(error.message);
-    });
+      .then(response => {
+        if (!response.ok) {
+          return response.text().then(text => {
+            throw new Error(text);
+          });
+        }
+        return response.text();
+      })
+      .then(data => {
+        setSnackbarMessage(data);
+        setSnackbarOpen(true);
+        setDialogOpen(false);
+        fetchOrders();
+      })
+      .catch(error => {
+        console.error('주문 취소 에러:', error);
+        setErrorMessage(error.message);
+      });
   };
 
-  const columns = [ // DataGrid 컬럼 정의 (기존과 동일)
+  const columns = [
     { field: 'orderId', headerName: '주문 ID', flex: 2 },
     { field: 'memberName', headerName: '회원 이름', flex: 2 },
     { field: 'productName', headerName: '상품명', flex: 2 },
     { field: 'quantity', headerName: '주문 수량', flex: 2 },
-    { field: 'totalPrice', headerName: '금액', flex: 2 },
+    {
+      field: 'totalPrice',
+      headerName: '금액',
+      flex: 2,
+      renderCell: (params) => (
+        <Typography variant="body2">
+          {new Intl.NumberFormat('ko-KR').format(params.value)}원
+        </Typography>
+      )
+    },
     { field: 'orderDate', headerName: '주문일자', flex: 2 },
     {
-        field: 'shippingAddress',
-        headerName: '주소',
-        flex: 3,
-        sx: {
-            '& .MuiDataGrid-cell': {
-             hiteSpace: 'normal',
-             },
-         },
-     },
+      field: 'shippingAddress',
+      headerName: '주소',
+      flex: 3,
+      renderCell: (params) => (
+        <Typography variant="body2">{params.value}</Typography>
+      )
+    },
     { field: 'paymentMethod', headerName: '결제수단', flex: 2 },
     {
       field: 'orderStatus',
       headerName: '주문상태',
       flex: 1,
       minWidth: 150,
-      renderCell: (params) => {
-        const isCanceled = params.value === 'CANCELED';
-        return (
-          <Typography style={{ color: isCanceled ? 'red' : 'inherit' }}>
-            {getOrderStatusKorean(params.value)}
-          </Typography>
-        );
-      }
+      renderCell: (params) => (
+        <Typography variant="body2" color={params.value === 'CANCELED' ? 'red' : 'inherit'}>
+          {getOrderStatusKorean(params.value)}
+        </Typography>
+      )
     },
     {
       field: 'manage',
@@ -144,25 +168,21 @@ const OrderList = () => {
       renderCell: (params) => {
         const isCanceled = params.row.orderStatus === 'CANCELED';
         const isDelivered = ['IN_TRANSIT', 'DELIVERED', 'ORDER_COMPLETED'].includes(params.row.orderStatus);
-
         let tooltipMessage = "";
         if (isCanceled) {
           tooltipMessage = "이미 취소된 주문입니다";
         } else if (isDelivered) {
           tooltipMessage = "배송 시작 이후의 주문은 취소할 수 없습니다";
         }
-
         return (
-          <Tooltip
-            title={tooltipMessage}
-            disableHoverListener={!isCanceled && !isDelivered}
-          >
+          <Tooltip title={tooltipMessage} disableHoverListener={!isCanceled && !isDelivered}>
             <span>
               <Button
                 variant="contained"
                 color={isCanceled ? 'default' : 'secondary'}
                 disabled={isCanceled || isDelivered}
                 onClick={() => handleCancelClick(params.row)}
+                sx={{ textTransform: 'none' }}
               >
                 {isCanceled ? '주문 취소 완료' : '주문 취소'}
               </Button>
@@ -174,42 +194,142 @@ const OrderList = () => {
   ];
 
   return (
-    <div>
-      <h3>관리자 주문 내역</h3>
-      <Box display="flex" alignItems="center" marginBottom="20px"> {/* Box 컴포넌트로 flex 레이아웃 사용 */}
-        <TextField
-          label="회원 이름 검색"
-          value={searchKeyword}
-          onChange={handleSearchChange}
-          style={{ marginRight: '10px' }} // 검색어 입력칸과 버튼 사이 간격
-          sx={{
-              '& .MuiInputBase-input': { // 입력 필드 스타일
-                paddingTop: '8px',   // 위쪽 패딩 줄이기
-                paddingBottom: '8px', // 아래쪽 패딩 줄이기
-              },
-            }}
-        />
-        <Button variant="contained" onClick={handleSearchButtonClick}> {/* "검색" 버튼 추가 */}
-          검색
-        </Button>
+    <Paper
+      elevation={2}
+      sx={{
+        padding: '24px',
+        backgroundColor: '#ffffff',
+        borderRadius: '12px',
+        overflow: 'hidden',
+        boxSizing: 'border-box'
+      }}
+    >
+      {/* 헤더 섹션 */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 3
+        }}
+      >
+        <Typography variant="h5" component="h1" sx={{ fontWeight: 600, color: '#1a237e' }}>
+          주문 관리
+        </Typography>
       </Box>
+
+      {/* 검색 섹션 */}
+      <Card
+        variant="outlined"
+        sx={{
+          mb: 3,
+          borderRadius: '8px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+        }}
+      >
+        <CardContent sx={{ p: 2 }}>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <TextField
+              placeholder="회원 이름 검색"
+              value={searchKeyword}
+              onChange={handleSearchChange}
+              size="small"
+              sx={{
+                flex: 1,
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': { borderColor: '#dee2e6' },
+                  '&.Mui-focused fieldset': { borderColor: '#3f51b5' }
+                }
+              }}
+              InputProps={{
+                endAdornment: (
+                  <Button
+                    variant="contained"
+                    onClick={handleSearchButtonClick}
+                    sx={{
+                      backgroundColor: '#3f51b5',
+                      '&:hover': { backgroundColor: '#303f9f' },
+                      minWidth: '40px',
+                      padding: '6px'
+                    }}
+                  >
+                    <SearchIcon sx={{ color: '#fff' }} />
+                  </Button>
+                )
+              }}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearchButtonClick();
+                }
+              }}
+            />
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* 데이터 그리드 */}
       <DataGrid
         rows={orders}
         columns={columns}
         pageSize={10}
         autoHeight
+        loading={loading}
+        sx={{
+          borderRadius: '8px',
+          '& .MuiDataGrid-columnHeaders': {
+            backgroundColor: '#f5f5f5',
+            borderRadius: '8px 8px 0 0'
+          },
+          '& .MuiDataGrid-cell': {
+            borderBottom: '1px solid #f0f0f0'
+          },
+          '& .MuiDataGrid-row:hover': {
+            backgroundColor: '#f9f9f9'
+          },
+          '& .MuiDataGrid-footerContainer': {
+            backgroundColor: '#f5f5f5',
+            borderRadius: '0 0 8px 8px'
+          }
+        }}
       />
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+      {/* 스낵바 알림 */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity="success"
+          sx={{ width: '100%', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+
+      {/* 주문 취소 확인 다이얼로그 */}
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        PaperProps={{
+          style: { borderRadius: '8px', padding: '12px' }
+        }}
+      >
         <DialogTitle>주문 취소 확인</DialogTitle>
         <DialogContent>
           {selectedOrder && (
             <>
-              <Typography>주문 번호: {selectedOrder.orderId}</Typography>
-              <Typography>현재 주문 상태: {getOrderStatusKorean(selectedOrder.orderStatus)}</Typography>
-              <Typography>이 주문을 취소하시겠습니까?</Typography>
+              <Typography variant="body2">주문 번호: {selectedOrder.orderId}</Typography>
+              <Typography variant="body2">
+                현재 주문 상태: {getOrderStatusKorean(selectedOrder.orderStatus)}
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                이 주문을 취소하시겠습니까?
+              </Typography>
               {errorMessage && (
-                <Typography color="error" style={{marginTop: '16px'}}>
+                <Typography variant="body2" color="error" sx={{ mt: 2 }}>
                   오류: {errorMessage}
                 </Typography>
               )}
@@ -217,13 +337,15 @@ const OrderList = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>취소</Button>
-          <Button onClick={handleCancelConfirm} color="secondary" disabled={!!errorMessage}>
+          <Button onClick={() => setDialogOpen(false)} sx={{ textTransform: 'none' }}>
+            취소
+          </Button>
+          <Button onClick={handleCancelConfirm} color="secondary" disabled={!!errorMessage} sx={{ textTransform: 'none' }}>
             확인
           </Button>
         </DialogActions>
       </Dialog>
-    </div>
+    </Paper>
   );
 };
 

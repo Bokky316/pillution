@@ -1,35 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, Typography, CircularProgress, Box, styled, Grid, ImageList, ImageListItem
+  Button, Typography, CircularProgress, Box,  Grid,
+  Paper // Paper 추가
 } from '@mui/material';
 import { API_URL } from '@/utils/constants';
 import { useNavigate } from 'react-router-dom';
-
-const StyledDialog = styled(Dialog)(({ theme }) => ({
-    '& .MuiDialogContent-root': {
-        padding: theme.spacing(2),
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-    },
-    '& .MuiDialogActions-root': {
-        padding: theme.spacing(1),
-    },
-}));
-
-const StyledDialogTitle = styled(DialogTitle)(({ theme }) => ({
-    textAlign: 'center',
-    backgroundColor: theme.palette.primary.main,
-    color: theme.palette.primary.contrastText,
-}));
-
-const ProductImage = styled('img')({
-    width: '50%',
-    maxWidth: '300px',
-    borderRadius: '4px',
-    marginBottom: '16px',
-});
 
 const ViewProduct = ({ productId, open, onClose }) => {
     const [product, setProduct] = useState(null);
@@ -38,7 +14,8 @@ const ViewProduct = ({ productId, open, onClose }) => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (open && productId) {
+      // useEffect (기존 코드 유지)
+      if (open && productId) {
             setLoading(true);
             fetch(`${API_URL}products/${productId}/dto`, {
                 method: 'GET',
@@ -64,19 +41,23 @@ const ViewProduct = ({ productId, open, onClose }) => {
     }, [productId, open]);
 
     const handleEdit = () => {
+        // handleEdit (기존 코드 유지)
         onClose();
         navigate(`/adminPage/products/${productId}/edit`);
     };
 
     const getAbsoluteImageUrl = (imageUrl) => {
+        // getAbsoluteImageUrl (기존 코드 유지)
         if (!imageUrl) return '';
         const baseUrl = API_URL.substring(0, API_URL.indexOf('/api'));
         return imageUrl.startsWith('http') ? imageUrl : `${baseUrl}${imageUrl}`;
     };
 
     return (
-        <StyledDialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-            <StyledDialogTitle>상품 상세 정보</StyledDialogTitle>
+        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+            <DialogTitle sx={{ textAlign: 'center', fontWeight: 'bold', bgcolor: 'primary.main', color: 'primary.contrastText' }}>
+                상품 상세 정보
+            </DialogTitle>
             <DialogContent dividers>
                 {loading ? (
                     <Box display="flex" justifyContent="center" my={2}>
@@ -85,7 +66,7 @@ const ViewProduct = ({ productId, open, onClose }) => {
                 ) : error ? (
                     <Typography color="error">Error: {error}</Typography>
                 ) : product ? (
-                    <Box sx={{ width: '100%', textAlign: 'center' }}>
+                    <Paper elevation={3} sx={{ padding: '20px', borderRadius: '12px', textAlign: 'center' }}> {/* Paper 추가 */}
                         <Typography variant="h5" fontWeight="bold" gutterBottom style={{ fontSize: '1.5rem' }}>
                             {product.name}
                         </Typography>
@@ -95,13 +76,14 @@ const ViewProduct = ({ productId, open, onClose }) => {
                             </Typography>
                         )}
                         {product.mainImageUrl && (
-                            <ProductImage
+                            <img
                                 src={getAbsoluteImageUrl(product.mainImageUrl)}
                                 alt={product.name}
+                                style={{ width: '50%', maxWidth: '300px', borderRadius: '4px', marginBottom: '16px' }}
                             />
                         )}
                         <Typography variant="body1" fontWeight="bold" style={{ fontSize: '1.1rem' }}>
-                            가격: {product.price}원
+                            가격: {new Intl.NumberFormat('ko-KR').format(product.price)}원
                         </Typography>
                         <Typography variant="body1" fontWeight="bold" style={{ fontSize: '1.1rem' }}>
                             재고: {product.stock}개
@@ -110,7 +92,6 @@ const ViewProduct = ({ productId, open, onClose }) => {
                             상품 내용: {product.description}
                         </Typography>
 
-                        {/* 상세 이미지 목록 표시 (Grid 사용) */}
                         {product.productImgList && product.productImgList.length > 0 && (
                             <Box mt={3}>
                                 <Typography variant="h6" gutterBottom>상세 이미지</Typography>
@@ -128,20 +109,20 @@ const ViewProduct = ({ productId, open, onClose }) => {
                             </Box>
                         )}
 
-                    </Box>
+                    </Paper>
                 ) : (
                     <Typography>상품 정보를 불러오는 중입니다...</Typography>
                 )}
             </DialogContent>
             <DialogActions>
-                <Button onClick={handleEdit} color="primary" variant="contained">
+                <Button onClick={handleEdit} color="primary" variant="contained" sx={{ textTransform: 'none' }}>
                     수정
                 </Button>
-                <Button onClick={onClose} color="secondary" variant="outlined">
+                <Button onClick={onClose} color="secondary" variant="outlined" sx={{ textTransform: 'none' }}>
                     취소
                 </Button>
             </DialogActions>
-        </StyledDialog>
+        </Dialog>
     );
 };
 
