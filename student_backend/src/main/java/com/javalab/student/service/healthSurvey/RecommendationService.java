@@ -3,6 +3,7 @@ package com.javalab.student.service.healthSurvey;
 import com.javalab.student.dto.healthSurvey.HealthAnalysisDTO;
 import com.javalab.student.dto.healthSurvey.ProductRecommendationDTO;
 import com.javalab.student.dto.healthSurvey.RecommendationDTO;
+import com.javalab.student.dto.healthSurvey.RecommendedIngredientDTO;
 import com.javalab.student.entity.Member;
 import com.javalab.student.entity.product.Product;
 import com.javalab.student.entity.healthSurvey.*;
@@ -200,16 +201,12 @@ public class RecommendationService {
             dto.setMemberId(recommendation.getMemberId());
             dto.setCreatedAt(recommendation.getCreatedAt());
 
-            // 영양 성분 정보 추가 (필요한 경우)
-//            List<RecommendedIngredient> ingredients =
-//                    recommendedIngredientRepository.findByRecommendationId(recommendation.getId());
-//            dto.setRecommendedIngredients(ingredients); // 이 줄 추가 (필요한 경우)
-
+            // 추천 제품 정보 추가
             List<ProductRecommendationDTO> productRecommendations =
                     recommendedProductRepository.findByRecommendationId(recommendation.getId())
                             .stream()
                             .map(product -> new ProductRecommendationDTO(
-                                    product.getId(),
+                                    product.getProduct().getId(),
                                     null,
                                     product.getReason(),
                                     null,
@@ -217,8 +214,20 @@ public class RecommendationService {
                                     null,
                                     null))
                             .toList();
-
             dto.setProductRecommendations(productRecommendations);
+
+            // 추천 영양 성분 정보 추가
+            List<RecommendedIngredientDTO> recommendedIngredients =
+                    recommendedIngredientRepository.findByRecommendationId(recommendation.getId())
+                            .stream()
+                            .map(ingredient -> {
+                                RecommendedIngredientDTO ingredientDTO = new RecommendedIngredientDTO();
+                                ingredientDTO.setIngredientName(ingredient.getIngredientName());
+                                ingredientDTO.setScore(ingredient.getScore());
+                                return ingredientDTO;
+                            })
+                            .toList();
+            dto.setRecommendedIngredients(recommendedIngredients);
 
             return dto;
         }).toList();
