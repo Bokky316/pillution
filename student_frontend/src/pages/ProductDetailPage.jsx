@@ -139,7 +139,7 @@ const ProductDetailPage = () => {
           <Typography variant="h5" sx={{ fontWeight: "bold", marginBottom: 2 }}>
             {product?.name || "상품 이름 없음"}
           </Typography>
-          <Typography variant="h6" sx={{ fontWeight: "bold", color: "primary.main", marginBottom: 2 }}>
+          <Typography variant="h6" sx={{ fontWeight: "bold", color: "#4169E1", marginBottom: 2 }}>
             {product?.price ? `${product.price.toLocaleString()}원` : "가격 정보 없음"}
           </Typography>
           <Divider sx={{ marginBottom: 3 }} />
@@ -218,17 +218,20 @@ const ProductDetailPage = () => {
       >
         <Button
           variant="contained"
-          color="primary"
+          /* disabled={!product?.isActive || product?.stock === 0} */
           sx={{
             textTransform: "none",
             width: "100%",
             paddingY: "14px",
-            backgroundColor: "#FF5722",
-            "&:hover": { backgroundColor: "#E64A19" },
+            backgroundColor: !product?.active || product?.stock === 0 ? "#B0B0B0" : "#4169E1",
             borderRadius: "10px",
             fontSize: "18px"
           }}
-          onClick={handleOpenModal}
+          onClick={() => {
+              if (product?.active && Number(product?.stock) > 0) {
+                handleOpenModal();
+              }
+            }}
         >
           구매하기
         </Button>
@@ -313,8 +316,7 @@ const ProductDetailPage = () => {
               textTransform: "none",
               width: "100%",
               paddingY: "14px",
-              backgroundColor: "#FF5722",
-              "&:hover": { backgroundColor: "#E64A19" },
+              backgroundColor: "#4169E1",
               borderRadius: "10px",
               fontSize: "18px"
             }}
