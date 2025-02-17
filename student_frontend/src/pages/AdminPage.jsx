@@ -7,6 +7,7 @@ import EditProduct from "@/features/admin/product/EditProduct";
 import AddProduct from "@/features/admin/product/AddProduct";
 import OrderManagement from "@/features/admin/order/OrderList";
 import ProductManagement from "@/features/admin/product/ProductList";
+import "@/styles/AdminPage.css";
 
 const AdminPage = () => {
     return (

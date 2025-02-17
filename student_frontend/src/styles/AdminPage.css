@@ -1,0 +1,30 @@
+.admin-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.admin-content {
+  flex-grow: 1;
+  padding: 20px;
+  margin-left: 100px; /* 기본 상태에서는 사이드바 너비만큼 마진 */
+  transition: margin-left 0.3s ease; /* 부드러운 전환 효과 */
+}
+
+/* 768px 이하일 때의 스타일 */
+@media (max-width: 768px) {
+  .admin-content {
+    margin-left: 0; /* 작은 화면에서는 마진 제거 */
+    width: 100%;
+  }
+
+  .sidebar {
+    transform: translateX(-100%); /* 사이드바를 화면 밖으로 숨김 */
+    position: fixed;
+    z-index: 1000;
+  }
+
+  /* 햄버거 메뉴 클릭 시 보이도록 하는 클래스 */
+  .sidebar.show {
+    transform: translateX(0);
+  }
+}
