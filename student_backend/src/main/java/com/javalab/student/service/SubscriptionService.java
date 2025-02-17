@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -54,6 +55,20 @@ public class SubscriptionService {
             }
         });
 
+        // ✅ SubscriptionItem에서 상품 이미지 추가
+        subscription.getItems().forEach(item -> {
+            if (item.getProduct() != null) {
+                item.getProduct().setMainImageUrl(item.getProduct().getMainImageUrl());
+            }
+        });
+
+        // ✅ SubscriptionNextItem에서 상품 이미지 추가
+        subscription.getNextItems().forEach(item -> {
+            if (item.getProduct() != null) {
+                item.getProduct().setMainImageUrl(item.getProduct().getMainImageUrl());
+            }
+        });
+
         return new SubscriptionResponseDto(subscription);
     }
 
@@ -84,6 +99,25 @@ public class SubscriptionService {
 
         return subscriptionRepository.save(subscription);
     }
+
+    /**
+     * 배송 요청사항 업데이트
+     */
+    @Transactional
+    public void updateDeliveryRequest(Long subscriptionId, String deliveryRequest) {
+        log.info("📡 [서비스 호출] 배송 요청 업데이트 - 구독 ID: {}", subscriptionId);
+
+        Subscription subscription = subscriptionRepository.findById(subscriptionId)
+                .orElseThrow(() -> new IllegalArgumentException("❌ 존재하지 않는 구독 ID: " + subscriptionId));
+
+        log.info("✅ [DB 조회] 구독 정보 찾음 - 구독 ID: {}", subscription.getId());
+
+        subscription.setDeliveryRequest(deliveryRequest);
+        subscriptionRepository.save(subscription);
+
+        log.info("✅ [DB 업데이트 완료] 배송 요청 저장됨 - 구독 ID: {}", subscriptionId);
+    }
+
 
     /**
      * 결제일 업데이트
@@ -245,17 +279,6 @@ public class SubscriptionService {
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
     /**
      * 담달 정기결제 상품 추가
      * - 이미 있는 상품이면 수량만 증가하도록 추가 구현 필요
@@ -338,32 +361,32 @@ public class SubscriptionService {
     }
 
 
-    @Transactional
-    public boolean replaceNextSubscriptionItems(Long subscriptionId, List<SubscriptionUpdateNextItemDto> updatedItems) {
-        try {
-            // 기존 구독 아이템 삭제
-            subscriptionNextItemRepository.deleteBySubscriptionId(subscriptionId);
-
-            // 📌 [수정] Subscription 객체 생성
-            Subscription subscription = new Subscription();
-            subscription.setId(subscriptionId);  // 객체에 ID만 설정 (DB에는 존재하는 값이므로 OK)
-
-            // 새 리스트 추가
-            for (SubscriptionUpdateNextItemDto item : updatedItems) {
-                SubscriptionNextItem newItem = new SubscriptionNextItem();
-                newItem.setSubscription(subscription);  // ✅ subscription 객체를 직접 설정
-                newItem.setProductId(item.getProductId());
-                newItem.setNextMonthQuantity(item.getNextMonthQuantity());
-                newItem.setNextMonthPrice(item.getNextMonthPrice());
-                subscriptionNextItemRepository.save(newItem);
-            }
-
-            return true;
-        } catch (Exception e) {
-            log.error("❌ [ERROR] 구독 상품 교체 실패", e);
-            return false;
-        }
-    }
+//    @Transactional
+//    public boolean replaceNextSubscriptionItems(Long subscriptionId, List<SubscriptionUpdateNextItemDto> updatedItems) {
+//        try {
+//            // 기존 구독 아이템 삭제
+//            subscriptionNextItemRepository.deleteBySubscriptionId(subscriptionId);
+//
+//            // 📌 [수정] Subscription 객체 생성
+//            Subscription subscription = new Subscription();
+//            subscription.setId(subscriptionId);  // 객체에 ID만 설정 (DB에는 존재하는 값이므로 OK)
+//
+//            // 새 리스트 추가
+//            for (SubscriptionUpdateNextItemDto item : updatedItems) {
+//                SubscriptionNextItem newItem = new SubscriptionNextItem();
+//                newItem.setSubscription(subscription);  // ✅ subscription 객체를 직접 설정
+//                newItem.setProductId(item.getProductId());
+//                newItem.setNextMonthQuantity(item.getNextMonthQuantity());
+//                newItem.setNextMonthPrice(item.getNextMonthPrice());
+//                subscriptionNextItemRepository.save(newItem);
+//            }
+//
+//            return true;
+//        } catch (Exception e) {
+//            log.error("❌ [ERROR] 구독 상품 교체 실패", e);
+//            return false;
+//        }
+//    }
 
     @Transactional
     public boolean deleteNextSubscriptionItem(Long subscriptionId, Long productId) {
@@ -387,18 +410,6 @@ public class SubscriptionService {
             return false;
         }
     }
-
-
-
-
 }
 
-//그리고 일단 api 테스트만 해볼라고 지금 수정중이었는데
-//궁극적으로는 저 로직은 최종적으로
-//다음결제 상품을 현재 들어 가 있는 상품중 선택해서 삭제하거나  프로덕트 디비에서 조회해와서 (나중에 기능구현 끝나고 모달로예정- 지금은 아님) 상품을 추가할 수 있게 할거야
-//지금은 구현단계니까 프로덕트 아이디 1~10번 불러와서 선택해서 추가할 수 있게 하면 될 듯?
-//나중에는 모달창으로 상품 카테고리별로 또 이름검색으로 검색해서 추가할 수있게 할 예정임
-//그다음에 수량 선택하고 그러면 개당가격하고 수량에따른 가격나오고
-//완전 합계 나오고
-//이렇게 된 다음 다음결제 상품 업데이트 누르면 디비에 현재 구독 아이디로 서브스크립션 넥스트 아이템에 추가되는거지 거기에 들어갈 넥스트 먼스 프라이스는 프로덕트에서 조회해서 방금 설정한 수량대로 계산되어 넣고 넥스트 먼스 퀀티티는 방금 추가나 수정할때 선택한걸로 들어가고 프로덕트아이디도 넣고
-//일단 지금은 모달없이 구현해보자 이해됐어?
+

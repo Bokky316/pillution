@@ -95,6 +95,7 @@ public class SubscriptionRenewService {
                 .nextPaymentMethod(oldSubscription.getNextPaymentMethod()) // 다음회차 결제수단 정보 가져오기
                 .lastBillingDate(oldSubscription.getNextBillingDate()) // 넥스트빌링데이트(다음결제일)=오늘을 최근결제일로 새 구독에 저장
                 .nextBillingDate(oldSubscription.getNextBillingDate().plusMonths(1)) // 새로운구독의 다음결제일을 오늘+1달로 저장
+                .deliveryRequest(oldSubscription.getDeliveryRequest())
                 .status("ACTIVE") // 갱신되는 구독의 상태는 active
                 .build();
 
