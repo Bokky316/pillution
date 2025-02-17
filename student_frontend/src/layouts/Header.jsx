@@ -90,30 +90,16 @@ const Header = () => {
                     </Box>
 
                     {/* 오른쪽 사용자 정보 */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px',marginRight:'25px' }}>
-                            {isLoggedIn ? (
-                                <>
-                                    {user.role === "CS_AGENT" && (
-                                        <>
-                                            <Badge badgeContent={invitedRequestsCount} color="secondary">
-                                                <Button
-                                                    disableRipple
-                                                    component={Link}
-                                                    to="/consultation"
-                                                    className={`user-menu ${isHome && isTop ? "" : "scrolled"}`}
-                                                    sx={{ display: isMobile ? 'none' : 'block',
-                                                      "&:hover": {
-                                                          backgroundColor: "transparent", // 마우스 올렸을 때 배경색을 투명하게 설정
-                                                      }
-                                                    }}
-                                                >
-                                                    상담 요청
-                                                </Button>
-                                            </Badge>
+                    <Box sx={{ display: 'flex', alignItems: 'center',marginRight:'25px' }}>
+                        {isLoggedIn ? (
+                            <>
+                                {user.role === "CS_AGENT" && (
+                                    <>
+                                        <Badge badgeContent={invitedRequestsCount} color="secondary">
                                             <Button
                                                 disableRipple
                                                 component={Link}
-                                                to="/consultation-list"
+                                                to="/consultation"
                                                 className={`user-menu ${isHome && isTop ? "" : "scrolled"}`}
                                                 sx={{ display: isMobile ? 'none' : 'block',
                                                   "&:hover": {
@@ -121,99 +107,122 @@ const Header = () => {
                                                   }
                                                 }}
                                             >
-                                                상담 목록
+                                                상담 요청
                                             </Button>
-                                        </>
-                                    )}
-                                    {user && (
-                                        <IconButton disableRipple className={`user-menu ${isHome && isTop ? "" : "scrolled"}`} color="inherit" component={Link} to="/cart">
-                                            <ShoppingCartIcon />
-                                        </IconButton>
-                                    )}
-                                    <Box sx={{ position: 'relative' }}>
-                                        {!isMobile && (
-                                            <Typography
-                                                position="absolute"
-                                                variant="caption"
-                                                className="login-tag"
-                                                sx={{ pointerEvents: "none" }}
-                                            >
-                                                MY
-                                            </Typography>
-                                        )}
-                                        <Badge badgeContent={unreadMessagesCount} color="error">
-                                            <IconButton
-                                                disableRipple
-                                                className={`user-menu ${isHome && isTop ? "" : "scrolled"}`}
-                                                color="inherit"
-                                                onClick={handleUserMenuOpen}
-                                            >
-                                                <PersonIcon />
-                                            </IconButton>
                                         </Badge>
-                                    </Box>
-                                    <Box sx={{ position: "relative", display: "inline-block"}}>
-                                        {/* 말풍선 꼬리 */}
-                                        {userMenuAnchorEl && (
-                                            <Box
-                                                sx={{
-                                                    position: "absolute",
-                                                    top: "35px", // ✅ 꼬리를 위로 올림
-                                                    left: "-27px",
-                                                    transform: "translateX(-55%)",
-                                                    width: "2px",
-                                                    height: "2px",
-                                                    borderLeft: "6px solid transparent",
-                                                    borderRight: "6px solid transparent",
-                                                    borderBottom: "6px solid white", // ✅ 꼬리 색 = 말풍선 배경색과 동일
-                                                    zIndex: 1, // ✅ 말풍선보다 앞에 오도록 설정
-
-                                                }}
-                                            />
-                                        )}
-                                        <Menu
-                                            anchorEl={userMenuAnchorEl}
-                                            open={Boolean(userMenuAnchorEl)}
-                                            onClose={handleUserMenuClose}
-                                            disableScrollLock={true}
-                                            sx={{
-                                                 "& .MuiPaper-root": {
-                                                     backgroundColor: "#ffffff", // ✅ 배경 흰색
-                                                     borderRadius: "12px", // ✅ 모서리 둥글게
-                                                     boxShadow: "0px 0px 0px rgba(0, 0, 0, 0) !important", // ✅ 부드러운 그림자
-                                                     padding: "8px 0",
-                                                     minWidth: "150px",
-                                                     top: "75px !important",
-                                                     left: "1218px !important",
-                                                     transition: "none !important"
-                                                 },
+                                        <Button
+                                            disableRipple
+                                            component={Link}
+                                            to="/consultation-list"
+                                            className={`user-menu ${isHome && isTop ? "" : "scrolled"}`}
+                                            sx={{ display: isMobile ? 'none' : 'block',
+                                              "&:hover": {
+                                                  backgroundColor: "transparent", // 마우스 올렸을 때 배경색을 투명하게 설정
+                                              }
                                             }}
                                         >
-                                            <MenuItem className="menu-item-centered" onClick={() => { handleUserMenuClose(); navigate("/messages"); }}>메시지 목록</MenuItem>
-                                            <MenuItem className="menu-item-centered" onClick={() => { handleUserMenuClose(); navigate("/mypage"); }}>마이페이지</MenuItem>
-                                            <MenuItem className="menu-item-centered" onClick={() => { handleUserMenuClose(); navigate("/subscription"); }}>구독관리</MenuItem>
-                                            <MenuItem className="menu-item-centered" onClick={() => { handleUserMenuClose(); navigate("/recommendation"); }}>추천결과</MenuItem>
-                                            {user.role === "CS_AGENT" && (
-                                                <MenuItem className="menu-item-centered" onClick={() => { handleUserMenuClose(); navigate("/consultation-list"); }}>상담 목록</MenuItem>
-                                            )}
-                                            {user.role === "ADMIN" && (
-                                                <MenuItem className="menu-item-centered" onClick={() => { handleUserMenuClose(); navigate("/adminpage"); }}>관리자페이지</MenuItem>
-                                            )}
-                                            <MenuItem className="menu-item-centered" onClick={() => { handleUserMenuClose(); handleLogout(); }}>로그아웃</MenuItem>
-                                        </Menu>
-                                    </Box>
-                                </>
-                            ) : (
-                                <IconButton
-                                    disableRipple
-                                    className={`user-menu ${isHome && isTop ? "" : "scrolled"}`}
-                                    onClick={() => navigate("/login")}
-                                >
-                                    <PersonIcon />
-                                </IconButton>
-                            )}
-                        </Box>
-                    </Toolbar>
+                                            상담 목록
+                                        </Button>
+                                    </>
+                                )}
+                                {user && (
+                                    <IconButton disableRipple className={`user-menu ${isHome && isTop ? "" : "scrolled"}`} sx={{ marginRight:"8px",marginLeft:"8px" }} color="inherit" component={Link} to="/cart">
+                                        <ShoppingCartIcon />
+                                    </IconButton>
+                                )}
+                                <Box sx={{ position: 'relative' }}>
+                                    {!isMobile && (
+                                        <Typography
+                                            position="absolute"
+                                            variant="caption"
+                                            className="login-tag"
+                                            sx={{ pointerEvents: "none" }}
+                                        >
+                                            MY
+                                        </Typography>
+                                    )}
+                                    <Badge badgeContent={unreadMessagesCount} color="error">
+                                        <IconButton
+                                            disableRipple
+                                            className={`user-menu ${isHome && isTop ? "" : "scrolled"}`}
+                                            color="inherit"
+                                            onClick={handleUserMenuOpen}
+                                        >
+                                            <PersonIcon />
+                                        </IconButton>
+                                    </Badge>
+                                </Box>
+                                <Box sx={{ position: "relative", display: "inline-block" }}>
+                                    <Menu
+                                        anchorEl={userMenuAnchorEl}
+                                        open={Boolean(userMenuAnchorEl)}
+                                        onClose={handleUserMenuClose}
+                                        disableScrollLock={true}
+                                        anchorOrigin={{ vertical: "bottom", horizontal: "center" }} // ✅ 아이콘 아래에서 열림
+                                        transformOrigin={{ vertical: "top", horizontal: "center" }} // ✅ 위에서 아래로 펼쳐짐
+                                        sx={{
+                                            mt: 1.5, // ✅ 메뉴 위치를 더 아래로 조정
+                                            "& .MuiPaper-root": {
+                                                backgroundColor: "#ffffff", // ✅ 배경 흰색
+                                                borderRadius: "12px", // ✅ 둥근 모서리
+                                                boxShadow: "0px 8px 24px rgba(0, 0, 0, 0.12)", // ✅ 부드러운 그림자
+                                                padding: "10px 0",
+                                                minWidth: "180px", // ✅ 메뉴 너비
+                                                overflow: "hidden", // ✅ 내부 요소 넘침 방지
+                                            },
+                                            "& .MuiMenuItem-root": {
+                                                fontSize: "14px", // ✅ 폰트 크기
+                                                fontWeight: "500", // ✅ 글자 두께
+                                                padding: "12px 36px", // ✅ 패딩
+                                                display: "flex", // ✅ 플렉스 적용
+                                                alignItems: "center", // ✅ 수직 중앙 정렬
+                                                gap: "9px", // ✅ 아이콘과 텍스트 간격 조정
+                                                transition: "background 0.2s",
+                                                "&:hover": {
+                                                    backgroundColor: "#f5f5f5", // ✅ 마우스 올렸을 때 배경색 변경
+                                                },
+                                            },
+                                        }}
+                                    >
+                                        <MenuItem sx={{ display: "flex", alignItems: "center" }} onClick={() => { handleUserMenuClose(); navigate("/messages"); }}>
+                                            <span>📩</span> <Box sx={{ flexGrow: 1, textAlign: "center" }}>메시지 목록</Box>
+                                        </MenuItem>
+                                        <MenuItem sx={{ display: "flex", alignItems: "center" }} onClick={() => { handleUserMenuClose(); navigate("/mypage"); }}>
+                                            <span>🙋</span> <Box sx={{ flexGrow: 1, textAlign: "center" }}>마이페이지</Box>
+                                        </MenuItem>
+                                        <MenuItem sx={{ display: "flex", alignItems: "center" }} onClick={() => { handleUserMenuClose(); navigate("/subscription"); }}>
+                                            <span>📦</span> <Box sx={{ flexGrow: 1, textAlign: "center" }}>구독관리</Box>
+                                        </MenuItem>
+                                        <MenuItem sx={{ display: "flex", alignItems: "center" }} onClick={() => { handleUserMenuClose(); navigate("/recommendation"); }}>
+                                            <span>⭐</span> <Box sx={{ flexGrow: 1, textAlign: "center" }}>추천결과</Box>
+                                        </MenuItem>
+                                        {user.role === "CS_AGENT" && (
+                                            <MenuItem sx={{ display: "flex", alignItems: "center" }} onClick={() => { handleUserMenuClose(); navigate("/consultation-list"); }}>
+                                                <span>📝</span> <Box sx={{ flexGrow: 1, textAlign: "center" }}>상담 목록</Box>
+                                            </MenuItem>
+                                        )}
+                                        {user.role === "ADMIN" && (
+                                            <MenuItem sx={{ display: "flex", alignItems: "center" }} onClick={() => { handleUserMenuClose(); navigate("/adminpage"); }}>
+                                                <span>🔧</span> <Box sx={{ flexGrow: 1, textAlign: "center" }}>관리자페이지</Box>
+                                            </MenuItem>
+                                        )}
+                                        <MenuItem sx={{ display: "flex", alignItems: "center" }} onClick={() => { handleUserMenuClose(); handleLogout(); }}>
+                                            <span>🚪</span> <Box sx={{ flexGrow: 1, textAlign: "center" }}>로그아웃</Box>
+                                        </MenuItem>
+                                    </Menu>
+                                </Box>
+                            </>
+                        ) : (
+                            <IconButton
+                                disableRipple
+                                className={`user-menu ${isHome && isTop ? "" : "scrolled"}`}
+                                onClick={() => navigate("/login")}
+                            >
+                                <PersonIcon />
+                            </IconButton>
+                        )}
+                    </Box>
+                </Toolbar>
             </AppBar>
 
             {/* 모달 메뉴 */}
