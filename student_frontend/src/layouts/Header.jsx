@@ -101,7 +101,11 @@ const Header = () => {
                                                     component={Link}
                                                     to="/consultation"
                                                     className={`user-menu ${isHome && isTop ? "" : "scrolled"}`}
-                                                    sx={{ display: isMobile ? 'none' : 'block' }}
+                                                    sx={{ display: isMobile ? 'none' : 'block',
+                                                      "&:hover": {
+                                                          backgroundColor: "transparent", // 마우스 올렸을 때 배경색을 투명하게 설정
+                                                      }
+                                                    }}
                                                 >
                                                     상담 요청
                                                 </Button>
@@ -111,7 +115,11 @@ const Header = () => {
                                                 component={Link}
                                                 to="/consultation-list"
                                                 className={`user-menu ${isHome && isTop ? "" : "scrolled"}`}
-                                                sx={{ display: isMobile ? 'none' : 'block' }}
+                                                sx={{ display: isMobile ? 'none' : 'block',
+                                                  "&:hover": {
+                                                      backgroundColor: "transparent", // 마우스 올렸을 때 배경색을 투명하게 설정
+                                                  }
+                                                }}
                                             >
                                                 상담 목록
                                             </Button>
@@ -144,13 +152,13 @@ const Header = () => {
                                             </IconButton>
                                         </Badge>
                                     </Box>
-                                    <Box sx={{ position: "relative", display: "inline-block" }}>
+                                    <Box sx={{ position: "relative", display: "inline-block"}}>
                                         {/* 말풍선 꼬리 */}
                                         {userMenuAnchorEl && (
                                             <Box
                                                 sx={{
                                                     position: "absolute",
-                                                    top: "30px", // ✅ 꼬리를 위로 올림
+                                                    top: "35px", // ✅ 꼬리를 위로 올림
                                                     left: "-27px",
                                                     transform: "translateX(-55%)",
                                                     width: "2px",
@@ -171,10 +179,10 @@ const Header = () => {
                                                  "& .MuiPaper-root": {
                                                      backgroundColor: "#ffffff", // ✅ 배경 흰색
                                                      borderRadius: "12px", // ✅ 모서리 둥글게
-                                                     boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.5)", // ✅ 부드러운 그림자
+                                                     boxShadow: "0px 0px 0px rgba(0, 0, 0, 0) !important", // ✅ 부드러운 그림자
                                                      padding: "8px 0",
                                                      minWidth: "150px",
-                                                     top: "70px !important",
+                                                     top: "75px !important",
                                                      left: "1218px !important",
                                                      transition: "none !important"
                                                  },
