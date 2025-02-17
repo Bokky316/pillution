@@ -9,17 +9,15 @@ const Layout = ({ children }) => {
     // 홈 페이지 여부 확인
     const isHomePage = location.pathname === "/";
 
-    // 홈 페이지에서만 가로 스크롤 생기지 않게 함
+    // 모든 페이지에 가로 스크롤 비활성화 적용
     useEffect(() => {
-        if (isHomePage) {
-            document.body.style.overflowX = "hidden"; // 홈 페이지에서는 수평 스크롤 비활성화
-        } else {
-            document.body.style.overflowX = "auto"; // 다른 페이지에서는 원래대로
-        }
+        document.body.style.overflowX = "hidden"; // 모든 페이지에서 수평 스크롤 비활성화
+
         return () => {
             document.body.style.overflowX = "auto"; // 언마운트 시 원래대로 복구
         };
-    }, [isHomePage]);
+    }, []); // 의존성 배열이 비어있으므로 컴포넌트 마운트 시에만 실행
+
 
     return (
         <Box sx={{

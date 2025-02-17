@@ -124,7 +124,7 @@ export default function ProductListPage() {
   );
 
   return (
-    <Container maxWidth="lg" sx={{ padding: "20px" }}>
+    <Container maxWidth="lg" sx={{ padding: "20px",marginTop:"50px" }}>
       {/* 카테고리 선택 Chip */}
       <Box
         sx={{
