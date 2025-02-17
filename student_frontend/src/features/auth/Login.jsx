@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { Button, TextField, Snackbar } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import { Button, TextField, Snackbar, IconButton, InputAdornment } from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material"; // ✅ 아이콘 추가
 import { useNavigate } from "react-router-dom";
 import { API_URL, SERVER_URL } from "@/utils/constants";
 import { useDispatch } from "react-redux";
@@ -7,6 +8,7 @@ import { setUser } from "@/store/authSlice";
 
 export default function Login({ onLogin }) {
     const [credentials, setCredentials] = useState({ email: "test@example.com", password: "1234" });
+    const [showPassword, setShowPassword] = useState(false); // ✅ 비밀번호 보기 상태 추가
     const [errorMessage, setErrorMessage] = useState("");
     const [openSnackbar, setOpenSnackbar] = useState(false);
     const navigate = useNavigate();
@@ -31,6 +33,11 @@ export default function Login({ onLogin }) {
                 credentials: "include",
             });
 
+            if (!response.ok) {  // 🔥 HTTP 상태 코드 체크 (401 에러 시 실행됨)
+                setErrorMessage("로그인 실패: 아이디 또는 비밀번호가 틀립니다.");
+                return;
+            }
+
             const data = await response.json();
 
             if (data.status === "failed") {
@@ -46,7 +53,10 @@ export default function Login({ onLogin }) {
             }));
 
             setOpenSnackbar(true);
-            setTimeout(() => navigate("/"), 1000);
+            setTimeout(() => {
+                navigate("/");
+                window.location.reload();
+            }, 1000);
         } catch (error) {
             console.error("로그인 요청 실패:", error.message);
             setErrorMessage("네트워크 오류가 발생했습니다. 다시 시도해주세요.");
@@ -64,6 +74,23 @@ export default function Login({ onLogin }) {
         }
     };
 
+    // ✅ 어디서든 "Enter" 키를 누르면 로그인 실행
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if (event.key === "Enter") {
+                handleLogin();
+            }
+        };
+
+        document.addEventListener("keydown", handleKeyDown);
+
+        // ✅ 컴포넌트 언마운트 시 이벤트 리스너 제거 (메모리 누수 방지)
+        return () => {
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, []);
+
+
     return (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "20px" }}>
             <TextField
@@ -76,12 +103,21 @@ export default function Login({ onLogin }) {
             <TextField
                 label="Password"
                 name="password"
-                type="password"
+                type={showPassword ? "text" : "password"} // ✅ 상태에 따라 텍스트/비밀번호 전환
                 value={credentials.password}
                 onChange={handleChange}
                 style={{ width: "400px", marginBottom: "10px" }}
                 error={!!errorMessage}
                 helperText={errorMessage}
+                InputProps={{
+                    endAdornment: (
+                        <InputAdornment position="end">
+                            <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                                {showPassword ? <VisibilityOff /> : <Visibility />}  {/* 👁️ 아이콘 변경 */}
+                            </IconButton>
+                        </InputAdornment>
+                    ),
+                }}
             />
             <div style={{ display: "flex", justifyContent: "space-between", width: "400px", marginBottom: "20px" }}>
                 <Button variant="contained" onClick={handleLogin}>

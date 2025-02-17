@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { API_URL } from "@/utils/constants";
 import { useNavigate } from "react-router-dom";
 import useDebounce from '@/hooks/useDebounce';
+import KakaoAddressSearch from "@/features/auth/KakaoAddressSearch";
+
 
 export default function RegisterMember() {
     //  회원가입 정보 상태
@@ -11,15 +13,19 @@ export default function RegisterMember() {
         name: "",
         email: "",
         password: "",
-        address: "",
+        confirmPassword: "",  // 비밀번호 확인 추가
         phone: "",
         birthDate: "",
         gender: "",
+        postalCode: "",     // 우편번호 추가
+        roadAddress: "",    // 도로명 주소 추가
+        detailAddress: "",  // 상세 주소 추가
     });
     const [email, setEmail] = useState(""); // 이메일 상태
     const debouncedEmail = useDebounce(email, 500); // 500ms 디바운스 적용
 
     const [emailError, setEmailError] = useState(""); // 이메일 중복 체크 에러 메시지
+    const [passwordError, setPasswordError] = useState(""); // 비밀번호 확인 메시지
     const navigate = useNavigate();
 
     const [verificationCode, setVerificationCode] = useState(""); // 입력받은 인증 코드
@@ -35,22 +41,27 @@ export default function RegisterMember() {
     }, [debouncedEmail]);
 
     // 입력 필드 변경 처리
-    // const onMemberChange = (event) => {
-    //     const { name, value } = event.target;
-    //     setMember({ ...member, [name]: value });
-    //
-    //     if (name === "email") {
-    //         checkEmail(value);
-    //     }
-    // };
-    // 입력 필드 변경 처리
     const onMemberChange = (event) => {
         const { name, value } = event.target;
         setMember({ ...member, [name]: value }); // 입력 필드 값 업데이트
+
         if (name === "email") {
             setEmail(value); // 이 부분을 추가
         }
     };
+
+    // 비밀번호 확인 체크
+    useEffect(() => {
+        if (member.confirmPassword) {
+            if (member.password === member.confirmPassword) {
+                setPasswordError("비밀번호가 일치합니다."); // 초록색 표시
+            } else {
+                setPasswordError("비밀번호가 맞지 않습니다."); // 빨간색 표시
+            }
+        } else {
+            setPasswordError("");
+        }
+    }, [member.password, member.confirmPassword]);
 
     // 이메일 중복 체크
     const checkEmail = (email) => {
@@ -127,25 +138,41 @@ export default function RegisterMember() {
         * - 사용자가 모든 정보를 입력하고 회원가입 버튼을 클릭 시 실행
      */
     const handleOnSubmit = () => {
-        console.log("회원가입 요청 데이터:", member);  // 디버깅용 로그 추가
+        if (member.password !== member.confirmPassword) {
+            alert("비밀번호가 일치하지 않습니다.");
+            return;
+        }
+
+        console.log("회원가입 요청 데이터:", member); // ✅ 확인용 로그 추가
+
         fetch(API_URL + "members/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(member),
+            body: JSON.stringify(member), // ✅ confirmPassword도 포함됨을 확인
         })
         .then(async (response) => {
-            const message = await response.text(); // 서버에서 받은 응답 메시지 가져오기
-
+            const message = await response.text();
             if (response.ok) {
-                alert(message);  // "회원가입이 완료되었습니다." 백엔드 응답 표시
-                navigate("/login"); // 회원가입 성공 시 로그인 페이지로 이동
+                alert(message);
+                navigate("/login");
             } else {
-                alert("회원가입 실패: " + message); // 서버에서 반환된 실패 메시지 표시
+                alert("회원가입 실패: " + message);
             }
         })
         .catch((error) => {
             console.error("회원가입 중 오류 발생:", error);
             alert("서버 오류가 발생했습니다. 다시 시도해주세요.");
+        });
+    };
+
+    // 카카오 주소 검색 후 선택한 주소를 상태에 저장
+    const handleAddressSelect = (data) => {
+        console.log("[DEBUG] 선택된 주소 데이터:", data);
+
+        setMember({
+            ...member,
+            postalCode: data.zonecode,  // 우편번호
+            roadAddress: data.roadAddress,  // 도로명 주소
         });
     };
 
@@ -195,13 +222,46 @@ export default function RegisterMember() {
                 style={{ width: "400px", marginBottom: "10px" }}
             />
             <TextField
-                label="Address"
-                name="address"
-                value={member.address}
+                label="Confirm Password"
+                name="confirmPassword"
+                type="password"
+                value={member.confirmPassword}
                 onChange={onMemberChange}
                 style={{ width: "400px", marginBottom: "10px" }}
-
+                error={passwordError === "비밀번호가 맞지 않습니다."}
+                helperText={passwordError}
+                sx={{ "& .MuiFormHelperText-root": { color: passwordError === "비밀번호가 맞지 않습니다." ? "red" : "green" } }}
             />
+
+
+             {/* 카카오 주소 검색 컴포넌트 */}
+            <div style={{ display: "flex", width: "400px", marginBottom: "10px" }}>
+                <TextField label="우편번호" name="postalCode" value={member.postalCode} style={{ flex: 1, marginRight: "10px" }} disabled />
+                <KakaoAddressSearch onAddressSelect={handleAddressSelect} />
+            </div>
+
+            <TextField
+                label="우편번호"
+                name="postalCode"
+                value={member.postalCode}
+                style={{ width: "400px", marginBottom: "10px" }}
+                disabled
+            />
+            <TextField
+                label="도로명 주소"
+                name="roadAddress"
+                value={member.roadAddress}
+                style={{ width: "400px", marginBottom: "10px" }}
+                disabled
+            />
+            <TextField
+                label="상세 주소"
+                name="detailAddress"
+                value={member.detailAddress}
+                onChange={onMemberChange}
+                style={{ width: "400px", marginBottom: "10px" }}
+            />
+
             <TextField
                 label="Phone"
                 name="phone"
