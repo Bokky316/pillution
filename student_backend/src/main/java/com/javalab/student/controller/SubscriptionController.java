@@ -130,6 +130,7 @@ public class SubscriptionController {
      */
     @PutMapping("/update-next-payment-method")
     public ResponseEntity<?> updateNextPaymentMethod(@RequestBody Map<String, Object> request) {
+        System.out.println("📡 [DEBUG] 요청 바디: " + request); // ✅ 추가
         Long subscriptionId = ((Number) request.get("subscriptionId")).longValue();
         String nextPaymentMethod = (String) request.get("nextPaymentMethod");
 

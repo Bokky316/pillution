@@ -8,23 +8,25 @@ import {
     Paper
 } from "@mui/material";
 import { updateNextPaymentMethod, fetchSubscription } from "@/store/subscriptionSlice";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 function PaymentMethod({ subscription }) {
     const dispatch = useDispatch();
+    const nextPaymentMethod = useSelector((state) => state.subscription.data?.nextPaymentMethod || subscription?.paymentMethod); // ✅ Redux 상태에서 가져오기
 
     const paymentMethods = [
         { id: "kakaopay", name: "카카오페이", logo: "/src/assets/images/kakaopay.png" },
         { id: "payco", name: "페이코", logo: "/src/assets/images/payco.png" },
         { id: "tosspay", name: "토스페이", logo: "/src/assets/images/tosspay.png" },
         { id: "card", name: "신용 / 체크카드" },
-        { id: "bank_transfer", name: "실시간 계좌이체" },
-        { id: "virtual_account", name: "가상계좌" },
+        { id: "trans", name: "실시간 계좌이체" },
+        { id: "vbank", name: "가상계좌" },
     ];
 
     const handlePaymentMethodChange = (event) => {
         const newMethod = event.target.value;
-        dispatch(updateNextPaymentMethod({ subscriptionId: subscription.id, newMethod }))
+        console.log("📡 변경된 결제수단:", newMethod); // ✅ 디버깅 로그 추가
+        dispatch(updateNextPaymentMethod({ subscriptionId: subscription.id, nextPaymentMethod: newMethod }))
             .then(() => dispatch(fetchSubscription()));
     };
 
@@ -37,11 +39,11 @@ function PaymentMethod({ subscription }) {
                 <RadioGroup
                     aria-label="payment-method"
                     name="paymentMethod"
-                    value={subscription?.paymentMethod || ""}
+                    value={nextPaymentMethod} // ✅ Redux 상태 값으로 설정
                     onChange={handlePaymentMethodChange}
                 >
                     {paymentMethods.map((method) => {
-                        const selected = subscription?.paymentMethod === method.id;
+                        const selected = nextPaymentMethod === method.id; // ✅ 선택된 상태 확인
                         return (
                             <Box
                                 key={method.id}
@@ -89,5 +91,4 @@ function PaymentMethod({ subscription }) {
         </Box>
     );
 }
-
 export default PaymentMethod;
