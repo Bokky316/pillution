@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.Arrays;
+import java.io.IOException;
 
 /**
  * 추천 관련 API를 제공하는 컨트롤러 클래스
@@ -171,9 +172,10 @@ public class RecommendationController {
     @GetMapping("/health-records")
     public ResponseEntity<List<RecommendationDTO>> getHealthRecords() {
         try {
-            Member member = authenticationService.getAuthenticatedMember();
-            List<HealthRecord> healthRecords = healthRecordService.getHealthHistory(member.getId());
+            Member member = authenticationService.getAuthenticatedMember(); // 현재 로그인한 사용자 정보 가져오기
+            List<HealthRecord> healthRecords = healthRecordService.getHealthHistory(member.getId()); // 건강 기록 조회
 
+            // HealthRecord -> RecommendationDTO 변환
             List<RecommendationDTO> recommendationDTOs = healthRecords.stream()
                     .map(healthRecord -> {
                         RecommendationDTO dto = new RecommendationDTO();
@@ -191,60 +193,54 @@ public class RecommendationController {
                         healthAnalysisDTO.setOverallAssessment(healthRecord.getOverallAssessment());
                         dto.setHealthAnalysis(healthAnalysisDTO);
 
-                        // RecommendedProduct 변환
-                        List<ProductRecommendationDTO> productRecommendations = recommendedProductRepository.findByRecommendationId(healthRecord.getId())
-                                .stream()
-                                .map(recommendedProduct -> {
-                                    ProductRecommendationDTO productDTO = new ProductRecommendationDTO();
-                                    productDTO.setId(recommendedProduct.getProduct().getId());
-                                    productDTO.setName(recommendedProduct.getProduct().getName());
-                                    productDTO.setDescription(recommendedProduct.getReason()); // 이유를 설명으로 사용
-                                    productDTO.setMainIngredient(recommendedProduct.getRelatedIngredients()); // 관련 영양 성분 설정
-                                    return productDTO;
-                                })
-                                .collect(Collectors.toList());
+                        // 추천 제품 정보 추가 (JSON 문자열 -> List<ProductRecommendationDTO>)
+                        try {
+                            ObjectMapper objectMapper = new ObjectMapper();
+                            String recommendedProductsJson = healthRecord.getRecommendedProducts(); // JSON 문자열 가져오기
+                            List<ProductRecommendationDTO> productRecommendations = null;
 
-                        dto.setProductRecommendations(productRecommendations);
+                            if (recommendedProductsJson != null && !recommendedProductsJson.isEmpty()) {
+                                productRecommendations = objectMapper.readValue(
+                                        recommendedProductsJson,
+                                        objectMapper.getTypeFactory().constructCollectionType(List.class, ProductRecommendationDTO.class)
+                                );
+                            } else {
+                                productRecommendations = List.of(); // 빈 문자열인 경우 빈 리스트 반환
+                            }
+                            dto.setProductRecommendations(productRecommendations);
+                        } catch (Exception e) {
+                            log.error("추천 제품 변환 중 오류 발생", e);
+                            dto.setProductRecommendations(List.of()); // 변환 실패 시 빈 리스트
+                        }
 
                         // 추천 영양 성분 정보 추가 (JSON 문자열 -> List<RecommendedIngredientDTO>)
                         try {
                             ObjectMapper objectMapper = new ObjectMapper();
-                            List<RecommendedIngredientDTO> recommendedIngredients = objectMapper.readValue(
-                                    healthRecord.getRecommendedIngredients(),
-                                    objectMapper.getTypeFactory().constructCollectionType(List.class, RecommendedIngredientDTO.class)
-                            );
+                            String recommendedIngredientsJson = healthRecord.getRecommendedIngredients(); // JSON 문자열 가져오기
+                            List<RecommendedIngredientDTO> recommendedIngredients = null;
+
+                            if (recommendedIngredientsJson != null && !recommendedIngredientsJson.isEmpty()) {
+                                recommendedIngredients = objectMapper.readValue(
+                                        recommendedIngredientsJson,
+                                        objectMapper.getTypeFactory().constructCollectionType(List.class, RecommendedIngredientDTO.class)
+                                );
+                            } else {
+                                recommendedIngredients = List.of(); // 빈 문자열인 경우 빈 리스트 반환
+                            }
                             dto.setRecommendedIngredients(recommendedIngredients);
                         } catch (Exception e) {
                             log.error("추천 영양 성분 변환 중 오류 발생", e);
                             dto.setRecommendedIngredients(List.of()); // 변환 실패 시 빈 리스트
                         }
 
-                        return dto;
+                        return dto; // DTO 반환
                     })
                     .collect(Collectors.toList());
 
-            return ResponseEntity.ok(recommendationDTOs);
+            return ResponseEntity.ok(recommendationDTOs); // 추천 DTO 리스트 반환
         } catch (Exception e) {
             log.error("건강 기록 조회 중 오류 발생", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
-    }
-
-    /**
-     * HealthRecord 엔티티를 HealthAnalysisDTO로 변환합니다.
-     *
-     * @param record HealthRecord 엔티티
-     * @return 변환된 HealthAnalysisDTO 객체
-     */
-    private HealthAnalysisDTO convertToDTO(HealthRecord record) {
-        HealthAnalysisDTO dto = new HealthAnalysisDTO();
-        dto.setName(record.getName());
-        dto.setGender(record.getGender());
-        dto.setAge(record.getAge());
-        dto.setBmi(record.getBmi());
-        dto.setRecordDate(record.getRecordDate());
-        dto.setRiskLevels(record.getRiskLevels()); // 문자열 그대로 저장
-        dto.setOverallAssessment(record.getOverallAssessment());
-        return dto;
     }
 }
