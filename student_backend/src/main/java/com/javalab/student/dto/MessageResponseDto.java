@@ -1,6 +1,6 @@
 package com.javalab.student.dto;
 
-import com.javalab.student.entity.Message;
+import com.javalab.student.entity.message.Message;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

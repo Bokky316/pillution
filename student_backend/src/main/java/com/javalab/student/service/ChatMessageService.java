@@ -1,9 +1,8 @@
 package com.javalab.student.service;
 
-import com.javalab.student.constant.ConsultationRequestStatus;
 import com.javalab.student.dto.ChatMessageDto;
-import com.javalab.student.entity.ChatMessage;
-import com.javalab.student.entity.ChatRoom;
+import com.javalab.student.entity.message.ChatMessage;
+import com.javalab.student.entity.message.ChatRoom;
 import com.javalab.student.entity.Member;
 import com.javalab.student.repository.ChatMessageRepository;
 import com.javalab.student.repository.ChatRoomRepository;

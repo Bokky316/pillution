@@ -1,7 +1,7 @@
 package com.javalab.student.repository;
 
 import com.javalab.student.entity.Member;
-import com.javalab.student.entity.Message;
+import com.javalab.student.entity.message.Message;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

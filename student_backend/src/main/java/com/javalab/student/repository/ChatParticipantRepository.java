@@ -1,7 +1,7 @@
 package com.javalab.student.repository;
 
-import com.javalab.student.entity.ChatParticipant;
-import com.javalab.student.entity.ChatRoom;
+import com.javalab.student.entity.message.ChatParticipant;
+import com.javalab.student.entity.message.ChatRoom;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

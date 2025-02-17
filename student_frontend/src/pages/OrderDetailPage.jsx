@@ -1,25 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import {
-    Button,
-    TextField,
-    Box,
-    Typography,
-    Paper,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
-} from "@mui/material";
+import { Button, Box, Typography, Paper, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio } from "@mui/material";
 import { API_URL } from "@/utils/constants";
 import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { createOrder } from "@/store/orderSlice";
 import { processPayment } from "@/store/paymentSlice";
+import { saveDeliveryInfo } from "@/store/deliverySlice";
+
+import OrderItems from "@features/payment/OrderItems";
+import UserInfo from "@features/payment/UserInfo";
+import DeliveryInfo from "@features/payment/DeliveryInfo";
+import PaymentSummary from "@features/payment/PaymentSummary";
 
 /**
  * OrderDetail 컴포넌트
  * 주문 상세 정보를 표시하고 결제 프로세스를 처리합니다.
+ * @returns {JSX.Element} OrderDetail 컴포넌트
  */
 const OrderDetail = () => {
     const location = useLocation();
@@ -35,18 +32,44 @@ const OrderDetail = () => {
     const [name, setName] = useState(userData?.name || '');
     const [email, setEmail] = useState(userData?.email || '');
     const [phone, setPhone] = useState(userData?.phone || '');
-    const [address, setAddress] = useState(userData?.address || '');
-    const [zipCode, setZipCode] = useState("");
-    const [address1, setAddress1] = useState("");
-    const [address2, setAddress2] = useState("");
-    const [deliveryName, setDeliveryName] = useState(''); // 배송 정보 이름 상태 추가, 초기값 빈 문자열
-    const [deliveryPhone, setDeliveryPhone] = useState(''); // 배송 정보 전화번호 상태 추가, 초기값 빈 문자열
-    const [deliveryEmail, setDeliveryEmail] = useState(''); // 배송 정보 이메일 상태 추가, 초기값 빈 문자열
+    const [zipCode, setZipCode] = useState("");  // 배송지 우편번호
+    const [address1, setAddress1] = useState(""); // 배송지 주소
+    const [address2, setAddress2] = useState(""); // 배송지 상세주소
+    const [userZipCode, setUserZipCode] = useState(""); // 사용자 우편번호
+    const [userAddress1, setUserAddress1] = useState(""); // 사용자 주소
+    const [userAddress2, setUserAddress2] = useState(""); // 사용자 상세주소
+    const [deliveryName, setDeliveryName] = useState('');
+    const [deliveryPhone, setDeliveryPhone] = useState('');
     const [merchantId, setMerchantId] = useState("");
     const [order, setOrder] = useState(null);
     const [isImpReady, setIsImpReady] = useState(false);
-    const [deliveryMessage, setDeliveryMessage] = useState(""); // 배송 메시지 상태 추가, 기본값 "선택 안 함"
-    const [customDeliveryMessage, setCustomDeliveryMessage] = useState(""); // 직접 입력 배송 메시지 상태 추가
+    const [deliveryMessage, setDeliveryMessage] = useState("");
+    const [customDeliveryMessage, setCustomDeliveryMessage] = useState("");
+    const [savedAddresses, setSavedAddresses] = useState([]);
+    const [selectedSavedAddressId, setSelectedSavedAddressId] = useState('');
+    const [openDialog, setOpenDialog] = useState(false);
+    const [isDefault, setIsDefault] = useState(false);
+    const [deliveryInfoName, setDeliveryInfoName] = useState("");
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('kakaopay'); // 기본 결제 수단을 카카오페이로 설정
+    const [isDeliveryInfoComplete, setIsDeliveryInfoComplete] = useState(false);
+    const [pg, setPg] = useState('kakaopay'); // 결제 PG사 상태 추가
+
+    /**
+     * 저장된 배송지 선택 핸들러
+     * @param {Event} event - 이벤트 객체
+     */
+    const handleSavedAddressChange = (event) => {
+        setSelectedSavedAddressId(event.target.value);
+        const selectedAddress = savedAddresses.find(address => address.id === event.target.value);
+        if (selectedAddress) {
+            setDeliveryName(selectedAddress.recipientName);
+            setDeliveryPhone(selectedAddress.recipientPhone);
+            setZipCode(selectedAddress.postalCode);
+            setAddress1(selectedAddress.roadAddress);
+            setAddress2(selectedAddress.detailAddress);
+            setDeliveryMessage(selectedAddress.deliveryMemo);
+        }
+    };
 
     useEffect(() => {
         const id = fetchMerchantId();
@@ -65,6 +88,48 @@ const OrderDetail = () => {
         kakaoScript.async = true;
         document.body.appendChild(kakaoScript);
 
+        // 저장된 배송지 목록 불러오기
+        const fetchSavedAddresses = async () => {
+            try {
+                const response = await fetchWithAuth(`${API_URL}delivery-info`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to fetch saved addresses');
+                }
+                const data = await response.json();
+                // savedAddresses의 id 값을 문자열로 변환
+                const updatedSavedAddresses = data.map(address => ({
+                    ...address,
+                    id: String(address.id)
+                }));
+                setSavedAddresses(updatedSavedAddresses);
+                const defaultDeliveryInfo = updatedSavedAddresses.find(info => info.isDefault === true);
+                if (defaultDeliveryInfo) {
+                    setSelectedSavedAddressId(defaultDeliveryInfo.id);
+                    setDeliveryName(defaultDeliveryInfo.recipientName);
+                    setDeliveryPhone(defaultDeliveryInfo.recipientPhone);
+                    setZipCode(defaultDeliveryInfo.postalCode);
+                    setAddress1(defaultDeliveryInfo.roadAddress);
+                    setAddress2(defaultDeliveryInfo.detailAddress);
+                    setDeliveryMessage(defaultDeliveryInfo.deliveryMemo);
+                }
+            } catch (error) {
+                console.error('Error fetching saved addresses:', error);
+                alert('Failed to fetch saved addresses');
+            }
+        };
+        fetchSavedAddresses();
+
+        if (userData) {
+            setUserZipCode(userData.zipCode || "");
+            setUserAddress1(userData.address1 || "");
+            setUserAddress2(userData.address2 || "");
+        }
+
         return () => {
             document.body.removeChild(impScript);
             document.body.removeChild(kakaoScript);
@@ -73,6 +138,7 @@ const OrderDetail = () => {
 
     /**
      * 가맹점 ID를 환경 변수에서 가져옵니다.
+     * @returns {string} 가맹점 ID
      */
     const fetchMerchantId = () => {
         const merchantId = import.meta.env.VITE_PORTONE_MERCHANT_ID;
@@ -82,15 +148,21 @@ const OrderDetail = () => {
 
     /**
      * 총 주문 금액을 계산합니다.
+     * @returns {number} 총 주문 금액
      */
     const calculateTotalPrice = () => {
         return selectedItems.reduce((total, item) => total + item.price * item.quantity, 0);
     };
 
     /**
-     * 주문을 생성하고 상태를 업데이트합니다.
+     * 결제 프로세스를 시작합니다.
      */
-    const handleCreateOrder = async () => {
+    const handlePayment = useCallback(async () => {
+        if (!isDeliveryInfoComplete) {
+            alert("배송 정보를 모두 입력해주세요.");
+            return;
+        }
+
         const orderData = {
             cartOrderItems: selectedItems.map(item => ({
                 cartItemId: item.cartItemId,
@@ -102,7 +174,8 @@ const OrderDetail = () => {
             buyerTel: phone,
             buyerAddr: `${address1} ${address2}`,
             buyerPostcode: zipCode,
-            deliveryMessage: deliveryMessage === 'custom' ? customDeliveryMessage : deliveryMessage, // 배송 메시지 추가
+            deliveryMessage: deliveryMessage === 'custom' ? customDeliveryMessage : deliveryMessage,
+            savedAddressId: selectedSavedAddressId,
         };
 
         try {
@@ -110,92 +183,130 @@ const OrderDetail = () => {
             console.log("주문 생성 성공:", response);
             setOrder({
                 ...response,
+                id: String(response.id),
                 items: selectedItems,
                 totalAmount: totalAmount,
                 purchaseType: purchaseType
+            });
+
+            if (!isImpReady) {
+                alert("결제 모듈이 아직 로드되지 않았습니다.");
+                return;
+            }
+
+            const IMP = window.IMP;
+            IMP.init(merchantId);
+
+            const paymentData = {
+                pg: getPgProvider(selectedPaymentMethod), // 기존의 pg 상태 대신 함수 사용
+                pay_method: getPayMethod(selectedPaymentMethod),
+                merchant_uid: `${response.id}_${new Date().getTime()}`,
+                name: selectedItems[0].name,
+                amount: totalAmount,
+                buyer_email: email,
+                buyer_name: name,
+                buyer_tel: phone,
+                buyer_addr: `${address1} ${address2}`,
+                buyer_postcode: zipCode,
+            };
+
+            IMP.request_pay(paymentData, async (rsp) => {
+                if (rsp.success) {
+                    console.log("결제 완료 응답:", rsp);
+
+                    const paymentRequest = {
+                        impUid: rsp.imp_uid,
+                        merchantUid: response.id,
+                        paidAmount: rsp.paid_amount,
+                        name: rsp.name,
+                        pgProvider: rsp.pg_provider,
+                        buyerEmail: rsp.buyer_email,
+                        buyerName: rsp.buyer_name,
+                        buyTel: rsp.buyer_tel,
+                        buyerAddr: rsp.buyer_addr,
+                        buyerPostcode: rsp.buyer_postcode,
+                        paidAt: rsp.paid_at,
+                        status: "PAYMENT_COMPLETED",
+                        cartOrderItems: selectedItems.map(item => ({
+                            cartItemId: item.cartItemId,
+                            quantity: item.quantity,
+                            price: item.price
+                        }))
+                    };
+
+                    try {
+                        const result = await dispatch(processPayment({ paymentRequestDto: paymentRequest, purchaseType: purchaseType })).unwrap();
+                        if (result) {
+                            const paymentInfo = {
+                                amount: rsp.paid_amount,
+                                paymentMethod: rsp.pay_method,
+                                merchantUid: rsp.merchant_uid,
+                                impUid: rsp.imp_uid,
+                                status: rsp.status,
+                                paidAt: rsp.paid_at,
+                            };
+                            navigate("/payResult", { state: { paymentInfo: paymentInfo } });
+                        } else {
+                            alert(`결제 실패: ${rsp.error_msg}`);
+                        }
+                    } catch (error) {
+                        console.error("결제 처리 중 오류:", error);
+                        alert("결제 처리 중 오류가 발생했습니다.");
+                    }
+                } else {
+                    alert(`결제 실패: ${rsp.error_msg}`);
+                }
             });
         } catch (error) {
             console.error("주문 생성 실패:", error);
             alert("주문 생성에 실패했습니다.");
         }
-    };
+    }, [isDeliveryInfoComplete, selectedItems, name, email, phone, address1, address2, zipCode, deliveryMessage, customDeliveryMessage, selectedSavedAddressId, purchaseType, totalAmount, dispatch, isImpReady, merchantId, selectedPaymentMethod, navigate, pg]);
 
     /**
-     * 결제 프로세스를 시작합니다.
+     * PG사 제공자를 가져옵니다.
+     * @param {string} method - 결제 수단
+     * @returns {string} PG사 제공자
      */
-    const handlePayment = async () => {
-        if (!isImpReady || !order) {
-            alert("결제 모듈이 아직 로드되지 않았거나 주문이 생성되지 않았습니다.");
-            return;
+       const getPgProvider = (method) => {
+              switch (method) {
+                  case 'kakaopay':
+                      return 'kakaopay';
+                  case 'payco':
+                      return 'payco';
+                  case 'tosspay':
+                      return 'tosspay';
+                  case 'card':
+                  case 'trans':
+                  case 'vbank':
+                      return 'html5_inicis';
+                  default:
+                      return 'html5_inicis';
+              }
+          };
+
+    /**
+     * 결제 방식을 가져옵니다.
+     * @param {string} method - 결제 수단
+     * @returns {string} 결제 방식
+     */
+    const getPayMethod = (method) => {
+        switch (method) {
+            case 'kakaopay':
+                return 'card';
+            case 'payco':
+                return 'card';
+            case 'tosspay':
+                return 'card';
+            case 'card':
+                return 'card'; // 신용카드
+            case 'trans':
+                return 'trans'; // 실시간 계좌이체
+            case 'vbank':
+                return 'vbank'; // 가상계좌
+            default:
+                return 'card';
         }
-
-        const IMP = window.IMP;
-        IMP.init(merchantId);
-
-        const paymentData = {
-            pg: "kakaopay",
-            pay_method: "card",
-            merchant_uid: `${order.id}_${new Date().getTime()}`, // 여기를 수정
-            name: order.items[0].name,
-            amount: order.totalAmount,
-            buyer_email: order.buyerEmail,
-            buyer_name: order.buyerName,
-            buyer_tel: order.buyerTel,
-            buyer_addr: order.buyerAddr,
-            buyer_postcode: order.buyerPostcode,
-        };
-
-        IMP.request_pay(paymentData, async (rsp) => {
-            if (rsp.success) {
-                console.log("결제 완료 응답:", rsp);
-
-                // PaymentRequestDto 객체 생성
-                const paymentRequest = {
-                    impUid: rsp.imp_uid,
-                    merchantUid: order.id,
-                    paidAmount: rsp.paid_amount,
-                    name: rsp.name,
-                    pgProvider: rsp.pg_provider,
-                    buyerEmail: rsp.buyerEmail,
-                    buyerName: rsp.buyerName,
-                    buyTel: rsp.buyerTel,
-                    buyerAddr: rsp.buyerAddr,
-                    buyerPostcode: rsp.buyerPostcode,
-                    paidAt: rsp.paid_at,
-                    status: "PAYMENT_COMPLETED",
-                    cartOrderItems: selectedItems.map(item => ({ // cartOrderItems 추가
-                        cartItemId: item.cartItemId,
-                        quantity: item.quantity,
-                        price: item.price
-                    }))
-                };
-
-                try {
-                    // processPayment 액션 호출
-                    const result = await dispatch(processPayment({ paymentRequestDto: paymentRequest, purchaseType: purchaseType })).unwrap();
-
-                    if (result) {
-                        const paymentInfo = {
-                            amount: rsp.paid_amount,
-                            paymentMethod: rsp.pay_method,
-                            merchantUid: rsp.merchant_uid,
-                            impUid: rsp.imp_uid,
-                            status: rsp.status,
-                            paidAt: rsp.paid_at,
-                        };
-                        // PayResult 페이지로 이동
-                        navigate("/payResult", { state: { paymentInfo: paymentInfo } });
-                    } else {
-                        alert(`결제 실패: ${rsp.error_msg}`);
-                    }
-                } catch (error) {
-                    console.error("결제 처리 중 오류:", error);
-                    alert("결제 처리 중 오류가 발생했습니다.");
-                }
-            } else {
-                alert(`결제 실패: ${rsp.error_msg}`);
-            }
-        });
     };
 
     /**
@@ -206,7 +317,7 @@ const OrderDetail = () => {
             oncomplete: function (data) {
                 setZipCode(data.zonecode);
                 setAddress1(data.address);
-                setAddress2(''); // 상세 주소 초기화
+                setAddress2('');
             }
         }).open();
     };
@@ -218,6 +329,9 @@ const OrderDetail = () => {
         setName(userData?.name || '');
         setEmail(userData?.email || '');
         setPhone(userData?.phone || '');
+        setZipCode(userZipCode);
+        setAddress1(userAddress1);
+        setAddress2(userAddress2);
     };
 
     /**
@@ -227,7 +341,7 @@ const OrderDetail = () => {
     const handleDeliveryMessageChange = (event) => {
         setDeliveryMessage(event.target.value);
         if (event.target.value !== 'custom') {
-            setCustomDeliveryMessage(""); // 직접 입력 메시지 초기화
+            setCustomDeliveryMessage("");
         }
     };
 
@@ -237,11 +351,87 @@ const OrderDetail = () => {
     const handleUseUserInfoForDelivery = () => {
         setDeliveryName(name);
         setDeliveryPhone(phone);
-        setDeliveryEmail(email);
         setZipCode(zipCode);
         setAddress1(address1);
         setAddress2(address2);
     };
+
+    /**
+     * 배송 정보 저장 다이얼로그 열기
+     */
+    const handleSaveDeliveryInfo = () => {
+        setOpenDialog(true);
+    };
+
+    /**
+     * 배송 정보 저장 다이얼로그 닫기
+     */
+    const handleCloseDialog = () => {
+        setOpenDialog(false);
+        setIsDefault(false);
+        setDeliveryInfoName("");
+    };
+
+    /**
+     * 배송 정보 저장 확인 핸들러
+     */
+    const handleConfirmSave = async () => {
+        const deliveryInfo = {
+            deliveryName: deliveryInfoName,
+            recipientName: deliveryName,
+            recipientPhone: deliveryPhone,
+            postalCode: zipCode,
+            roadAddress: address1,
+            detailAddress: address2,
+            deliveryMemo: deliveryMessage === 'custom' ? customDeliveryMessage : deliveryMessage,
+            isDefault: isDefault
+        };
+
+        try {
+            await dispatch(saveDeliveryInfo(deliveryInfo)).unwrap();
+            alert("배송 정보가 저장되었습니다.");
+            const response = await fetchWithAuth(`${API_URL}delivery-info`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            if (!response.ok) {
+                throw new Error('Failed to fetch saved addresses');
+            }
+            const data = await response.json();
+            setSavedAddresses(data);
+            const defaultDeliveryInfo = data.find(info => info.isDefault === true);
+            if (defaultDeliveryInfo) {
+                setSelectedSavedAddressId(defaultDeliveryInfo.id);
+            }
+        } catch (error) {
+            console.error("배송 정보 저장 중 오류:", error);
+            alert("배송 정보 저장 중 오류가 발생했습니다.");
+        } finally {
+            handleCloseDialog();
+        }
+    };
+
+    /**
+     * 결제 수단 변경 핸들러
+     * @param {Event} event - 이벤트 객체
+     */
+    const handlePaymentMethodChange = (event) => {
+        setSelectedPaymentMethod(event.target.value);
+        setPg(getPgProvider(event.target.value)); // 선택된 결제 수단에 따라 PG사 설정
+    };
+
+    /**
+     * 배송 정보가 모두 채워졌는지 확인하는 함수
+     */
+    const checkDeliveryInfoComplete = useCallback(() => {
+        return deliveryName && deliveryPhone && zipCode && address1 && address2;
+    }, [deliveryName, deliveryPhone, zipCode, address1, address2]);
+
+    useEffect(() => {
+        setIsDeliveryInfoComplete(checkDeliveryInfoComplete());
+    }, [checkDeliveryInfoComplete]);
 
     return (
         <Box sx={{ maxWidth: 800, margin: "auto", padding: 3 }}>
@@ -249,180 +439,67 @@ const OrderDetail = () => {
                 주문서
             </Typography>
             <Paper sx={{ padding: 3 }}>
-                {/* 주문 정보 */}
-                <Typography variant="h6" gutterBottom>
-                    주문 정보
-                </Typography>
-                {selectedItems.map((item, index) => (
-                    <Box key={index} display="flex" alignItems="center" mb={2}>
-                        <img
-                            src={item.imageUrl}
-                            alt={item.name}
-                            style={{ width: 100, height: 100, marginRight: 20 }}
-                        />
-                        <Box>
-                            <Typography variant="h6">{item.name}</Typography>
-                            <Typography variant="body1">가격: {item.price}원</Typography>
-                            <Typography variant="body1">수량: {item.quantity}</Typography>
-                        </Box>
-                    </Box>
-                ))}
-
-                <Typography variant="h6" mt={3}>
-                    총 주문 금액: {calculateTotalPrice()}원
-                </Typography>
-
-                {/* 사용자 정보 */}
-                <Typography variant="h6" mt={3} gutterBottom>
-                    사용자 정보
-                </Typography>
-                <TextField
-                    label="이름"
-                    value={name}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                    margin="normal"
+                <OrderItems selectedItems={selectedItems} />
+                <UserInfo
+                    name={name}
+                    email={email}
+                    phone={phone}
+                    zipCode={userZipCode}
+                    address1={userAddress1}
+                    address2={userAddress2}
+                    handleUseUserInfo={handleUseUserInfo}
                 />
-                <TextField
-                    label="이메일"
-                    value={email}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                    margin="normal"
+                <DeliveryInfo
+                    deliveryName={deliveryName}
+                    deliveryPhone={deliveryPhone}
+                    zipCode={zipCode}
+                    address1={address1}
+                    address2={address2}
+                    deliveryMessage={deliveryMessage}
+                    customDeliveryMessage={customDeliveryMessage}
+                    savedAddresses={savedAddresses}
+                    selectedSavedAddressId={selectedSavedAddressId}
+                    openDialog={openDialog}
+                    deliveryInfoName={deliveryInfoName}
+                    handleSavedAddressChange={handleSavedAddressChange}
+                    handleAddressSearch={handleAddressSearch}
+                    handleDeliveryMessageChange={handleDeliveryMessageChange}
+                    handleUseUserInfoForDelivery={handleUseUserInfoForDelivery}
+                    handleSaveDeliveryInfo={handleSaveDeliveryInfo}
+                    handleCloseDialog={handleCloseDialog}
+                    handleConfirmSave={handleConfirmSave}
+                    setDeliveryName={setDeliveryName}
+                    setDeliveryPhone={setDeliveryPhone}
+                    setAddress2={setAddress2}
+                    setCustomDeliveryMessage={setCustomDeliveryMessage}
+                    setIsDefault={setIsDefault}
+                    setDeliveryInfoName={setDeliveryInfoName}
                 />
-                <TextField
-                    label="전화번호"
-                    value={phone}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                    margin="normal"
+               <PaymentSummary
+                    totalAmount={totalAmount}
+                    selectedPaymentMethod={selectedPaymentMethod}
+                    onPaymentMethodChange={handlePaymentMethodChange}
+                    onPayment={handlePayment}
+                    isDeliveryInfoComplete={isDeliveryInfoComplete}
                 />
-                <TextField
-                    label="주소"
-                    value={`${address1} ${address2}`}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                    margin="normal"
-                />
-
-                {/* 배송 정보 */}
-                <Typography variant="h6" mt={3} gutterBottom>
-                    배송 정보
-                </Typography>
-
-                {/* 배송 정보 - 이름 */}
-                <TextField
-                    label="이름"
-                    value={deliveryName}
-                    onChange={(e) => setDeliveryName(e.target.value)}
-                    fullWidth
-                    margin="normal"
-                />
-
-                {/* 배송 정보 - 전화번호 */}
-                <TextField
-                    label="전화번호"
-                    value={deliveryPhone}
-                    onChange={(e) => setDeliveryPhone(e.target.value)}
-                    fullWidth
-                    margin="normal"
-                />
-
-                {/* 배송 정보 - 이메일 */}
-                <TextField
-                    label="이메일"
-                    value={deliveryEmail}
-                    onChange={(e) => setDeliveryEmail(e.target.value)}
-                    fullWidth
-                    margin="normal"
-                />
-
-                {/* 배송 정보 - 주소 */}
-                <Box display="flex" alignItems="center" mb={2}>
-                    <TextField
-                        label="우편번호"
-                        value={zipCode}
-                        readOnly
-                        sx={{ width: '150px', marginRight: 2 }}
-                    />
-                    <Button variant="outlined" onClick={handleAddressSearch}>
-                        주소 검색
-                    </Button>
-                </Box>
-                <TextField
-                    label="주소"
-                    value={address1}
-                    readOnly
-                    fullWidth
-                    margin="normal"
-                />
-                <TextField
-                    label="상세주소"
-                    value={address2}
-                    onChange={(e) => setAddress2(e.target.value)}
-                    fullWidth
-                    margin="normal"
-                />
-                {/* 배송 메모 선택 */}
-                <FormControl fullWidth margin="normal">
-                    <InputLabel id="delivery-message-label">배송 메모</InputLabel>
-                    <Select
-                        labelId="delivery-message-label"
-                        id="delivery-message"
-                        value={deliveryMessage}
-                        onChange={handleDeliveryMessageChange}
-                        label="배송 메모"
+                <FormControl component="fieldset" sx={{ mt: 2 }}>
+                    <FormLabel component="legend">결제 수단 선택</FormLabel>
+                    <RadioGroup
+                        aria-label="payment-method"
+                        name="payment-method"
+                        value={selectedPaymentMethod}
+                        onChange={handlePaymentMethodChange}
+                        row
                     >
-                        <MenuItem value="선택 안 함">선택 안 함</MenuItem>
-                        <MenuItem value="문 앞에 놓아주세요">문 앞에 놓아주세요</MenuItem>
-                        <MenuItem value="부재 시 연락 부탁드려요">부재 시 연락 부탁드려요</MenuItem>
-                        <MenuItem value="배송 전 미리 연락해 주세요">배송 전 미리 연락해 주세요</MenuItem>
-                        <MenuItem value="custom">직접 입력하기</MenuItem>
-                    </Select>
-                    {deliveryMessage === 'custom' && (
-                        <TextField
-                            label="배송 메시지 직접 입력"
-                            value={customDeliveryMessage}
-                            onChange={(e) => setCustomDeliveryMessage(e.target.value)}
-                            fullWidth
-                            margin="normal"
-                        />
-                    )}
+                        <FormControlLabel value="kakaopay" control={<Radio />} label="카카오페이" />
+                        <FormControlLabel value="payco" control={<Radio />} label="페이코" />
+                        <FormControlLabel value="tosspay" control={<Radio />} label="토스페이" />
+                        <FormControlLabel value="card" control={<Radio />} label="신용카드" />
+                        <FormControlLabel value="trans" control={<Radio />} label="실시간계좌이체" />
+                        <FormControlLabel value="vbank" control={<Radio />} label="가상계좌" />
+                    </RadioGroup>
                 </FormControl>
-
-                {/* 배송 정보 - 사용자 정보 이용 버튼 */}
-                <Box mt={2}>
-                    <Button variant="contained" color="primary" onClick={handleUseUserInfoForDelivery}>
-                        사용자 정보와 동일하게
-                    </Button>
-                </Box>
-
-                <Box mt={3} textAlign="center">
-                    <Button variant="contained" color="primary" size="large" onClick={handleCreateOrder}>
-                        주문 생성
-                    </Button>
-                </Box>
             </Paper>
-
-            {/* 결제 정보 */}
-            {order && (
-                <Paper sx={{ padding: 3, marginTop: 3 }}>
-                    <Typography variant="h5" gutterBottom>
-                        결제 정보
-                    </Typography>
-                    <p>주문 번호: {order.id}</p>
-                    <p>총 결제 금액: {order.totalAmount}원</p>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        size="large"
-                        onClick={handlePayment}
-                        disabled={!isImpReady}
-                    >
-                        결제하기
-                    </Button>
-                </Paper>
-            )}
         </Box>
     );
 };
