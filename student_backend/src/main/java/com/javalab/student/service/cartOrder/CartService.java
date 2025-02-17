@@ -85,13 +85,8 @@ public class CartService {
      */
     @Transactional(readOnly = true)
     public List<CartDetailDto> getCartList(String email) {
-        // Member member = memberRepository.findByEmail(email); // 불필요한 DB 조회 제거
-
-        // 이메일로 Member ID를 조회
         Member member = memberRepository.findByEmail(email);
-        Long memberId = member.getId(); // Member ID 얻기
-
-        Cart cart = cartRepository.findByMemberId(memberId).orElse(null); // Member ID로 Cart 조회
+        Cart cart = cartRepository.findByMemberId(member.getId()).orElse(null);
         if (cart == null) {
             return new ArrayList<>();
         }
