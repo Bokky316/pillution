@@ -31,7 +31,6 @@ const AdminMessageModal = ({ open, onClose, onSend }) => {
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
 
-
     const receiverOptions = [
         { value: "ALL", label: "모든 사용자" },
         { value: "ROLE", label: "역할별 사용자" },
@@ -43,6 +42,20 @@ const AdminMessageModal = ({ open, onClose, onSend }) => {
             fetchUsers(debouncedQuery);
         }
     }, [debouncedQuery, selectedReceiverType]);
+
+    const resetState = () => {
+        setMessageContent("");
+        setSelectedReceiverType("ALL");
+        setSelectedReceiverId("");
+        setUsers([]);
+        setSearchQuery("");
+    };
+
+    useEffect(() => {
+        if (!open) {
+            resetState();
+        }
+    }, [open]);
 
     /**
      * 사용자 검색 함수
@@ -115,20 +128,25 @@ const AdminMessageModal = ({ open, onClose, onSend }) => {
             });
 
             if (response && response.status === 200) { // response && 추가
-                    dispatch(showSnackbar("✅ 관리자 메시지가 성공적으로 전송되었습니다."));
-                    onClose();
-                    onSend();
-                } else {
-                    dispatch(showSnackbar("❌ 관리자 메시지 전송 실패"));
-                }
-            } catch (error) {
-                console.error("관리자 메시지 전송 실패:", error.message);
+                dispatch(showSnackbar("✅ 관리자 메시지가 성공적으로 전송되었습니다."));
+                handleClose();
+                onSend();
+            } else {
                 dispatch(showSnackbar("❌ 관리자 메시지 전송 실패"));
             }
+        } catch (error) {
+            console.error("관리자 메시지 전송 실패:", error.message);
+            dispatch(showSnackbar("❌ 관리자 메시지 전송 실패"));
+        }
+    };
+
+    const handleClose = () => {
+        resetState();
+        onClose();
     };
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+        <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
             <DialogTitle>관리자 공지 보내기</DialogTitle>
             <DialogContent>
                 <FormControl fullWidth margin="normal">
@@ -164,7 +182,6 @@ const AdminMessageModal = ({ open, onClose, onSend }) => {
                         isOptionEqualToValue={(option, value) => option?.id === value?.id}
                         filterOptions={(x) => x}
                     />
-
                 )}
 
                 {selectedReceiverType === "ROLE" && (
@@ -192,7 +209,7 @@ const AdminMessageModal = ({ open, onClose, onSend }) => {
                 />
             </DialogContent>
             <DialogActions>
-                <Button onClick={onClose}>취소</Button>
+                <Button onClick={handleClose}>취소</Button>
                 <Button onClick={handleSendAdminMessage} color="primary">보내기</Button>
             </DialogActions>
         </Dialog>

@@ -21,12 +21,16 @@ const SendMessageModal = ({ open, onClose, onSend }) => {
         }
     }, [debouncedQuery]);
 
+    const resetState = () => {
+        setMessageContent("");
+        setSelectedUser(null);
+        setUsers([]);
+        setSearchQuery("");
+    };
+
     useEffect(() => {
         if (!open) {
-            setMessageContent("");
-            setSelectedUser(null);
-            setUsers([]);
-            setSearchQuery("");
+            resetState();
         }
     }, [open]);
 
@@ -67,7 +71,6 @@ const SendMessageModal = ({ open, onClose, onSend }) => {
         }
     };
 
-
     const handleSendMessage = async () => {
         if (!selectedUser || !messageContent) {
             dispatch(showSnackbar("❌ 수신자와 메시지를 입력해주세요."));
@@ -97,10 +100,7 @@ const SendMessageModal = ({ open, onClose, onSend }) => {
     };
 
     const handleClose = () => {
-        setMessageContent("");
-        setSelectedUser(null);
-        setUsers([]);
-        setSearchQuery("");
+        resetState();
         onClose();
     };
 
