@@ -1,51 +1,104 @@
+.container {
+    background-color: transparent !important;
+    box-shadow: none !important;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.container.scrolled {
+    background-color: #fff !important;
+    border-bottom: 1px solid #ddd;
+}
+
 .nav-bar {
-  background-color: #fafafa;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: min(1000px, 90vw); /* ✅ 반응형 적용 */
+    width: 100%;
+    margin: 0 auto;
+    padding: 0px 16px;
+    position: relative;
 }
 
-.nav-bar .MuiToolbar-root {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  min-height: 80px;
-    max-width: 1280px; /* 최대 너비 설정 */
-    margin: 0 auto; /* 중앙 정렬 */
-    padding: 0 16px; /* 좌우 패딩 추가 */
+/* 태블릿 크기 (1024px 이하) */
+@media (max-width: 1024px) {
+    .nav-bar {
+        max-width: 95vw;
+        padding: 0px 12px;
+    }
 }
 
-.nav-bar .logo-container {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+/* 모바일 크기 (768px 이하) */
+@media (max-width: 768px) {
+    .nav-bar {
+        max-width: 100vw;
+        padding: 0px 8px;
+    }
 }
 
-.nav-bar img {
-  height: 50px;
-  vertical-align: middle;
+/* 햄버거 메뉴 및 사용자 메뉴 */
+.ham-menu,
+.user-menu {
+    color: #fff !important;
+    transition: color 0.3s ease-in-out;
 }
 
-.nav-bar .menu-icon {
-  margin-right: 16px;
+/* 스크롤 시 햄버거 메뉴 색상 변경 */
+.ham-menu.scrolled,
+.user-menu.scrolled {
+    color: #282c2f !important;
 }
 
-.menu-item {
-  color: #333333;
-  text-decoration: none;
+/* 로고 박스 - 중앙 정렬 */
+.logo-box {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-55%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.user-info {
-  margin-right: 16px;
-  color: #4f4f4f;
+/* 로고 크기 */
+.logo {
+    height: 50px;
+    vertical-align: middle;
 }
 
-.nav-bar button,
-.nav-bar a {
-  color: #4f4f4f;
-  text-decoration: none;
+@media (max-width: 768px) {
+    .logo {
+        height: 40px;
+    }
 }
 
-.nav-bar button:hover,
-.nav-bar a:hover {
-  text-decoration: underline;
+/* 로그인 태그 스타일 */
+.login-tag {
+    position: absolute;
+    top: 25px;
+    right: 10px;
+    font-weight: bold;
+    font-size: 7px !important;
+    background-color: #1976d2;
+    color: white;
+    z-index: 1000;
+    width: 21px;
+    text-align: center;
+    border-radius: 10px;
+}
+
+/* 반응형 적용 */
+@media (max-width: 768px) {
+    .login-tag {
+        top: 20px;
+        right: 8px;
+        font-size: 6px !important;
+    }
+    .logo-box {
+        transform: translateX(-88%);
+    }
+}
+.menu-item-centered {
+    display: flex !important;
+    justify-content: center !important;
+    text-align: center !important;
 }

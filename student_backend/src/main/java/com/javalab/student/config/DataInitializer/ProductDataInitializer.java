@@ -346,7 +346,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .price(new BigDecimal("30000"))
                         .stock(50)
                         .active(true)
-                        .categories(List.of(여성건강))
+                        .categories(List.of(여성건강,피로활력,빈혈,피부))
                         .ingredients(List.of(감마리놀렌산, 비타민E, 엽산, 철분))
                         .build(),
                 Product.builder()
@@ -355,7 +355,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .price(new BigDecimal("28000"))
                         .stock(40)
                         .active(true)
-                        .categories(List.of(여성건강))
+                        .categories(List.of(여성건강,다이어트,피로활력,간건강,장건강,위소화,빈혈,피부))
                         .ingredients(List.of(감마리놀렌산, 비타민B6, 비타민B군))
                         .build(),
                 Product.builder()
@@ -364,7 +364,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .price(new BigDecimal("15000"))
                         .stock(100)
                         .active(true)
-                        .categories(List.of(여성건강))
+                        .categories(List.of(여성건강,피로활력,빈혈))
                         .ingredients(List.of(엽산, 비타민B12, 철분))
                         .build(),
                 Product.builder()
@@ -373,7 +373,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .price(new BigDecimal("20000"))
                         .stock(60)
                         .active(true)
-                        .categories(List.of(빈혈))
+                        .categories(List.of(빈혈,구강관리,피부,노화항산화,면역력,여성건강,피로활력))
                         .ingredients(List.of(철분, 비타민C, 엽산))
                         .build(),
                 Product.builder()
@@ -382,7 +382,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .price(new BigDecimal("22000"))
                         .stock(100)
                         .active(true)
-                        .categories(List.of(관절뼈))
+                        .categories(List.of(관절뼈,다이어트,마음건강,피로활력,수면,면역력,만성질환))
                         .ingredients(List.of(칼슘, 비타민D, 마그네슘, 비타민A))
                         .build(),
                 Product.builder()
@@ -391,7 +391,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .price(new BigDecimal("28000"))
                         .stock(90)
                         .active(true)
-                        .categories(List.of(수면))
+                        .categories(List.of(수면,관절뼈,다이어트,마음건강,피로활력,여성건강))
                         .ingredients(List.of(GABA, 마그네슘, 비타민B6))
                         .build(),
                 Product.builder()
@@ -400,7 +400,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .price(new BigDecimal("16000"))
                         .stock(100)
                         .active(true)
-                        .categories(List.of(여성건강, 피로활력))
+                        .categories(List.of(여성건강, 피로활력,다이어트,간건강,장건강,위소화,빈혈,관절뼈,마음건강,수면))
                         .ingredients(List.of(비타민B군, 비타민B6, 마그네슘))
                         .build(),
                 Product.builder()
@@ -409,7 +409,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .price(new BigDecimal("24000"))
                         .stock(100)
                         .active(true)
-                        .categories(List.of(수면, 관절뼈))
+                        .categories(List.of(수면, 관절뼈,다이어트,마음건강,피로활력,면역력,만성질환))
                         .ingredients(List.of(마그네슘, 칼슘, 비타민D))
                         .build(),
                 Product.builder()
@@ -418,7 +418,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .price(new BigDecimal("18000"))
                         .stock(150)
                         .active(true)
-                        .categories(List.of(구강관리, 면역력))
+                        .categories(List.of(구강관리, 면역력,피부,노화항산화,위소화,모발두피))
                         .ingredients(List.of(비타민C, 아연, 프로바이오틱스))
                         .build(),
                 Product.builder()
@@ -427,7 +427,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .price(new BigDecimal("29000"))
                         .stock(90)
                         .active(true)
-                        .categories(List.of(노화항산화, 만성질환))
+                        .categories(List.of(마음건강,노화항산화,간건강,눈건강,만성질환,구강관리,피로활력))
                         .ingredients(List.of(코엔자임Q10, 오메가3, 비타민E))
                         .build(),
                 Product.builder()
@@ -436,7 +436,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .price(new BigDecimal("31000"))
                         .stock(85)
                         .active(true)
-                        .categories(List.of(노화항산화, 간건강))
+                        .categories(List.of(마음건강,노화항산화,간건강,눈건강,만성질환,관절뼈,면역력))
                         .ingredients(List.of(오메가3, 비타민D, 밀크씨슬))
                         .build(),
                 Product.builder()
@@ -445,7 +445,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .price(new BigDecimal("22000"))
                         .stock(90)
                         .active(true)
-                        .categories(List.of(눈건강))
+                        .categories(List.of(눈건강,노화항산화))
                         .ingredients(List.of(루테인, 비타민A, 아미노산))
                         .build(),
                 Product.builder()
@@ -454,7 +454,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .price(new BigDecimal("33000"))
                         .stock(75)
                         .active(true)
-                        .categories(List.of(피부))
+                        .categories(List.of(피부,구강관리,노화항산화,면역력,모발두피))
                         .ingredients(List.of(콜라겐, 비타민C, 비오틴, 식이섬유))
                         .build(),
                 Product.builder()
@@ -463,7 +463,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .price(new BigDecimal("28000"))
                         .stock(60)
                         .active(true)
-                        .categories(List.of(만성질환))
+                        .categories(List.of(만성질환,마음건강,노화항산화,간건강,눈건강))
                         .ingredients(List.of(인지질, 오메가3, 전해질))
                         .build(),
                 Product.builder()
@@ -472,7 +472,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .price(new BigDecimal("32000"))
                         .stock(100)
                         .active(true)
-                        .categories(List.of(관절뼈, 피로활력, 수면))
+                        .categories(List.of(관절뼈,다이어트,마음건강,피부,피로활력,위소화,면역력,수면,모발두피,만성질환))
                         .ingredients(List.of(칼슘, 마그네슘, 비타민D, 아연, 프로바이오틱스))
                         .build(),
                 Product.builder()
@@ -481,7 +481,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .price(new BigDecimal("19000"))
                         .stock(120)
                         .active(true)
-                        .categories(List.of(면역력, 피부))
+                        .categories(List.of(면역력, 피부,구강관리,노화항산화,위소화,모발두피))
                         .ingredients(List.of(아연, 비타민C, 단백질, 비타민B5))
                         .build(),
                 Product.builder()
@@ -490,7 +490,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .price(new BigDecimal("25000"))
                         .stock(80)
                         .active(true)
-                        .categories(List.of(장건강, 면역력))
+                        .categories(List.of(장건강, 면역력,위소화))
                         .ingredients(List.of(글루타민, 프로바이오틱스, 크롬))
                         .build(),
                 Product.builder()
@@ -499,7 +499,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .price(new BigDecimal("27000"))
                         .stock(70)
                         .active(true)
-                        .categories(List.of(만성질환))
+                        .categories(List.of(피부,위소화,면역력,모발두피,눈건강))
                         .ingredients(List.of(쏘팔메토, 아연, 비타민A))
                         .build(),
                 Product.builder()
@@ -508,7 +508,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .price(new BigDecimal("26000"))
                         .stock(95)
                         .active(true)
-                        .categories(List.of(피로활력))
+                        .categories(List.of(피로활력,관절뼈,다이어트,마음건강,수면,모발두피))
                         .ingredients(List.of(아르기닌, 마그네슘, 비타민B2))
                         .build(),
                 Product.builder()
@@ -517,7 +517,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .price(new BigDecimal("21000"))
                         .stock(110)
                         .active(true)
-                        .categories(List.of(피부))
+                        .categories(List.of(피부,구강관리,모발두피))
                         .ingredients(List.of(비오틴, 콜라겐, 구리, 종합비타민))
                         .build()
         );

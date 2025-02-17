@@ -84,22 +84,40 @@ const EditProduct = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                await fetchIngredients();
+                // ✅ clearSelectedCategories()로 초기화
+                dispatch(clearSelectedCategories()); // 상품 변경 시 선택된 카테고리 초기화
+
+                // ✅ 영양성분 데이터와 제품 데이터 fetch
+                const ingredientsResponse = await fetch(`${API_URL}ingredients`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                    credentials: 'include',
+                });
+
+                if (!ingredientsResponse.ok) {
+                    throw new Error('영양성분 데이터를 가져오는 데 실패했습니다.');
+                }
+
+                const ingredientsData = await ingredientsResponse.json();
+                console.log("✅ Fetched ingredients:", ingredientsData);
+                setIngredients(Array.isArray(ingredientsData) ? ingredientsData : []);
 
                 const productResponse = await fetch(`${API_URL}products/${productId}/dto`, {
                     headers: {
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${token}`,
                     },
-                    credentials: 'include'
+                    credentials: 'include',
                 });
 
                 if (!productResponse.ok) {
-                    const errorData = await productResponse.json();
-                    throw new Error(errorData.message || `제품 정보를 가져오는데 실패했습니다.`);
+                    throw new Error('제품 데이터를 가져오는 데 실패했습니다.');
                 }
 
                 const productData = await productResponse.json();
+                console.log("✅ Received product data:", productData);
 
+                // ✅ 제품 데이터 설정
                 setProduct({
                     name: productData.name || '',
                     description: productData.description || '',
@@ -107,47 +125,22 @@ const EditProduct = () => {
                     stock: productData.stock || '',
                     active: productData.active !== undefined ? productData.active : true,
                     categoryIds: productData.categories ? productData.categories.map(cat => cat.id) : [],
-                    ingredientIds: productData.ingredients ? productData.ingredients.map(ing => ing.id) : [],
-                    ingredients: productData.ingredients || []
+                    ingredientIds: [],
+                    ingredients: productData.ingredients || [],
                 });
 
-                // 영양성분에 따른 카테고리 불러오기
-                if (productData.ingredients && productData.ingredients.length > 0) {
-                    const ingredientIds = productData.ingredients.map(ing => ing.id);
-                    dispatch(fetchCategoriesByIngredient(ingredientIds));
-                }
+               // ✅ ingredientIds 추출 및 카테고리 fetch
+               const ingredientIds = ingredientsData
+                   .filter((ingredient) => productData.ingredients.includes(ingredient.ingredientName))
+                   .map((ingredient) => ingredient.id);
 
-                // 대표 이미지와 상세 이미지 분리 처리 및 state 업데이트
-                if (productData.productImgList && productData.productImgList.length > 0) {
-                    const mainImage = productData.productImgList.find(img => img.imageType === '대표');
-                    if (mainImage) {
-                        setMainImagePreview(getAbsoluteImageUrl(mainImage.imageUrl));
-                    } else {
-                        setMainImagePreview(null); // 대표 이미지 없는 경우 null 설정 명시적으로 추가
-                    }
+               console.log("🟠 Dispatching fetchCategoriesByIngredient with:", ingredientIds);
 
-                    const detailImages = productData.productImgList.filter(img => img.imageType !== '대표');
-                    const detailPreviews = detailImages.map(img => getAbsoluteImageUrl(img.imageUrl));
-                    const initialDetailPreviews = Array(4).fill(null);
-                    detailPreviews.forEach((preview, index) => {
-                        if (index < 4) {
-                            initialDetailPreviews[index] = preview;
-                        }
-                    });
-                    setDetailImagePreviews(initialDetailPreviews);
-                } else {
-                    setMainImagePreview(null); // 이미지 없는 경우 대표 이미지 미리보기 null 로 명시적으로 초기화
-                    setDetailImagePreviews(Array(4).fill(null)); // 이미지 없는 경우 상세 이미지 미리보기 null 배열로 명시적으로 초기화
-                }
-
-                // 영양성분에 따른 카테고리 불러오기
-                if (productData.ingredients && productData.ingredients.length > 0) {
-                    const ingredientIds = productData.ingredients.map(ing => ing.id);
-                    dispatch(fetchCategoriesByIngredient(ingredientIds));
-                }
-
+               if (ingredientIds.length > 0) {
+                   await dispatch(fetchCategoriesByIngredient(ingredientIds));
+               }
             } catch (error) {
-                console.error("Error fetching data:", error);
+                console.error("❌ Error fetching data:", error);
                 setError(error.message);
             } finally {
                 setLoading(false);
@@ -165,6 +158,16 @@ const EditProduct = () => {
             }));
         }
     }, [selectedCategories]);
+
+    useEffect(() => {
+        if (product.ingredients && ingredients.length > 0) {
+            // `product.ingredients`에는 영양성분 이름이 들어있다고 가정
+            const selectedIds = ingredients
+                .filter(ing => product.ingredients.includes(ing.ingredientName))
+                .map(ing => ing.id);
+            setProduct(prev => ({ ...prev, ingredientIds: selectedIds }));
+        }
+    }, [product.ingredients, ingredients]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -337,27 +340,23 @@ const EditProduct = () => {
             <h2 className="edit-product-title">상품 수정</h2>
             <form className="edit-product-form" onSubmit={handleSubmit}>
                 <TextField fullWidth label="상품명" name="name" value={product.name} onChange={handleInputChange} required margin="normal" />
-                {/* ✅ 기존 상품이 가지고 있던 영양성분을 텍스트로 출력 */}
-                {product.ingredients && product.ingredients.length > 0 ? (
-                    <p style={{ marginTop: "10px", fontSize: "14px", color: "#666" }}>
-                        기존 영양성분: {product.ingredients.join(", ")}
-                    </p>
-                ) : (
-                    <p style={{ marginTop: "10px", fontSize: "14px", color: "#999" }}>
-                        기존 영양성분이 없습니다.
-                    </p>
-                )}
-
                 <FormControl fullWidth margin="normal">
                     <InputLabel>영양성분</InputLabel>
                     <Select
                         multiple
-                        value={product.ingredientIds}
+                        value={product.ingredientIds || []} // 기본값이 없을 경우 빈 배열로 처리
                         onChange={handleIngredientChange}
+                        renderValue={(selected) =>
+                            ingredients
+                                .filter(ing => selected.includes(ing.id))
+                                .map(ing => ing.ingredientName)
+                                .join(', ')
+                        }
                     >
                         {Array.isArray(ingredients) && ingredients.length > 0 ? (
                             ingredients.map(ing => (
                                 <MenuItem key={ing.id} value={ing.id}>
+                                    <Checkbox checked={product.ingredientIds.includes(ing.id)} />
                                     {ing.ingredientName}
                                 </MenuItem>
                             ))
