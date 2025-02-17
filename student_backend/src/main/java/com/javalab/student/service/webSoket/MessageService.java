@@ -33,10 +33,13 @@ public class MessageService {
      * @param userId 사용자 ID
      * @return 사용자가 보낸 메시지 목록
      */
-    public List<Message> getSentMessages(Long userId) {
+    public List<MessageResponseDto> getSentMessages(Long userId) {
         Member sender = memberRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-        return messageRepository.findBySenderOrderByRegTimeDesc(sender);
+        List<Message> messages = messageRepository.findBySenderOrderByRegTimeDesc(sender);
+        return messages.stream()
+                .map(MessageResponseDto::new)
+                .collect(Collectors.toList());
     }
 
     /**

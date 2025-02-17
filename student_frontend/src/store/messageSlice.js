@@ -18,8 +18,11 @@ export const fetchSentMessages = createAsyncThunk(
             if (!response.ok) {
                 throw new Error('서버 응답이 실패했습니다');
             }
-            return await response.json();
+            const data = await response.json();
+            console.log('✅ fetchSentMessages 액션 성공:', data);  // 성공 로그 추가
+            return data;
         } catch (error) {
+            console.error('❌ fetchSentMessages 액션 실패:', error);  // 실패 로그 추가
             return rejectWithValue(error.message);
         }
     }
