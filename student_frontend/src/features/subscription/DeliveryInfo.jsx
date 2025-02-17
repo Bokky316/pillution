@@ -172,7 +172,7 @@ function DeliveryInfo({ subscription }) {
                 )}
 
                 <Button variant="contained" onClick={handleUpdate}>
-                    저장
+                    배송요청사항 저장
                 </Button>
             </Paper>
         </Box>
