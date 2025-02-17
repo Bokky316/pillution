@@ -235,7 +235,7 @@ const ProductDetailPage = () => {
       </Box>
 
       {/* 구매 모달 (이전과 동일) */}
-      <Dialog open={openModal} onClose={handleCloseModal} fullWidth maxWidth="xs"
+      <Dialog open={openModal} onClose={handleCloseModal} fullWidth maxWidth="xs" disableScrollLock={true}
         sx={{
           '& .MuiPaper-root': {
             width: "100%",
