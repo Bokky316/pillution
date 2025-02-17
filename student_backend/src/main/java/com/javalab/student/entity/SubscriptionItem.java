@@ -31,6 +31,30 @@ public class SubscriptionItem {
     @JsonIgnoreProperties({"subscriptionItems"})
     private Product product;
 
+    @Column(name = "product_id", insertable = false, updatable = false)
+    private Long productId;
+
     private int quantity;
     private double price;
+
+    /**
+     * ✅ 상품 대표 이미지 URL 반환 (없으면 기본 이미지)
+     */
+    public String getImageUrl() {
+        if (this.product == null) {
+            return "https://via.placeholder.com/100"; // 기본 이미지 URL
+        }
+        return this.product.getMainImageUrl() != null ? this.product.getMainImageUrl() : "https://via.placeholder.com/100";
+    }
+
+    @Override
+    public String toString() {
+        return "SubscriptionItem{" +
+                "id=" + id +
+                ", productId=" + productId +
+                ", productName=" + (product != null ? product.getName() : "N/A") +
+                ", quantity=" + quantity +
+                ", price=" + price +
+                '}';
+    }
 }

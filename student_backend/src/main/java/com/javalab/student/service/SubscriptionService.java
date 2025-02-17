@@ -56,6 +56,20 @@ public class SubscriptionService {
             }
         });
 
+        // ✅ SubscriptionItem에서 상품 이미지 추가
+        subscription.getItems().forEach(item -> {
+            if (item.getProduct() != null) {
+                item.getProduct().setMainImageUrl(item.getProduct().getMainImageUrl());
+            }
+        });
+
+        // ✅ SubscriptionNextItem에서 상품 이미지 추가
+        subscription.getNextItems().forEach(item -> {
+            if (item.getProduct() != null) {
+                item.getProduct().setMainImageUrl(item.getProduct().getMainImageUrl());
+            }
+        });
+
         return new SubscriptionResponseDto(subscription);
     }
 

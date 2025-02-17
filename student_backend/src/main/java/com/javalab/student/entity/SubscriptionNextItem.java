@@ -43,4 +43,25 @@ public class SubscriptionNextItem {
     public Long getProductId() {
         return this.productId != null ? this.productId : (this.product != null ? this.product.getId() : null);
     }
+
+    /**
+     * ✅ 상품 대표 이미지 URL 반환 (없으면 기본 이미지)
+     */
+    public String getImageUrl() {
+        if (this.product == null) {
+            return "https://via.placeholder.com/100"; // 기본 이미지 URL
+        }
+        return this.product.getMainImageUrl() != null ? this.product.getMainImageUrl() : "https://via.placeholder.com/100";
+    }
+
+    @Override
+    public String toString() {
+        return "SubscriptionNextItem{" +
+                "id=" + id +
+                ", productId=" + productId +
+                ", productName=" + (product != null ? product.getName() : "N/A") +
+                ", nextMonthQuantity=" + nextMonthQuantity +
+                ", nextMonthPrice=" + nextMonthPrice +
+                '}';
+    }
 }

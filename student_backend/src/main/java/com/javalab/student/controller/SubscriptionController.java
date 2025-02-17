@@ -46,7 +46,9 @@ public class SubscriptionController {
             SubscriptionResponseDto subscriptionResponse = subscriptionService.getSubscription(memberId);
             log.info("📡 [API 응답] 구독 정보 조회 - 구독 ID: {}, 배송 요청사항: {}",
                     subscriptionResponse.getId(),
-                    subscriptionResponse.getDeliveryRequest() != null ? subscriptionResponse.getDeliveryRequest() : "없음");
+                    subscriptionResponse.getDeliveryRequest() != null ? subscriptionResponse.getDeliveryRequest() : "없음",
+                    subscriptionResponse.getItems().size(),
+                    subscriptionResponse.getNextItems().size());
 
             return ResponseEntity.ok(subscriptionResponse);
         } catch (RuntimeException e) {

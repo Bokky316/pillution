@@ -16,6 +16,8 @@ export const fetchSubscription = createAsyncThunk(
     const memberId = state.auth.user?.id;  // ✅ 현재 로그인된 유저 ID 가져오기
             console.log("🔍 fetchSubscription 호출됨");
 
+    console.log("📡 [API 요청] 구독 정보 가져오기:", memberId);
+
 
     if (!memberId) {
       throw new Error("로그인 정보 없음: memberId가 없습니다.");
@@ -27,7 +29,9 @@ export const fetchSubscription = createAsyncThunk(
       throw new Error(`서버 오류: ${response.status}`);
     }
 
-    return response.json();
+    const data = await response.json();
+    console.log("✅ [SUCCESS] 구독 정보 응답:", data);
+    return data;
   }
 );
 

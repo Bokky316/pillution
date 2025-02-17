@@ -11,13 +11,16 @@ function SubscriptionItems({ subscription }) {
     return (
         <Box sx={{ mb: 2 }}>
             {/* ✅ 섹션 제목 */}
-            <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>구독중인 제품</Typography>
+            <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>구독 중인 제품</Typography>
             <Divider sx={{ mb: 2 }} />
 
             {/* ✅ 구독 아이템 리스트 */}
             {subscription.items.map((item, index) => {
                 const price = item.price || 0; // ✅ 가격이 undefined일 경우 기본값 0 처리
                 const totalPrice = price * item.quantity; // ✅ NaN 방지 처리
+                const imageUrl = item.imageUrl || "https://via.placeholder.com/70"; // ✅ 이미지 URL 확인
+
+                console.log("📌 [SubscriptionItems] 상품명:", item.productName, "| 이미지 URL:", imageUrl);
 
                 return (
                     <Box key={index} sx={{ mb: 2, borderBottom: "1px solid #eee", pb: 1 }}>
@@ -25,7 +28,7 @@ function SubscriptionItems({ subscription }) {
                             {/* ✅ 제품 이미지 */}
                             <Grid item xs={3}>
                                 <img
-                                    src={item.mainiImageUrl || "https://via.placeholder.com/70"}
+                                    src={imageUrl}
                                     alt={item.productName || "상품 이미지"}
                                     style={{
                                         width: "70px",
@@ -38,7 +41,6 @@ function SubscriptionItems({ subscription }) {
 
                             {/* ✅ 제품 정보 */}
                             <Grid item xs={6}>
-                                {/* ✅ 건강기능식품 태그 (상품명 위로 이동) */}
                                 <Typography
                                     variant="body2"
                                     sx={{
@@ -48,7 +50,7 @@ function SubscriptionItems({ subscription }) {
                                         padding: "2px 5px",
                                         display: "inline-block",
                                         borderRadius: "3px",
-                                        mb: 0.5, // ✅ 아래 간격 조정
+                                        mb: 0.5,
                                     }}
                                 >
                                     건강기능식품
@@ -74,10 +76,10 @@ function SubscriptionItems({ subscription }) {
                     </Box>
                 );
             })}
-        {/* ✅ 할인 정보 */}
-        <p style={{ color: "#888", fontSize: "13px", marginTop: "10px" }}>
-            #구독혜택 #무료배송 #구독할인5% #건강설문할인10% #장기고객우대(4회차부터)5%
-        </p>
+            {/* ✅ 할인 정보 */}
+            <p style={{ color: "#888", fontSize: "13px", marginTop: "10px" }}>
+                #구독혜택 #무료배송 #구독할인5% #건강설문할인10% #장기고객우대(4회차부터)5%
+            </p>
         </Box>
     );
 }
