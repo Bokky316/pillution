@@ -442,7 +442,7 @@ const ProductList = () => {
                       label="카테고리"
                       value={selectedCategory}
                       onChange={(e) => handleCategoryChange(e.target.value)}
-                      sx={{
+                      sx={{ minWidth: 120,
                         '& .MuiOutlinedInput-root': {
                           '&.Mui-focused fieldset': {
                             borderColor: '#3f51b5',
