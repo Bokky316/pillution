@@ -177,6 +177,6 @@ public class MessageService {
     }
 
     public List<Member> searchUsers(String query) {
-        return memberRepository.findByNameContainingIgnoreCase(query);
+        return memberRepository.searchByNameEmailOrId(query);
     }
 }

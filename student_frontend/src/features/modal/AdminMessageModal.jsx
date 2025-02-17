@@ -51,15 +51,16 @@ const AdminMessageModal = ({ open, onClose, onSend }) => {
     const fetchUsers = async (query) => {
         console.log("Fetching users with query:", query);
         try {
-            const response = await fetchWithAuth(`${API_URL}members/search?query=${query}`);
+            const response = await fetchWithAuth(`${API_URL}messages/search?query=${query}`);
             console.log('Fetched users response:', response);
 
             if (response.ok) {
                 const responseData = await response.json();
                 console.log('Fetched users data:', responseData);
 
-                if (responseData.status === 'success' && Array.isArray(responseData.data)) {
-                    const formattedUsers = responseData.data.map(user => ({
+                // 여기서 responseData가 배열인지 확인
+                if (Array.isArray(responseData)) {
+                    const formattedUsers = responseData.map(user => ({
                         id: user.id,
                         name: `${user.name} (${user.email}) - ID: ${user.id}`,
                         email: user.email

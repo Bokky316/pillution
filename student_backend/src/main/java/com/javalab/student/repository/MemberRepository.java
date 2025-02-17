@@ -5,12 +5,14 @@ import com.javalab.student.constant.Role;
 import com.javalab.student.entity.Member;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import jakarta.persistence.criteria.Predicate;
 
-import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,9 +20,6 @@ public interface MemberRepository extends JpaRepository<Member, Long>, JpaSpecif
 
     // 이메일로 회원을 조회
     Member findByEmail(String email);
-
-    // 이름으로 회원을 검색하는 JPA 메소드
-    Member findByName(String memberName);
 
     // 이름이 포함된 사용자를 검색 (대소문자 구분 없이)
     List<Member> findByNameContainingIgnoreCase(String name);
@@ -50,9 +49,27 @@ public interface MemberRepository extends JpaRepository<Member, Long>, JpaSpecif
     // 회원 상태(activate)별 회원 조회
     Page<Member> findByActivate(boolean activate, Pageable pageable);
 
-    // 검색 기능 (JpaSpecificationExecutor 사용)
+    // 이름, 이메일, 아이디로 검색
+    default List<Member> searchByNameEmailOrId(String query) {
+        Specification<Member> spec = (root, criteriaQuery, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
 
-    // 옵셔널타입으로 이멜 조회
-    Optional<Member> findOptionalByEmail(String email);
+            // 이름 검색 조건
+            predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), "%" + query.toLowerCase() + "%"));
 
+            // 이메일 검색 조건
+            predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("email")), "%" + query.toLowerCase() + "%"));
+
+            // ID 검색 조건
+            try {
+                Long id = Long.parseLong(query);
+                predicates.add(criteriaBuilder.equal(root.get("id"), id));
+            } catch (NumberFormatException e) {
+                // ID가 숫자가 아닌 경우 무시
+            }
+
+            return criteriaBuilder.or(predicates.toArray(new Predicate[0]));
+        };
+        return findAll(spec);
+    }
 }

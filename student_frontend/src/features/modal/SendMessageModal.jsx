@@ -30,22 +30,35 @@ const SendMessageModal = ({ open, onClose, onSend }) => {
         }
     }, [open]);
 
+    /**
+     * 사용자 검색 함수
+     * @param {string} query 검색어
+     */
     const fetchUsers = async (query) => {
+        console.log("Fetching users with query:", query);
         try {
-            const response = await fetchWithAuth(`${API_URL}members/search?query=${query}`);
+            const response = await fetchWithAuth(`${API_URL}messages/search?query=${query}`);
+            console.log('Fetched users response:', response);
+
             if (response.ok) {
                 const responseData = await response.json();
-                if (responseData.status === 'success' && Array.isArray(responseData.data)) {
-                    const formattedUsers = responseData.data.map(user => ({
+                console.log('Fetched users data:', responseData);
+
+                // 여기서 responseData가 배열인지 확인
+                if (Array.isArray(responseData)) {
+                    const formattedUsers = responseData.map(user => ({
                         id: user.id,
                         name: `${user.name} (${user.email}) - ID: ${user.id}`,
                         email: user.email
                     }));
+                    console.log("Formatted users:", formattedUsers);
                     setUsers(formattedUsers);
                 } else {
+                    console.error("Unexpected data format:", responseData);
                     setUsers([]);
                 }
             } else {
+                console.error("Failed to fetch users:", response.status);
                 setUsers([]);
             }
         } catch (error) {
@@ -53,6 +66,7 @@ const SendMessageModal = ({ open, onClose, onSend }) => {
             setUsers([]);
         }
     };
+
 
     const handleSendMessage = async () => {
         if (!selectedUser || !messageContent) {
