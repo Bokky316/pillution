@@ -21,7 +21,7 @@ public class MessageRequestDto {
 
     private Long senderId;  // 발신자 ID
     private String receiverType; // 수신자 유형 (ALL, ROLE, USER)
-    private Long receiverId; // 수신자 ID 또는 역할 (ROLE_ADMIN, ROLE_USER 등)
+    private String receiverId; // 수신자 ID 또는 역할 (ROLE_ADMIN, ROLE_USER 등)
 
     @NotBlank(message = "메시지 내용은 필수 입력 값입니다.")
     private String content; // 메시지 내용

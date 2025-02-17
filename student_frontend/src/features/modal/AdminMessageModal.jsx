@@ -1,3 +1,8 @@
+/**
+ * AdminMessageModal 컴포넌트
+ * 관리자가 공지 메시지를 작성하고 전송하는 모달 컴포넌트입니다.
+ */
+
 import React, { useState, useEffect } from "react";
 import {
     Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField,
@@ -10,14 +15,10 @@ import { showSnackbar } from "@/store/snackbarSlice";
 import useDebounce from "@/hooks/useDebounce";
 
 /**
- * AdminMessageModal 컴포넌트
- * 관리자가 공지 메시지를 작성하고 전송하는 모달
- * 관리자만 사용 가능
- * @param {Object} props - 컴포넌트 props
- * @param {boolean} props.open - 모달 open 여부
- * @param {Function} props.onClose - 모달 닫기 함수
- * @param {Function} props.onSend - 메시지 전송 완료 후 실행할 함수
- * @returns {JSX.Element} AdminMessageModal 컴포넌트
+ * @param {Object} props
+ * @param {boolean} props.open 모달 open 여부
+ * @param {Function} props.onClose 모달 닫기 함수
+ * @param {Function} props.onSend 메시지 전송 완료 후 실행할 함수
  */
 const AdminMessageModal = ({ open, onClose, onSend }) => {
     const [messageContent, setMessageContent] = useState("");
@@ -43,23 +44,20 @@ const AdminMessageModal = ({ open, onClose, onSend }) => {
 
     /**
      * 사용자 검색 함수
-     * @param {string} query - 검색어
+     * @param {string} query 검색어
      */
-    // AdminMessageModal.jsx
-
     const fetchUsers = async (query) => {
         try {
             const response = await fetchWithAuth(`${API_URL}members/search?query=${query}`);
-            if (response.ok) {
-                const data = await response.json();
-                const formattedUsers = Array.isArray(data) ? data.map(user => ({
+            console.log('Fetched users:', response);
+            if (response.status === 'success' && Array.isArray(response.data)) {
+                const formattedUsers = response.data.map(user => ({
                     id: user.id,
                     name: `${user.name} (${user.email}) - ID: ${user.id}`,
                     email: user.email
-                })) : [];
+                }));
                 setUsers(formattedUsers);
             } else {
-                console.error("🚨 사용자 검색 API 응답 실패:", response.status, response.statusText);
                 setUsers([]);
             }
         } catch (error) {
@@ -82,31 +80,36 @@ const AdminMessageModal = ({ open, onClose, onSend }) => {
             return;
         }
 
+        let receiverId = null;
+
+        if (selectedReceiverType === 'USER') {
+            receiverId = selectedReceiverId;
+        } else if (selectedReceiverType === 'ROLE') {
+            receiverId = selectedReceiverId;
+        }
+
         try {
             const response = await fetchWithAuth(`${API_URL}messages/admin/send`, {
                 method: "POST",
                 body: JSON.stringify({
                     senderId: user.id,
                     receiverType: selectedReceiverType,
-                    receiverId: selectedReceiverType === 'USER' ? Number(selectedReceiverId) : null,
+                    receiverId: receiverId,
                     content: messageContent,
                 }),
             });
 
-            if (response.ok) {
-                dispatch(showSnackbar("✅ 관리자 메시지가 성공적으로 전송되었습니다."));
-                onClose();
-                setMessageContent("");
-                setSelectedReceiverType("ALL");
-                setSelectedReceiverId("");
-                onSend();
-            } else {
+            if (response && response.status === 200) { // response && 추가
+                    dispatch(showSnackbar("✅ 관리자 메시지가 성공적으로 전송되었습니다."));
+                    onClose();
+                    onSend();
+                } else {
+                    dispatch(showSnackbar("❌ 관리자 메시지 전송 실패"));
+                }
+            } catch (error) {
+                console.error("관리자 메시지 전송 실패:", error.message);
                 dispatch(showSnackbar("❌ 관리자 메시지 전송 실패"));
             }
-        } catch (error) {
-            console.error("🚨 관리자 메시지 전송 실패:", error.message);
-            dispatch(showSnackbar("❌ 관리자 메시지 전송 실패"));
-        }
     };
 
     return (
@@ -119,7 +122,7 @@ const AdminMessageModal = ({ open, onClose, onSend }) => {
                         value={selectedReceiverType}
                         onChange={(e) => {
                             setSelectedReceiverType(e.target.value);
-                            setSelectedReceiverId(""); // Select value가 바뀌면 초기화
+                            setSelectedReceiverId("");
                         }}
                     >
                         {receiverOptions.map((option) => (
@@ -131,10 +134,15 @@ const AdminMessageModal = ({ open, onClose, onSend }) => {
                 {selectedReceiverType === "USER" && (
                     <Autocomplete
                         options={users}
-                        getOptionLabel={(option) => `${option.name}`}
-                        onChange={(event, value) => setSelectedReceiverId(value ? value.id : "")}
+                        getOptionLabel={(option) => option.name}
+                        onChange={(event, newValue) => {
+                            setSelectedReceiverId(newValue ? newValue.id : "");
+                            console.log("Selected user:", newValue);
+                        }}
                         onInputChange={(event, newInputValue) => setSearchQuery(newInputValue)}
                         renderInput={(params) => <TextField {...params} label="특정 사용자 선택" fullWidth />}
+                        value={users.find(user => user.id === selectedReceiverId) || null}
+                        isOptionEqualToValue={(option, value) => option.id === value?.id}
                     />
                 )}
 

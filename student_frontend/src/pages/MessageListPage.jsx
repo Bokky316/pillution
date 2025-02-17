@@ -36,9 +36,9 @@ const MessageListPage = () => {
     useEffect(() => {
         if (user) {
             fetchMessages();
-            dispatch(fetchSentMessages(user.id));
+            fetchSentMessages(user.id);
         }
-    }, [user, dispatch]);
+    }, [user]);
 
     /**
      * 받은 메시지 목록을 가져오는 함수
@@ -46,15 +46,28 @@ const MessageListPage = () => {
     const fetchMessages = async () => {
         try {
             const response = await fetchWithAuth(`${API_URL}messages/${user.id}`);
-            if (response.ok) {
-                const data = await response.json();
-                dispatch(setMessages(data));
+            if (response) {
+                dispatch(setMessages(response));
             } else {
-                throw new Error("서버 응답이 실패했습니다.");
+                dispatch(showSnackbar("❌ 메시지 목록을 가져오는데 실패했습니다."));
             }
         } catch (error) {
             console.error("🚨 메시지 목록 조회 실패:", error.message);
-            dispatch(showSnackbar("메시지 목록을 가져오는데 실패했습니다."));
+            dispatch(showSnackbar("❌ 메시지 목록을 가져오는데 실패했습니다."));
+        }
+    };
+
+    const fetchSentMessages = async (userId) => {
+        try {
+            const response = await fetchWithAuth(`${API_URL}messages/sent/${userId}`);
+            if (response) {
+                dispatch(setSentMessages(response));
+            } else {
+                dispatch(showSnackbar("❌ 보낸 메시지 목록을 가져오는데 실패했습니다."));
+            }
+        } catch (error) {
+            console.error("🚨 보낸 메시지 목록 조회 실패:", error.message);
+            dispatch(showSnackbar("❌ 보낸 메시지 목록을 가져오는데 실패했습니다."));
         }
     };
 

@@ -1,3 +1,8 @@
+/**
+ * SendMessageModal 컴포넌트
+ * 일반 사용자 간 메시지를 보내는 모달 컴포넌트입니다.
+ */
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Autocomplete } from "@mui/material";
 import { useSelector, useDispatch } from "react-redux";
@@ -7,13 +12,10 @@ import { showSnackbar } from "@/store/snackbarSlice";
 import useDebounce from "@/hooks/useDebounce";
 
 /**
- * SendMessageModal 컴포넌트
- * 일반 사용자 간 메시지를 보내는 모달
- * @param {Object} props - 컴포넌트 props
- * @param {boolean} props.open - 모달 open 여부
- * @param {Function} props.onClose - 모달 닫기 함수
- * @param {Function} props.onSend - 메시지 전송 완료 후 실행할 함수
- * @returns {JSX.Element} SendMessageModal 컴포넌트
+ * @param {Object} props
+ * @param {boolean} props.open 모달 open 여부
+ * @param {Function} props.onClose 모달 닫기 함수
+ * @param {Function} props.onSend 메시지 전송 완료 후 실행할 함수
  */
 const SendMessageModal = ({ open, onClose, onSend }) => {
     const [messageContent, setMessageContent] = useState("");
@@ -32,7 +34,7 @@ const SendMessageModal = ({ open, onClose, onSend }) => {
 
     /**
      * 사용자 검색 함수
-     * @param {string} query - 검색어
+     * @param {string} query 검색어
      */
     const fetchUsers = async (query) => {
         try {
@@ -90,9 +92,13 @@ const SendMessageModal = ({ open, onClose, onSend }) => {
                 <Autocomplete
                     options={users}
                     getOptionLabel={(option) => option.name}
-                    onChange={(event, value) => setSelectedUser(value)}
+                    onChange={(event, value) => {
+                        setSelectedUser(value);
+                        console.log("Selected user:", value);
+                    }}
                     onInputChange={(event, newInputValue) => setSearchQuery(newInputValue)}
                     renderInput={(params) => <TextField {...params} label="받는 사람 (이름 | 이메일 | ID로 검색)" fullWidth />}
+                    getOptionSelected={(option, value) => option?.id === selectedUser?.id}
                 />
                 <TextField
                     fullWidth

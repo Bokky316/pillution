@@ -89,7 +89,14 @@ public class MessageService {
             throw new IllegalArgumentException("ADMIN, CS_AGENT, USER Role만 메시지를 전송할 수 있습니다.");
         }
 
-        Member receiver = memberRepository.findById(requestDto.getReceiverId())
+        Long receiverId;
+        try {
+            receiverId = Long.parseLong(requestDto.getReceiverId());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("잘못된 수신자 ID 형식입니다: " + requestDto.getReceiverId());
+        }
+
+        Member receiver = memberRepository.findById(receiverId)
                 .orElseThrow(() -> new IllegalArgumentException("수신자를 찾을 수 없습니다."));
 
         return messageRepository.save(
@@ -126,7 +133,6 @@ public class MessageService {
         Member sender = memberRepository.findById(requestDto.getSenderId())
                 .orElseThrow(() -> new IllegalArgumentException("발신자를 찾을 수 없습니다."));
 
-        // 발신자가 ADMIN Role이 아닌 경우 예외 발생
         if (sender.getRole() != Role.ADMIN) {
             throw new IllegalArgumentException("ADMIN Role만 관리자 메시지를 전송할 수 있습니다.");
         }
@@ -139,7 +145,7 @@ public class MessageService {
                 break;
             case "ROLE":
                 try {
-                    Role role = Role.valueOf(requestDto.getReceiverType());
+                    Role role = Role.valueOf(requestDto.getReceiverId());
                     receiverList = memberRepository.findByRole(role);
                 } catch (IllegalArgumentException e) {
                     throw new IllegalArgumentException("잘못된 역할입니다: " + requestDto.getReceiverId());
@@ -147,7 +153,7 @@ public class MessageService {
                 break;
             case "USER":
                 try {
-                    Long userId = Long.parseLong(requestDto.getReceiverType());
+                    Long userId = Long.parseLong(requestDto.getReceiverId());
                     Member receiver = memberRepository.findById(userId)
                             .orElseThrow(() -> new IllegalArgumentException("수신자를 찾을 수 없습니다."));
                     receiverList.add(receiver);

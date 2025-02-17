@@ -134,8 +134,8 @@ public class MessageController {
 
     /**
      * 사용자 검색
-     * @param query
-     * @return
+     * @param query 검색어
+     * @return 검색된 사용자 목록
      */
     @GetMapping("/search-users")
     public ResponseEntity<List<Member>> searchUsers(@RequestParam String query) {
