@@ -261,9 +261,9 @@ export default function ProductListPage() {
 
       {/* 로딩 중 표시 (스크롤 후 데이터 로딩 중) */}
       {isFetching && (
-        <Box sx={{ textAlign: "center", padding: "20px" }}>
-          <CircularProgress />
-          <Typography sx={{ marginTop: "10px" }}>로딩 중...</Typography>
+        <Box sx={{ textAlign: "center", padding: "20px",marginTop:"40px" }}>
+          <CircularProgress sx={{color:"#4169E1"}} />
+          <Typography sx={{ marginTop: "10px", color:"#4169E1" }}></Typography>
         </Box>
       )}
 
