@@ -12,6 +12,7 @@ import Layout from "@/layouts/Layout";
 import HomePage from "@/pages/HomePage";
 import RecommendationPage from "@/pages/RecommendationPage";
 import SurveyPage from "@/pages/SurveyPage";
+import HealthHistoryPage from "@/pages/HealthHistoryPage";
 import ProductDetailPage from "@/pages/ProductDetailPage";
 import ProductListPage from "@/pages/ProductListPage";
 import CartPage from "@/pages/CartPage";
@@ -67,6 +68,7 @@ function App() {
                     <Route path="/payResult" element={<PayResult />} />
                     <Route path="/recommendation" element={<RecommendationPage />} />
                     <Route path="/survey" element={<SurveyPage />} />
+                    <Route path="/HealthHistory" element={<HealthHistoryPage />} />
 
                     <Route path="/board/*" element={<BoardPage />} />
                     <Route path="/news" element={<NewsBoardPage />} />
