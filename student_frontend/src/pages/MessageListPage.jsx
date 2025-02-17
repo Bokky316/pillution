@@ -36,15 +36,7 @@ const MessageListPage = () => {
     useEffect(() => {
         if (user) {
             fetchMessages();
-            // fetchSentMessages 액션을 디스패치하고 결과를 처리
-            dispatch(fetchSentMessages(user.id))
-                .then(() => {
-                    console.log("보낸 메시지를 성공적으로 가져왔습니다.");
-                })
-                .catch((error) => {
-                    console.error("보낸 메시지 가져오기 실패:", error);
-                    dispatch(showSnackbar("보낸 메시지를 가져오는데 실패했습니다."));
-                });
+            dispatch(fetchSentMessages(user.id));
         }
     }, [user, dispatch]);
 

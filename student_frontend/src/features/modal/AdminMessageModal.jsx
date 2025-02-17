@@ -45,13 +45,21 @@ const AdminMessageModal = ({ open, onClose, onSend }) => {
      * 사용자 검색 함수
      * @param {string} query - 검색어
      */
+    // AdminMessageModal.jsx
+
     const fetchUsers = async (query) => {
         try {
             const response = await fetchWithAuth(`${API_URL}members/search?query=${query}`);
             if (response.ok) {
                 const data = await response.json();
-                setUsers(data || []);
+                const formattedUsers = Array.isArray(data) ? data.map(user => ({
+                    id: user.id,
+                    name: `${user.name} (${user.email}) - ID: ${user.id}`,
+                    email: user.email
+                })) : [];
+                setUsers(formattedUsers);
             } else {
+                console.error("🚨 사용자 검색 API 응답 실패:", response.status, response.statusText);
                 setUsers([]);
             }
         } catch (error) {
@@ -80,7 +88,7 @@ const AdminMessageModal = ({ open, onClose, onSend }) => {
                 body: JSON.stringify({
                     senderId: user.id,
                     receiverType: selectedReceiverType,
-                    receiverId: selectedReceiverType === 'USER' ? selectedReceiverId : selectedReceiverId, // [수정] receiverId 전송
+                    receiverId: selectedReceiverType === 'USER' ? Number(selectedReceiverId) : null,
                     content: messageContent,
                 }),
             });
@@ -123,7 +131,7 @@ const AdminMessageModal = ({ open, onClose, onSend }) => {
                 {selectedReceiverType === "USER" && (
                     <Autocomplete
                         options={users}
-                        getOptionLabel={(option) => `${option.name} (${option.email}) - ID: ${option.id}`}
+                        getOptionLabel={(option) => `${option.name}`}
                         onChange={(event, value) => setSelectedReceiverId(value ? value.id : "")}
                         onInputChange={(event, newInputValue) => setSearchQuery(newInputValue)}
                         renderInput={(params) => <TextField {...params} label="특정 사용자 선택" fullWidth />}
