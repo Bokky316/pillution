@@ -125,7 +125,7 @@ const Header = () => {
                                             </Button>
                                         </>
                                     )}
-                                    {user.role === "USER" && (
+                                    {user && (
                                         <IconButton disableRipple className={`user-menu ${isHome && isTop ? "" : "scrolled"}`} color="inherit" component={Link} to="/cart">
                                             <ShoppingCartIcon />
                                         </IconButton>
@@ -319,7 +319,6 @@ const Header = () => {
                                             padding: "7px 10px",
                                             borderRadius: "6px",
                                             display: "inline-block",
-                                            cursor: "pointer",
                                             fontSize: "14px",
                                             cursor: "default",
                                             "&::before": {
