@@ -19,8 +19,8 @@ function PaymentMethod({ subscription }) {
         { id: "payco", name: "페이코", logo: "/src/assets/images/payco.png" },
         { id: "tosspay", name: "토스페이", logo: "/src/assets/images/tosspay.png" },
         { id: "card", name: "신용 / 체크카드" },
-        { id: "bank_transfer", name: "실시간 계좌이체" },
-        { id: "virtual_account", name: "가상계좌" },
+        { id: "trans", name: "실시간 계좌이체" },
+        { id: "vbank", name: "가상계좌" },
     ];
 
     const handlePaymentMethodChange = (event) => {
