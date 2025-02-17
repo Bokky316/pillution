@@ -115,7 +115,14 @@ const MemberList = () => {
                 </span>
             ),
         },
-        { field: 'subscription', headerName: '구독여부', flex: 2 }, //구현x
+        {
+            field: 'isSubscribing', // Member 엔티티의 필드 이름과 일치시켜야 함
+            headerName: '구독 여부', // 더 명확한 헤더 이름
+            flex: 2,
+            renderCell: (params) => (
+                <span>{params.row.isSubscribing ? '구독 중' : '미구독'}</span> // "구독 중" 또는 "미구독" 표시
+            ),
+        },
         {
             field: 'edit',
             headerName: '관리',
@@ -128,7 +135,6 @@ const MemberList = () => {
                 >
                     수정
                 </Button>
-
             ),
         },
     ];
