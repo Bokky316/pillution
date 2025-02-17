@@ -21,6 +21,7 @@ import subscriptionReducer from "@/store/subscriptionSlice";
 import cartReducer from "@/store/cartSlice";
 import orderReducer from "@/store/orderSlice";
 import paymentReducer from "@/store/paymentSlice";
+import deliveryReducer from "@/store/deliverySlice"; // 새로 추가된 배송 정보 리듀서
 
 /**
  * Redux Persist의 설정을 정의합니다.
@@ -31,7 +32,7 @@ import paymentReducer from "@/store/paymentSlice";
 const persistConfig = {
     key: "root",
     storage,
-    whitelist: ["auth", "survey", "ui", "products", "recommendations", "board", "news", "postDetail", "faq", "postCreate", "postEdit", "snackbar", "chat", "sidebar", "subscription", "cart", "order", "payment"],
+    whitelist: ["auth", "survey", "ui", "products", "recommendations", "board", "news", "postDetail", "faq", "postCreate", "postEdit", "snackbar", "chat", "sidebar", "subscription", "cart", "order", "payment", "delivery"], // delivery 추가
 };
 
 /**
@@ -58,6 +59,7 @@ const rootReducer = combineReducers({
     cart: cartReducer,
     order: orderReducer,
     payment: paymentReducer,
+    delivery: deliveryReducer, // 새로 추가된 배송 정보 리듀서
 });
 
 /**

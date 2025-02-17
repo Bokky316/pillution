@@ -1,4 +1,4 @@
-package com.javalab.student.controller;
+package com.javalab.student.controller.message;
 
 import com.javalab.student.dto.ChatMessageDto;
 import com.javalab.student.service.ChatMessageService;

@@ -3,7 +3,7 @@ package com.javalab.student.service.webSoket;
 import com.javalab.student.dto.MessageRequestDto;
 import com.javalab.student.dto.MessageResponseDto;
 import com.javalab.student.entity.Member;
-import com.javalab.student.entity.Message;
+import com.javalab.student.entity.message.Message;
 import com.javalab.student.repository.MemberRepository;
 import com.javalab.student.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;

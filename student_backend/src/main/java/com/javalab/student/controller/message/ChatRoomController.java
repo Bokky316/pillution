@@ -1,4 +1,4 @@
-package com.javalab.student.controller;
+package com.javalab.student.controller.message;
 
 import com.javalab.student.constant.ConsultationRequestStatus;
 import com.javalab.student.dto.ChatRoomResponseDto;

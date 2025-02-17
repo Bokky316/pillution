@@ -1,7 +1,7 @@
 package com.javalab.student.repository;
 
 import com.javalab.student.constant.ConsultationRequestStatus;
-import com.javalab.student.entity.ChatRoom;
+import com.javalab.student.entity.message.ChatRoom;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

@@ -122,6 +122,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/survey/**").authenticated() // 설문 API는 로그인한 사용자만 접근 가능
                 .requestMatchers("/api/recommendations/**").authenticated() // 추천 API는 로그인한 사용자만 접근 가능
                 .requestMatchers("/api/cart/**").authenticated() // 장바구니 API는 로그인한 사용자만 접근 가능
+                .requestMatchers("/api/members/**").authenticated()
+                .requestMatchers("/api/payments/**").authenticated()
+                .requestMatchers("/api/orders").authenticated()
 
                 // 관리자 전용 엔드포인트
                 .requestMatchers("/admin/**").hasRole("ADMIN")
@@ -130,9 +133,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/posts/*/delete").hasRole("ADMIN")  // 게시물 삭제
 
                 // 사용자 및 관리자, 상담사 접근 가능한 엔드포인트
-                .requestMatchers("/api/members/**").hasAnyRole("USER", "ADMIN", "CS_AGENT")
-                .requestMatchers("/api/payments/**").hasAnyRole("USER", "ADMIN", "CS_AGENT") // 결제 요청, 결제 검증 API는 USER, ADMIN만 접근 가능
-                .requestMatchers("/api/orders").hasAnyRole("USER", "ADMIN", "CS_AGENT")
+//                .requestMatchers("/api/members/**").hasAnyRole("USER", "ADMIN", "CS_AGENT")
+//                .requestMatchers("/api/payments/**").hasAnyRole("USER", "ADMIN", "CS_AGENT")
+//                .requestMatchers("/api/orders").hasAnyRole("USER", "ADMIN", "CS_AGENT")
                 // Swagger UI 및 API 문서
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
 
