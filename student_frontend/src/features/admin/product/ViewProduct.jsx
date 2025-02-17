@@ -151,7 +151,7 @@ const ViewProduct = ({ productId, open, onClose }) => {
                       </Box>
                   </Box>
 
-                  <Divider sx={{ my: 3, borderColor: '#ddd' }} /> {/* 구분선 색상 변경 */}
+                  <Divider sx={{ my: 3, borderColor: '#ddd' }} /> {/* 구분선 색상 변경선 */}
 
                   {/* 상품 설명 */}
                   <Box sx={{ mb: 4 }}>
