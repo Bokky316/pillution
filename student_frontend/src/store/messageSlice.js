@@ -12,12 +12,8 @@ export const fetchSentMessages = createAsyncThunk(
     async (userId, { rejectWithValue }) => {
         try {
             const response = await fetchWithAuth(`${API_URL}messages/sent/${userId}`);
-            if (!response.ok) {
-                throw new Error('서버 응답이 실패했습니다');
-            }
-            const data = await response.json();
-            console.log('✅ fetchSentMessages 액션 성공:', data);
-            return data;
+            console.log('✅ fetchSentMessages 액션 성공:', response);
+            return response;
         } catch (error) {
             console.error('❌ fetchSentMessages 액션 실패:', error);
             return rejectWithValue(error.message);

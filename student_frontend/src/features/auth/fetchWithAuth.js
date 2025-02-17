@@ -76,43 +76,37 @@ export const fetchWithAuth = async (url, options = {}) => {
   try {
     const response = await fetch(url, config);
     console.log('Response received:', response);
-    console.log('Response status:', response.status);
-    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
-    let responseData;
-    const contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
-      responseData = await response.json();
-    } else {
-      responseData = await response.text();
+            console.log('Response status:', response.status);
+            console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+            if (response.status === 401) {
+                //const errorData = await response.json(); // 이 부분을 제거
+                //console.warn(`401 Error: ${errorData.message}`);
+
+                //if (errorData.message.includes("만료")) { // 이 부분을 수정
+                console.log("fetchWithAuth.js: 액세스 토큰 만료되어 refreshAccessToken() 호출 - 1");
+                const refreshSuccess = await refreshAccessToken();
+
+                if (refreshSuccess) {
+                    console.log("리프레시 토큰 성공, 기존 요청 재시도");
+                    const newResponse = await fetch(url, config); // 기존 요청 재시도
+                    return newResponse;
+                } else {
+                    console.error("리프레시 토큰 갱신 실패");
+                    throw new Error("Unauthorized: 리프레시 토큰 갱신 실패");
+                }
+                //} else {
+                //    throw new Error(`Unauthorized: ${errorData.message}`);
+                //}
+            }
+
+
+        return response;
+    } catch (error) {
+        console.error("API 요청 실패:", error.message);
+        throw error;
     }
-    console.log('Response data:', responseData);
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        console.log("fetchWithAuth.js: 액세스 토큰 만료되어 refreshAccessToken() 호출 - 1");
-        const refreshSuccess = await refreshAccessToken();
-
-        if (refreshSuccess) {
-          console.log("리프레시 토큰 성공, 기존 요청 재시도");
-          const newResponse = await fetch(url, config);
-          const newResponseData = await newResponse.json();
-          console.log('New response data:', newResponseData);
-          return newResponseData;
-        } else {
-          console.error("리프레시 토큰 갱신 실패");
-          throw new Error("Unauthorized: 리프레시 토큰 갱신 실패");
-        }
-      } else {
-        throw new Error(`API 요청 실패: ${response.status} - ${responseData}`);
-      }
-    }
-
-    return responseData;
-  } catch (error) {
-    console.error("API 요청 실패:", error.message);
-    throw error;
-  }
 };
 
 /**

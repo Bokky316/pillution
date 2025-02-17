@@ -13,6 +13,7 @@ import { API_URL } from "@/utils/constants";
 import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
 import { showSnackbar } from "@/store/snackbarSlice";
 import useDebounce from "@/hooks/useDebounce";
+import { matchSorter } from 'match-sorter';
 
 /**
  * @param {Object} props
@@ -29,6 +30,7 @@ const AdminMessageModal = ({ open, onClose, onSend }) => {
     const debouncedQuery = useDebounce(searchQuery, 300);
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
+
 
     const receiverOptions = [
         { value: "ALL", label: "모든 사용자" },
@@ -47,17 +49,29 @@ const AdminMessageModal = ({ open, onClose, onSend }) => {
      * @param {string} query 검색어
      */
     const fetchUsers = async (query) => {
+        console.log("Fetching users with query:", query);
         try {
             const response = await fetchWithAuth(`${API_URL}members/search?query=${query}`);
-            console.log('Fetched users:', response);
-            if (response.status === 'success' && Array.isArray(response.data)) {
-                const formattedUsers = response.data.map(user => ({
-                    id: user.id,
-                    name: `${user.name} (${user.email}) - ID: ${user.id}`,
-                    email: user.email
-                }));
-                setUsers(formattedUsers);
+            console.log('Fetched users response:', response);
+
+            if (response.ok) {
+                const responseData = await response.json();
+                console.log('Fetched users data:', responseData);
+
+                if (responseData.status === 'success' && Array.isArray(responseData.data)) {
+                    const formattedUsers = responseData.data.map(user => ({
+                        id: user.id,
+                        name: `${user.name} (${user.email}) - ID: ${user.id}`,
+                        email: user.email
+                    }));
+                    console.log("Formatted users:", formattedUsers);
+                    setUsers(formattedUsers);
+                } else {
+                    console.error("Unexpected data format:", responseData);
+                    setUsers([]);
+                }
             } else {
+                console.error("Failed to fetch users:", response.status);
                 setUsers([]);
             }
         } catch (error) {
@@ -134,16 +148,22 @@ const AdminMessageModal = ({ open, onClose, onSend }) => {
                 {selectedReceiverType === "USER" && (
                     <Autocomplete
                         options={users}
-                        getOptionLabel={(option) => option.name}
+                        getOptionLabel={(option) => option.name || ""}
+                        value={users.find(user => user.id === selectedReceiverId) || null}
                         onChange={(event, newValue) => {
                             setSelectedReceiverId(newValue ? newValue.id : "");
                             console.log("Selected user:", newValue);
                         }}
-                        onInputChange={(event, newInputValue) => setSearchQuery(newInputValue)}
+                        onInputChange={(event, newInputValue, reason) => {
+                            if (reason === 'input') {
+                                setSearchQuery(newInputValue);
+                            }
+                        }}
                         renderInput={(params) => <TextField {...params} label="특정 사용자 선택" fullWidth />}
-                        value={users.find(user => user.id === selectedReceiverId) || null}
-                        isOptionEqualToValue={(option, value) => option.id === value?.id}
+                        isOptionEqualToValue={(option, value) => option?.id === value?.id}
+                        filterOptions={(x) => x}
                     />
+
                 )}
 
                 {selectedReceiverType === "ROLE" && (

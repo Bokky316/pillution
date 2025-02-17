@@ -67,12 +67,15 @@ export default function MessagesList() {
      * @param {string} query 검색어
      */
     const fetchUsers = async (query) => {
-        if (!query) return;
         try {
             const response = await fetchWithAuth(`${API_URL}members/search?query=${query}`);
-            if (response.ok) {
-                const data = await response.json();
-                setUsers(data.data || []);
+            if (Array.isArray(response)) {
+                const formattedUsers = response.map(user => ({
+                    id: user.id,
+                    name: `${user.name} (${user.email}) - ID: ${user.id}`,
+                    email: user.email
+                }));
+                setUsers(formattedUsers);
             } else {
                 setUsers([]);
             }
@@ -81,6 +84,7 @@ export default function MessagesList() {
             setUsers([]);
         }
     };
+
 
     /**
      * 메시지 목록 조회 API 호출
