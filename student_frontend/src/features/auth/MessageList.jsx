@@ -14,8 +14,6 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    Checkbox,
-    ListItemText
 } from "@mui/material";
 import { useSelector, useDispatch } from "react-redux";
 import { API_URL } from "@/utils/constants";
@@ -144,7 +142,6 @@ export default function MessagesList() {
      */
     const handleReply = async () => {
         if (!selectedMessage || !replyContent) return;
-
         try {
             await fetchWithAuth(`${API_URL}messages/send`, {
                 method: "POST",
@@ -221,15 +218,20 @@ export default function MessagesList() {
      */
     const [openAdminMessageModal, setOpenAdminMessageModal] = useState(false);
     const [adminMessageContent, setAdminMessageContent] = useState("");
-    const [selectedReceivers, setSelectedReceivers] = useState([]);
+
+    /**
+     * ✅ 수신자 유형 : ALL(전체), ROLE(특정 역할), USER(특정 사용자)
+     */
+    const [receiverType, setReceiverType] = useState("ALL");
+    const [selectedReceiver, setSelectedReceiver] = useState(null);
 
     /**
      * 수신자 옵션 정의
      */
     const receiverOptions = [
-        { value: 'all', label: '모든 사용자' },
-        { value: 'user', label: '일반 사용자' },
-        { value: 'marketing', label: '마케팅 알림 동의 사용자' }
+        { value: 'ALL', label: '모든 사용자' },
+        { value: 'ROLE', label: '역할별 사용자' },
+        { value: 'USER', label: '특정 사용자' }
     ];
 
     /**
@@ -237,6 +239,8 @@ export default function MessagesList() {
      */
     const handleOpenAdminMessageModal = () => {
         setOpenAdminMessageModal(true);
+        setReceiverType('ALL');
+        setSelectedReceiver(null);
     };
 
     /**
@@ -245,7 +249,8 @@ export default function MessagesList() {
     const handleCloseAdminMessageModal = () => {
         setOpenAdminMessageModal(false);
         setAdminMessageContent("");
-        setSelectedReceivers([]);
+        setReceiverType('ALL');
+        setSelectedReceiver(null);
     };
 
     /**
@@ -257,12 +262,24 @@ export default function MessagesList() {
             return;
         }
 
+        let receiverId = "0";
+
+        if (receiverType === 'ROLE' || receiverType === 'USER') {
+            if (!selectedReceiver) {
+                dispatch(showSnackbar("수신자를 선택해주세요."));
+                return;
+            }
+            receiverId = selectedReceiver;
+        }
+
         try {
             const response = await fetchWithAuth(`${API_URL}messages/admin/send`, {
                 method: "POST",
                 body: JSON.stringify({
+                    senderId: user.id,
                     content: adminMessageContent,
-                    receiverId: 0  // 전체 사용자에게 전송
+                    receiverType: receiverType,
+                    receiverId: receiverId
                 }),
             });
 
@@ -285,6 +302,37 @@ export default function MessagesList() {
     const filteredMessages = messages.filter(message =>
         message.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
         message.senderName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    /**
+     * 역할 선택 컴포넌트
+     */
+    const RoleSelector = () => (
+        <FormControl fullWidth margin="normal">
+            <InputLabel>역할 선택</InputLabel>
+            <Select
+                value={selectedReceiver ? selectedReceiver : ''}
+                onChange={(e) => setSelectedReceiver(e.target.value)}
+            >
+                <MenuItem value="USER">일반 사용자</MenuItem>
+                <MenuItem value="ADMIN">관리자</MenuItem>
+                <MenuItem value="CS_AGENT">상담원</MenuItem>
+            </Select>
+        </FormControl>
+    );
+
+    /**
+     * 사용자 선택 컴포넌트
+     */
+    const UserSelector = () => (
+        <Autocomplete
+            options={users}
+            getOptionLabel={(option) => option.name}
+            value={selectedReceiver}
+            onChange={(event, value) => setSelectedReceiver(value?.id)}
+            onInputChange={(event, newInputValue) => fetchUsers(newInputValue)}
+            renderInput={(params) => <TextField {...params} label="사용자 선택" fullWidth />}
+        />
     );
 
     return (
@@ -388,21 +436,25 @@ export default function MessagesList() {
                 <DialogTitle>관리자 공지 보내기</DialogTitle>
                 <DialogContent>
                     <FormControl fullWidth margin="normal">
-                        <InputLabel>수신자 선택</InputLabel>
+                        <InputLabel>수신자 유형</InputLabel>
                         <Select
-                            multiple
-                            value={selectedReceivers}
-                            onChange={(e) => setSelectedReceivers(e.target.value)}
-                            renderValue={(selected) => selected.join(', ')}
+                            value={receiverType}
+                            onChange={(e) => {
+                                setReceiverType(e.target.value);
+                                setSelectedReceiver(null); // 수신자 유형 변경 시 선택된 수신자 초기화
+                            }}
                         >
                             {receiverOptions.map((option) => (
                                 <MenuItem key={option.value} value={option.value}>
-                                    <Checkbox checked={selectedReceivers.indexOf(option.value) > -1} />
-                                    <ListItemText primary={option.label} />
+                                    {option.label}
                                 </MenuItem>
                             ))}
                         </Select>
                     </FormControl>
+
+                    {receiverType === 'ROLE' && <RoleSelector />}
+                    {receiverType === 'USER' && <UserSelector />}
+
                     <TextField
                         fullWidth
                         multiline

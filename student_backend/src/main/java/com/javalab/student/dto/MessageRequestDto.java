@@ -9,13 +9,14 @@ import lombok.Setter;
 import java.util.HashMap;
 import java.util.Map;
 
-@Getter @Setter
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class MessageRequestDto {
 
     private Long senderId;
-    private Long receiverId;
+    private String receiverId;
     @NotBlank(message = "메시지 내용은 필수 입력 값입니다.")
     private String content;
     private String receiverType; // 추가: ALL, ROLE, USER
