@@ -47,33 +47,41 @@ public class CartService {
      */
     @Transactional
     public Long addCart(CartItemDto cartItemDto, String email) {
-        // 상품과 회원 정보를 조회
-        Product product = productRepository.findById(cartItemDto.getProductId())
-                .orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다. ID: " + cartItemDto.getProductId()));
-        Member member = memberRepository.findByEmail(email);
-        if (member == null) {
-            throw new EntityNotFoundException("회원을 찾을 수 없습니다. Email: " + email);
-        }
+        try {
+            // 상품 조회
+            Product product = productRepository.findById(cartItemDto.getProductId())
+                    .orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다. ID: " + cartItemDto.getProductId()));
 
-        // 회원의 장바구니를 조회하거나 새로 생성
-        Cart cart = cartRepository.findByMemberId(member.getId())
-                .orElseGet(() -> {
-                    Cart newCart = Cart.createCart(member);
-                    return cartRepository.save(newCart);
-                });
+            // 회원 조회
+            Member member = memberRepository.findByEmail(email);
+            if (member == null) {
+                throw new EntityNotFoundException("회원을 찾을 수 없습니다. Email: " + email);
+            }
 
-        // 장바구니에 이미 같은 상품이 있는지 확인
-        CartItem savedCartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), product.getId());
+            // 회원의 장바구니를 조회하거나 새로 생성
+            Cart cart = cartRepository.findByMemberId(member.getId())
+                    .orElseGet(() -> {
+                        Cart newCart = Cart.createCart(member);
+                        return cartRepository.save(newCart);
+                    });
 
-        if (savedCartItem != null) {
-            // 이미 있다면 수량만 증가
-            savedCartItem.addQuantity(cartItemDto.getQuantity());
-            return savedCartItem.getId();
-        } else {
-            // 없다면 새로운 CartItem 생성
-            CartItem cartItem = CartItem.createCartItem(cart, product, cartItemDto.getQuantity());
-            cartItemRepository.save(cartItem);
-            return cartItem.getId();
+            // 장바구니에 이미 같은 상품이 있는지 확인
+            CartItem savedCartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), product.getId());
+
+            if (savedCartItem != null) {
+                // 이미 있다면 수량만 증가
+                savedCartItem.addQuantity(cartItemDto.getQuantity());
+                return savedCartItem.getId();
+            } else {
+                // 없다면 새로운 CartItem 생성
+                CartItem cartItem = CartItem.createCartItem(cart, product, cartItemDto.getQuantity());
+                cartItemRepository.save(cartItem);
+                return cartItem.getId();
+            }
+        } catch (Exception e) {
+            // 로그에 에러 메시지 출력
+            log.error("장바구니에 상품을 추가하는 중 오류 발생: " + e.getMessage(), e);
+            throw e;  // 예외를 다시 던져서 상위 레벨에서 처리할 수 있게 함
         }
     }
 
@@ -85,8 +93,18 @@ public class CartService {
      */
     @Transactional(readOnly = true)
     public List<CartDetailDto> getCartList(String email) {
+        // Member member = memberRepository.findByEmail(email); // 불필요한 DB 조회 제거
+
+        // 이메일로 Member ID를 조회
+        // Member member = memberRepository.findByEmail(email); // 불필요한 DB 조회 <-- 삭제!
+        // Long memberId = member.getId(); // Member ID 얻기  <-- 삭제!
+
+        // Cart cart = cartRepository.findByMemberId(memberId).orElse(null); // Member ID로 Cart 조회 <-- memberId 관련 코드 삭제!
+
         Member member = memberRepository.findByEmail(email);
+
         Cart cart = cartRepository.findByMemberId(member.getId()).orElse(null);
+
         if (cart == null) {
             return new ArrayList<>();
         }
