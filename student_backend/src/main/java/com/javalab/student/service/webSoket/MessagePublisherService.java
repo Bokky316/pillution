@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class MessagePublisherService {
 
-    private final RedisTemplate<String, String> redisTemplate;
+    private final RedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
     private static final String CHANNEL_NAME = "chat_channel";
 
@@ -25,7 +25,7 @@ public class MessagePublisherService {
      * RedisTemplate이라는 클래스가 두개의 빈으로 만들어지기 때문에 특정 하나의 빈을 선택하기 위해 @Qualifier 사용
      */
     public MessagePublisherService(
-            @Qualifier("redisStringTemplate") RedisTemplate<String, String> redisTemplate,
+            @Qualifier("redisStringTemplate") RedisTemplate redisTemplate,
             ObjectMapper objectMapper) {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
@@ -37,7 +37,6 @@ public class MessagePublisherService {
     public void publishMessage(MessageRequestDto requestDto) {
         log.info("📨 Redis 메시지 발행 요청 - senderId={}, receiverId={}, content={}",
                 requestDto.getSenderId(), requestDto.getReceiverId(), requestDto.getContent());
-
         if (requestDto.getSenderId() == null || requestDto.getReceiverId() == null) {
             log.error("❌ 메시지 발행 실패: 발신자 또는 수신자 ID가 누락되었습니다.");
             throw new IllegalArgumentException("발신자 또는 수신자 ID가 누락되었습니다.");
@@ -45,16 +44,35 @@ public class MessagePublisherService {
 
         try {
             // ✅ JSON 문자열로 변환 후 Redis Pub/Sub으로 발행
-            String jsonMessage = objectMapper.writeValueAsString(requestDto.toMap()); // Map -> JSON 변환
+            String jsonMessage = objectMapper.writeValueAsString(requestDto);
             // - Redis Pub/Sub으로 메세지 발행 즉, 채널에 메시지 전송
             redisTemplate.convertAndSend(CHANNEL_NAME, jsonMessage);
-
             log.info("📩 Redis 메시지 발행 완료! senderId={}, receiverId={}, content={}",
                     requestDto.getSenderId(), requestDto.getReceiverId(), requestDto.getContent());
-
         } catch (Exception e) {
             log.error("❌ 메시지 발행 중 오류 발생", e);
             throw new RuntimeException("메시지 발행 실패", e);
+        }
+    }
+
+    /**
+     * ✅ 관리자 메시지를 Redis Pub/Sub으로 발행하는 메서드
+     * @param requestDto 관리자 메시지 요청 DTO
+     */
+    public void publishAdminMessage(MessageRequestDto requestDto) {
+        log.info("📨 관리자 Redis 메시지 발행 요청 - senderId={}, receiverId={}, content={}",
+                requestDto.getSenderId(), requestDto.getReceiverId(), requestDto.getContent());
+
+        try {
+            // ✅ JSON 문자열로 변환 후 Redis Pub/Sub으로 발행
+            String jsonMessage = objectMapper.writeValueAsString(requestDto);
+            // - Redis Pub/Sub으로 메세지 발행 즉, 채널에 메시지 전송
+            redisTemplate.convertAndSend(CHANNEL_NAME, jsonMessage);
+            log.info("📩 관리자 Redis 메시지 발행 완료! senderId={}, receiverId={}, content={}",
+                    requestDto.getSenderId(), requestDto.getReceiverId(), requestDto.getContent());
+        } catch (Exception e) {
+            log.error("❌ 관리자 메시지 발행 중 오류 발생", e);
+            throw new RuntimeException("관리자 메시지 발행 실패", e);
         }
     }
 }

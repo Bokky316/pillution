@@ -51,4 +51,8 @@ public interface MemberRepository extends JpaRepository<Member, Long>, JpaSpecif
     Page<Member> findByActivate(boolean activate, Pageable pageable);
 
     // 검색 기능 (JpaSpecificationExecutor 사용)
+
+    // 옵셔널타입으로 이멜 조회
+    Optional<Member> findOptionalByEmail(String email);
+
 }

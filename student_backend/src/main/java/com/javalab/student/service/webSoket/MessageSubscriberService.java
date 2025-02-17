@@ -1,6 +1,5 @@
 package com.javalab.student.service.webSoket;
 
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.javalab.student.dto.MessageRequestDto;
 import lombok.RequiredArgsConstructor;
@@ -28,21 +27,31 @@ public class MessageSubscriberService implements org.springframework.data.redis.
      *    메시지를 수신하고 WebSocket을 통해 클라이언트에게 보냅니다.
      */
     @Override
-    public void onMessage(Message redisMessage, byte[] pattern) { // ✅ RedisMessage는 변수로 사용
+    public void onMessage(Message redisMessage, byte[] pattern) {
         try {
-            // 1. Redis 메시지 수신
-            String jsonMessage = new String(redisMessage.getBody()); // Redis 메시지를 JSON 문자열로 변환
+            String jsonMessage = new String(redisMessage.getBody());
             log.info("🔹 Redis Pub/Sub 수신 경로: {}, 메시지 내용: {}", new String(pattern), jsonMessage);
 
-            // 2. JSON 문자열을 MessageRequestDto 객체로 변환
             MessageRequestDto messageDto = objectMapper.readValue(jsonMessage, MessageRequestDto.class);
 
-            log.info("✅ WebSocket으로 메시지 전송: /topic/chat/{}", messageDto.getReceiverId());
+            String content = messageDto.getContent();
 
-            // 3. Redis에서 보낸 메시지를 전달받고 이를 WebSocket을 통해 클라이언트에게 전달
-            // - "/topic/chat/{receiverId}"로 구독 중인 클라이언트에게 메시지 전송
-            //    여기서 클라이언트는 ChatController의 @MessageMapping("/chat") 메서드를 통해 메시지를 받을 수 있다.
-            messagingTemplate.convertAndSend("/topic/chat/" + messageDto.getReceiverId(), messageDto.getContent());
+            switch (messageDto.getReceiverType()) {
+                case "ALL":
+                    log.info("✅ 전체 사용자에게 메시지 전송");
+                    messagingTemplate.convertAndSend("/topic/chat/all", content);
+                    break;
+                case "ROLE":
+                    log.info("✅ 특정 역할의 사용자에게 메시지 전송");
+                    messagingTemplate.convertAndSend("/topic/chat/role/" + messageDto.getReceiverId(), content);
+                    break;
+                case "USER":
+                    log.info("✅ 특정 사용자 {}에게 메시지 전송", messageDto.getReceiverId());
+                    messagingTemplate.convertAndSend("/topic/chat/" + messageDto.getReceiverId(), content);
+                    break;
+                default:
+                    log.error("❌ 잘못된 수신자 유형: {}", messageDto.getReceiverType());
+            }
 
         } catch (Exception e) {
             log.error("❌ 메시지 처리 중 오류 발생", e);

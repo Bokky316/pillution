@@ -8,6 +8,7 @@ import com.javalab.student.service.webSoket.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.List;
  * - 사용자의 읽지 않은 메시지 개수 조회
  * - 메시지를 읽음 처리
  * - 메시지 전송 (DB 저장 + Redis Pub/Sub 발행)
+ * - 관리자 메시지 전송 (DB 저장 + Redis Pub/Sub 발행)
  */
 @RestController
 @RequestMapping("/api/messages")
@@ -92,5 +94,28 @@ public class MessageController {
         return ResponseEntity.ok(messages);
     }
 
+    /**
+     * ✅ 관리자 메시지 전송 (DB 저장 + Redis Pub/Sub 발행)
+     */
+    /**
+     * ✅ 관리자 메시지 전송 (DB 저장 + Redis Pub/Sub 발행)
+     */
+    @PostMapping("/admin/send")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> sendAdminMessage(@RequestBody MessageRequestDto requestDto) {
+        try {
+            // ✅ 1. 관리자 메시지를 DB에 저장
+            messageService.saveAdminMessage(requestDto);
 
+            // ✅ 2. 메시지를 Redis Pub/Sub으로 발행
+            messagePublisherService.publishAdminMessage(requestDto);
+
+            log.info("✅ 관리자 메시지 전송 요청 완료: senderId={}, receiverType={}, content={}",
+                    requestDto.getSenderId(), requestDto.getReceiverType(), requestDto.getContent());
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("❌ 관리자 메시지 전송 중 오류 발생", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }
