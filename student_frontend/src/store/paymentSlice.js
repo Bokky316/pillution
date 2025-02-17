@@ -21,14 +21,16 @@ export const fetchMerchantId = createAsyncThunk(
 
 /**
  * 결제를 처리하는 비동기 액션
- * @param {Object} paymentRequestDto - 결제 요청 정보
+ * @param {Object} payload - 결제 요청 정보와 구매 유형
+ * @param {Object} payload.paymentRequestDto - 결제 요청 정보
+ * @param {string} payload.purchaseType - 구매 유형 (일회성 또는 구독)
  * @returns {Promise<Object>} 결제 처리 결과
  */
 export const processPayment = createAsyncThunk(
   'payment/processPayment',
-  async (paymentRequestDto, { rejectWithValue }) => {
+  async ({ paymentRequestDto, purchaseType }, { rejectWithValue }) => {
     try {
-      const response = await fetchWithAuth(`${API_URL}payments/request`, {
+      const response = await fetchWithAuth(`${API_URL}payments/request?purchaseType=${purchaseType}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

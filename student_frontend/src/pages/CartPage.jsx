@@ -37,6 +37,7 @@ const CartPage = () => {
     // Redux 스토어에서 가맹점 ID를 가져옵니다.
     const { merchantId } = useSelector((state) => state.payment);
 
+
     /**
      * 컴포넌트 마운트 시 장바구니 아이템을 불러옵니다.
      */
@@ -59,6 +60,8 @@ const CartPage = () => {
         const allSelected = cartItems.every((item) => item.selected);
         setSelectAll(allSelected);
     }, [cartItems]);
+
+
 
     /**
      * 전체 선택/해제 처리 함수
@@ -177,10 +180,8 @@ const handleCheckout = async () => {
             };
 
             console.log("CartPage - createOrder 액션 디스패치:", { orderData, purchaseType: selectedPurchaseType });
-            await dispatch(createOrder({ orderData: orderData, purchaseType: selectedPurchaseType })).unwrap();
-            console.log("CartPage - createOrder 액션 디스패치 완료");
 
-            navigate('/order-detail', {
+             navigate('/order-detail', {
                 state: {
                     selectedItems: selectedCartItems.map(item => ({
                         cartItemId: item.cartItemId,
@@ -197,7 +198,7 @@ const handleCheckout = async () => {
                         email: user.email,
                         phone: user.phone,
                         address: user.address
-                    }
+                    },
                 }
             });
 
@@ -216,80 +217,81 @@ const handleCheckout = async () => {
      */
     return (
         <>
-        {/* 장바구니 페이지 전체 컨테이너 */}
-        <div className="cart-page">
-            {/* 페이지 제목 */}
-            <h2>CART</h2>
-            {/* 장바구니 내용 컨테이너 */}
-            <main className="cart-container">
-                {/* 장바구니 아이템 목록 섹션 */}
-                <section className="cart-items">
-                    {/* 전체 선택 체크박스 컨테이너 */}
-                    <div className="select-all-container">
-                        <input
-                            type="checkbox"
-                            id="select-all"
-                            checked={selectAll}
-                            onChange={handleSelectAll}
-                        />
-                        <label htmlFor="select-all" className="checkbox-label">전체 선택</label>
-                    </div>
-                    {/* 장바구니 아이템이 없는 경우 메시지 표시 */}
-                    {cartItems.length === 0 ? (
-                        <div className="empty-cart-message">장바구니가 비어 있습니다.</div>
-                    ) : (
-                        // 장바구니 아이템 목록 표시
-                        cartItems.map((item) => (
-                            <CartItem
-                                key={item.cartItemId}
-                                item={item}
-                                onSelect={() => handleItemSelect(item.cartItemId)}
-                                onQuantityChange={handleQuantityChange}
-                                onRemove={handleRemoveItem}
+            {/* 장바구니 페이지 전체 컨테이너 */}
+            <div className="cart-page">
+                {/* 페이지 제목 */}
+                <h2>CART</h2>
+                {/* 장바구니 내용 컨테이너 */}
+                <main className="cart-container">
+                    {/* 장바구니 아이템 목록 섹션 */}
+                    <section className="cart-items">
+                        {/* 전체 선택 체크박스 컨테이너 */}
+                        <div className="select-all-container">
+                            <input
+                                type="checkbox"
+                                id="select-all"
+                                checked={selectAll}
+                                onChange={handleSelectAll}
                             />
-                        ))
-                    )}
-                </section>
-                {/* 총 결제 금액 요약 정보 표시 */}
-                <TotalPaymentSummary
-                    cartItems={cartItems}
-                    purchaseType={selectedPurchaseType}
-                />
-                {/* 구매 유형 선택 섹션 */}
-                <div className="purchase-type-selection">
-                    {/* 정기 구독 구매 유형 선택 */}
-                    <CartSummary
+                            <label htmlFor="select-all" className="checkbox-label">전체 선택</label>
+                        </div>
+                        {/* 장바구니 아이템이 없는 경우 메시지 표시 */}
+                        {cartItems.length === 0 ? (
+                            <div className="empty-cart-message">장바구니가 비어 있습니다.</div>
+                        ) : (
+                            // 장바구니 아이템 목록 표시
+                            cartItems.map((item) => (
+                                <CartItem
+                                    key={item.cartItemId}
+                                    item={item}
+                                    onSelect={() => handleItemSelect(item.cartItemId)}
+                                    onQuantityChange={handleQuantityChange}
+                                    onRemove={handleRemoveItem}
+                                />
+                            ))
+                        )}
+                    </section>
+                    {/* 총 결제 금액 요약 정보 표시 */}
+                    <TotalPaymentSummary
                         cartItems={cartItems}
-                        purchaseType="subscription"
-                        isSelected={selectedPurchaseType === "subscription"}
-                        onSelect={() => handlePurchaseTypeSelect("subscription")}
+                        purchaseType={selectedPurchaseType}
                     />
-                    {/* 일회성 구매 유형 선택 */}
-                    <CartSummary
-                        cartItems={cartItems}
-                        purchaseType="oneTime"
-                        isSelected={selectedPurchaseType === "oneTime"}
-                        onSelect={() => handlePurchaseTypeSelect("oneTime")}
-                    />
-                </div>
-                {/* 정기 구독 혜택 정보 표시 */}
-                <div className="subscription-benefits">
-                    <h4>정기 구독 혜택</h4>
-                    <ul>
-                        <li>3만원 이상 구매 시 3,000원 할인</li>
-                        <li>1만원 이상 구매 시 무료 배송</li>
-                    </ul>
-                </div>
-                {/* 결제하기 버튼 */}
-                <button
-                    className="checkout-btn"
-                    onClick={handleCheckout}
-                    disabled={!selectedPurchaseType}
-                >
-                    결제하기
-                </button>
-            </main>
-        </div>
+                    {/* 구매 유형 선택 섹션 */}
+                    <div className="purchase-type-selection">
+                        {/* 정기 구독 구매 유형 선택 */}
+                        <CartSummary
+                            cartItems={cartItems}
+                            purchaseType="subscription"
+                            isSelected={selectedPurchaseType === "subscription"}
+                            onSelect={() => handlePurchaseTypeSelect("subscription")}
+                        />
+                        {/* 일회성 구매 유형 선택 */}
+                        <CartSummary
+                            cartItems={cartItems}
+                            purchaseType="oneTime"
+                            isSelected={selectedPurchaseType === "oneTime"}
+                            onSelect={() => handlePurchaseTypeSelect("oneTime")}
+                        />
+                    </div>
+                    {/* 정기 구독 혜택 정보 표시 */}
+                    <div className="subscription-benefits">
+                        <h4>정기 구독 혜택</h4>
+                        <ul>
+                            <li>3만원 이상 구매 시 3,000원 할인</li>
+                            <li>1만원 이상 구매 시 무료 배송</li>
+                        </ul>
+                    </div>
+                    {/* 결제하기 버튼 */}
+                    <button
+                        className="checkout-btn"
+                        onClick={handleCheckout}
+                        disabled={!selectedPurchaseType}
+                    >
+                        결제하기
+                    </button>
+                    {/* 구독 확인 로딩 상태 표시 */}
+                </main>
+            </div>
         </>
     );
 };
