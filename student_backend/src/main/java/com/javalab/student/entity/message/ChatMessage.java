@@ -1,5 +1,6 @@
-package com.javalab.student.entity;
+package com.javalab.student.entity.message;
 
+import com.javalab.student.entity.Member;
 import jakarta.persistence.*;
 import lombok.*;
 
