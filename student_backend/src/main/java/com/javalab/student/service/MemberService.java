@@ -36,6 +36,11 @@ public class MemberService {
             throw new IllegalStateException("이미 존재하는 이메일입니다.");
         }
 
+        // 비밀번호 확인
+        if (!memberFormDto.getPassword().equals(memberFormDto.getConfirmPassword())) {
+            throw new IllegalStateException("비밀번호가 일치하지 않습니다.");
+        }
+
         // MemberFormDto를 Member 엔티티로 변환
         Member member = Member.createMember(memberFormDto, passwordEncoder);
 
@@ -64,13 +69,27 @@ public class MemberService {
         member.setName(memberUpdateDto.getName());
         member.setEmail(memberUpdateDto.getEmail());
         member.setPhone(memberUpdateDto.getPhone());
-        member.setAddress(memberUpdateDto.getAddress());
         member.setBirthDate(memberUpdateDto.getBirthDate());
         member.setGender(memberUpdateDto.getGender());
         member.setActivate(memberUpdateDto.isActivate());
 
+        // 변경된 주소 필드 적용
+        member.setPostalCode(memberUpdateDto.getPostalCode());
+        member.setRoadAddress(memberUpdateDto.getRoadAddress());
+        member.setDetailAddress(memberUpdateDto.getDetailAddress());
+
+        // 비밀번호 변경 요청이 있는 경우만 업데이트
+        if (memberUpdateDto.getPassword() != null && !memberUpdateDto.getPassword().isEmpty()) {
+            if (!memberUpdateDto.getPassword().equals(memberUpdateDto.getConfirmPassword())) {
+                throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+            }
+            member.setPassword(passwordEncoder.encode(memberUpdateDto.getPassword()));
+        }
+
+
         memberRepository.save(member); // 변경 사항 저장
     }
+
 
 
     /**

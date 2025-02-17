@@ -28,6 +28,8 @@ public class SubscriptionResponseDto {
     private List<SubscriptionNextItemDto> nextItems; // 다음 회차 결제 예정 상품들
     private LocalDate lastBillingDate;
     private int currentCycle;
+    private String deliveryRequest; // 배송요청사항
+
 
 
     public SubscriptionResponseDto(Subscription subscription) {
@@ -44,6 +46,7 @@ public class SubscriptionResponseDto {
         this.detailAddress = subscription.getDetailAddress();
         this.lastBillingDate = subscription.getLastBillingDate();
         this.currentCycle = subscription.getCurrentCycle();
+        this.deliveryRequest = subscription.getDeliveryRequest(); // 배송요청사항
 
         // ✅ Lazy-Loading 방지: DTO 리스트로 변환
         this.items = subscription.getItems().stream()
