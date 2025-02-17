@@ -126,12 +126,20 @@ export default function ProductListPage() {
   return (
     <Container maxWidth="lg" sx={{ padding: "20px" }}>
       {/* 카테고리 선택 Chip */}
-      <Box sx={{
+      <Box
+        sx={{
+          position: "fixed", // 화면에 고정
+          top: { xs: "56px", sm: "64px" }, // 상단에 고정
+          left: "50%", // 왼쪽 정렬
+          transform: "translateX(-50%)",
+          width: "480px", // 전체 너비
+          backgroundColor: "white", // 배경색 추가 (안 하면 투명)
+          zIndex: 1000, // 다른 요소 위에 표시되도록 설정
           display: "flex",
           gap: "10px",
           marginBottom: "20px",
           overflowX: "auto",
-          padding: "10px 0" ,
+          padding: "10px 0",
           "&::-webkit-scrollbar": {
             height: "8px",
           },
@@ -145,7 +153,8 @@ export default function ProductListPage() {
           "&::-webkit-scrollbar-track": {
             backgroundColor: "#f0f0f0",
           },
-      }}>
+        }}
+      >
         <Chip
           key="all"
           label="전체"
