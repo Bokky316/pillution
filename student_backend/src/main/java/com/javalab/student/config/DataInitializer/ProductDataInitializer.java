@@ -1,14 +1,8 @@
 /*
 package com.javalab.student.config.DataInitializer;
 
-import com.javalab.student.entity.product.Product;
-import com.javalab.student.entity.product.ProductCategory;
-import com.javalab.student.entity.product.ProductIngredient;
-import com.javalab.student.entity.product.ProductIngredientCategoryMapping;
-import com.javalab.student.repository.product.ProductCategoryRepository;
-import com.javalab.student.repository.product.ProductIngredientCategoryRepository;
-import com.javalab.student.repository.product.ProductIngredientRepository;
-import com.javalab.student.repository.product.ProductRepository;
+import com.javalab.student.entity.product.*;
+import com.javalab.student.repository.product.*;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
@@ -26,6 +20,7 @@ public class ProductDataInitializer implements CommandLineRunner {
     private final ProductIngredientRepository productIngredientRepository;
     private final ProductRepository productRepository;
     private final ProductIngredientCategoryRepository productIngredientCategoryRepository;
+    private final ProductImgRepository productImgRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -522,7 +517,27 @@ public class ProductDataInitializer implements CommandLineRunner {
                         .build()
         );
 
-        productRepository.saveAll(products);
+        List<Product> savedProducts = productRepository.saveAll(products);
+
+        for (int i = 0; i < savedProducts.size(); i++) {
+            Product product = savedProducts.get(i);
+
+            // ✅ 이미지 파일명 자동 설정 (01.jpg, 02.jpg ...)
+            String imageFileName = String.format("%02d.jpg", i + 1);
+            String imageUrl = "/api/products/images/" + imageFileName; // API를 통해 제공될 URL
+
+            ProductImg 대표이미지 = ProductImg.builder()
+                    .product(product)
+                    .imageUrl(imageUrl)
+                    .imageType("대표")
+                    .order(0)
+                    .build();
+
+            productImgRepository.save(대표이미지);
+
+            product.setMainImageUrl(imageUrl);
+            productRepository.save(product);
+        }
 
     }
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, CircularProgress } from "@mui/material";
 import { useNavigate } from 'react-router-dom';
 import SurveyContent from '@/features/survey/SurveyContent';
@@ -6,9 +6,11 @@ import CategoryNavigation from '@/features/survey/CategoryNavigation';
 import useSurveyData from '@/hooks/useSurveyData';
 import useNavigation from '@/hooks/useNavigation';
 import ProgressIndicator from '@/features/survey/ProgressIndicator';
+import AnalysisLoading from '@/features/survey/AnalysisLoading';
 
 const SurveyPage = () => {
   const navigate = useNavigate();
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const {
     categories,
@@ -36,6 +38,15 @@ const SurveyPage = () => {
     navigate('/'); // 메인 페이지 경로로 수정 필요
   };
 
+  // 분석 시작 및 결과 페이지로 이동
+  const handleAnalysis = () => {
+    setIsAnalyzing(true);
+    setTimeout(() => {
+      setIsAnalyzing(false);
+      navigate('/recommendation'); // 결과 페이지 경로로 수정 필요
+    }, 2500); // 2.5초 후 결과 페이지로 이동
+  };
+
   console.log("SurveyPage 렌더링");
 
   if (categoriesLoading || questionsLoading) {
@@ -54,6 +65,10 @@ const SurveyPage = () => {
     return <Typography>설문을 불러오는 중입니다...</Typography>;
   }
 
+  if (isAnalyzing) {
+    return <AnalysisLoading />;
+  }
+
   const categoriesToUse = filteredCategories || categories;
   const currentCategory = categoriesToUse[currentCategoryIndex];
   const subCategoriesToDisplay = filteredSubCategories || currentCategory?.subCategories;
@@ -64,39 +79,20 @@ const SurveyPage = () => {
                          currentSubCategoryIndex === subCategoriesToDisplay.length - 1;
 
   return (
-      <Box sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-        maxWidth: '800px',
-        margin: '0 auto'
-      }}>
-        {/* ProgressIndicator는 한 번만 렌더링 */}
-        <ProgressIndicator
-          categories={categoriesToUse}
-          currentCategoryIndex={currentCategoryIndex}
-          currentSubCategoryIndex={currentSubCategoryIndex}
-          onPrevious={handlePrevious}
-          onClose={handleClose}
-        />
-
-{/*          */}{/* 카테고리 및 서브카테고리 이름 표시 */}
-{/*         <Box sx={{ mb: 4, px: 2 }}> */}
-{/*           <Typography variant="h6" sx={{ */}
-{/*             fontWeight: 'bold', */}
-{/*             fontSize: '1.1rem', */}
-{/*             color: '#333' */}
-{/*           }}> */}
-{/*             {currentCategory?.name} */}
-{/*           </Typography> */}
-{/*           <Typography sx={{ */}
-{/*             color: '#666', */}
-{/*             fontSize: '0.9rem', */}
-{/*             mt: 1 */}
-{/*           }}> */}
-{/*             {currentSubCategory?.name} */}
-{/*           </Typography> */}
-{/*         </Box> */}
+    <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: '100vh',
+      maxWidth: '800px',
+      margin: '0 auto'
+    }}>
+      <ProgressIndicator
+        categories={categoriesToUse}
+        currentCategoryIndex={currentCategoryIndex}
+        currentSubCategoryIndex={currentSubCategoryIndex}
+        onPrevious={handlePrevious}
+        onClose={handleClose}
+      />
 
       <Box sx={{ flexGrow: 1 }}>
         <SurveyContent
@@ -119,7 +115,7 @@ const SurveyPage = () => {
       }}>
         <CategoryNavigation
           handlePrevious={handlePrevious}
-          handleNext={handleNext}
+          handleNext={isLastCategory ? handleAnalysis : handleNext}
           isNextButtonDisabled={isNextButtonDisabled()}
           isFirstCategory={isFirstCategory}
           isLastCategory={isLastCategory}
