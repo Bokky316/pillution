@@ -124,6 +124,16 @@ const RecommendationPage = () => {
     }, [cartAddingStatus]);
 
     /**
+     * 컴포넌트 언마운트 시 스낵바 상태 초기화
+     */
+    useEffect(() => {
+        return () => {
+            setSnackbarOpen(false);
+            setSnackbarMessage('');
+        };
+    }, []);
+
+    /**
      * 추천 상품 전체를 장바구니에 추가하는 함수
      */
     const handleAddAllToCart = async () => {

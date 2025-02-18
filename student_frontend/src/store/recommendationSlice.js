@@ -102,7 +102,6 @@ export const addRecommendationsToCart = createAsyncThunk(
   }
 );
 
-
 /**
  * 추천 관련 상태를 관리하는 Redux 슬라이스
  */
@@ -115,6 +114,7 @@ const recommendationSlice = createSlice({
         loading: false,
         error: null,
         cartAddingStatus: 'idle', // 장바구니 상태 추가
+        snackbarMessage: null, // 스낵바 메시지 상태 추가
     },
 
     reducers: {
@@ -128,6 +128,13 @@ const recommendationSlice = createSlice({
             state.loading = false;
             state.error = null;
             state.cartAddingStatus = 'idle';
+            state.snackbarMessage = null; // 스낵바 메시지 초기화 추가
+        },
+        /**
+         * 스낵바 메시지를 초기화하는 리듀서
+         */
+        clearSnackbarMessage: (state) => {
+            state.snackbarMessage = null;
         },
     },
 
@@ -145,6 +152,7 @@ const recommendationSlice = createSlice({
             .addCase(fetchHealthAnalysis.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
+                state.snackbarMessage = action.payload; // 스낵바 메시지 설정
             })
 
             // 추천 영양 성분
@@ -160,6 +168,7 @@ const recommendationSlice = createSlice({
             .addCase(fetchRecommendedIngredients.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
+                state.snackbarMessage = action.payload; // 스낵바 메시지 설정
             })
 
             // 추천 상품
@@ -175,6 +184,7 @@ const recommendationSlice = createSlice({
             .addCase(fetchRecommendedProducts.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
+                state.snackbarMessage = action.payload; // 스낵바 메시지 설정
             })
 
             // 장바구니 추가
@@ -184,13 +194,15 @@ const recommendationSlice = createSlice({
             })
             .addCase(addRecommendationsToCart.fulfilled, (state) => {
                 state.cartAddingStatus = 'succeeded';
+                state.snackbarMessage = '모든 추천 상품이 장바구니에 담겼습니다.'; // 스낵바 메시지 설정
             })
             .addCase(addRecommendationsToCart.rejected, (state, action) => {
                 state.cartAddingStatus = 'failed';
                 state.error = action.payload;
+                state.snackbarMessage = action.payload; // 스낵바 메시지 설정
             });
     },
 });
 
-export const { resetRecommendationState } = recommendationSlice.actions;
+export const { resetRecommendationState, clearSnackbarMessage } = recommendationSlice.actions;
 export default recommendationSlice.reducer;
