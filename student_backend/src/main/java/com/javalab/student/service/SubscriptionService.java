@@ -81,59 +81,6 @@ public class SubscriptionService {
     /**
      * 새로운 구독 생성 (구독, 구독 아이템, 구독 넥스트 아이템 추가)
      */
-//    @Transactional
-//    public Subscription createSubscription(Long memberId, String paymentMethod, String postalCode, String roadAddress, String detailAddress) {
-//        Optional<Subscription> latestActiveSubscription = subscriptionRepository
-//                .findFirstByMemberIdAndStatusOrderByCurrentCycleDesc(memberId, "ACTIVE");
-//
-//        if (latestActiveSubscription.isPresent()) {
-//            throw new RuntimeException("이미 활성화된 구독이 있습니다.");
-//        }
-//
-//        Subscription subscription = Subscription.builder()
-//                .startDate(LocalDate.now())
-//                .lastBillingDate(LocalDate.now())
-//                .nextBillingDate(LocalDate.now().plusMonths(1))
-//                .status("ACTIVE")
-//                .paymentMethod(paymentMethod)
-//                .postalCode(postalCode)
-//                .roadAddress(roadAddress)
-//                .detailAddress(detailAddress)
-//                .currentCycle(1)
-//                .build();
-//
-//        subscription = subscriptionRepository.save(subscription);
-//
-//        // 🔥 productIds가 비어있다면 기본 동작 수행
-//        if (productIds != null && !productIds.isEmpty()) {
-//            for (Long productId : productIds) {
-//                Product product = productRepository.findById(productId)
-//                        .orElseThrow(() -> new RuntimeException("상품 정보를 찾을 수 없습니다: " + productId));
-//
-//                BigDecimal productPrice = product.getPrice();
-//
-//                SubscriptionItem subscriptionItem = SubscriptionItem.builder()
-//                        .subscription(subscription)
-//                        .product(product)
-//                        .quantity(1) // 기본 수량 설정 (필요 시 변경 가능)
-//                        .price(productPrice.doubleValue()) // BigDecimal → double 변환
-//                        .build();
-//                subscriptionItemRepository.save(subscriptionItem);
-//
-//                SubscriptionNextItem subscriptionNextItem = SubscriptionNextItem.builder()
-//                        .subscription(subscription)
-//                        .product(product)
-//                        .productId(product.getId())
-//                        .nextMonthQuantity(1)
-//                        .nextMonthPrice(productPrice.doubleValue()) // BigDecimal → double 변환
-//                        .build();
-//                subscriptionNextItemRepository.save(subscriptionNextItem);
-//            }
-//        }
-//
-//        return subscription;
-//    }
-
     @Transactional
     public Subscription createSubscription(Long memberId, String paymentMethod, String postalCode, String roadAddress, String detailAddress, List<SubscriptionUpdateNextItemDto> items) {
         Member member = memberRepository.findById(memberId)
@@ -440,33 +387,6 @@ public class SubscriptionService {
                 .orElseThrow(() -> new RuntimeException("다음 결제일이 예정된 활성화된 구독이 없습니다."));
     }
 
-
-//    @Transactional
-//    public boolean replaceNextSubscriptionItems(Long subscriptionId, List<SubscriptionUpdateNextItemDto> updatedItems) {
-//        try {
-//            // 기존 구독 아이템 삭제
-//            subscriptionNextItemRepository.deleteBySubscriptionId(subscriptionId);
-//
-//            // 📌 [수정] Subscription 객체 생성
-//            Subscription subscription = new Subscription();
-//            subscription.setId(subscriptionId);  // 객체에 ID만 설정 (DB에는 존재하는 값이므로 OK)
-//
-//            // 새 리스트 추가
-//            for (SubscriptionUpdateNextItemDto item : updatedItems) {
-//                SubscriptionNextItem newItem = new SubscriptionNextItem();
-//                newItem.setSubscription(subscription);  // ✅ subscription 객체를 직접 설정
-//                newItem.setProductId(item.getProductId());
-//                newItem.setNextMonthQuantity(item.getNextMonthQuantity());
-//                newItem.setNextMonthPrice(item.getNextMonthPrice());
-//                subscriptionNextItemRepository.save(newItem);
-//            }
-//
-//            return true;
-//        } catch (Exception e) {
-//            log.error("❌ [ERROR] 구독 상품 교체 실패", e);
-//            return false;
-//        }
-//    }
 
     @Transactional
     public boolean deleteNextSubscriptionItem(Long subscriptionId, Long productId) {
