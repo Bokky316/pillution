@@ -1,7 +1,7 @@
 import React from "react";
 import { CircularProgress } from "@mui/material";
 import { useSelector } from "react-redux";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { persistor } from "@/store/store";
 import { API_URL } from "@/utils/constants";
 
@@ -43,7 +43,14 @@ import useAuth from "@/hooks/useAuth";
 import useWebSocket from "@/hooks/useWebSocket";
 import useMessage from "@/hooks/useMessage";
 
-// import "@/App.css";
+// ProtectedRoute 컴포넌트 정의
+const ProtectedRoute = ({ children }) => {
+    const { isLoggedIn } = useSelector((state) => state.auth);
+    if (!isLoggedIn) {
+        return <Navigate to="/login" replace />;
+    }
+    return children;
+};
 
 function App() {
     const { isLoading, isLoggedIn, user } = useAuth();
@@ -59,13 +66,12 @@ function App() {
             <Header />
             <Layout>
                 <Routes>
-                    {/* Routes */}
                     <Route path="/" element={<HomePage />} />
                     <Route path="/products" element={<ProductListPage />} />
                     <Route path="/products/:productId" element={<ProductDetailPage />} />
-                    <Route path="/cart" element={<CartPage />} />
-                    <Route path="/order-detail" element={<OrderDetailPage />} />
-                    <Route path="/payResult" element={<PayResult />} />
+                    <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+                    <Route path="/order-detail" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
+                    <Route path="/payResult" element={<ProtectedRoute><PayResult /></ProtectedRoute>} />
                     <Route path="/recommendation" element={<RecommendationPage />} />
                     <Route path="/survey" element={<SurveyPage />} />
                     <Route path="/healthHistory" element={<HealthHistoryPage />} />
@@ -79,18 +85,18 @@ function App() {
                     <Route path="/faq/post/:postId/edit" element={<PostEditPage />} />
 
                     <Route path="/login" element={<Login />} />
-                    <Route path="/mypage" element={<MyPage />} />
+                    <Route path="/mypage" element={<ProtectedRoute><MyPage /></ProtectedRoute>} />
                     <Route path="/registerMember" element={<RegisterMember />} />
                     <Route path="/unauthorized" element={<UnauthorizedPage />} />
                     <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
-                    <Route path="/messages" element={<MessageListPage />} />
-                    <Route path="/update-delivery" element={<KakaoAddressSearch />} />
+                    <Route path="/messages" element={<ProtectedRoute><MessageListPage /></ProtectedRoute>} />
+                    <Route path="/update-delivery" element={<ProtectedRoute><KakaoAddressSearch /></ProtectedRoute>} />
 
-                    <Route path="/consultation" element={<ConsultationRequestList />} />
-                    <Route path="/chatroom/:roomId" element={<ChatRoom />} />
+                    <Route path="/consultation" element={<ProtectedRoute><ConsultationRequestList /></ProtectedRoute>} />
+                    <Route path="/chatroom/:roomId" element={<ProtectedRoute><ChatRoom /></ProtectedRoute>} />
 
-                    <Route path="/adminpage/*" element={<AdminPage />} />
-                    <Route path="/subscription" element={<SubscriptionPage />} />
+                    <Route path="/adminpage/*" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+                    <Route path="/subscription" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
                 </Routes>
             </Layout>
             <Footer />
