@@ -125,6 +125,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/members/**").authenticated()
                 .requestMatchers("/api/payments/**").authenticated()
                 .requestMatchers("/api/orders").authenticated()
+                .requestMatchers("/api/messages").authenticated()
 
                 // 관리자 전용 엔드포인트
                 .requestMatchers("/admin/**").hasRole("ADMIN")

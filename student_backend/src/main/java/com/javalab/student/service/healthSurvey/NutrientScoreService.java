@@ -46,7 +46,9 @@ public class NutrientScoreService {
 
     /**
      * 계산된 영양 성분 점수를 기반으로 추천 영양 성분을 결정합니다.
+     * 점수가 낮더라도 기본 성분(칼슘, 마그네슘, 비타민D)은 추천하도록 수정되었습니다.
      *
+     * @param responses        회원의 설문 응답 목록
      * @param ingredientScores 계산된 영양 성분 점수
      * @param age              회원의 나이
      * @param bmi              회원의 BMI
@@ -57,23 +59,41 @@ public class NutrientScoreService {
         Set<String> baseIngredients = new HashSet<>(Arrays.asList("칼슘", "마그네슘", "비타민D"));
         baseIngredients.forEach(ingredient -> ingredientScores.putIfAbsent(ingredient, 1));
 
-        // 총점이 1점 이상인 성분만 필터링하고 점수 내림차순 정렬
-        List<Map.Entry<String, Integer>> sortedIngredients = ingredientScores.entrySet().stream()
-                .filter(entry -> entry.getValue() >= 1) // 총점이 1점 이상인 것만 포함
-                .sorted(Comparator.comparing(Map.Entry::getValue, Comparator.reverseOrder())) // 점수 내림차순 정렬
-                .collect(Collectors.toList());
+        // 모든 성분을 점수 내림차순으로 정렬
+        List<Map.Entry<String, Integer>> sortedIngredients = new ArrayList<>(ingredientScores.entrySet());
+        sortedIngredients.sort(Comparator.comparing(Map.Entry::getValue, Comparator.reverseOrder()));
 
-        // 상위 5개만 선택하여 이름과 점수를 Map에 담아 List로 반환
-        return sortedIngredients.stream()
-                .limit(5)
-                .map(entry -> {
+        // 추천 목록 초기화
+        List<Map<String, Object>> recommendedList = new ArrayList<>();
+
+        // 정렬된 성분 목록을 순회하면서 추천 목록에 추가
+        for (Map.Entry<String, Integer> entry : sortedIngredients) {
+            if (recommendedList.size() < 5) {
+                Map<String, Object> ingredient = new HashMap<>();
+                ingredient.put("name", entry.getKey());
+                ingredient.put("score", entry.getValue());
+                recommendedList.add(ingredient);
+            } else {
+                break; // 추천 목록이 이미 5개인 경우 종료
+            }
+        }
+
+        // 만약 추천 목록이 비어있다면, 기본 성분 중 하나를 강제로 추가
+        if (recommendedList.isEmpty()) {
+            for (String baseIngredient : baseIngredients) {
+                if (ingredientScores.containsKey(baseIngredient)) {
                     Map<String, Object> ingredient = new HashMap<>();
-                    ingredient.put("name", entry.getKey());
-                    ingredient.put("score", entry.getValue());
-                    return ingredient;
-                })
-                .collect(Collectors.toList());
+                    ingredient.put("name", baseIngredient);
+                    ingredient.put("score", ingredientScores.get(baseIngredient));
+                    recommendedList.add(ingredient);
+                    break; // 기본 성분 하나만 추가하고 종료
+                }
+            }
+        }
+
+        return recommendedList;
     }
+
 
     /**
      * 추천 영양 성분을 저장합니다.

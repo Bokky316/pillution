@@ -7,18 +7,17 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    Checkbox,
-    ListItemText,
-    Grid,
-    IconButton,
     Typography,
     Chip,
-    Stack
+    Stack,
+    Paper, // Paper 추가
+    Grid,
+    IconButton,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { API_URL } from '@/utils/constants';
 import { useNavigate } from 'react-router-dom';
-import '@/styles/AddProduct.css';
+import '@/styles/AddProduct.css'; // 스타일은 유지
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchCategoriesByIngredient } from '@features/product/productApi';
 import { clearSelectedCategories } from '@/store/productSlice';
@@ -54,37 +53,35 @@ const AddProduct = () => {
     }, [selectedCategories]);
 
     useEffect(() => {
-        console.log("🔍 [DEBUG] fetchIngredients 실행!");
         fetchIngredients();
     }, []);
 
     const fetchIngredients = async () => {
-        try {
-            const token = localStorage.getItem('accessToken');
-            console.log("🔍 [DEBUG] 요청 URL:", `${API_URL}ingredients`);
+      // fetchIngredients 함수 내용 (기존 코드 유지)
+      try {
+          const token = localStorage.getItem('accessToken');
+          const response = await fetch(`${API_URL}ingredients`, {
+              method: 'GET',
+              headers: {
+                  'Authorization': token ? `Bearer ${token}` : '',
+              },
+              credentials: 'include'
+          });
 
-            const response = await fetch(`${API_URL}ingredients`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': token ? `Bearer ${token}` : '',
-                },
-                credentials: 'include'
-            });
+          if (!response.ok) throw new Error('영양성분 목록을 불러오는 데 실패했습니다.');
 
-            if (!response.ok) throw new Error('영양성분 목록을 불러오는 데 실패했습니다.');
+          const data = await response.json();
+          setIngredients(Array.isArray(data) ? data : []);
 
-            const data = await response.json();
-            console.log("✅ [DEBUG] API 응답 데이터:", data);
-            setIngredients(Array.isArray(data) ? data : []);
-
-        } catch (error) {
-            console.error("❌ [ERROR] 영양성분 데이터 로딩 실패:", error);
-            alert(error.message);
-        }
+      } catch (error) {
+          console.error("영양성분 데이터 로딩 실패:", error);
+          alert(error.message);
+      }
     };
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
+      // handleChange 함수 내용 (기존 코드 유지)
+      const { name, value } = e.target;
         setProduct(prev => ({
             ...prev,
             [name]: (name === 'price' || name === 'stock') ? Number(value) : value,
@@ -92,7 +89,8 @@ const AddProduct = () => {
     };
 
     const handleIngredientChange = (e) => {
-        const selectedIngredients = e.target.value;
+      // handleIngredientChange 함수 내용 (기존 코드 유지)
+      const selectedIngredients = e.target.value;
         setProduct(prev => ({ ...prev, ingredientIds: selectedIngredients }));
 
         if (selectedIngredients.length === 0) {
@@ -104,7 +102,8 @@ const AddProduct = () => {
     };
 
     const handleMainImageChange = (e) => {
-        const file = e.target.files[0];
+      // handleMainImageChange 함수 내용 (기존 코드 유지)
+      const file = e.target.files[0];
         setMainImageFile(file);
         if (file) {
             setMainImagePreview(URL.createObjectURL(file));
@@ -114,7 +113,8 @@ const AddProduct = () => {
     };
 
     const handleDetailImageChange = (e, index) => {
-        const file = e.target.files[0];
+      // handleDetailImageChange 함수 내용 (기존 코드 유지)
+      const file = e.target.files[0];
         const newDetailImageFiles = [...detailImageFiles];
         const newDetailImagePreviews = [...detailImagePreviews];
 
@@ -131,12 +131,14 @@ const AddProduct = () => {
     };
 
     const handleMainImageDelete = () => {
-        setMainImageFile(null);
+      // handleMainImageDelete 함수 내용 (기존 코드 유지)
+      setMainImageFile(null);
         setMainImagePreview(null);
     };
 
     const handleDetailImageDelete = (indexToDelete) => {
-        const newDetailImageFiles = [...detailImageFiles];
+      // handleDetailImageDelete 함수 내용 (기존 코드 유지)
+      const newDetailImageFiles = [...detailImageFiles];
         const newDetailImagePreviews = [...detailImagePreviews];
 
         newDetailImageFiles[indexToDelete] = null;
@@ -147,11 +149,10 @@ const AddProduct = () => {
     };
 
     const handleSubmit = async (event) => {
+        // handleSubmit 함수 내용 (기존 코드 유지)
         event.preventDefault();
 
         const formData = new FormData();
-
-        // ✅ JSON 데이터를 Blob으로 변환하여 추가
         const productData = {
             name: product.name,
             description: product.description,
@@ -163,14 +164,12 @@ const AddProduct = () => {
         };
         formData.append('product', new Blob([JSON.stringify(productData)], { type: 'application/json' }));
 
-        // ✅ 대표 이미지 추가
         if (mainImageFile) {
             formData.append('mainImageFile', mainImageFile);
         } else {
-            formData.append('mainImageFile', new Blob([], { type: 'image/png' }));  // 빈 파일 추가
+            formData.append('mainImageFile', new Blob([], { type: 'image/png' }));
         }
 
-        // ✅ 상세 이미지 추가
         detailImageFiles.forEach((file, index) => {
             if (file) {
                 formData.append(`detailImageFiles`, file);
@@ -180,7 +179,7 @@ const AddProduct = () => {
         try {
             const token = localStorage.getItem('accessToken');
             const response = await fetch(`${API_URL}products`, {
-                method: 'POST', // 등록은 'POST', 수정은 'PUT'
+                method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
                 },
@@ -200,10 +199,9 @@ const AddProduct = () => {
         }
     };
 
-
     return (
-        <Box sx={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
-            <h2>상품 추가</h2>
+        <Paper elevation={3} sx={{ maxWidth: '800px', margin: '0 auto', padding: '20px', borderRadius: '12px' }}>
+            <Typography variant="h5" sx={{ fontWeight: 600, color: '#1a237e', mb: 3 }}>상품 추가</Typography>
             <form onSubmit={handleSubmit}>
                 <TextField
                     fullWidth
@@ -213,13 +211,22 @@ const AddProduct = () => {
                     onChange={handleChange}
                     required
                     margin="normal"
+                    variant="outlined" // Material-UI 스타일 적용
                 />
-                <FormControl fullWidth margin="normal">
+                <FormControl fullWidth margin="normal" variant="outlined">
                     <InputLabel>영양성분</InputLabel>
                     <Select
                         multiple
                         value={product.ingredientIds}
                         onChange={handleIngredientChange}
+                        renderValue={(selected) => (
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                {selected.map((value) => {
+                                    const ingredient = ingredients.find(ing => ing.id === value);
+                                    return ingredient ? <Chip key={value} label={ingredient.ingredientName} /> : null;
+                                })}
+                            </Box>
+                        )}
                     >
                         {Array.isArray(ingredients) && ingredients.length > 0 ? (
                             ingredients.map(ing => (
@@ -232,16 +239,21 @@ const AddProduct = () => {
                         )}
                     </Select>
                 </FormControl>
-                <h3>선택된 카테고리</h3>
-                {selectedCategories.length > 0 ? (
-                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-                        {selectedCategories.map((category, index) => (
-                            <Chip key={index} label={category.name} variant="outlined" />
-                        ))}
-                    </Stack>
-                ) : (
-                    <p>선택된 카테고리가 없습니다.</p>
-                )}
+
+                <Box sx={{ mt: 2, mb: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>선택된 카테고리</Typography>
+                    {selectedCategories.length > 0 ? (
+                        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                            {selectedCategories.map((category, index) => (
+                                <Chip key={index} label={category.name} variant="outlined" />
+                            ))}
+                        </Stack>
+                    ) : (
+                        <Typography variant="body2" color="textSecondary">선택된 카테고리가 없습니다.</Typography>
+                    )}
+                </Box>
+
+
                 <TextField
                     fullWidth
                     label="가격"
@@ -251,6 +263,7 @@ const AddProduct = () => {
                     onChange={handleChange}
                     required
                     margin="normal"
+                    variant="outlined"
                 />
                 <TextField
                     fullWidth
@@ -261,6 +274,7 @@ const AddProduct = () => {
                     onChange={handleChange}
                     required
                     margin="normal"
+                    variant="outlined"
                 />
                 <TextField
                     fullWidth
@@ -272,6 +286,7 @@ const AddProduct = () => {
                     multiline
                     rows={4}
                     margin="normal"
+                    variant="outlined"
                 />
                 <Box sx={{ mt: 3, mb: 3 }}>
                     <Typography variant="h6" gutterBottom>대표 이미지</Typography>
@@ -297,7 +312,18 @@ const AddProduct = () => {
                                 </IconButton>
                             </Box>
                         ) : (
-                            <span>대표 이미지 선택</span>
+                            // 이 부분을 좀 더 Material-UI 스타일로 (선택적으로)
+                            <Box
+                                sx={{
+                                    p: 2,
+                                    border: '1px dashed grey',
+                                    borderRadius: 1,
+                                    textAlign: 'center',
+                                    color: 'grey.600',
+                                }}
+                            >
+                                대표 이미지 선택
+                            </Box>
                         )}
                     </div>
                 </Box>
@@ -333,13 +359,25 @@ const AddProduct = () => {
                                             </IconButton>
                                         </Box>
                                     ) : (
-                                        <span>상세 이미지 추가</span>
+                                        // 이 부분도 Material-UI 스타일 (선택적)
+                                        <Box
+                                            sx={{
+                                                p: 2,
+                                                border: '1px dashed grey',
+                                                borderRadius: 1,
+                                                textAlign: 'center',
+                                                color: 'grey.600',
+                                            }}
+                                        >
+                                            상세 이미지 추가
+                                        </Box>
                                     )}
                                 </div>
                             </Grid>
                         ))}
                     </Grid>
                 </Box>
+
                 <FormControl fullWidth margin="normal" variant="outlined">
                     <InputLabel shrink htmlFor="active-select">상품 활성화</InputLabel>
                     <Select
@@ -354,17 +392,18 @@ const AddProduct = () => {
                     </Select>
                 </FormControl>
                 <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
-                    <Button type="submit" variant="contained" color="primary">저장</Button>
+                    <Button type="submit" variant="contained" color="primary" sx={{ textTransform: 'none' }}>저장</Button>
                     <Button
                         variant="outlined"
                         color="secondary"
                         onClick={() => navigate('/adminpage/products')}
+                        sx={{ textTransform: 'none' }} // ProductList 버튼 스타일
                     >
                         취소
                     </Button>
                 </Box>
             </form>
-        </Box>
+        </Paper>
     );
 };
 
