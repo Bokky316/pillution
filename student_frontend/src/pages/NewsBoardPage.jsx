@@ -35,18 +35,57 @@ function NewsBoardPage() {
     } = useSelector(state => state.news || {}); // news 상태가 없을 경우를 대비한 기본값 설정
 
     const auth = useSelector((state) => state.auth);
-    const userRole = auth?.user?.authorities?.some(auth =>
-        typeof auth === 'string' ? auth === 'ROLE_ADMIN' : auth.authority === 'ROLE_ADMIN'
-    ) ? 'ADMIN' : 'USER';
+
+    // 권한 확인 로직 수정
+    const userRole = (() => {
+        // 먼저 콘솔로 auth 객체 구조를 확인
+        console.log("Complete auth object:", auth);
+
+        // auth.user가 있는지 확인
+        if (!auth?.user) {
+            console.log("User object is missing");
+            return 'USER';
+        }
+
+        // auth.user.role이 있는 경우 직접 확인
+        if (auth.user.role === 'ADMIN') {
+            console.log("User has ADMIN role directly");
+            return 'ADMIN';
+        }
+
+        // 기존 authorities 배열 확인 (좀 더 유연하게)
+        if (auth.user.authorities) {
+            console.log("User authorities:", auth.user.authorities);
+
+            // 다양한 형태의 authorities 처리
+            const isAdmin = auth.user.authorities.some(authority => {
+                if (typeof authority === 'string') {
+                    return authority === 'ROLE_ADMIN' || authority === 'ADMIN';
+                } else if (authority && typeof authority === 'object') {
+                    const authorityValue = authority.authority || authority.role || '';
+                    return authorityValue === 'ROLE_ADMIN' || authorityValue === 'ADMIN';
+                }
+                return false;
+            });
+
+            console.log("Is admin based on authorities:", isAdmin);
+            return isAdmin ? 'ADMIN' : 'USER';
+        }
+
+        console.log("No valid authority information found");
+        return 'USER';
+    })();
 
     useEffect(() => {
         console.log("Auth state:", auth);
+        console.log("Determined User Role:", userRole);
+        // 기존 로그 유지
         console.log("User authorities:", auth?.user?.authorities);
         const isAdmin = auth?.user?.authorities?.some(auth =>
             typeof auth === 'string' ? auth === 'ROLE_ADMIN' : auth.authority === 'ROLE_ADMIN'
         );
-        console.log("Is admin:", isAdmin);
-    }, [auth]);
+        console.log("Is admin (original logic):", isAdmin);
+    }, [auth, userRole]);
 
     useEffect(() => {
         dispatch(fetchNewsPosts({ page: currentPage }));
