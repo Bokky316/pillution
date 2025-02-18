@@ -14,7 +14,7 @@ import { createOrder } from "@/store/orderSlice";
 import { fetchMerchantId, processPayment } from "@/store/paymentSlice";
 import "@/styles/CartPage.css";
 import { useNavigate } from 'react-router-dom';
-import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
+import { fetchWithAuth } from "@/features/auth/fetchWithAuth"; // fetchWithAuth import
 import { API_URL } from "@/utils/constants";
 
 /**
@@ -36,7 +36,6 @@ const CartPage = () => {
     const { user } = useSelector((state) => state.auth);
     // Redux 스토어에서 가맹점 ID를 가져옵니다.
     const { merchantId } = useSelector((state) => state.payment);
-
 
     /**
      * 컴포넌트 마운트 시 장바구니 아이템을 불러옵니다.
@@ -60,8 +59,6 @@ const CartPage = () => {
         const allSelected = cartItems.every((item) => item.selected);
         setSelectAll(allSelected);
     }, [cartItems]);
-
-
 
     /**
      * 전체 선택/해제 처리 함수
@@ -118,7 +115,7 @@ const CartPage = () => {
         setSelectedPurchaseType(type);
     };
 
-   const calculateTotal = (items, type) => {
+    const calculateTotal = (items, type) => {
         let totalPrice = 0;
         let shippingFee = 0;
         let discount = 0;
@@ -141,77 +138,86 @@ const CartPage = () => {
         return { totalPrice, shippingFee, discount, finalPrice };
     };
 
-/**
- * 장바구니에서 선택한 상품으로 주문 페이지로 이동하는 함수
- * @async
- */
-const handleCheckout = async () => {
-    if (selectedPurchaseType) {
-        try {
-            console.log("CartPage - handleCheckout 시작");
-            await dispatch(fetchCartItems());
+    /**
+     * 장바구니에서 선택한 상품으로 주문 페이지로 이동하는 함수
+     * @async
+     */
+    const handleCheckout = async () => {
+        if (selectedPurchaseType) {
+            try {
+                console.log("CartPage - handleCheckout 시작");
+                await dispatch(fetchCartItems());
 
-            const selectedCartItems = cartItems.filter((item) => item.selected);
+                const selectedCartItems = cartItems.filter((item) => item.selected);
 
-            if (selectedCartItems.length === 0) {
-                alert("선택된 상품이 없습니다.");
-                return;
-            }
-
-            if (!user || !user.name || !user.email || !user.phone || !user.postalCode || !user.roadAddress || !user.detailAddress) {
-                alert("사용자 정보를 확인해주세요.");
-                return;
-            }
-
-            const {finalPrice} = calculateTotal(selectedCartItems, selectedPurchaseType);
-
-            // orderData 정의
-            const orderData = {
-                cartOrderItems: selectedCartItems.map(item => ({
-                    cartItemId: item.cartItemId,
-                    quantity: item.quantity,
-                    price: item.price
-                })),
-                buyerName: user.name,
-                buyerEmail: user.email,
-                buyerTel: user.phone,
-                buyerAddr: user.roadAddress + " " + user.detailAddress, // 주소를 buyerAddr로 설정
-                buyerPostcode: user.postalCode, // 우편번호를 추가해야 함
-            };
-
-            console.log("CartPage - createOrder 액션 디스패치:", { orderData, purchaseType: selectedPurchaseType });
-
-             navigate('/order-detail', {
-                state: {
-                    selectedItems: selectedCartItems.map(item => ({
-                        cartItemId: item.cartItemId,
-                        productId: item.productId,
-                        name: item.name,
-                        price: item.price,
-                        quantity: item.quantity,
-                        imageUrl: item.imageUrl // 백엔드에서 제공하는 이미지 URL 사용
-                    })),
-                    purchaseType: selectedPurchaseType,
-                    totalAmount: finalPrice,
-                    user: {
-                        name: user.name,
-                        email: user.email,
-                        phone: user.phone,
-                        postalCode: user.postalCode,
-                        roadAddress: user.roadAddress,
-                        detailAddress: user.detailAddress
-                    },
+                if (selectedCartItems.length === 0) {
+                    alert("선택된 상품이 없습니다.");
+                    return;
                 }
-            });
 
-        } catch (error) {
-            console.error("CartPage - 주문 준비 중 오류:", error);
-            alert("주문 준비 중 오류가 발생했습니다: " + error);
+                // fetchWithAuth를 사용하여 사용자 정보 가져오기
+                const userInfoResponse = await fetchWithAuth(`${API_URL}/api/auth/userInfo`); // API_URL/api/auth/userInfo
+                console.log("userInfoResponse", userInfoResponse);
+                if (!userInfoResponse.ok) {
+                    // 401 에러는 fetchWithAuth에서 처리되므로 여기서는 다른 에러 처리
+                    alert("사용자 정보를 가져오는 데 실패했습니다.");
+                    return;
+                }
+                const userInfo = await userInfoResponse.json();
+
+                if (!userInfo || !userInfo.name || !userInfo.email || !userInfo.phone || !userInfo.postalCode || !userInfo.roadAddress || !userInfo.detailAddress) {
+                    alert("사용자 정보를 확인해주세요.");
+                    return;
+                }
+
+                const { finalPrice } = calculateTotal(selectedCartItems, selectedPurchaseType);
+
+                // orderData 정의
+                const orderData = {
+                    cartOrderItems: selectedCartItems.map(item => ({
+                        cartItemId: item.cartItemId,
+                        quantity: item.quantity,
+                        price: item.price
+                    })),
+                    buyerName: userInfo.name,
+                    buyerEmail: userInfo.email,
+                    buyerTel: userInfo.phone,
+                    buyerAddr: userInfo.roadAddress + " " + userInfo.detailAddress, // 주소를 buyerAddr로 설정
+                    buyerPostcode: userInfo.postalCode, // 우편번호를 추가해야 함
+                };
+
+                console.log("CartPage - createOrder 액션 디스패치:", { orderData, purchaseType: selectedPurchaseType });
+
+                navigate('/order-detail', {
+                    state: {
+                        selectedItems: selectedCartItems.map(item => ({
+                            cartItemId: item.cartItemId,
+                            productId: item.productId,
+                            name: item.name,
+                            price: item.price,
+                            quantity: item.quantity,
+                            imageUrl: item.imageUrl // 백엔드에서 제공하는 이미지 URL 사용
+                        })),
+                        purchaseType: selectedPurchaseType,
+                        totalAmount: finalPrice,
+                        user: {
+                            name: userInfo.name,
+                            email: userInfo.email,
+                            phone: userInfo.phone,
+                            postalCode: userInfo.postalCode,
+                            roadAddress: userInfo.roadAddress,
+                            detailAddress: userInfo.detailAddress
+                        },
+                    }
+                });
+            } catch (error) {
+                console.error("CartPage - 주문 준비 중 오류:", error);
+                alert("주문 준비 중 오류가 발생했습니다: " + error);
+            }
+        } else {
+            alert("구매 유형을 선택해주세요.");
         }
-    } else {
-        alert("구매 유형을 선택해주세요.");
-    }
-};
+    };
 
     /**
      * 렌더링 함수
