@@ -2,10 +2,12 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchHealthHistory } from '@store/healthSlice'; // 슬라이스에서 액션 임포트
 import '@styles/HealthHistoryPage.css'; // 스타일 파일 임포트
+import { useNavigate } from 'react-router-dom';
 
 const HealthHistoryPage = () => {
     const dispatch = useDispatch();
     const { history, loading, error } = useSelector((state) => state.health);
+    const navigate = useNavigate(); // useNavigate 훅 초기화
 
     // 컴포넌트가 마운트될 때 건강 기록 히스토리 조회 액션 디스패치
     useEffect(() => {
@@ -27,41 +29,23 @@ const HealthHistoryPage = () => {
         return <div>No health history available.</div>;
     }
 
+    // 특정 건강 기록 클릭 시 추천 페이지로 이동
+    const handleRecordClick = (record) => {
+        navigate(`/recommendation/${record.id}`); // 추천 페이지로 이동
+    };
+
     return (
-        <div className="health-history-container">
+        <div>
             <h2>Health History</h2>
-            {history.map((record) => (
-                <div key={record.id} className="health-record">
-                    <h3>Record Date: {new Date(record.createdAt).toLocaleDateString()}</h3>
-                    <p>BMI: {record.healthAnalysis?.bmi}</p>
-                    <p>Risk Levels: {record.healthAnalysis?.riskLevels}</p>
-                    <p>Overall Assessment: {record.healthAnalysis?.overallAssessment}</p>
-                    <h4>Recommended Products:</h4>
-                    <ul>
-                        {record.productRecommendations && record.productRecommendations.length > 0 ? (
-                            record.productRecommendations.map((product) => (
-                                <li key={product.id}>
-                                    {product.productName} - {product.reason}
-                                </li>
-                            ))
-                        ) : (
-                            <li>No products recommended.</li>
-                        )}
-                    </ul>
-                    <h4>Recommended Ingredients:</h4>
-                    <ul>
-                        {record.recommendedIngredients && record.recommendedIngredients.length > 0 ? (
-                            record.recommendedIngredients.map((ingredient) => (
-                                <li key={ingredient.ingredientName}>
-                                    {ingredient.ingredientName} (Score: {ingredient.score})
-                                </li>
-                            ))
-                        ) : (
-                            <li>No ingredients recommended.</li>
-                        )}
-                    </ul>
-                </div>
-            ))}
+            <ul>
+                {history.map((record) => (
+                    <li key={record.id}>
+                        <button onClick={() => handleRecordClick(record)}>
+                            Record Date: {new Date(record.createdAt).toLocaleDateString()}
+                        </button>
+                    </li>
+                ))}
+            </ul>
         </div>
     );
 };
