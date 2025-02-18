@@ -2,10 +2,12 @@ package com.javalab.student.service;
 
 import com.javalab.student.dto.SubscriptionResponseDto;
 import com.javalab.student.dto.SubscriptionUpdateNextItemDto;
+import com.javalab.student.entity.Member;
 import com.javalab.student.entity.product.Product;
 import com.javalab.student.entity.Subscription;
 import com.javalab.student.entity.SubscriptionItem;
 import com.javalab.student.entity.SubscriptionNextItem;
+import com.javalab.student.repository.MemberRepository;
 import com.javalab.student.repository.product.ProductRepository;
 import com.javalab.student.repository.SubscriptionItemRepository;
 import com.javalab.student.repository.SubscriptionNextItemRepository;
@@ -16,8 +18,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -34,6 +36,7 @@ public class SubscriptionService {
     private final SubscriptionItemRepository subscriptionItemRepository;
     private final SubscriptionNextItemRepository subscriptionNextItemRepository;
     private final ProductRepository productRepository;
+    private final MemberRepository memberRepository;
     private static final Logger log = LoggerFactory.getLogger(SubscriptionService.class);
 
     /**
@@ -74,31 +77,106 @@ public class SubscriptionService {
 
 
     /**
-     * 새로운 구독 생성
+     * 새로운 구독 생성 (구독, 구독 아이템, 구독 넥스트 아이템 추가)
      */
-    @Transactional
-    public Subscription createSubscription(Long memberId, String paymentMethod, String postalCode, String roadAddress, String deliverydetailAddressddress) {
-        Optional<Subscription> latestActiveSubscription = subscriptionRepository
-                .findFirstByMemberIdAndStatusOrderByCurrentCycleDesc(memberId, "active");
+//    @Transactional
+//    public Subscription createSubscription(Long memberId, String paymentMethod, String postalCode, String roadAddress, String detailAddress) {
+//        Optional<Subscription> latestActiveSubscription = subscriptionRepository
+//                .findFirstByMemberIdAndStatusOrderByCurrentCycleDesc(memberId, "ACTIVE");
+//
+//        if (latestActiveSubscription.isPresent()) {
+//            throw new RuntimeException("이미 활성화된 구독이 있습니다.");
+//        }
+//
+//        Subscription subscription = Subscription.builder()
+//                .startDate(LocalDate.now())
+//                .lastBillingDate(LocalDate.now())
+//                .nextBillingDate(LocalDate.now().plusMonths(1))
+//                .status("ACTIVE")
+//                .paymentMethod(paymentMethod)
+//                .postalCode(postalCode)
+//                .roadAddress(roadAddress)
+//                .detailAddress(detailAddress)
+//                .currentCycle(1)
+//                .build();
+//
+//        subscription = subscriptionRepository.save(subscription);
+//
+//        // 🔥 productIds가 비어있다면 기본 동작 수행
+//        if (productIds != null && !productIds.isEmpty()) {
+//            for (Long productId : productIds) {
+//                Product product = productRepository.findById(productId)
+//                        .orElseThrow(() -> new RuntimeException("상품 정보를 찾을 수 없습니다: " + productId));
+//
+//                BigDecimal productPrice = product.getPrice();
+//
+//                SubscriptionItem subscriptionItem = SubscriptionItem.builder()
+//                        .subscription(subscription)
+//                        .product(product)
+//                        .quantity(1) // 기본 수량 설정 (필요 시 변경 가능)
+//                        .price(productPrice.doubleValue()) // BigDecimal → double 변환
+//                        .build();
+//                subscriptionItemRepository.save(subscriptionItem);
+//
+//                SubscriptionNextItem subscriptionNextItem = SubscriptionNextItem.builder()
+//                        .subscription(subscription)
+//                        .product(product)
+//                        .productId(product.getId())
+//                        .nextMonthQuantity(1)
+//                        .nextMonthPrice(productPrice.doubleValue()) // BigDecimal → double 변환
+//                        .build();
+//                subscriptionNextItemRepository.save(subscriptionNextItem);
+//            }
+//        }
+//
+//        return subscription;
+//    }
 
-        if (latestActiveSubscription.isPresent()) {
-            throw new RuntimeException("이미 활성화된 구독이 있습니다.");
-        }
+    @Transactional
+    public Subscription createSubscription(Long memberId, String paymentMethod, String postalCode, String roadAddress, String detailAddress, List<SubscriptionUpdateNextItemDto> items) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("회원을 찾을 수 없습니다: " + memberId));
 
         Subscription subscription = Subscription.builder()
+                .member(member)
                 .startDate(LocalDate.now())
                 .lastBillingDate(LocalDate.now())
                 .nextBillingDate(LocalDate.now().plusMonths(1))
-                .status("active")
+                .status("ACTIVE")
                 .paymentMethod(paymentMethod)
                 .postalCode(postalCode)
                 .roadAddress(roadAddress)
-                .detailAddress(deliverydetailAddressddress)
+                .detailAddress(detailAddress)
                 .currentCycle(1)
                 .build();
 
-        return subscriptionRepository.save(subscription);
+        subscription = subscriptionRepository.save(subscription);
+
+        for (SubscriptionUpdateNextItemDto item : items) {
+            Product product = productRepository.findById(item.getProductId())
+                    .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + item.getProductId()));
+
+            SubscriptionItem subscriptionItem = SubscriptionItem.builder()
+                    .subscription(subscription)
+                    .product(product)
+                    .quantity(item.getNextMonthQuantity())
+                    .price(item.getNextMonthPrice())
+                    .build();
+            subscriptionItemRepository.save(subscriptionItem);
+
+            SubscriptionNextItem subscriptionNextItem = SubscriptionNextItem.builder()
+                    .subscription(subscription)
+                    .product(product)
+                    .productId(product.getId())
+                    .nextMonthQuantity(item.getNextMonthQuantity())
+                    .nextMonthPrice(item.getNextMonthPrice())
+                    .build();
+            subscriptionNextItemRepository.save(subscriptionNextItem);
+        }
+
+        return subscription;
     }
+
 
     /**
      * 배송 요청사항 업데이트

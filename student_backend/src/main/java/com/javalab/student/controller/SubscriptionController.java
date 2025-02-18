@@ -62,18 +62,20 @@ public class SubscriptionController {
     }
 
 
-    /**
-     * 새로운 구독 생성 API
-     */
-    @PostMapping("/create")
-    public ResponseEntity<Subscription> createSubscription(
-            @RequestParam Long memberId,
-            @RequestParam String paymentMethod,
-            @RequestParam String postalCode,
-            @RequestParam String roadAddress,
-            @RequestParam String detailAddress) {
-        return ResponseEntity.ok(subscriptionService.createSubscription(memberId, paymentMethod, postalCode, roadAddress, detailAddress));
-    }
+//    /**
+//     * 새로운 구독 생성 API
+//     * 페이먼트 메소드랑 컨트롤러에서 중복으로 만들어서 이미 구독이 있다는 오류가 나옴
+//     */
+//    @PostMapping("/create")
+//    public ResponseEntity<Subscription> createSubscription(
+//            @RequestParam Long memberId,
+//            @RequestParam String paymentMethod,
+//            @RequestParam String postalCode,
+//            @RequestParam String roadAddress,
+//            @RequestParam String detailAddress) {
+//        return ResponseEntity.ok(subscriptionService.createSubscription(memberId, paymentMethod, postalCode, roadAddress, detailAddress));
+//    }
+
 
     /**
      * 배송 요청사항 업데이트 API
