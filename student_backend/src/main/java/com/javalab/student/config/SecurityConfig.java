@@ -119,13 +119,13 @@ public class SecurityConfig {
                 .requestMatchers("/api/subscription/**").permitAll()
 
                 // 로그인한 사용자만 접근 가능
-                .requestMatchers("/api/survey/**").authenticated() // 설문 API는 로그인한 사용자만 접근 가능
-                .requestMatchers("/api/recommendations/**").authenticated() // 추천 API는 로그인한 사용자만 접근 가능
-                .requestMatchers("/api/cart/**").authenticated() // 장바구니 API는 로그인한 사용자만 접근 가능
-                .requestMatchers("/api/members/**").authenticated()
-                .requestMatchers("/api/payments/**").authenticated()
-                .requestMatchers("/api/orders").authenticated()
-                .requestMatchers("/api/messages").authenticated()
+                .requestMatchers("/api/survey/**").hasAnyRole("USER", "ADMIN", "CS_AGENT")
+                .requestMatchers("/api/recommendations/**").hasAnyRole("USER", "ADMIN", "CS_AGENT")
+                .requestMatchers("/api/cart/**").hasAnyRole("USER", "ADMIN", "CS_AGENT")
+                .requestMatchers("/api/members/**").hasAnyRole("USER", "ADMIN", "CS_AGENT")
+                .requestMatchers("/api/payments/**").hasAnyRole("USER", "ADMIN", "CS_AGENT")
+                .requestMatchers("/api/orders").hasAnyRole("USER", "ADMIN", "CS_AGENT")
+                .requestMatchers("/api/messages").hasAnyRole("USER", "ADMIN", "CS_AGENT")
 
                 // 관리자 전용 엔드포인트
                 .requestMatchers("/admin/**").hasRole("ADMIN")

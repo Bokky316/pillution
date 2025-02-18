@@ -70,13 +70,13 @@ public class TotalDataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        initializeProductData();
-        initializeProductIngredients();
-        initializeIngredientCategoryMappings();
+//        initializeProductData();
+//        initializeProductIngredients();
+//        initializeIngredientCategoryMappings();
         initializeMemberData();
         initializeSurveyData();
         initializeBoardData();
-        initializeProducts();
+//        initializeProducts();
         initializePosts();
         initializeSubscriptionData();
     }
