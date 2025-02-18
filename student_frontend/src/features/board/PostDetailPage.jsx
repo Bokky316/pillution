@@ -177,7 +177,7 @@ function PostDetailPage() {
                                 <Box
                                     sx={{
                                         display: 'inline-block',
-                                        bgcolor: '#add8e6',
+                                        bgcolor: '#e9efff',
                                         borderRadius: '4px',
                                         px: 0.5,
                                         py: 0.5,
@@ -186,7 +186,7 @@ function PostDetailPage() {
                                 >
                                     <Typography variant="body1" sx={{
                                         fontSize: '10px',
-                                        color: '#fff'
+                                        color: '#4169E1'
                                     }}>
                                         {post.category}
                                     </Typography>
