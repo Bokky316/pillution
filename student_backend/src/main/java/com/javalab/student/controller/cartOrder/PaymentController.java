@@ -2,7 +2,9 @@ package com.javalab.student.controller.cartOrder;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import com.javalab.student.config.portone.PortOneProperties;
+import com.javalab.student.dto.SubscriptionItemDto;
 import com.javalab.student.dto.cartOrder.PaymentRequestDto;
+import com.javalab.student.entity.Subscription;
 import com.javalab.student.service.SubscriptionService;
 import com.javalab.student.service.cartOrder.PaymentService;
 import com.javalab.student.repository.MemberRepository;
@@ -108,14 +110,25 @@ public class PaymentController {
                     // SubscriptionService의 updateNextSubscriptionItems 메소드를 호출하여 다음 결제 상품 목록을 업데이트합니다.
                     subscriptionService.updateNextSubscriptionItems(member.getId(), updatedItems);
                 } else {
-                    log.info("새로운 구독자입니다. 새로운 구독을 생성합니다.");
-                    // 5. 새로운 구독자인 경우: 새로운 구독을 생성합니다.
+                    log.info("새로운 구독자입니다. 새로운 구독을 생성하고 상품 목록을 업데이트합니다.");
+                    // 5. 새로운 구독자인 경우: 새로운 구독을 생성하고 현재 및 다음 결제 상품 목록을 업데이트합니다.
+                    List<SubscriptionUpdateNextItemDto> items = requestDto.getCartOrderItems().stream()
+                            .map(item -> {
+                                SubscriptionUpdateNextItemDto dto = new SubscriptionUpdateNextItemDto();
+                                dto.setProductId(item.getCartItemId());
+                                dto.setNextMonthQuantity(item.getQuantity());
+                                dto.setNextMonthPrice(item.getPrice().doubleValue());
+                                return dto;
+                            })
+                            .collect(Collectors.toList());
+
                     subscriptionService.createSubscription(
                             member.getId(),
                             requestDto.getPayMethod(),
                             requestDto.getBuyerPostcode(),
                             requestDto.getBuyerAddr(),
-                            requestDto.getBuyerAddr() // 상세 주소가 별도로 없다면 이렇게 사용
+                            requestDto.getBuyerAddr(), // 상세 주소가 별도로 없다면 이렇게 사용
+                            items
                     );
                 }
             }
