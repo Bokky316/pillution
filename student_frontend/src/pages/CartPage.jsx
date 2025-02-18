@@ -158,7 +158,7 @@ const handleCheckout = async () => {
                 return;
             }
 
-            if (!user || !user.name || !user.email || !user.phone || !user.address) {
+            if (!user || !user.name || !user.email || !user.phone || !user.postalCode || !user.roadAddress || !user.detailAddress) {
                 alert("사용자 정보를 확인해주세요.");
                 return;
             }
@@ -175,8 +175,8 @@ const handleCheckout = async () => {
                 buyerName: user.name,
                 buyerEmail: user.email,
                 buyerTel: user.phone,
-                buyerAddr: user.address, // 주소를 buyerAddr로 설정
-                // 우편번호를 추가해야 함
+                buyerAddr: user.roadAddress + " " + user.detailAddress, // 주소를 buyerAddr로 설정
+                buyerPostcode: user.postalCode, // 우편번호를 추가해야 함
             };
 
             console.log("CartPage - createOrder 액션 디스패치:", { orderData, purchaseType: selectedPurchaseType });
@@ -197,7 +197,9 @@ const handleCheckout = async () => {
                         name: user.name,
                         email: user.email,
                         phone: user.phone,
-                        address: user.address
+                        postalCode: user.postalCode,
+                        roadAddress: user.roadAddress,
+                        detailAddress: user.detailAddress
                     },
                 }
             });

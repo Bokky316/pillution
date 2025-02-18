@@ -4,6 +4,7 @@ import com.javalab.student.constant.OrderStatus;
 import com.javalab.student.dto.cartOrder.OrderDto;
 import com.javalab.student.dto.cartOrder.PaymentRequestDto;
 import com.javalab.student.dto.cartOrder.OrderItemDto;
+import com.javalab.student.dto.cartOrder.AdminOrderDto;
 import com.javalab.student.entity.Member;
 import com.javalab.student.entity.Subscription;
 import com.javalab.student.entity.SubscriptionNextItem;
@@ -13,6 +14,7 @@ import com.javalab.student.repository.MemberRepository;
 import com.javalab.student.repository.SubscriptionNextItemRepository;
 import com.javalab.student.repository.SubscriptionRepository;
 import com.javalab.student.repository.cartOrder.*;
+import com.javalab.student.repository.product.ProductRepository;
 import com.javalab.student.service.SubscriptionService;
 import com.siot.IamportRestClient.IamportClient;
 import com.siot.IamportRestClient.exception.IamportResponseException;
@@ -20,12 +22,19 @@ import com.siot.IamportRestClient.response.IamportResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -50,6 +59,7 @@ public class PaymentService {
     private final SubscriptionRepository subscriptionRepository;
     private final OrderItemRepository orderItemRepository;
     private final SubscriptionNextItemRepository subscriptionNextItemRepository;
+    private final ProductRepository productRepository;
 
     /**
      * 결제를 처리하고 검증합니다.
@@ -319,5 +329,105 @@ public class PaymentService {
 
             subscriptionRepository.save(newSubscription);
         }
+    }
+
+    /**
+     * 관리자용 주문 취소 메소드
+     * - 주문 ID를 받아서 주문을 취소하고, 취소된 주문 정보를 반환합니다.
+     * @param orderId 취소할 주문 ID
+     * @throws EntityNotFoundException 주문 ID에 해당하는 주문이 없을 경우
+     * @throws IllegalStateException 주문 상태가 취소 불가능한 상태일 경우
+     */
+    @Transactional
+    public void cancelOrderAdmin(Long orderId) {
+        log.info("주문 취소 요청 - 주문 ID: {}", orderId);
+
+        // 1. 주문 조회
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("주문 ID [" + orderId + "]에 해당하는 주문을 찾을 수 없습니다."));
+
+        // 2. 주문 상태 확인 및 유효성 검사
+        OrderStatus currentOrderStatus = order.getOrderStatus();
+        if (currentOrderStatus == OrderStatus.CANCELED) {
+            throw new IllegalStateException("이미 취소된 주문입니다. 주문 ID: " + orderId);
+        }
+        if (currentOrderStatus == OrderStatus.IN_TRANSIT ||
+                currentOrderStatus == OrderStatus.DELIVERED ||
+                currentOrderStatus == OrderStatus.ORDER_COMPLETED) {
+            throw new IllegalStateException("배송이 시작된 주문은 취소할 수 없습니다. 주문 ID: " + orderId);
+        }
+
+        // 3. 주문 취소 처리 (Order 엔티티의 cancelOrder() 메소드 호출)
+        order.cancelOrder(); // Order 엔티티에 구현된 cancelOrder() 메소드 호출
+
+        // 4. 변경된 주문 상태 저장
+        orderRepository.save(order); // 변경된 주문 엔티티 저장
+
+        log.info("주문 ID {} 번 주문이 성공적으로 취소되었습니다. 변경된 주문 상태: {}", orderId, order.getOrderStatus());
+    }
+
+    /**
+     * 관리자용 주문 목록 조회 메소드 (검색 기능 및 기간 검색 기능 추가)
+     * 페이징 네이션 처리와 AdminOrderDto 변환을 수행합니다.
+     *
+     * @param page 페이지 번호
+     * @param size 페이지 크기
+     * @param memberName 검색할 회원 이름 (선택 사항)
+     * @param startDate 검색할 시작 주문일자
+     * @param endDate 검색할 종료 주문일자
+     * @return 페이징된 주문 목록과 메타데이터를 포함한 Map 객체 반환
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getAdminOrders(int page, int size, String memberName, LocalDate startDate, LocalDate endDate) { // 날짜 파라미터 추가
+        Pageable pageable = PageRequest.of(page, size, Sort.by("orderDate").descending());
+        Page<Order> ordersPage;
+
+        if (memberName != null && !memberName.trim().isEmpty()) { // 회원 이름 검색
+            ordersPage = orderRepository.findOrdersByMemberNameContaining(memberName, pageable);
+        } else if (startDate != null && endDate != null) { // 날짜 범위 검색
+            ordersPage = orderRepository.findOrdersByOrderDateBetween(startDate.atStartOfDay(), endDate.atTime(LocalTime.MAX), pageable); // Repository 메소드 호출 (날짜 범위 전달)
+        }
+        else { // 전체 주문 목록 조회
+            ordersPage = orderRepository.findAll(pageable);
+        }
+
+        List<AdminOrderDto> dtoList = new ArrayList<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+        for (Order order : ordersPage.getContent()) {
+            String orderDateStr = order.getOrderDate().format(formatter); // 주문일자 포맷팅
+
+            String shippingAddress = ""; // 배송주소 구성 (Address 엔티티가 있을 경우)
+            if (order.getAddress() != null) {
+                shippingAddress = order.getAddress().getAddr() + " " +
+                        order.getAddress().getAddrDetail() + " (" +
+                        order.getAddress().getZipcode() + ")";
+            }
+
+            for (OrderItem orderItem : order.getOrderItems()) {
+                AdminOrderDto dto = AdminOrderDto.builder()
+                        .id(orderItem.getId())  // 주문 아이템 ID
+                        .orderId(order.getId()) // 주문 ID
+                        .memberName(order.getMember().getName()) // 회원 이름
+                        .productName(orderItem.getProduct().getName()) // 상품명
+                        .quantity(orderItem.getCount()) // 수량
+                        .totalPrice(orderItem.getOrderPrice().multiply(
+                                BigDecimal.valueOf(orderItem.getCount()))) // 총 금액 계산
+                        .orderDate(orderDateStr) // 주문일자 문자열 변환
+                        .shippingAddress(shippingAddress) // 배송주소 설정
+                        .paymentMethod(order.getPaymentMethod()) // 결제수단 설정
+                        .orderStatus(order.getOrderStatus().name()) // 주문 상태 설정
+                        .build();
+                dtoList.add(dto);
+            }
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", dtoList); // DTO 리스트 추가
+        response.put("totalElements", ordersPage.getTotalElements()); // 총 요소 수 추가
+        response.put("totalPages", ordersPage.getTotalPages()); // 총 페이지 수 추가
+        response.put("number", ordersPage.getNumber()); // 현재 페이지 번호 추가
+
+        return response; // 결과 반환
     }
 }

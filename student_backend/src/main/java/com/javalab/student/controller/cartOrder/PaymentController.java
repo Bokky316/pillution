@@ -7,12 +7,16 @@ import com.javalab.student.service.SubscriptionService;
 import com.javalab.student.service.cartOrder.PaymentService;
 import com.javalab.student.repository.MemberRepository;
 import com.javalab.student.entity.Member;
+import com.javalab.student.dto.cartOrder.AdminOrderDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.security.Principal;
+import java.time.LocalDate;
 import java.util.Map;
 
 import com.javalab.student.entity.cartOrder.Order;
@@ -197,4 +201,55 @@ public class PaymentController {
                 .orderItems(orderItemDtos)
                 .build();
     }
+
+    /**
+     * 관리자 주문 취소 API
+     * @param orderId 취소할 주문 ID
+     * @return 성공 메시지 또는 에러 응답
+     */
+    @PostMapping("/admin/orders/{orderId}/cancel") //
+    @PreAuthorize("hasRole('ADMIN')") // Spring Security 설정과 연동, ADMIN 권한만 접근 가능하도록 설정
+    public ResponseEntity<?> cancelOrderAdmin(@PathVariable("orderId") Long orderId) {
+        log.info("관리자 주문 취소 요청 - 주문 ID: {}", orderId);
+        try {
+            paymentService.cancelOrderAdmin(orderId); // PaymentService의 주문 취소 메소드 호출
+            return ResponseEntity.ok("주문이 성공적으로 취소되었습니다."); // 성공 응답
+        } catch (IllegalStateException e) {
+            // 이미 취소된 주문, 배송 시작된 주문 등의 비즈니스 로직 예외 처리
+            log.warn("주문 취소 실패 - {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); // 400 Bad Request 응답
+        } catch (EntityNotFoundException e) {
+            // 주문을 찾을 수 없는 경우
+            log.error("주문 취소 실패 - 주문 ID {} not found", orderId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // 404 Not Found 응답
+        } catch (Exception e) {
+            // 기타 예외 발생
+            log.error("주문 취소 실패 - 예기치 않은 오류 발생", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("주문 취소 중 오류가 발생했습니다."); // 500 Internal Server Error 응답
+        }
+    }
+
+    /**
+     * 관리자 주문 목록 조회 API (검색 기능 및 기간 검색 기능 추가)
+     * 페이징 네이션 처리가 되어 있으며, DataGrid에 맞춰 AdminOrderDto 리스트와 페이징 정보를 반환합니다.
+     *
+     * @param page 페이지 번호 (기본값 0)
+     * @param size 페이지 크기 (기본값 10)
+     * @param memberName 검색할 회원 이름
+     * @param startDate 검색할 시작 주문일자
+     * @param endDate 검색할 종료 주문일자
+     * @return 관리자 주문 목록 및 페이징 정보
+     */
+    @GetMapping("/admin/orders")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getAdminOrders(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "memberName", required = false) String memberName,
+            @RequestParam(value = "startDate", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate, // LocalDate 타입으로 변경
+            @RequestParam(value = "endDate", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) { // LocalDate 타입으로 변경
+        Map<String, Object> orders = paymentService.getAdminOrders(page, size, memberName, startDate, endDate); // Service 호출 시 날짜 파라미터 전달
+        return ResponseEntity.ok(orders);
+    }
 }
+

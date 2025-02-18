@@ -1,12 +1,14 @@
 package com.javalab.student.repository.cartOrder;
 
 import com.javalab.student.entity.cartOrder.Order;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -33,4 +35,18 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      */
     @Query("SELECT COUNT(o) FROM Order o WHERE o.member.email = :email")
     Long countOrder(@Param("email") String email);
+
+    /**
+     * 회원 이름으로 주문 목록 검색 (부분 검색, 페이징)
+     */
+    Page<Order> findOrdersByMemberNameContaining(String memberName, Pageable pageable);
+
+    /**
+     * 주문일자 범위로 주문 목록 검색 (페이징) - 추가됨
+     * @param startDate 시작 주문일시 (LocalDateTime)
+     * @param endDate 종료 주문일시 (LocalDateTime)
+     * @param pageable 페이징 정보
+     * @return 검색된 주문 목록 (Page)
+     */
+    Page<Order> findOrdersByOrderDateBetween(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
 }

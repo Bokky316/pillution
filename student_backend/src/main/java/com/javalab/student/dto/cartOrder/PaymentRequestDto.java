@@ -31,7 +31,11 @@ public class PaymentRequestDto {
     private String buyerPostcode; // 우편번호
     private Long paidAt;          // Unix Timestamp
     private List<CartOrderItemDto> cartOrderItems; // 카트 아이템 정보
-
+    private String deliveryMessage; //배송메세지
+    /**
+     * 저장된 배송지 ID
+     */
+    private Long savedAddressId;
 
     @Getter
     @Setter
