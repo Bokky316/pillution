@@ -108,14 +108,31 @@ const ProductDetailPage = () => {
     if (loading) return <Box display="flex" justifyContent="center" alignItems="center" height="100vh"><CircularProgress /></Box>;
     if (error) return <Box display="flex" justifyContent="center" alignItems="center" height="100vh"><Typography variant="h6" color="error">{error}</Typography></Box>;
 
+    console.log("현재 auth 상태:", auth);
+
     const handleAddToCart = async () => {
+        // auth 객체의 구조를 확인하기 위한 디버깅
+        console.log("Auth state:", auth);
+        console.log("Is authenticated:", auth?.user); // user 객체가 있는지 확인
+
+        // user 객체의 존재 여부로 로그인 상태 확인
+        if (!auth?.user) {
+            navigate('/login', {
+                state: {
+                    from: `/products/${productId}`,
+                    message: "장바구니 이용을 위해 로그인이 필요합니다."
+                }
+            });
+            return;
+        }
+
         if (!product) {
             console.error("🚨 상품 정보가 로드되지 않음!");
             return;
         }
 
         const cartItemDto = {
-            productId: product?.productId || productId, // ✅ productId가 없으면 useParams()에서 가져오기
+            productId: product?.productId || productId,
             quantity,
         };
 
@@ -135,10 +152,14 @@ const ProductDetailPage = () => {
             await dispatch(fetchCartItems()).unwrap();
             console.log("✅ 장바구니 데이터 새로 불러오기 완료!");
 
-            // ✅ Redux 상태가 반영된 후 페이지 이동
+            // 장바구니 페이지로 이동
             navigate('/cart');
         } catch (error) {
             console.error("❌ 장바구니 추가 실패:", error);
+            // 에러 발생 시 처리
+            if (error.status === 401) {
+                navigate('/login');
+            }
         }
     };
 
