@@ -12,6 +12,7 @@ import com.javalab.student.repository.product.ProductRepository;
 import com.javalab.student.repository.SubscriptionItemRepository;
 import com.javalab.student.repository.SubscriptionNextItemRepository;
 import com.javalab.student.repository.SubscriptionRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +50,7 @@ public class SubscriptionService {
     public SubscriptionResponseDto getSubscription(Long memberId) {
         Subscription subscription = subscriptionRepository
                 .findFirstByMemberIdAndStatusOrderByCurrentCycleDesc(memberId, "ACTIVE")
-                .orElseThrow(() -> new RuntimeException("활성화된 구독 정보가 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("활성화된 구독 정보가 없습니다."));
 
         // ✅ nextItems에서 productId가 없는 경우 product에서 가져오기
         subscription.getNextItems().forEach(item -> {
@@ -74,6 +75,7 @@ public class SubscriptionService {
 
         return new SubscriptionResponseDto(subscription);
     }
+
 
 
     /**
