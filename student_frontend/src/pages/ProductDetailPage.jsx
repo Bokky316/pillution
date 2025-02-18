@@ -114,15 +114,6 @@ const ProductDetailPage = () => {
             return;
         }
 
-        // ✅ 로그인 여부 확인
-        const isLoggedIn = Boolean(localStorage.getItem("token")); // 토큰이 있으면 로그인 상태
-
-        if (!isLoggedIn) {
-            console.warn("⚠️ 로그인 필요! 로그인 페이지로 이동합니다.");
-            navigate("/login"); // ✅ 로그인 페이지로 이동
-            return;
-        }
-
         const cartItemDto = {
             productId: product?.productId || productId, // ✅ productId가 없으면 useParams()에서 가져오기
             quantity,
