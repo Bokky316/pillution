@@ -76,56 +76,86 @@ public class SubscriptionService {
         return new SubscriptionResponseDto(subscription);
     }
 
-
-
     /**
      * 새로운 구독 생성 (구독, 구독 아이템, 구독 넥스트 아이템 추가)
      */
     @Transactional
     public Subscription createSubscription(Long memberId, String paymentMethod, String postalCode, String roadAddress, String detailAddress, List<SubscriptionUpdateNextItemDto> items) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new RuntimeException("회원을 찾을 수 없습니다: " + memberId));
+                .orElseThrow(() -> new EntityNotFoundException("회원을 찾을 수 없습니다: " + memberId));
 
-        Subscription subscription = Subscription.builder()
-                .member(member)
-                .startDate(LocalDate.now())
-                .lastBillingDate(LocalDate.now())
-                .nextBillingDate(LocalDate.now().plusMonths(1))
-                .status("ACTIVE")
-                .paymentMethod(paymentMethod)
-                .postalCode(postalCode)
-                .roadAddress(roadAddress)
-                .detailAddress(detailAddress)
-                .currentCycle(1)
-                .build();
+        // 이미 활성화된 구독이 있는지 확인
+        Optional<Subscription> existingSubscription = subscriptionRepository.findFirstByMemberIdAndStatusOrderByCurrentCycleDesc(memberId, "ACTIVE");
+
+        Subscription subscription;
+        if (existingSubscription.isPresent()) {
+            // 이미 활성화된 구독이 있으면 해당 구독을 업데이트
+            subscription = existingSubscription.get();
+            subscription.setPaymentMethod(paymentMethod);
+            subscription.setPostalCode(postalCode);
+            subscription.setRoadAddress(roadAddress);
+            subscription.setDetailAddress(detailAddress);
+        } else {
+            // 활성화된 구독이 없으면 새로 생성
+            subscription = Subscription.builder()
+                    .member(member)
+                    .startDate(LocalDate.now())
+                    .lastBillingDate(LocalDate.now())
+                    .nextBillingDate(LocalDate.now().plusMonths(1))
+                    .status("ACTIVE")
+                    .paymentMethod(paymentMethod)
+                    .postalCode(postalCode)
+                    .roadAddress(roadAddress)
+                    .detailAddress(detailAddress)
+                    .currentCycle(1)
+                    .build();
+        }
 
         subscription = subscriptionRepository.save(subscription);
 
+        // 현재 구독 아이템 추가 또는 업데이트
         for (SubscriptionUpdateNextItemDto item : items) {
             Product product = productRepository.findById(item.getProductId())
-                    .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + item.getProductId()));
+                    .orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다: " + item.getProductId()));
 
-            SubscriptionItem subscriptionItem = SubscriptionItem.builder()
-                    .subscription(subscription)
-                    .product(product)
-                    .quantity(item.getNextMonthQuantity())
-                    .price(item.getNextMonthPrice())
-                    .build();
-            subscriptionItemRepository.save(subscriptionItem);
+            // 현재 구독 아이템 추가 또는 업데이트
+            Optional<SubscriptionItem> existingItem = subscriptionItemRepository.findBySubscriptionAndProduct(subscription, product);
+            if (existingItem.isPresent()) {
+                SubscriptionItem subscriptionItem = existingItem.get();
+                subscriptionItem.setQuantity(item.getNextMonthQuantity());
+                subscriptionItem.setPrice(item.getNextMonthPrice());
+                subscriptionItemRepository.save(subscriptionItem);
+            } else {
+                SubscriptionItem subscriptionItem = SubscriptionItem.builder()
+                        .subscription(subscription)
+                        .product(product)
+                        .quantity(item.getNextMonthQuantity())
+                        .price(item.getNextMonthPrice())
+                        .build();
+                subscriptionItemRepository.save(subscriptionItem);
+            }
 
-            SubscriptionNextItem subscriptionNextItem = SubscriptionNextItem.builder()
-                    .subscription(subscription)
-                    .product(product)
-                    .productId(product.getId())
-                    .nextMonthQuantity(item.getNextMonthQuantity())
-                    .nextMonthPrice(item.getNextMonthPrice())
-                    .build();
-            subscriptionNextItemRepository.save(subscriptionNextItem);
+            // 다음 달 구독 아이템 추가 또는 업데이트
+            Optional<SubscriptionNextItem> existingNextItem = subscriptionNextItemRepository.findBySubscriptionAndProduct(subscription, product);
+            if (existingNextItem.isPresent()) {
+                SubscriptionNextItem subscriptionNextItem = existingNextItem.get();
+                subscriptionNextItem.setNextMonthQuantity(item.getNextMonthQuantity());
+                subscriptionNextItem.setNextMonthPrice(item.getNextMonthPrice());
+                subscriptionNextItemRepository.save(subscriptionNextItem);
+            } else {
+                SubscriptionNextItem subscriptionNextItem = SubscriptionNextItem.builder()
+                        .subscription(subscription)
+                        .product(product)
+                        .productId(product.getId())
+                        .nextMonthQuantity(item.getNextMonthQuantity())
+                        .nextMonthPrice(item.getNextMonthPrice())
+                        .build();
+                subscriptionNextItemRepository.save(subscriptionNextItem);
+            }
         }
 
         return subscription;
     }
-
 
     /**
      * 배송 요청사항 업데이트
@@ -275,36 +305,38 @@ public class SubscriptionService {
     @Transactional
     public boolean updateNextSubscriptionItems(Long subscriptionId, List<SubscriptionUpdateNextItemDto> updatedItems) {
         try {
+            // 구독 ID로 구독 정보 조회 (EntityNotFoundException 처리)
+            Subscription subscription = subscriptionRepository.findById(subscriptionId)
+                    .orElseThrow(() -> new EntityNotFoundException("해당 구독 ID를 찾을 수 없습니다: " + subscriptionId));
+
+            // 기존 SubscriptionNextItem 삭제 (구독 ID로 삭제)
+            subscriptionNextItemRepository.deleteBySubscriptionId(subscriptionId);
+
+            // 업데이트된 상품 목록을 기반으로 새로운 SubscriptionNextItem 생성 및 저장
             for (SubscriptionUpdateNextItemDto item : updatedItems) {
                 Product product = productRepository.findById(item.getProductId())
-                        .orElseThrow(() -> new RuntimeException("해당 productId의 제품을 찾을 수 없습니다: " + item.getProductId()));
+                        .orElseThrow(() -> new EntityNotFoundException("해당 productId의 제품을 찾을 수 없습니다: " + item.getProductId()));
 
-                Optional<SubscriptionNextItem> existingItem = subscriptionNextItemRepository.findBySubscriptionIdAndProduct(subscriptionId, product);
+                SubscriptionNextItem newNextItem = SubscriptionNextItem.builder()
+                        .subscription(subscription) // 연관관계 설정
+                        .product(product)
+                        .productId(product.getId())
+                        .nextMonthQuantity(item.getNextMonthQuantity())
+                        .nextMonthPrice(item.getNextMonthPrice())
+                        .build();
 
-                if (existingItem.isPresent()) {
-                    SubscriptionNextItem nextItem = existingItem.get();
-                    nextItem.setNextMonthQuantity(item.getNextMonthQuantity());
-                    nextItem.setNextMonthPrice(item.getNextMonthPrice());
-                    subscriptionNextItemRepository.save(nextItem);
-                } else {
-                    SubscriptionNextItem newItem = SubscriptionNextItem.builder()
-                            .subscription(subscriptionRepository.findById(subscriptionId)
-                                    .orElseThrow(() -> new RuntimeException("해당 구독 ID를 찾을 수 없습니다: " + subscriptionId)))
-                            .product(product)
-                            .productId(product.getId())  // ✅ productId 명시적으로 설정
-                            .nextMonthQuantity(item.getNextMonthQuantity())
-                            .nextMonthPrice(item.getNextMonthPrice())
-                            .build();
-                    subscriptionNextItemRepository.save(newItem);
-                }
+                subscriptionNextItemRepository.save(newNextItem);
             }
+
             return true;
+        } catch (EntityNotFoundException e) {
+            log.error("❌ [ERROR] 구독 상품 업데이트 실패: {}", e.getMessage());
+            return false;
         } catch (Exception e) {
-            log.error("❌ [ERROR] 구독 상품 업데이트 실패", e);
+            log.error("❌ [ERROR] 구독 상품 업데이트 중 오류 발생", e);
             return false;
         }
     }
-
 
     /**
      * 담달 정기결제 상품 추가
@@ -330,10 +362,6 @@ public class SubscriptionService {
         // ✅ 새로운 아이템 저장 후 반환
         return subscriptionNextItemRepository.save(newItem);
     }
-
-
-
-
 
     /**
      * 자동 결제 처리 (매월 결제일에 호출)
@@ -374,7 +402,6 @@ public class SubscriptionService {
         subscriptionRepository.save(subscription);
     }
 
-
     /**
      * 다음 결제일이 가장 최근인 구독을 가져오는 메서드(추 후 결제로직에 사용가능성 있어서 만듬
      * 예를들어 구독아이템 즉시결제 등
@@ -386,7 +413,6 @@ public class SubscriptionService {
         return subscriptionRepository.findFirstByMemberIdAndStatusOrderByNextBillingDateDesc(memberId, "active")
                 .orElseThrow(() -> new RuntimeException("다음 결제일이 예정된 활성화된 구독이 없습니다."));
     }
-
 
     @Transactional
     public boolean deleteNextSubscriptionItem(Long subscriptionId, Long productId) {
@@ -411,5 +437,3 @@ public class SubscriptionService {
         }
     }
 }
-
-

@@ -1,9 +1,12 @@
 package com.javalab.student.repository;
 
+import com.javalab.student.entity.Subscription;
 import com.javalab.student.entity.SubscriptionItem;
+import com.javalab.student.entity.product.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * subscription_item 테이블과 연결된 JPA 리포지토리로
@@ -11,4 +14,7 @@ import java.util.List;
  */
 public interface SubscriptionItemRepository extends JpaRepository<SubscriptionItem, Long> {
     List<SubscriptionItem> findBySubscriptionId(Long subscriptionId);
+
+    Optional<SubscriptionItem> findBySubscriptionAndProduct(Subscription subscription, Product product);
+
 }
