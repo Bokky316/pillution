@@ -16,13 +16,12 @@ import {
 } from "@mui/material";
 import PropTypes from 'prop-types';
 
-
 /**
  * @param {string} deliveryName - 배송 받는 사람 이름
  * @param {string} deliveryPhone - 배송 받는 사람 전화번호
- * @param {string} zipCode - 우편번호
- * @param {string} address1 - 주소
- * @param {string} address2 - 상세주소
+ * @param {string} postalCode - 우편번호
+ * @param {string} roadAddress - 주소
+ * @param {string} detailAddress - 상세주소
  * @param {string} deliveryMessage - 배송 메시지
  * @param {string} customDeliveryMessage - 직접 입력한 배송 메시지
  * @param {Array} savedAddresses - 저장된 배송지 목록
@@ -38,7 +37,8 @@ import PropTypes from 'prop-types';
  * @param {Function} handleConfirmSave - 저장 확인 핸들러
  * @param {Function} setDeliveryName - 배송 이름 설정 핸들러
  * @param {Function} setDeliveryPhone - 배송 전화번호 설정 핸들러
- * @param {Function} setAddress2 - 상세 주소 설정 핸들러
+ * @param {Function} setRoadAddress - 도로명 주소 설정 핸들러
+ * @param {Function} setDetailAddress - 상세 주소 설정 핸들러
  * @param {Function} setCustomDeliveryMessage - 직접 입력한 배송 메시지 설정 핸들러
  * @param {Function} setIsDefault - 기본 배송지 설정 핸들러
  * @param {Function} setDeliveryInfoName - 배송 정보 이름 설정 핸들러
@@ -48,9 +48,9 @@ import PropTypes from 'prop-types';
 const DeliveryInfo = ({
                           deliveryName,
                           deliveryPhone,
-                          zipCode,
-                          address1,
-                          address2,
+                          postalCode,
+                          roadAddress,
+                          detailAddress,
                           deliveryMessage,
                           customDeliveryMessage,
                           savedAddresses,
@@ -66,7 +66,8 @@ const DeliveryInfo = ({
                           handleConfirmSave,
                           setDeliveryName,
                           setDeliveryPhone,
-                          setAddress2,
+                          setRoadAddress,
+                          setDetailAddress,
                           setCustomDeliveryMessage,
                           setIsDefault,
                           setDeliveryInfoName
@@ -118,7 +119,7 @@ const DeliveryInfo = ({
             <Box display="flex" alignItems="center" mb={2}>
                 <TextField
                     label="우편번호"
-                    value={zipCode}
+                    value={postalCode}
                     readOnly
                     sx={{ width: '150px', marginRight: 2 }}
                 />
@@ -127,16 +128,16 @@ const DeliveryInfo = ({
                 </Button>
             </Box>
             <TextField
-                label="주소"
-                value={address1}
+                label="도로명 주소"
+                value={roadAddress}
                 readOnly
                 fullWidth
                 margin="normal"
             />
             <TextField
                 label="상세주소"
-                value={address2}
-                onChange={(e) => setAddress2(e.target.value)}
+                value={detailAddress}
+                onChange={(e) => setDetailAddress(e.target.value)}
                 fullWidth
                 margin="normal"
             />
@@ -217,9 +218,9 @@ const DeliveryInfo = ({
 DeliveryInfo.propTypes = {
     deliveryName: PropTypes.string.isRequired,
     deliveryPhone: PropTypes.string.isRequired,
-    zipCode: PropTypes.string.isRequired,
-    address1: PropTypes.string.isRequired,
-    address2: PropTypes.string.isRequired,
+    postalCode: PropTypes.string.isRequired,
+    roadAddress: PropTypes.string.isRequired,
+    detailAddress: PropTypes.string.isRequired,
     deliveryMessage: PropTypes.string.isRequired,
     customDeliveryMessage: PropTypes.string.isRequired,
     savedAddresses: PropTypes.arrayOf(PropTypes.shape({
@@ -240,7 +241,8 @@ DeliveryInfo.propTypes = {
     handleConfirmSave: PropTypes.func.isRequired,
     setDeliveryName: PropTypes.func.isRequired,
     setDeliveryPhone: PropTypes.func.isRequired,
-    setAddress2: PropTypes.func.isRequired,
+    setRoadAddress: PropTypes.func.isRequired,
+    setDetailAddress: PropTypes.func.isRequired,
     setCustomDeliveryMessage: PropTypes.func.isRequired,
     setIsDefault: PropTypes.func.isRequired,
     setDeliveryInfoName: PropTypes.func.isRequired
