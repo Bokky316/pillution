@@ -5,6 +5,7 @@ import {
     Box, Button, TextField, Typography, Dialog, DialogActions,
     DialogContent, DialogContentText, DialogTitle, Select,
     MenuItem, InputLabel, FormControl, Snackbar, IconButton,
+    FormHelperText,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import {
@@ -15,6 +16,46 @@ import {
 
 // FAQ 카테고리 목록 - 전체는 선택하는 카테고리가 아니라 여기에서는 뺌.
 const faqCategories = ["제품", "회원정보", "주문/결제", "교환/반품", "배송", "기타"];
+
+// 관리자 권한 확인 헬퍼 함수 - 다른 페이지 방식 적용
+const checkIsAdmin = (user) => {
+    // 전체 사용자 객체 로깅
+    console.log("Complete user object:", user);
+
+    // user가 없는 경우
+    if (!user) {
+        console.log("User object is missing");
+        return false;
+    }
+
+    // user.role이 있는 경우 직접 확인
+    if (user.role === 'ADMIN') {
+        console.log("User has ADMIN role directly");
+        return true;
+    }
+
+    // 기존 authorities 배열 확인 (좀 더 유연하게)
+    if (user.authorities) {
+        console.log("User authorities:", user.authorities);
+
+        // 다양한 형태의 authorities 처리
+        const isAdmin = user.authorities.some(authority => {
+            if (typeof authority === 'string') {
+                return authority === 'ROLE_ADMIN' || authority === 'ADMIN';
+            } else if (authority && typeof authority === 'object') {
+                const authorityValue = authority.authority || authority.role || '';
+                return authorityValue === 'ROLE_ADMIN' || authorityValue === 'ADMIN';
+            }
+            return false;
+        });
+
+        console.log("Is admin based on authorities:", isAdmin);
+        return isAdmin;
+    }
+
+    console.log("No valid authority information found");
+    return false;
+};
 
 function PostCreatePage() {
     const dispatch = useDispatch();
@@ -35,6 +76,11 @@ function PostCreatePage() {
     // Snackbar 상태 추가
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
+    // 유효성 검사 오류 상태 추가
+    const [validationErrors, setValidationErrors] = useState({
+        category: false,
+        subCategory: false,
+    });
 
     // 컴포넌트 마운트 시 폼 초기화
     useEffect(() => {
@@ -64,17 +110,9 @@ function PostCreatePage() {
                 return;
             }
 
-            // user.authorities 확인
-            console.log("user.authorities:", user.authorities);
-
-            const userAuthorities = user.authorities || [];
-
-            // 배열이 단순한 문자열 배열인지, 객체 배열인지 확인 후 처리
-            const isAdminUser = Array.isArray(userAuthorities)
-                ? userAuthorities.some(auth => auth === "ROLE_ADMIN" || auth.authority === "ROLE_ADMIN")
-                : false;
-
-            console.log("권한 확인 - 권한:", userAuthorities, "관리자:", isAdminUser);
+            // 유연한 방식으로 권한 확인
+            const isAdminUser = checkIsAdmin(user);
+            console.log("권한 확인 결과 - 관리자:", isAdminUser);
 
             dispatch(setIsAdmin(isAdminUser));
             dispatch(setAuthorId(user.id));
@@ -97,13 +135,33 @@ function PostCreatePage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!formData.title.trim() || !formData.content.trim()) {
-            alert("제목과 내용을 입력해주세요.");
-            return;
+        // 유효성 검사 초기화
+        const errors = {
+            category: false,
+            subCategory: false,
+        };
+
+        // 각 필드 유효성 검사
+        if (!formData.category) {
+            errors.category = true;
         }
 
         if (formData.category === "자주 묻는 질문" && !formData.subCategory) {
-            alert("FAQ 카테고리를 선택해주세요.");
+            errors.subCategory = true;
+        }
+
+        // 유효성 검사 결과 업데이트
+        setValidationErrors(errors);
+
+        // 필수 필드 검사
+        if (!formData.title.trim() || !formData.content.trim() || errors.category || errors.subCategory) {
+            if (!formData.title.trim() || !formData.content.trim()) {
+                alert("제목과 내용을 입력해주세요.");
+            } else if (errors.category) {
+                alert("게시판을 선택해주세요.");
+            } else if (errors.subCategory) {
+                alert("FAQ 카테고리를 선택해주세요.");
+            }
             return;
         }
 
@@ -121,6 +179,14 @@ function PostCreatePage() {
             }
             if (!formData.content.trim()) {
                 alert('내용을 입력해주세요.');
+                return;
+            }
+            if (!formData.category) {
+                alert('게시판을 선택해주세요.');
+                return;
+            }
+            if (formData.category === "자주 묻는 질문" && !formData.subCategory) {
+                alert('FAQ 카테고리를 선택해주세요.');
                 return;
             }
 
@@ -171,13 +237,25 @@ function PostCreatePage() {
         const { name, value } = e.target;
         dispatch(setFormData({ [name]: value }));
 
-        // 게시판 변경 시 boardId 업데이트
+        // 오류 상태 초기화
         if (name === 'category') {
+            setValidationErrors(prev => ({
+                ...prev,
+                category: false,
+                // FAQ가 아닌 경우 subCategory 오류 초기화
+                subCategory: value !== '자주 묻는 질문' ? false : prev.subCategory
+            }));
+
             dispatch(setFormData({
                 [name]: value,
                 boardId: value === '공지사항' ? 1 : 2,
                 // FAQ가 아닌 경우 subCategory 초기화
                 subCategory: value !== '자주 묻는 질문' ? '' : formData.subCategory
+            }));
+        } else if (name === 'subCategory') {
+            setValidationErrors(prev => ({
+                ...prev,
+                subCategory: false
             }));
         }
     };
@@ -204,15 +282,15 @@ function PostCreatePage() {
         }
     };
 
-    // 관리자가 아닌 경우 표시
-    if (!isLoggedIn || !user?.authorities?.some(auth => auth === "ROLE_ADMIN" || auth.authority === "ROLE_ADMIN")) {
+    // 관리자가 아닌 경우 표시 - 수정된 유연한 로직 사용
+    if (!isLoggedIn || !checkIsAdmin(user)) {
         return (
             <Box maxWidth="md" mx="auto" p={3}>
                 <Typography variant="h6" sx={{ color: '#EF5350' }} align="center">
                     관리자만 게시글을 등록할 수 있습니다.
                 </Typography>
                 <Box display="flex" justifyContent="center" mt={2}>
-                    <Button variant="contained" sx={{ color: '#4169E1' }} onClick={() => navigate("/board")}>
+                    <Button variant="contained" sx={{ backgroundColor: '#4169E1', color: '#fff' }} onClick={() => navigate("/board")}>
                         목록으로 돌아가기
                     </Button>
                 </Box>
@@ -222,37 +300,42 @@ function PostCreatePage() {
 
     return (
         <Box maxWidth="md" mx="auto" p={3}>
-            <Typography variant="h4" align="center" gutterBottom>
+            <Typography variant="h4" align="center" gutterBottom sx={{ marginBottom: 6 }}>
                 게시글 등록
             </Typography>
 
             <Box component="form" onSubmit={handleSubmit}>
                 {/* 게시판 선택 */}
                 <Box mb={3}>
-                    <FormControl fullWidth variant="outlined">
+                    <FormControl fullWidth variant="outlined" error={validationErrors.category} required>
                         <InputLabel>게시판 선택</InputLabel>
                         <Select
                             name="category"
                             value={formData.category}
                             onChange={handleChange}
                             label="게시판 선택"
+                            required
                         >
                             <MenuItem value="공지사항">공지사항</MenuItem>
                             <MenuItem value="자주 묻는 질문">자주 묻는 질문</MenuItem>
                         </Select>
+                        {validationErrors.category && (
+                            <FormHelperText>게시판을 선택해주세요.</FormHelperText>
+                        )}
                     </FormControl>
                 </Box>
 
                 {/* FAQ 카테고리 선택 */}
                 {formData.category === "자주 묻는 질문" && (
                     <Box mb={3}>
-                        <FormControl fullWidth variant="outlined">
+                        <FormControl fullWidth variant="outlined" error={validationErrors.subCategory} required>
                             <InputLabel>카테고리 선택</InputLabel>
                             <Select
                                 name="subCategory"
                                 value={formData.subCategory}
                                 onChange={handleChange}
                                 label="카테고리 선택"
+                                required
                             >
                                 {faqCategories.map((category) => (
                                     <MenuItem key={category} value={category}>
@@ -260,6 +343,9 @@ function PostCreatePage() {
                                     </MenuItem>
                                 ))}
                             </Select>
+                            {validationErrors.subCategory && (
+                                <FormHelperText>카테고리를 선택해주세요.</FormHelperText>
+                            )}
                         </FormControl>
                     </Box>
                 )}

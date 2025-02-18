@@ -38,7 +38,45 @@ function FAQBoardPage() {
     const [snackbar, setSnackbar] = useState({ open: false, message: '' }); // 스낵바 상태
 
     // 사용자의 역할이 ADMIN인지 확인
-    const userRole = auth?.user?.authorities?.some(auth => auth.authority === "ROLE_ADMIN") ? "ADMIN" : "USER";
+    // 권한 확인 로직 수정
+    const userRole = (() => {
+        // 먼저 콘솔로 auth 객체 구조를 확인
+        console.log("Complete auth object:", auth);
+
+        // auth.user가 있는지 확인
+        if (!auth?.user) {
+            console.log("User object is missing");
+            return 'USER';
+        }
+
+        // auth.user.role이 있는 경우 직접 확인
+        if (auth.user.role === 'ADMIN') {
+            console.log("User has ADMIN role directly");
+            return 'ADMIN';
+        }
+
+        // 기존 authorities 배열 확인 (좀 더 유연하게)
+        if (auth.user.authorities) {
+            console.log("User authorities:", auth.user.authorities);
+
+            // 다양한 형태의 authorities 처리
+            const isAdmin = auth.user.authorities.some(authority => {
+                if (typeof authority === 'string') {
+                    return authority === 'ROLE_ADMIN' || authority === 'ADMIN';
+                } else if (authority && typeof authority === 'object') {
+                    const authorityValue = authority.authority || authority.role || '';
+                    return authorityValue === 'ROLE_ADMIN' || authorityValue === 'ADMIN';
+                }
+                return false;
+            });
+
+            console.log("Is admin based on authorities:", isAdmin);
+            return isAdmin ? 'ADMIN' : 'USER';
+        }
+
+        console.log("No valid authority information found");
+        return 'USER';
+    })();
 
     useEffect(() => {
         // 컴포넌트가 처음 마운트될 때 "전체" 카테고리를 선택하고 게시글을 불러옴

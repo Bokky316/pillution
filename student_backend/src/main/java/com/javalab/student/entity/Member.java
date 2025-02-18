@@ -1,5 +1,6 @@
 package com.javalab.student.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.javalab.student.constant.Role;
 import com.javalab.student.dto.MemberFormDto;
 import jakarta.persistence.*;
@@ -43,10 +44,10 @@ public class Member extends BaseEntity{
     @Column(unique = true, nullable = false)
     private String email;
 
+    @JsonIgnore // 비밀번호는 JSON 직렬화에서 제외
     private String password;
 
     private String phone;
-
 
     // 생년월일 (DB: birth_date DATE)
     private LocalDate birthDate;
@@ -83,9 +84,6 @@ public class Member extends BaseEntity{
     private String roadAddress;  // 도로명 주소
     private String detailAddress; // 상세 주소
 
-
-
-
     @Builder
     public Member(String email, String password, String auth) {
         this.email = email;
@@ -94,15 +92,15 @@ public class Member extends BaseEntity{
     }
 
     /*
-        * 회원 엔티티 생성 정적 메서드
-        * - MemberFormDto의 값들이 -> Member 엔티티로 이동
-        * - 회원가입 폼 DTO를 전달받아 회원 엔티티를 생성하는 역할을 한다.
-        * - Member 객체 생성 로직을 엔티티 내부에 숨기고, 외부에서는 이 메서드를 통해 객체를 생성하도록 한다.
-        * - 이 메소드를 만들어 두면 외부에서 이 엔티티 객체를 생성하고 값을 할당하는 코드를 중복으로 작성할 필요가 없다.
-        * - 정적 메소드이기 때문에 외부에 객체 생성없이 바로 호출이 가능하다는 장점이 있다.
-        * - Member 엔티티의 속성이 변화된다고 할지라도 여기서만 바꿔주면 된다.
-        * - passwordEncoder.encode : 비밀번호 암호화 함수
-        * - 사용자가 입력한 암호는 "평문"이다. 즉 암호화가 안된 문자열이다.
+     * 회원 엔티티 생성 정적 메서드
+     * - MemberFormDto의 값들이 -> Member 엔티티로 이동
+     * - 회원가입 폼 DTO를 전달받아 회원 엔티티를 생성하는 역할을 한다.
+     * - Member 객체 생성 로직을 엔티티 내부에 숨기고, 외부에서는 이 메서드를 통해 객체를 생성하도록 한다.
+     * - 이 메소드를 만들어 두면 외부에서 이 엔티티 객체를 생성하고 값을 할당하는 코드를 중복으로 작성할 필요가 없다.
+     * - 정적 메소드이기 때문에 외부에 객체 생성없이 바로 호출이 가능하다는 장점이 있다.
+     * - Member 엔티티의 속성이 변화된다고 할지라도 여기서만 바꿔주면 된다.
+     * - passwordEncoder.encode : 비밀번호 암호화 함수
+     * - 사용자가 입력한 암호는 "평문"이다. 즉 암호화가 안된 문자열이다.
      */
     public static Member createMember(MemberFormDto memberFormDto, PasswordEncoder passwordEncoder) {
         Member member = new Member();
@@ -132,6 +130,7 @@ public class Member extends BaseEntity{
     }
 
     // 권한 정보 반환 메서드
+    @JsonIgnore // 권한 정보도 JSON 직렬화에서 제외
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + this.role.name()));
     }
