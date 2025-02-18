@@ -1,37 +1,60 @@
 import React, { useState, useEffect } from "react";
 import { DataGrid } from "@mui/x-data-grid";
-import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Typography, Box, Autocomplete } from "@mui/material";
+import {
+    Button,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    TextField,
+    Typography,
+    Box,
+    Autocomplete,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+} from "@mui/material";
 import { useSelector, useDispatch } from "react-redux";
 import { API_URL } from "@/utils/constants";
-import { fetchWithAuth, fetchWithoutAuth } from "@/features/auth/fetchWithAuth";
+import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
 import "@/styles/MessageList.css";
 import { showSnackbar } from "@/store/snackbarSlice";
 import useWebSocket from "@/hooks/useWebSocket";
 import useDebounce from "@/hooks/useDebounce";
 import { setMessages, markMessageAsRead } from "@/store/messageSlice";
 
+/**
+ * 메시지 목록 컴포넌트
+ * - 사용자의 메시지 목록을 표시하고, 메시지 전송, 답장 기능을 제공합니다.
+ * - 관리자 권한이 있는 경우, 관리자 공지 전송 기능도 제공합니다.
+ * @returns {JSX.Element} 메시지 목록 컴포넌트
+ */
 export default function MessagesList() {
-    const { user } = useSelector((state) => state.auth); // Redux에서 사용자 정보 가져오기, 슬라이스 이름이 auth  가져오기
+    const { user } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
-    const messages = useSelector(state => state.messages.messages);  // ✅ Redux에서 메시지 가져오기
-    const unreadCount = useSelector(state => state.messages.unreadMessages.length);  // ✅ 읽지 않은 메시지 수 Redux에서 가져오기
-    const [openSendMessageModal, setOpenSendMessageModal] = useState(false);    // ✅ 메시지 보내기 모달 상태(모달을 띄우고, 닫는 상태)
+    const messages = useSelector(state => state.messages.messages);
+    const unreadCount = useSelector(state => state.messages.unreadMessages.length);
+
+    const [openSendMessageModal, setOpenSendMessageModal] = useState(false);
     const [messageContent, setMessageContent] = useState("");
     const [selectedUser, setSelectedUser] = useState(null);
     const [users, setUsers] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
-    const debouncedQuery = useDebounce(searchQuery, 300); // 사용자 검색을 위한 디바운스
-    const [openReplyModal, setOpenReplyModal] = useState(false);
+    const debouncedQuery = useDebounce(searchQuery, 300);
+
     const [selectedMessage, setSelectedMessage] = useState(null);
+    const [openMessageDetailModal, setOpenMessageDetailModal] = useState(false);
     const [replyContent, setReplyContent] = useState("");
 
-    useWebSocket(user); // ✅ 웹소켓 연결 (setMessages 불필요, Redux가 관리)
+    const [searchTerm, setSearchTerm] = useState("");
+
+    useWebSocket(user);
 
     useEffect(() => {
         if (user) {
             fetchMessages();
         }
-
         if (debouncedQuery.length >= 2) {
             fetchUsers(debouncedQuery);
         } else {
@@ -39,15 +62,20 @@ export default function MessagesList() {
         }
     }, [user, debouncedQuery]);
 
-    // 사용자 검색 API 호출, 메시지 전송 모달에서 사용자 검색
+    /**
+     * 사용자 검색 API 호출
+     * @param {string} query 검색어
+     */
     const fetchUsers = async (query) => {
-        if (!query) return;
-
         try {
             const response = await fetchWithAuth(`${API_URL}members/search?query=${query}`);
-            if (response.ok) {
-                const data = await response.json();
-                setUsers(data.data || []);
+            if (Array.isArray(response)) {
+                const formattedUsers = response.map(user => ({
+                    id: user.id,
+                    name: `${user.name} (${user.email}) - ID: ${user.id}`,
+                    email: user.email
+                }));
+                setUsers(formattedUsers);
             } else {
                 setUsers([]);
             }
@@ -57,12 +85,16 @@ export default function MessagesList() {
         }
     };
 
+
+    /**
+     * 메시지 목록 조회 API 호출
+     */
     const fetchMessages = async () => {
         try {
             const response = await fetchWithAuth(`${API_URL}messages/${user.id}`);
             if (response.ok) {
                 const data = await response.json();
-                dispatch(setMessages(data));  // ✅ Redux 상태 업데이트
+                dispatch(setMessages(data));
             }
         } catch (error) {
             console.error("🚨 메시지 목록 조회 실패:", error.message);
@@ -77,7 +109,6 @@ export default function MessagesList() {
             dispatch(showSnackbar("❌ 수신자와 메시지를 입력해주세요."));
             return;
         }
-
         try {
             await fetchWithAuth(`${API_URL}messages/send`, {
                 method: "POST",
@@ -87,21 +118,34 @@ export default function MessagesList() {
                     content: messageContent,
                 }),
             });
-
             setOpenSendMessageModal(false);
             setMessageContent("");
             setSelectedUser(null);
             dispatch(showSnackbar("✅ 메시지가 성공적으로 전송되었습니다."));
-
-            fetchMessages(); // ✅ 즉시 메시지 목록 갱신[미적용?]
+            fetchMessages();
         } catch (error) {
             console.error("🚨 메시지 전송 실패:", error.message);
         }
     };
 
+    /**
+     * 메시지 열기 함수
+     * @param {Object} message 선택한 메시지 객체
+     */
+    const handleOpenMessage = async (message) => {
+        setSelectedMessage(message);
+        setOpenMessageDetailModal(true);
+        if (!message.read) {
+            await fetchWithAuth(`${API_URL}messages/read/${message.id}`, { method: "POST" });
+            dispatch(markMessageAsRead(message.id));
+        }
+    };
+
+    /**
+     * 답장 전송 함수 (관리자 전용)
+     */
     const handleReply = async () => {
         if (!selectedMessage || !replyContent) return;
-
         try {
             await fetchWithAuth(`${API_URL}messages/send`, {
                 method: "POST",
@@ -112,34 +156,28 @@ export default function MessagesList() {
                 }),
             });
 
-            setOpenReplyModal(false);
+            setOpenMessageDetailModal(false);
             setReplyContent("");
             dispatch(showSnackbar("✅ 답장이 전송되었습니다."));
 
-            fetchMessages(); // ✅ 즉시 메시지 목록 갱신[미적용?]
+            fetchMessages();
         } catch (error) {
-            console.error("🚨 메시지 응답 실패:", error.message);
+            console.error("🚨 답장 전송 실패:", error.message);
         }
     };
 
-    const handleOpenMessage = async (message) => {
-        setSelectedMessage(message); // ✅ 특정 메시지가 선택되면 그걸 상태로 저장해서 모달에 표시
-        setOpenReplyModal(true); // ✅ 답장 모달 열기
-
-        if (!message.read) {    // ✅ 읽지 않은 메시지인 경우
-            await fetchWithAuth(`${API_URL}messages/read/${message.id}`, { method: "POST" });
-
-            // ✅ Redux에서 메시지를 읽음 처리
-            dispatch(markMessageAsRead(message.id));
-        }
-    };
-
-    // ✅ DataGrid 행 스타일 동적 적용
+    /**
+     * DataGrid 행 스타일 동적 적용
+     * @param {Object} params DataGrid 행 파라미터
+     * @returns {string} 행 스타일 클래스 이름
+     */
     const getRowClassName = (params) => {
-        return params.row.read ? "read-message" : "unread-message"; // ✅ 읽지 않은 메시지는 강조
+        return params.row.read ? "read-message" : "unread-message";
     };
 
-    // ✅ DataGrid 컬럼에서 메시지 클릭 시 `handleOpenMessage` 실행
+    /**
+     * DataGrid 컬럼 정의
+     */
     const columns = [
         {
             field: "content",
@@ -166,7 +204,140 @@ export default function MessagesList() {
                     second: "2-digit"
                 }).replace(/\. /g, "-").replace(" ", " "),
         },
+        {
+            field: "isNotice",
+            headerName: "공지여부",
+            flex: 1,
+            renderCell: (params) => params.value ? "공지" : "-"
+        }
     ];
+
+    /**
+     * 관리자 권한 확인
+     */
+    const isAdmin = user && user.authorities && user.authorities.some(auth => auth.authority === 'ROLE_ADMIN');
+
+    /**
+     * 관리자 메시지 전송 관련 상태
+     */
+    const [openAdminMessageModal, setOpenAdminMessageModal] = useState(false);
+    const [adminMessageContent, setAdminMessageContent] = useState("");
+
+    /**
+     * ✅ 수신자 유형 : ALL(전체), ROLE(특정 역할), USER(특정 사용자)
+     */
+    const [receiverType, setReceiverType] = useState("ALL");
+    const [selectedReceiver, setSelectedReceiver] = useState(null);
+
+    /**
+     * 수신자 옵션 정의
+     */
+    const receiverOptions = [
+        { value: 'ALL', label: '모든 사용자' },
+        { value: 'ROLE', label: '역할별 사용자' },
+        { value: 'USER', label: '특정 사용자' }
+    ];
+
+    /**
+     * 관리자 메시지 전송 모달 열기
+     */
+    const handleOpenAdminMessageModal = () => {
+        setOpenAdminMessageModal(true);
+        setReceiverType('ALL');
+        setSelectedReceiver(null);
+    };
+
+    /**
+     * 관리자 메시지 전송 모달 닫기
+     */
+    const handleCloseAdminMessageModal = () => {
+        setOpenAdminMessageModal(false);
+        setAdminMessageContent("");
+        setReceiverType('ALL');
+        setSelectedReceiver(null);
+    };
+
+    /**
+     * 관리자 메시지 전송
+     */
+    const handleSendAdminMessage = async () => {
+        if (!adminMessageContent) {
+            dispatch(showSnackbar("메시지를 입력해주세요."));
+            return;
+        }
+
+        let receiverId = "0";
+
+        if (receiverType === 'ROLE' || receiverType === 'USER') {
+            if (!selectedReceiver) {
+                dispatch(showSnackbar("수신자를 선택해주세요."));
+                return;
+            }
+            receiverId = selectedReceiver;
+        }
+
+        try {
+            const response = await fetchWithAuth(`${API_URL}messages/admin/send`, {
+                method: "POST",
+                body: JSON.stringify({
+                    senderId: user.id,
+                    content: adminMessageContent,
+                    receiverType: receiverType,
+                    receiverId: receiverId
+                }),
+            });
+
+            if (response.ok) {
+                dispatch(showSnackbar("관리자 메시지가 성공적으로 전송되었습니다."));
+                handleCloseAdminMessageModal();
+                fetchMessages();
+            } else {
+                dispatch(showSnackbar("관리자 메시지 전송 실패"));
+            }
+        } catch (error) {
+            console.error("관리자 메시지 전송 실패:", error.message);
+            dispatch(showSnackbar("관리자 메시지 전송 실패"));
+        }
+    };
+
+    /**
+     * 메시지 필터링
+     */
+    const filteredMessages = messages.filter(message =>
+        message.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        message.senderName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    /**
+     * 역할 선택 컴포넌트
+     */
+    const RoleSelector = () => (
+        <FormControl fullWidth margin="normal">
+            <InputLabel>역할 선택</InputLabel>
+            <Select
+                value={selectedReceiver ? selectedReceiver : ''}
+                onChange={(e) => setSelectedReceiver(e.target.value)}
+            >
+                <MenuItem value="USER">일반 사용자</MenuItem>
+                <MenuItem value="ADMIN">관리자</MenuItem>
+                <MenuItem value="CS_AGENT">상담원</MenuItem>
+            </Select>
+        </FormControl>
+    );
+
+    /**
+     * 사용자 선택 컴포넌트
+     */
+    const UserSelector = () => (
+        <Autocomplete
+            options={users}
+            getOptionLabel={(option) => option.name}
+            value={selectedReceiver}
+            onChange={(event, value) => setSelectedReceiver(value?.id)}
+            onInputChange={(event, newInputValue) => fetchUsers(newInputValue)}
+            renderInput={(params) => <TextField {...params} label="사용자 선택" fullWidth />}
+        />
+    );
 
     return (
         <div className="data-grid-container">
@@ -177,18 +348,32 @@ export default function MessagesList() {
             </Box>
 
             <Box display="flex" justifyContent="flex-end" width="100%" mb={1}>
-                <Button variant="contained" color="primary" onClick={() => {
-                    console.log("🟢 [메시지 보내기] 버튼 클릭됨!");
-
-                    setOpenSendMessageModal(true)
-                    }
-                }>
+                <Button variant="contained" color="primary" onClick={() => setOpenSendMessageModal(true)}>
                     메시지 보내기
                 </Button>
+
+                {isAdmin && (
+                    <Button
+                        variant="contained"
+                        color="secondary"
+                        onClick={handleOpenAdminMessageModal}
+                        style={{ marginLeft: "10px" }}
+                    >
+                        관리자 공지 보내기
+                    </Button>
+                )}
             </Box>
 
+            <TextField
+                label="메시지 검색"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                fullWidth
+                margin="normal"
+            />
+
             <DataGrid
-                rows={messages}
+                rows={filteredMessages}
                 columns={columns}
                 pageSizeOptions={[5, 10, 20]}
                 disableRowSelectionOnClick
@@ -196,28 +381,34 @@ export default function MessagesList() {
                 getRowClassName={getRowClassName}
             />
 
-            {/* ✅ 메시지 보기 및 답장 모달 */}
-            <Dialog open={openReplyModal} onClose={() => setOpenReplyModal(false)} fullWidth maxWidth="sm">
+            {/* 메시지 상세 보기 모달 */}
+            <Dialog open={openMessageDetailModal} onClose={() => setOpenMessageDetailModal(false)} fullWidth maxWidth="sm">
                 <DialogTitle>메시지 내용</DialogTitle>
                 <DialogContent>
                     <Typography>{selectedMessage?.content}</Typography>
-                    <TextField
-                        fullWidth
-                        multiline
-                        rows={4}
-                        label="답장"
-                        value={replyContent}
-                        onChange={(e) => setReplyContent(e.target.value)}
-                        margin="normal"
-                    />
+                    {/* 관리자 권한이 있는 경우에만 답장 기능을 활성화 */}
+                    {isAdmin && (
+                        <TextField
+                            fullWidth
+                            multiline
+                            rows={4}
+                            label="답장"
+                            value={replyContent}
+                            onChange={(e) => setReplyContent(e.target.value)}
+                            margin="normal"
+                        />
+                    )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpenReplyModal(false)}>취소</Button>
-                    <Button onClick={handleReply} color="primary">보내기</Button>
+                    <Button onClick={() => setOpenMessageDetailModal(false)}>닫기</Button>
+                    {/* 관리자 권한이 있는 경우에만 답장 버튼을 활성화 */}
+                    {isAdmin && (
+                        <Button onClick={handleReply} color="primary">답장</Button>
+                    )}
                 </DialogActions>
             </Dialog>
 
-            {/* ✅ 메시지 보내기 모달 */}
+            {/* 메시지 보내기 모달 */}
             <Dialog open={openSendMessageModal} onClose={() => setOpenSendMessageModal(false)} fullWidth maxWidth="sm">
                 <DialogTitle>메시지 보내기</DialogTitle>
                 <DialogContent>
@@ -241,6 +432,46 @@ export default function MessagesList() {
                 <DialogActions>
                     <Button onClick={() => setOpenSendMessageModal(false)}>취소</Button>
                     <Button onClick={handleSendMessage} color="primary">보내기</Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* 관리자 공지 보내기 모달 */}
+            <Dialog open={openAdminMessageModal} onClose={handleCloseAdminMessageModal} fullWidth maxWidth="sm">
+                <DialogTitle>관리자 공지 보내기</DialogTitle>
+                <DialogContent>
+                    <FormControl fullWidth margin="normal">
+                        <InputLabel>수신자 유형</InputLabel>
+                        <Select
+                            value={receiverType}
+                            onChange={(e) => {
+                                setReceiverType(e.target.value);
+                                setSelectedReceiver(null); // 수신자 유형 변경 시 선택된 수신자 초기화
+                            }}
+                        >
+                            {receiverOptions.map((option) => (
+                                <MenuItem key={option.value} value={option.value}>
+                                    {option.label}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
+                    {receiverType === 'ROLE' && <RoleSelector />}
+                    {receiverType === 'USER' && <UserSelector />}
+
+                    <TextField
+                        fullWidth
+                        multiline
+                        rows={4}
+                        label="공지 내용"
+                        value={adminMessageContent}
+                        onChange={(e) => setAdminMessageContent(e.target.value)}
+                        margin="normal"
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseAdminMessageModal}>취소</Button>
+                    <Button onClick={handleSendAdminMessage} color="primary">보내기</Button>
                 </DialogActions>
             </Dialog>
         </div>

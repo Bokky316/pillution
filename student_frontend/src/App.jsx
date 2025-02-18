@@ -12,6 +12,7 @@ import Layout from "@/layouts/Layout";
 import HomePage from "@/pages/HomePage";
 import RecommendationPage from "@/pages/RecommendationPage";
 import SurveyPage from "@/pages/SurveyPage";
+import HealthHistoryPage from "@/pages/HealthHistoryPage";
 import ProductDetailPage from "@/pages/ProductDetailPage";
 import ProductListPage from "@/pages/ProductListPage";
 import CartPage from "@/pages/CartPage";
@@ -21,13 +22,13 @@ import FAQBoardPage from "@/pages/FAQBoardPage";
 import AdminPage from "@/pages/AdminPage";
 import SubscriptionPage from "@/pages/SubscriptionManagement";
 import OrderDetailPage from "@/pages/OrderDetailPage";
+import MessageListPage from "@/pages/MessageListPage";
 
 import Login from "@/features/auth/Login";
 import MyPage from "@/features/auth/MyPage";
 import RegisterMember from "@/features/auth/RegisterMember";
 import UnauthorizedPage from "@/features/auth/UnAuthorizedPage";
 import OAuth2RedirectHandler from '@/features/auth/OAuth2RedirectHandler';
-import MessageList from "@/features/auth/MessageList";
 import KakaoAddressSearch from "@/features/auth/KakaoAddressSearch";
 import PayResult from "@/features/Payment/PayResult";
 import PostDetailPage from "@/features/board/PostDetailPage";
@@ -67,6 +68,7 @@ function App() {
                     <Route path="/payResult" element={<PayResult />} />
                     <Route path="/recommendation" element={<RecommendationPage />} />
                     <Route path="/survey" element={<SurveyPage />} />
+                    <Route path="/healthHistory" element={<HealthHistoryPage />} />
 
                     <Route path="/board/*" element={<BoardPage />} />
                     <Route path="/news" element={<NewsBoardPage />} />
@@ -81,7 +83,7 @@ function App() {
                     <Route path="/registerMember" element={<RegisterMember />} />
                     <Route path="/unauthorized" element={<UnauthorizedPage />} />
                     <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
-                    <Route path="/messages" element={<MessageList />} />
+                    <Route path="/messages" element={<MessageListPage />} />
                     <Route path="/update-delivery" element={<KakaoAddressSearch />} />
 
                     <Route path="/consultation" element={<ConsultationRequestList />} />

@@ -1,64 +1,194 @@
-import { createSlice } from "@reduxjs/toolkit";
-import { fetchWithAuth, fetchWithoutAuth } from "@features/auth/fetchWithAuth";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
 import { API_URL } from "@/utils/constants";
 
 /**
+ * 보낸 메시지를 가져오는 비동기 액션
+ * @param {string} userId - 메시지를 가져올 사용자 ID
+ * @returns {Promise<Array>} - 서버에서 받은 메시지 목록을 담은 Promise
+ */
+export const fetchSentMessages = createAsyncThunk(
+    'messages/fetchSentMessages',
+    async (userId, { rejectWithValue }) => {
+        try {
+            const response = await fetchWithAuth(`${API_URL}messages/sent/${userId}`);
+            if (!response.ok) {
+                throw new Error('서버 응답이 실패했습니다.');
+            }
+            return await response.json(); // JSON으로 파싱된 데이터 반환
+        } catch (error) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
+/**
+ * 받은 메시지를 가져오는 비동기 액션
+ * @param {string} userId - 메시지를 가져올 사용자 ID
+ * @returns {Promise<Array>} - 서버에서 받은 메시지 목록을 담은 Promise
+ */
+export const fetchReceivedMessages = createAsyncThunk(
+    'messages/fetchReceivedMessages',
+    async (userId, { rejectWithValue }) => {
+        try {
+            const response = await fetchWithAuth(`${API_URL}messages/${userId}`);
+            if (!response.ok) {
+                throw new Error('서버 응답이 실패했습니다.');
+            }
+            return await response.json(); // JSON으로 파싱된 데이터 반환
+        } catch (error) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
+/**
  * messages 슬라이스(Slice) 정의
- * 슬라이스(Slice)는 Redux Toolkit에서 도입된 개념으로, Redux 상태의 한 부분을(메시지 목록) 관리하기 위한 로직을 모아놓은 단위입니다.
- * 메시지 상태를 Redux에서 관리,
- * - 전체 메시지 목록을 저장하는 messages 상태
- * - 읽지 않은 메시지 목록을 저장하는 unreadMessages 상태
- * - 메시지를 추가하는 addMessage 액션
- * - 메시지를 읽음으로 표시하는 markMessageAsRead 액션
- * - 메시지 목록을 설정하는 setMessages 액션
- *
- * @type {Slice<{unreadMessages: *[], messages: *[]}, {setMessages: reducers.setMessages, addMessage: reducers.addMessage, markMessageAsRead: reducers.markMessageAsRead}, string, string, SliceSelectors<{unreadMessages: *[], messages: *[]}>>}
  */
 const messageSlice = createSlice({
     name: "messages",
     initialState: {
-        messages: [], // 전체 메시지 목록 첨에 여기 들어있다가
-        unreadMessages: [], // 읽지 않은 메시지 목록 / 읽으면 여기서 빼줘야 함
-        unreadCount: 0,  // ✅ 읽지 않은 메시지 개수를 저장하는 상태 추가 / 뱃지에 있는 숫자
+        messages: [],
+        sentMessages: [],
+        unreadMessages: [],
+        unreadCount: 0,
+        loading: false,
+        error: null,
     },
-
-    // 반드시 리듀서를 통해 바꾸야 한따
     reducers: {
-        // ✅ setMessages: 전체 메시지 목록 설정, 읽지 않은 메시지 목록 설정, payload로 전체 메시지 목록을 받음, 읽지 않은 메시지 목록은 read 속성이 false인 메시지로 설정
+        /**
+         * 메시지 목록을 설정하는 리듀서
+         * @param {Object} state - 현재 상태
+         * @param {Object} action - 액션 객체
+         */
         setMessages: (state, action) => {
-            state.messages = action.payload;    // 전체 메시지 목록 설정
-            state.unreadMessages = action.payload.filter(msg => !msg.read);     // 읽지 않은 메시지 목록 설정
-            state.unreadCount = state.unreadMessages.length;  // ✅ 개수 자동 업데이트
+            state.messages = action.payload;
+            state.unreadMessages = action.payload.filter(msg => !msg.read);
+            state.unreadCount = state.unreadMessages.length;
         },
-        //
+        /**
+         * 새 메시지를 추가하는 리듀서
+         * @param {Object} state - 현재 상태
+         * @param {Object} action - 액션 객체
+         */
         addMessage: (state, action) => {
-            state.messages.push(action.payload);    // 기존 메시지 목록에 새 메시지 추가
-            if (!action.payload.read) {   // 새 메시지가 읽지 않은 상태라면
-                state.unreadMessages.push(action.payload);  // 읽지 않은 메시지 목록에 추가
-                state.unreadCount += 1;  // ✅ 새 메시지가 읽지 않음이면 개수 증가
+            state.messages.push(action.payload);
+            if (!action.payload.read) {
+                state.unreadMessages.push(action.payload);
+                state.unreadCount += 1;
             }
         },
-        // ✅ markMessageAsRead: 메시지를 읽음으로 표시, payload로 메시지 ID를 받아서 해당 메시지를 읽음으로 표시하고 읽지 않은 메시지 목록에서 제거
+        /**
+         * 메시지를 읽음 처리하는 리듀서
+         * @param {Object} state - 현재 상태
+         * @param {Object} action - 액션 객체
+         */
         markMessageAsRead: (state, action) => {
-            const messageId = action.payload;   // 메시지 ID 추출
-            state.messages = state.messages.map(msg =>  // 리덕스에서 보관하고 있는 메시지 목록을 순회하면서 해당 메시지를 찾음
-                msg.id === messageId ? { ...msg, read: true } : msg // 찾은 메시지를 읽음으로 처리, 그렇게 되면 읽지 않은 메시지 목록에서 해당 메시지가 제거됨, 제거되면 읽지 않은 메시지 목록이 갱신됨
+            const messageId = action.payload;
+            state.messages = state.messages.map(msg =>
+                msg.id === messageId ? { ...msg, read: true } : msg
             );
-            state.unreadMessages = state.unreadMessages.filter(msg => msg.id !== messageId);    // 읽지 않은 메시지 목록에서 해당 메시지 제거
-            state.unreadCount = state.unreadMessages.length;  // ✅ 읽음 처리 후 개수 업데이트
+            state.unreadMessages = state.unreadMessages.filter(msg => msg.id !== messageId);
+            state.unreadCount = state.unreadMessages.length;
         },
+        /**
+         * 읽지 않은 메시지 목록을 설정하는 리듀서
+         * @param {Object} state - 현재 상태
+         * @param {Object} action - 액션 객체
+         */
         setUnreadMessages: (state, action) => {
-            console.log("✅ messageSlice setUnreadMessages 실행됨", action.payload);
-            state.unreadMessages = action.payload;  // ✅ 배열로 저장
-            state.unreadCount = action.payload.length;  // ✅ 개수 상태 업데이트
+            state.unreadMessages = action.payload;
+            state.unreadCount = action.payload.length;
         },
+        /**
+         * 읽지 않은 메시지 개수를 설정하는 리듀서
+         * @param {Object} state - 현재 상태
+         * @param {Object} action - 액션 객체
+         */
         setUnreadCount: (state, action) => {
-            console.log("✅ messageSlice setUnreadCount 실행됨", action.payload);
-            state.unreadCount = action.payload;  // ✅ 개수만 업데이트
+            state.unreadCount = action.payload;
         },
-    }
+        /**
+         * 보낸 메시지 목록을 설정하는 리듀서
+         * @param {Object} state - 현재 상태
+         * @param {Object} action - 액션 객체
+         */
+        setSentMessages: (state, action) => {
+            state.sentMessages = action.payload;
+        },
+    },
+    extraReducers: (builder) => {
+        builder
+            .addCase(fetchSentMessages.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(fetchSentMessages.fulfilled, (state, action) => {
+                state.loading = false;
+                if (Array.isArray(action.payload)) {
+                    state.sentMessages = action.payload;
+                } else {
+                    console.error('Received payload is not an array:', action.payload);
+                    state.sentMessages = []; // 또는 적절한 기본값 설정
+                }
+                state.error = null;
+            })
+            .addCase(fetchSentMessages.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            .addCase(fetchReceivedMessages.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(fetchReceivedMessages.fulfilled, (state, action) => {
+                state.loading = false;
+                if (Array.isArray(action.payload)) {
+                    state.messages = action.payload;
+                    state.unreadMessages = action.payload.filter(msg => !msg.read);
+                    state.unreadCount = state.unreadMessages.length;
+                } else {
+                    console.error('Received payload is not an array:', action.payload);
+                    state.messages = []; // 또는 적절한 기본값 설정
+                    state.unreadMessages = [];
+                    state.unreadCount = 0;
+                }
+                state.error = null;
+            })
+            .addCase(fetchReceivedMessages.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            });
+    },
 });
 
-// ✅ 액션 생성자 내보내기
-export const { setMessages, addMessage, markMessageAsRead , setUnreadMessages, setUnreadCount } = messageSlice.actions;
+// 액션 생성자 내보내기
+export const {
+    setMessages,
+    addMessage,
+    markMessageAsRead,
+    setUnreadMessages,
+    setUnreadCount,
+    setSentMessages
+} = messageSlice.actions;
+
 export default messageSlice.reducer;
+
+/**
+ * 보낸 메시지 목록 선택자
+ * @param {Object} state - Redux store의 전체 상태
+ * @returns {Array} - 보낸 메시지 목록
+ */
+export const selectSentMessages = (state) => state.messages.sentMessages;
+
+/**
+ * 받은 메시지 목록 선택자
+ * @param {Object} state - Redux store의 전체 상태
+ * @returns {Array} - 받은 메시지 목록
+ */
+export const selectReceivedMessages = (state) => state.messages.messages;
+
+/**
+ * 읽지 않은 메시지 개수 선택자
+ * @param {Object} state - Redux store의 전체 상태
+ * @returns {number} - 읽지 않은 메시지 개수
+ */
+export const selectUnreadCount = (state) => state.messages.unreadCount;

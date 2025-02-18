@@ -11,4 +11,8 @@ public class RecommendationDTO {
     private Long memberId;
     private LocalDateTime createdAt;
     private List<ProductRecommendationDTO> productRecommendations;
+    private List<RecommendedIngredientDTO> recommendedIngredients;
+    private HealthAnalysisDTO healthAnalysis;
+
+
 }

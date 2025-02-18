@@ -6,6 +6,7 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { fetchProducts, fetchCategories } from "@/features/product/productApi";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
 
 
 export default function ProductListPage() {
@@ -160,8 +161,15 @@ export default function ProductListPage() {
           label="전체"
           clickable
           onClick={() => handleCategoryClick("전체")}
-          color={!selectedCategory ? "primary" : "default"}
-          variant={!selectedCategory ? "filled" : "outlined"}
+          sx={{
+            backgroundColor: !selectedCategory ? "#4169E1" : "transparent",
+            color: !selectedCategory ? "white" : "#4169E1",
+            border: "1px solid #4169E1",
+            "&:hover": {
+              backgroundColor: "#3159C5", // hover 시 더 어두운 블루
+              color: "white",
+            },
+          }}
         />
         {categories.map((category) => (
           <Chip
@@ -169,8 +177,15 @@ export default function ProductListPage() {
             label={category.name}
             clickable
             onClick={() => handleCategoryClick(category.name)}
-            color={selectedCategory === category.name ? "primary" : "default"}
-            variant={selectedCategory === category.name ? "filled" : "outlined"}
+            sx={{
+              backgroundColor: selectedCategory === category.name ? "#4169E1" : "transparent",
+              color: selectedCategory === category.name ? "white" : "#4169E1",
+              border: "1px solid #4169E1",
+              "&:hover": {
+                backgroundColor: "#e9efff",
+                color:"#4169E1"
+              },
+            }}
           />
         ))}
       </Box>
@@ -213,7 +228,7 @@ export default function ProductListPage() {
               {/* 상품 정보 */}
               <CardContent sx={{ flexGrow: 1,position:"relative" }}>
                <Typography variant="h6" sx={{ fontSize:"13.5px" }} >{product.name}</Typography>
-                <Typography variant="body1" sx={{ fontWeight: "bold", color: "#ff5722" }}>
+                <Typography variant="body1" sx={{ fontWeight: "bold", color: "#4169E1",marginBottom:"10px" }}>
                   {product.price.toLocaleString()}원
                 </Typography>
 
@@ -223,21 +238,20 @@ export default function ProductListPage() {
                       <Chip
                         key={index}
                         label={ingredient}
-                        size="small" // 🔥 태그 크기 작게 설정
+                        size="small" // 태그 크기 작게 설정
                         sx={{
-                          fontSize: "9px", // 🔥 글자 크기 줄임
-                          backgroundColor: "#eee", // 🔥 더 연한 배경색
-                          color: "#555", // 🔥 글자 색 더 연하게
+                          fontSize: "9px", // 글자 크기 줄임
+                          backgroundColor: "#e9efff", // 더 연한 배경색
+                          color: "#555", // 글자 색 더 연하게
                           fontWeight: "bold",
-                          borderRadius: "12px", // 🔥 태그 모양 더 둥글게
-                          paddingX: "6px", // 🔥 좌우 여백 줄이기
-                          height: "20px" // 🔥 태그 높이 조절
+                          borderRadius: "5px", // 태그 모양 더 둥글게
+                          paddingX: "0px", // 좌우 여백 줄이기
+                          height: "20px" // 태그 높이 조절
                         }}
                       />
                     ))}
                   </Box>
                 )}
-
 
               </CardContent>
             </Card>
@@ -247,9 +261,9 @@ export default function ProductListPage() {
 
       {/* 로딩 중 표시 (스크롤 후 데이터 로딩 중) */}
       {isFetching && (
-        <Box sx={{ textAlign: "center", padding: "20px" }}>
-          <CircularProgress />
-          <Typography sx={{ marginTop: "10px" }}>로딩 중...</Typography>
+        <Box sx={{ textAlign: "center", padding: "20px",marginTop:"40px" }}>
+          <CircularProgress sx={{color:"#4169E1"}} />
+          <Typography sx={{ marginTop: "10px", color:"#4169E1" }}></Typography>
         </Box>
       )}
 
