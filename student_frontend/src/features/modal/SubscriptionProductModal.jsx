@@ -1,8 +1,21 @@
 import React from "react";
 import { Box, Typography, Button } from "@mui/material";
+import { useSelector } from "react-redux";
 
 export default function SubscriptionProductModal({ isOpen, onClose, products, selectedItems, onSelectProduct }) {
+    const allProducts = useSelector((state) => state.subscription.products); // ✅ Redux에서 전체 상품 정보 가져오기
+
     if (!isOpen) return null;
+
+    // ✅ Redux에서 상품명으로 제품을 찾아서 대표 이미지 URL 가져오기
+    const getProductImageUrl = (productName) => {
+        const product = allProducts.find((p) => p.name === productName);
+        if (product && product.mainImageUrl) {
+            const baseUrl = import.meta.env.VITE_PUBLIC_URL || "http://localhost:8080"; // ✅ API 기본 URL 설정
+            return `${baseUrl}${product.mainImageUrl.startsWith("/") ? product.mainImageUrl : "/" + product.mainImageUrl}`;
+        }
+        return "https://dummyimage.com/70x70/cccccc/ffffff&text=No+Image"; // 기본 이미지
+    };
 
     return (
         <Box sx={{
@@ -25,13 +38,14 @@ export default function SubscriptionProductModal({ isOpen, onClose, products, se
             {/* 상품 리스트 */}
             {products.map((product) => {
                 const isAdded = selectedItems.some(item => item.productId === product.id);
+                const imageUrl = getProductImageUrl(product.name); // ✅ Redux에서 이미지 URL 가져오기
 
                 return (
                     <Box key={product.id} sx={{
                         display: "flex", alignItems: "center", mb: 2, pb: 1, borderBottom: "1px solid #eee"
                     }}>
                         <img
-                            src={product.imageUrl || "https://via.placeholder.com/70"}
+                            src={imageUrl}
                             alt={product.name}
                             style={{ width: "70px", height: "70px", objectFit: "cover", marginRight: "15px", borderRadius: "5px" }}
                         />

@@ -1,8 +1,22 @@
 import React from "react";
 import { Box, Typography, Divider, Grid } from "@mui/material";
+import { useSelector } from "react-redux"; // ✅ Redux에서 제품 정보 가져오기
+
 
 function SubscriptionItems({ subscription }) {
+    const products = useSelector((state) => state.subscription.products); // ✅ Redux에서 전체 제품 목록 가져오기
+
     console.log("📌 [SubscriptionItems] 구독 중인 제품 렌더링:", subscription.items);
+
+    // ✅ 상품명으로 Redux에서 제품 정보를 찾아 대표 이미지 URL 가져오기
+    const getProductImageUrl = (productName) => {
+        const product = products.find((p) => p.name === productName);
+        if (product && product.mainImageUrl) {
+            const baseUrl = import.meta.env.VITE_PUBLIC_URL || "http://localhost:8080"; // ✅ 환경변수에서 API 기본 URL 가져오기
+            return `${baseUrl}${product.mainImageUrl.startsWith("/") ? product.mainImageUrl : "/" + product.mainImageUrl}`;
+        }
+        return "https://dummyimage.com/70x70/cccccc/ffffff&text=No+Image"; // 기본 이미지
+    };
 
     if (!subscription.items || subscription.items.length === 0) {
         return <Typography sx={{ textAlign: "center", color: "#888", mt: 2 }}>구독 중인 제품이 없습니다.</Typography>;
@@ -18,7 +32,7 @@ function SubscriptionItems({ subscription }) {
             {subscription.items.map((item, index) => {
                 const price = item.price || 0; // ✅ 가격이 undefined일 경우 기본값 0 처리
                 const totalPrice = price * item.quantity; // ✅ NaN 방지 처리
-                const imageUrl = item.imageUrl || "https://via.placeholder.com/70"; // ✅ 이미지 URL 확인
+                const imageUrl = getProductImageUrl(item.productName); // ✅ Redux에서 이미지 URL 가져오기
 
                 console.log("📌 [SubscriptionItems] 상품명:", item.productName, "| 이미지 URL:", imageUrl);
 
