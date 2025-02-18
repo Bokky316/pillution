@@ -395,28 +395,32 @@ public class PaymentService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
         for (Order order : ordersPage.getContent()) {
-            String orderDateStr = order.getOrderDate().format(formatter); // 주문일자 포맷팅
+            String orderDateStr = order.getOrderDate().format(formatter);
 
-            String shippingAddress = ""; // 배송주소 구성 (Address 엔티티가 있을 경우)
+            String shippingAddress = "";
             if (order.getAddress() != null) {
                 shippingAddress = order.getAddress().getAddr() + " " +
                         order.getAddress().getAddrDetail() + " (" +
                         order.getAddress().getZipcode() + ")";
             }
 
+            // Payment 정보에서 buyerAddr 가져오기 (null 처리)
+            String buyerAddr = (order.getPayment() != null) ? order.getPayment().getBuyerAddr() : null;
+
+
             for (OrderItem orderItem : order.getOrderItems()) {
                 AdminOrderDto dto = AdminOrderDto.builder()
-                        .id(orderItem.getId())  // 주문 아이템 ID
-                        .orderId(order.getId()) // 주문 ID
-                        .memberName(order.getMember().getName()) // 회원 이름
-                        .productName(orderItem.getProduct().getName()) // 상품명
-                        .quantity(orderItem.getCount()) // 수량
-                        .totalPrice(orderItem.getOrderPrice().multiply(
-                                BigDecimal.valueOf(orderItem.getCount()))) // 총 금액 계산
-                        .orderDate(orderDateStr) // 주문일자 문자열 변환
-                        .shippingAddress(shippingAddress) // 배송주소 설정
-                        .paymentMethod(order.getPaymentMethod()) // 결제수단 설정
-                        .orderStatus(order.getOrderStatus().name()) // 주문 상태 설정
+                        .id(orderItem.getId())
+                        .orderId(order.getId())
+                        .memberName(order.getMember().getName())
+                        .productName(orderItem.getProduct().getName())
+                        .quantity(orderItem.getCount())
+                        .totalPrice(orderItem.getOrderPrice().multiply(BigDecimal.valueOf(orderItem.getCount())))
+                        .orderDate(orderDateStr)
+                        .shippingAddress(shippingAddress)
+                        .paymentMethod(order.getPaymentMethod())
+                        .orderStatus(order.getOrderStatus().name())
+                        .buyerAddr(buyerAddr) // buyerAddr 설정
                         .build();
                 dtoList.add(dto);
             }
@@ -430,4 +434,28 @@ public class PaymentService {
 
         return response; // 결과 반환
     }
+
+    /**
+     * 주문 상태를 변경합니다.
+     *
+     * @param orderId   상태를 변경할 주문의 ID
+     * @param newStatus 새로운 주문 상태
+     * @throws EntityNotFoundException 주문을 찾을 수 없을 때
+     * @throws IllegalStateException  주문 상태를 변경할 수 없을 때 (배송 시작 등)
+     */
+    @Transactional
+    public void updateOrderStatus(Long orderId, OrderStatus newStatus) {
+        // 1. 주문 조회
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("주문 ID " + orderId + "에 해당하는 주문을 찾을 수 없습니다."));
+
+        // 2. 주문 상태 변경 (Order 엔티티의 메서드 호출)
+        order.changeOrderStatus(newStatus);
+
+        // 3. 변경 사항 저장
+        orderRepository.save(order);
+
+        log.info("주문 ID {}의 상태가 {}로 변경되었습니다.", orderId, newStatus);
+    }
+
 }

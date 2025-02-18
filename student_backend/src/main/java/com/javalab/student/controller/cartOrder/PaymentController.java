@@ -3,13 +3,12 @@ package com.javalab.student.controller.cartOrder;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.javalab.student.config.portone.PortOneProperties;
 import com.javalab.student.dto.SubscriptionItemDto;
-import com.javalab.student.dto.cartOrder.PaymentRequestDto;
+import com.javalab.student.dto.cartOrder.*;
 import com.javalab.student.entity.Subscription;
 import com.javalab.student.service.SubscriptionService;
 import com.javalab.student.service.cartOrder.PaymentService;
 import com.javalab.student.repository.MemberRepository;
 import com.javalab.student.entity.Member;
-import com.javalab.student.dto.cartOrder.AdminOrderDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -29,7 +28,6 @@ import java.util.stream.Collectors;
 import java.util.List;
 import com.javalab.student.dto.SubscriptionUpdateNextItemDto;
 import com.javalab.student.dto.cartOrder.OrderItemDto;
-
 /**
  * 결제 관련 API를 처리하는 컨트롤러
  */
@@ -264,5 +262,33 @@ public class PaymentController {
         Map<String, Object> orders = paymentService.getAdminOrders(page, size, memberName, startDate, endDate); // Service 호출 시 날짜 파라미터 전달
         return ResponseEntity.ok(orders);
     }
+
+    /**
+     * 관리자가 주문 상태를 변경하는 API 엔드포인트
+     * @param orderId 상태를 변경할 주문 ID
+     * @param updateDto 새로운 주문 상태 정보를 담은 DTO
+     * @return 성공/실패 여부 및 메시지
+     */
+    @PutMapping("/admin/orders/{orderId}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateOrderStatus(@PathVariable("orderId") Long orderId,
+                                               @RequestBody OrderStatusUpdateDto updateDto) {
+        log.info("주문 상태 변경 요청 - 주문 ID: {}, 새로운 상태: {}", orderId, updateDto.getStatus());
+        try {
+            paymentService.updateOrderStatus(orderId, updateDto.getStatus());
+            return ResponseEntity.ok("주문 상태가 성공적으로 변경되었습니다.");
+        } catch (EntityNotFoundException e) {
+            log.error("주문 상태 변경 실패 - 주문 ID {} not found", orderId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalStateException e) {
+            log.warn("주문 상태 변경 실패 - {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            log.error("주문 상태 변경 실패 - 예기치 않은 오류 발생", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("주문 상태 변경 중 오류가 발생했습니다.");
+        }
+    }
+
+
 }
 

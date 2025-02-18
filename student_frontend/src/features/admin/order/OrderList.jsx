@@ -3,32 +3,33 @@ import { useState, useEffect } from 'react';
 import { API_URL } from '@/utils/constants';
 import {
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Typography,
-  Tooltip,
   TextField,
   Box,
   Paper,
-  Snackbar,
-  Alert,
+  IconButton,
   Card,
   CardContent,
-  Divider
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import ViewOrder from './ViewOrder';
+import Logo from '@/assets/images/logo.png'; // 로고 임포트
 
 const OrderList = () => {
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertSeverity, setAlertSeverity] = useState("success"); // 알림 심각도 (success, error 등)
 
   useEffect(() => {
     fetchOrders();
@@ -57,12 +58,39 @@ const OrderList = () => {
       })
       .catch(error => {
         console.error('에러 발생:', error);
-        setSnackbarMessage("주문 정보를 가져오는 데 실패했습니다.");
-        setSnackbarOpen(true);
+        showAlert("주문 정보를 가져오는 데 실패했습니다.", "error");
       })
       .finally(() => {
         setLoading(false);
       });
+  };
+
+  const handleOrderStatusChange = async (orderId, newStatus) => {
+    if (newStatus !== orders.find(order => order.orderId === orderId)?.orderStatus) {
+      try {
+        const response = await fetch(`${API_URL}admin/orders/${orderId}/status`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem("accToken")}`
+          },
+          body: JSON.stringify({ status: newStatus }),
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          const errorData = await response.text(); // 에러 메시지 받기
+          throw new Error(errorData || '상태 변경 실패'); // 받은 에러 메시지 사용
+        }
+
+        showAlert("주문 상태가 변경되었습니다.", "success");
+      } catch (error) {
+        console.error('상태 변경 에러:', error);
+        showAlert(error.message || "주문 상태 변경에 실패했습니다.", "error");
+      }
+    }
+    setDialogOpen(false);
+    fetchOrders();
   };
 
   const getOrderStatusKorean = (status) => {
@@ -78,51 +106,6 @@ const OrderList = () => {
       'ORDER_COMPLETED': '주문완료'
     };
     return statusMap[status] || status;
-  };
-
-  const handleSearchChange = (event) => {
-    setSearchKeyword(event.target.value);
-  };
-
-  const handleSearchButtonClick = () => {
-    fetchOrders();
-  };
-
-  const handleCancelClick = (order) => {
-    setSelectedOrder(order);
-    setErrorMessage("");
-    setDialogOpen(true);
-  };
-
-  const handleCancelConfirm = () => {
-    if (!selectedOrder) return;
-
-    fetch(`${API_URL}admin/orders/${selectedOrder.orderId}/cancel`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem("accToken")}`
-      },
-      credentials: 'include'
-    })
-      .then(response => {
-        if (!response.ok) {
-          return response.text().then(text => {
-            throw new Error(text);
-          });
-        }
-        return response.text();
-      })
-      .then(data => {
-        setSnackbarMessage(data);
-        setSnackbarOpen(true);
-        setDialogOpen(false);
-        fetchOrders();
-      })
-      .catch(error => {
-        console.error('주문 취소 에러:', error);
-        setErrorMessage(error.message);
-      });
   };
 
   const columns = [
@@ -142,56 +125,57 @@ const OrderList = () => {
     },
     { field: 'orderDate', headerName: '주문일자', flex: 2 },
     {
-      field: 'shippingAddress',
-      headerName: '주소',
-      flex: 3,
-      renderCell: (params) => (
-        <Typography variant="body2">{params.value}</Typography>
-      )
-    },
-    { field: 'paymentMethod', headerName: '결제수단', flex: 2 },
-    {
       field: 'orderStatus',
       headerName: '주문상태',
       flex: 1,
       minWidth: 150,
       renderCell: (params) => (
-        <Typography variant="body2" color={params.value === 'CANCELED' ? 'red' : 'inherit'}>
+        <Typography
+          variant="body2"
+          color={params.value === 'CANCELED' ? 'error' : 'inherit'}
+          sx={{
+            backgroundColor: params.value === 'CANCELED' ? '#ffebee' :
+              params.value === 'DELIVERED' ? '#e8f5e9' :
+                'transparent',
+            padding: '4px 8px',
+            borderRadius: '4px'
+          }}
+        >
           {getOrderStatusKorean(params.value)}
         </Typography>
       )
     },
     {
-      field: 'manage',
+      field: 'actions',
       headerName: '관리',
       flex: 2,
-      renderCell: (params) => {
-        const isCanceled = params.row.orderStatus === 'CANCELED';
-        const isDelivered = ['IN_TRANSIT', 'DELIVERED', 'ORDER_COMPLETED'].includes(params.row.orderStatus);
-        let tooltipMessage = "";
-        if (isCanceled) {
-          tooltipMessage = "이미 취소된 주문입니다";
-        } else if (isDelivered) {
-          tooltipMessage = "배송 시작 이후의 주문은 취소할 수 없습니다";
-        }
-        return (
-          <Tooltip title={tooltipMessage} disableHoverListener={!isCanceled && !isDelivered}>
-            <span>
-              <Button
-                variant="contained"
-                color={isCanceled ? 'default' : 'secondary'}
-                disabled={isCanceled || isDelivered}
-                onClick={() => handleCancelClick(params.row)}
-                sx={{ textTransform: 'none' }}
-              >
-                {isCanceled ? '주문 취소 완료' : '주문 취소'}
-              </Button>
-            </span>
-          </Tooltip>
-        );
-      }
+      renderCell: (params) => (
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={() => {
+            setSelectedOrder(params.row);
+            setDialogOpen(true);
+          }}
+          sx={{ textTransform: 'none' }}
+        >
+          상세보기
+        </Button>
+      )
     }
   ];
+
+  const handleSearch = () => {
+    fetchOrders();
+  };
+
+  // 알림 표시 함수
+  const showAlert = (message, severity) => {
+    setAlertMessage(message);
+    setAlertSeverity(severity);
+    setAlertOpen(true);
+  };
+
 
   return (
     <Paper
@@ -218,7 +202,7 @@ const OrderList = () => {
         </Typography>
       </Box>
 
-      {/* 검색 섹션 */}
+      {/* 검색 카드 */}
       <Card
         variant="outlined"
         sx={{
@@ -227,120 +211,91 @@ const OrderList = () => {
           boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
         }}
       >
-        <CardContent sx={{ p: 2 }}>
-          <Box sx={{ display: 'flex', gap: 2 }}>
+        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <FilterListIcon sx={{ mr: 1, color: '#3f51b5' }} />
+            <Typography variant="subtitle1" fontWeight={500}>검색</Typography>
+          </Box>
+
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'stretch', sm: 'center' },
+              gap: 2,
+              mb: 2
+            }}
+          >
             <TextField
-              placeholder="회원 이름 검색"
-              value={searchKeyword}
-              onChange={handleSearchChange}
+              variant="outlined"
               size="small"
-              sx={{
-                flex: 1,
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: '#dee2e6' },
-                  '&.Mui-focused fieldset': { borderColor: '#3f51b5' }
-                }
+              label="회원 이름을 검색하세요"
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') handleSearch();
               }}
+              sx={{ flex: 1 }}
               InputProps={{
                 endAdornment: (
-                  <Button
-                    variant="contained"
-                    onClick={handleSearchButtonClick}
-                    sx={{
-                      backgroundColor: '#3f51b5',
-                      '&:hover': { backgroundColor: '#303f9f' },
-                      minWidth: '40px',
-                      padding: '6px'
-                    }}
+                  <IconButton
+                    onClick={handleSearch}
+                    edge="end"
+                    sx={{ color: '#3f51b5' }}
                   >
-                    <SearchIcon sx={{ color: '#fff' }} />
-                  </Button>
-                )
-              }}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleSearchButtonClick();
-                }
+                    <SearchIcon />
+                  </IconButton>
+                ),
               }}
             />
           </Box>
         </CardContent>
       </Card>
 
-      {/* 데이터 그리드 */}
       <DataGrid
         rows={orders}
         columns={columns}
         pageSize={10}
         autoHeight
         loading={loading}
+        disableSelectionOnClick
         sx={{
           borderRadius: '8px',
           '& .MuiDataGrid-columnHeaders': {
             backgroundColor: '#f5f5f5',
-            borderRadius: '8px 8px 0 0'
-          },
-          '& .MuiDataGrid-cell': {
-            borderBottom: '1px solid #f0f0f0'
           },
           '& .MuiDataGrid-row:hover': {
-            backgroundColor: '#f9f9f9'
-          },
-          '& .MuiDataGrid-footerContainer': {
-            backgroundColor: '#f5f5f5',
-            borderRadius: '0 0 8px 8px'
+            backgroundColor: '#f8f9fa'
           }
         }}
       />
 
-      {/* 스낵바 알림 */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setSnackbarOpen(false)}
-          severity="success"
-          sx={{ width: '100%', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
-
-      {/* 주문 취소 확인 다이얼로그 */}
-      <Dialog
+      <ViewOrder
         open={dialogOpen}
+        order={selectedOrder}
         onClose={() => setDialogOpen(false)}
-        PaperProps={{
-          style: { borderRadius: '8px', padding: '12px' }
-        }}
+        onStatusChange={handleOrderStatusChange}
+        getOrderStatusKorean={getOrderStatusKorean}
+      />
+      {/* 알림 다이얼로그 */}
+      <Dialog
+        open={alertOpen}
+        onClose={() => setAlertOpen(false)}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
       >
-        <DialogTitle>주문 취소 확인</DialogTitle>
-        <DialogContent>
-          {selectedOrder && (
-            <>
-              <Typography variant="body2">주문 번호: {selectedOrder.orderId}</Typography>
-              <Typography variant="body2">
-                현재 주문 상태: {getOrderStatusKorean(selectedOrder.orderStatus)}
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                이 주문을 취소하시겠습니까?
-              </Typography>
-              {errorMessage && (
-                <Typography variant="body2" color="error" sx={{ mt: 2 }}>
-                  오류: {errorMessage}
-                </Typography>
-              )}
-            </>
-          )}
+        <DialogTitle id="alert-dialog-title" sx={{ backgroundColor: '#e9efff', padding: '16px 24px' }}>
+        <Box display="flex" alignItems="center" justifyContent="center" mb={1}>
+            <img src={Logo} alt="Logo" style={{ maxWidth: '150px', maxHeight: '50px' }} />
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ backgroundColor: '#e9efff', padding: '8px 24px' }}>
+          <DialogContentText id="alert-dialog-description" textAlign="center">
+            {alertMessage}
+          </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)} sx={{ textTransform: 'none' }}>
-            취소
-          </Button>
-          <Button onClick={handleCancelConfirm} color="secondary" disabled={!!errorMessage} sx={{ textTransform: 'none' }}>
+        <DialogActions sx={{ backgroundColor: '#e9efff', padding: '8px 24px' }}>
+          <Button onClick={() => setAlertOpen(false)} color="primary" autoFocus>
             확인
           </Button>
         </DialogActions>

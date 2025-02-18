@@ -158,4 +158,24 @@ public class Order {
                 .orderItems(orderItemDtos)
                 .build();
     }
+
+    /**
+     * 주문 상태 변경 메서드 (상태 변경 가능 여부 검증)
+     * @param newStatus 새로운 주문 상태
+     * @throws IllegalStateException 상태 변경이 불가능한 경우
+     */
+    public void changeOrderStatus(OrderStatus newStatus) {
+        // 상태 변경 가능 여부 검증 로직
+        if (this.orderStatus == OrderStatus.IN_TRANSIT ||
+                this.orderStatus == OrderStatus.DELIVERED ||
+                this.orderStatus == OrderStatus.ORDER_COMPLETED) {
+            throw new IllegalStateException("배송이 시작된 주문은 상태를 변경할 수 없습니다.");
+        }
+        if (this.orderStatus == OrderStatus.CANCELED) {
+            throw new IllegalStateException("이미 취소된 주문은 상태를 변경할 수 없습니다.");
+        }
+        // ... (추가적인 상태 변경 검증 로직이 필요하면 여기에 추가) ...
+
+        this.orderStatus = newStatus; // 상태 변경
+    }
 }
