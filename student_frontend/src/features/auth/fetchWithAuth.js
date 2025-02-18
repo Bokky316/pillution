@@ -81,10 +81,6 @@ export const fetchWithAuth = async (url, options = {}) => {
             console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
             if (response.status === 401) {
-                //const errorData = await response.json(); // 이 부분을 제거
-                //console.warn(`401 Error: ${errorData.message}`);
-
-                //if (errorData.message.includes("만료")) { // 이 부분을 수정
                 console.log("fetchWithAuth.js: 액세스 토큰 만료되어 refreshAccessToken() 호출 - 1");
                 const refreshSuccess = await refreshAccessToken();
 
@@ -93,14 +89,11 @@ export const fetchWithAuth = async (url, options = {}) => {
                     const newResponse = await fetch(url, config); // 기존 요청 재시도
                     return newResponse;
                 } else {
-                    console.error("리프레시 토큰 갱신 실패");
+                    console.error("리프레시 토큰 갱신 실패, 로그인 페이지로 리다이렉트");
+                    window.location.href = '/login'; // 로그인 페이지 URL을 적절히 수정하세요
                     throw new Error("Unauthorized: 리프레시 토큰 갱신 실패");
                 }
-                //} else {
-                //    throw new Error(`Unauthorized: ${errorData.message}`);
-                //}
             }
-
 
         return response;
     } catch (error) {
