@@ -121,7 +121,6 @@ public class PaymentController {
                                 return dto;
                             })
                             .collect(Collectors.toList());
-
                     subscriptionService.createSubscription(
                             member.getId(),
                             requestDto.getPayMethod(),
@@ -214,7 +213,6 @@ public class PaymentController {
                 .orderItems(orderItemDtos)
                 .build();
     }
-
     /**
      * 관리자 주문 취소 API
      * @param orderId 취소할 주문 ID
@@ -265,4 +263,3 @@ public class PaymentController {
         return ResponseEntity.ok(orders);
     }
 }
-
