@@ -16,6 +16,7 @@ import "@/styles/CartPage.css";
 import { useNavigate } from 'react-router-dom';
 import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
 import { API_URL } from "@/utils/constants";
+import { Button, Box } from '@mui/material';
 
 /**
  * 장바구니 페이지 컴포넌트
@@ -36,7 +37,6 @@ const CartPage = () => {
     const { user } = useSelector((state) => state.auth);
     // Redux 스토어에서 가맹점 ID를 가져옵니다.
     const { merchantId } = useSelector((state) => state.payment);
-
 
     /**
      * 컴포넌트 마운트 시 장바구니 아이템을 불러옵니다.
@@ -61,8 +61,6 @@ const CartPage = () => {
         setSelectAll(allSelected);
     }, [cartItems]);
 
-
-
     /**
      * 전체 선택/해제 처리 함수
      * 모든 장바구니 아이템의 선택 상태를 변경합니다.
@@ -78,10 +76,7 @@ const CartPage = () => {
      * @param {number} cartItemId - 장바구니 아이템 ID
      */
     const handleItemSelect = (cartItemId) => {
-        const item = cartItems.find((item) => item.cartItemId === cartItemId);
-        if (item) {
-            dispatch(selectCartItem({ cartItemId, selected: !item.selected }));
-        }
+        dispatch(selectCartItem({ cartItemId, selected: !cartItems.find(item => item.cartItemId === cartItemId).selected }));
     };
 
     /**
@@ -118,7 +113,7 @@ const CartPage = () => {
         setSelectedPurchaseType(type);
     };
 
-   const calculateTotal = (items, type) => {
+    const calculateTotal = (items, type) => {
         let totalPrice = 0;
         let shippingFee = 0;
         let discount = 0;
@@ -141,77 +136,76 @@ const CartPage = () => {
         return { totalPrice, shippingFee, discount, finalPrice };
     };
 
-/**
- * 장바구니에서 선택한 상품으로 주문 페이지로 이동하는 함수
- * @async
- */
-const handleCheckout = async () => {
-    if (selectedPurchaseType) {
-        try {
-            console.log("CartPage - handleCheckout 시작");
-            await dispatch(fetchCartItems());
+    /**
+     * 장바구니에서 선택한 상품으로 주문 페이지로 이동하는 함수
+     * @async
+     */
+    const handleCheckout = async () => {
+        if (selectedPurchaseType) {
+            try {
+                console.log("CartPage - handleCheckout 시작");
+                await dispatch(fetchCartItems());
 
-            const selectedCartItems = cartItems.filter((item) => item.selected);
+                const selectedCartItems = cartItems.filter((item) => item.selected);
 
-            if (selectedCartItems.length === 0) {
-                alert("선택된 상품이 없습니다.");
-                return;
-            }
-
-            if (!user || !user.name || !user.email || !user.phone || !user.postalCode || !user.roadAddress || !user.detailAddress) {
-                alert("사용자 정보를 확인해주세요.");
-                return;
-            }
-
-            const {finalPrice} = calculateTotal(selectedCartItems, selectedPurchaseType);
-
-            // orderData 정의
-            const orderData = {
-                cartOrderItems: selectedCartItems.map(item => ({
-                    cartItemId: item.cartItemId,
-                    quantity: item.quantity,
-                    price: item.price
-                })),
-                buyerName: user.name,
-                buyerEmail: user.email,
-                buyerTel: user.phone,
-                buyerAddr: user.roadAddress + " " + user.detailAddress, // 주소를 buyerAddr로 설정
-                buyerPostcode: user.postalCode, // 우편번호를 추가해야 함
-            };
-
-            console.log("CartPage - createOrder 액션 디스패치:", { orderData, purchaseType: selectedPurchaseType });
-
-             navigate('/order-detail', {
-                state: {
-                    selectedItems: selectedCartItems.map(item => ({
-                        cartItemId: item.cartItemId,
-                        productId: item.productId,
-                        name: item.name,
-                        price: item.price,
-                        quantity: item.quantity,
-                        imageUrl: item.imageUrl // 백엔드에서 제공하는 이미지 URL 사용
-                    })),
-                    purchaseType: selectedPurchaseType,
-                    totalAmount: finalPrice,
-                    user: {
-                        name: user.name,
-                        email: user.email,
-                        phone: user.phone,
-                        postalCode: user.postalCode,
-                        roadAddress: user.roadAddress,
-                        detailAddress: user.detailAddress
-                    },
+                if (selectedCartItems.length === 0) {
+                    alert("선택된 상품이 없습니다.");
+                    return;
                 }
-            });
 
-        } catch (error) {
-            console.error("CartPage - 주문 준비 중 오류:", error);
-            alert("주문 준비 중 오류가 발생했습니다: " + error);
+                if (!user || !user.name || !user.email || !user.phone || !user.postalCode || !user.roadAddress || !user.detailAddress) {
+                    alert("사용자 정보를 확인해주세요.");
+                    return;
+                }
+
+                const { finalPrice } = calculateTotal(selectedCartItems, selectedPurchaseType);
+
+                // orderData 정의
+                const orderData = {
+                    cartOrderItems: selectedCartItems.map(item => ({
+                        cartItemId: item.cartItemId,
+                        quantity: item.quantity,
+                        price: item.price
+                    })),
+                    buyerName: user.name,
+                    buyerEmail: user.email,
+                    buyerTel: user.phone,
+                    buyerAddr: user.roadAddress + " " + user.detailAddress, // 주소를 buyerAddr로 설정
+                    buyerPostcode: user.postalCode, // 우편번호를 추가해야 함
+                };
+
+                console.log("CartPage - createOrder 액션 디스패치:", { orderData, purchaseType: selectedPurchaseType });
+
+                navigate('/order-detail', {
+                    state: {
+                        selectedItems: selectedCartItems.map(item => ({
+                            cartItemId: item.cartItemId,
+                            productId: item.productId,
+                            name: item.name,
+                            price: item.price,
+                            quantity: item.quantity,
+                            imageUrl: item.imageUrl // 백엔드에서 제공하는 이미지 URL 사용
+                        })),
+                        purchaseType: selectedPurchaseType,
+                        totalAmount: finalPrice,
+                        user: {
+                            name: user.name,
+                            email: user.email,
+                            phone: user.phone,
+                            postalCode: user.postalCode,
+                            roadAddress: user.roadAddress,
+                            detailAddress: user.detailAddress
+                        },
+                    }
+                });
+            } catch (error) {
+                console.error("CartPage - 주문 준비 중 오류:", error);
+                alert("주문 준비 중 오류가 발생했습니다: " + error);
+            }
+        } else {
+            alert("구매 유형을 선택해주세요.");
         }
-    } else {
-        alert("구매 유형을 선택해주세요.");
-    }
-};
+    };
 
     /**
      * 렌더링 함수
@@ -228,15 +222,24 @@ const handleCheckout = async () => {
                     {/* 장바구니 아이템 목록 섹션 */}
                     <section className="cart-items">
                         {/* 전체 선택 체크박스 컨테이너 */}
-                        <div className="select-all-container">
-                            <input
-                                type="checkbox"
-                                id="select-all"
-                                checked={selectAll}
-                                onChange={handleSelectAll}
-                            />
-                            <label htmlFor="select-all" className="checkbox-label">전체 선택</label>
-                        </div>
+                        <Box display="flex" justifyContent="flex-start" mb={2}>
+                            <Button
+                                onClick={handleSelectAll}
+                                sx={{
+                                    color: '#4169E1',
+                                    border: 'none',
+                                    '&:hover': {
+                                        backgroundColor: 'transparent',
+                                        color: '#4169E1',
+                                    },
+                                    padding: '6px 8px',
+                                    minWidth: 'auto',
+                                }}
+                            >
+                                {selectAll ? "전체 선택 해제" : "전체 선택"}
+                            </Button>
+                        </Box>
+
                         {/* 장바구니 아이템이 없는 경우 메시지 표시 */}
                         {cartItems.length === 0 ? (
                             <div className="empty-cart-message">장바구니가 비어 있습니다.</div>

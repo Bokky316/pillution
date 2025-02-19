@@ -3,6 +3,15 @@ import { Box, Typography } from "@mui/material";
 import PropTypes from 'prop-types';
 
 const OrderItems = ({ selectedItems }) => {
+    // 이미지 URL을 가져오는 함수
+    const getProductImageUrl = (imageUrl) => {
+        if (imageUrl) {
+            const baseUrl = import.meta.env.VITE_PUBLIC_URL || "http://localhost:8080";
+            return `${baseUrl}${imageUrl.startsWith("/") ? imageUrl : "/" + imageUrl}`;
+        }
+        return "https://dummyimage.com/80x80/cccccc/ffffff&text=No+Image"; // 기본 이미지
+    };
+
     return (
         <Box>
             {selectedItems.map((item, index) => (
@@ -16,9 +25,9 @@ const OrderItems = ({ selectedItems }) => {
                     }}
                 >
                     <img
-                        src={item.imageUrl}
+                        src={getProductImageUrl(item.imageUrl)}
                         alt={item.name}
-                        style={{ width: 80, height: 80, marginRight: 16 }}
+                        style={{ width: 80, height: 80, marginRight: 16, objectFit: "cover" }}
                     />
                     <Box sx={{ flex: 1 }}>
                         <Typography sx={{ fontSize: '0.9rem', mb: 1 }}>

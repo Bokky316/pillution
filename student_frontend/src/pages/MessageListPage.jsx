@@ -89,80 +89,110 @@ const MessageListPage = () => {
     };
 
     return (
-        <div className="data-grid-container">
-            {/* 메시지 제목 및 읽지 않은 메시지 수 표시 */}
-            <Box display="flex" justifyContent="center" width="100%" mb={2}>
-                <Typography variant="h4" gutterBottom>
-                    메시지 ({unreadCount})
-                </Typography>
-            </Box>
+            <Box sx={{ maxWidth: 800, margin: "auto", padding: 2 }}>
+                <Box display="flex" justifyContent="center" width="100%" mb={2}>
+                    <Typography variant="h5" sx={{ fontWeight: 600, color: '#333' }}>
+                        메시지 ({unreadCount})
+                    </Typography>
+                </Box>
 
-            {/* 메시지 보내기 및 관리자 공지 보내기 버튼 */}
-            <Box display="flex" justifyContent="flex-end" width="100%" mb={1}>
-                {isAdminOrCSAgent && (
-                    <Button variant="contained" color="primary" onClick={() => setOpenSendMessageModal(true)}>
-                        메시지 보내기
-                    </Button>
-                )}
+                <Box display="flex" justifyContent="flex-end" width="100%" mb={2}>
+                    {isAdminOrCSAgent && (
+                        <Button
+                            variant="outlined"
+                            onClick={() => setOpenSendMessageModal(true)}
+                            sx={{
+                                color: '#4169E1',
+                                borderColor: '#4169E1',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(65, 105, 225, 0.04)',
+                                    borderColor: '#4169E1',
+                                },
+                                textTransform: 'none',
+                                fontWeight: 500,
+                                mr: 1
+                            }}
+                        >
+                            메시지 보내기
+                        </Button>
+                    )}
 
-                {isAdmin && (
-                    <Button
-                        variant="contained"
-                        color="secondary"
-                        onClick={() => setOpenAdminMessageModal(true)}
-                        style={{ marginLeft: "10px" }}
-                    >
-                        관리자 공지 보내기
-                    </Button>
-                )}
-            </Box>
+                    {isAdmin && (
+                        <Button
+                            variant="contained"
+                            onClick={() => setOpenAdminMessageModal(true)}
+                            sx={{
+                                backgroundColor: '#4169E1',
+                                '&:hover': {
+                                    backgroundColor: '#3a5fc8',
+                                },
+                                textTransform: 'none',
+                                fontWeight: 500
+                            }}
+                        >
+                            관리자 공지 보내기
+                        </Button>
+                    )}
+                </Box>
 
-            {/* 받은 메시지와 보낸 메시지 탭 */}
-            <Tabs value={currentTab} onChange={(e, newValue) => setCurrentTab(newValue)}>
-                <Tab label="받은 메시지" />
-                {isAdminOrCSAgent && <Tab label="보낸 메시지" />}
-            </Tabs>
+                <Tabs
+                    value={currentTab}
+                    onChange={(e, newValue) => setCurrentTab(newValue)}
+                    sx={{
+                        '& .MuiTab-root': {
+                            textTransform: 'none',
+                            fontWeight: 500,
+                            color: '#666',
+                            '&.Mui-selected': {
+                                color: '#4169E1',
+                            },
+                        },
+                        '& .MuiTabs-indicator': {
+                            backgroundColor: '#4169E1',
+                        },
+                    }}
+                >
+                    <Tab label="받은 메시지" />
+                    {isAdminOrCSAgent && <Tab label="보낸 메시지" />}
+                </Tabs>
 
-            {/* 받은 메시지 목록 */}
-            {currentTab === 0 && (
-                <ReceivedMessages onOpenMessage={handleOpenMessage} messages={receivedMessages} />
-            )}
+                <Box mt={2}>
+                    {currentTab === 0 && (
+                        <ReceivedMessages onOpenMessage={handleOpenMessage} messages={receivedMessages} />
+                    )}
 
-            {/* 보낸 메시지 목록 */}
-            {currentTab === 1 && isAdminOrCSAgent && (
-                loading ? (
-                    <div>로딩 중...</div>
-                ) : (
-                    <SentMessages onOpenMessage={handleOpenMessage} sentMessages={sentMessages} />
-                )
-            )}
+                    {currentTab === 1 && isAdminOrCSAgent && (
+                        loading ? (
+                            <Typography sx={{ textAlign: 'center', color: '#666', mt: 2 }}>로딩 중...</Typography>
+                        ) : (
+                            <SentMessages onOpenMessage={handleOpenMessage} sentMessages={sentMessages} />
+                        )
+                    )}
+                </Box>
 
-            {/* 메시지 상세 보기 모달 */}
-            <MessageDetailModal
-                open={openMessageDetailModal}
-                onClose={() => setOpenMessageDetailModal(false)}
-                message={selectedMessage}
-                isAdmin={isAdmin}
-                onReply={refreshMessages}
-            />
+                <MessageDetailModal
+                    open={openMessageDetailModal}
+                    onClose={() => setOpenMessageDetailModal(false)}
+                    message={selectedMessage}
+                    isAdmin={isAdmin}
+                    onReply={refreshMessages}
+                />
 
-            {/* 메시지 보내기 모달 */}
-            <SendMessageModal
-                open={openSendMessageModal}
-                onClose={resetSendMessageModalState} // 모달 닫을 때 상태 초기화 함수 호출
-                onSend={refreshMessages}
-            />
-
-            {/* 관리자 공지 보내기 모달 */}
-            {isAdmin && (
-                <AdminMessageModal
-                    open={openAdminMessageModal}
-                    onClose={resetAdminMessageModalState} // 모달 닫을 때 상태 초기화 함수 호출
+                <SendMessageModal
+                    open={openSendMessageModal}
+                    onClose={resetSendMessageModalState}
                     onSend={refreshMessages}
                 />
-            )}
-        </div>
-    );
-};
 
-export default MessageListPage;
+                {isAdmin && (
+                    <AdminMessageModal
+                        open={openAdminMessageModal}
+                        onClose={resetAdminMessageModalState}
+                        onSend={refreshMessages}
+                    />
+                )}
+            </Box>
+        );
+    };
+
+    export default MessageListPage;

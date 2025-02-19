@@ -527,11 +527,7 @@ const OrderDetail = () => {
 
                     {/* 결제 수단 선택 */}
                     <Box sx={{ mb: 3 }}>
-                        <Typography sx={{
-                                    fontSize: '16px',
-                                    fontWeight: 'bold',
-                                    mb: 2
-                                }}>
+                        <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, mb: 1 }}>
                                   결제수단 선택
                                 </Typography>
                                 <RadioGroup

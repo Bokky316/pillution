@@ -13,12 +13,16 @@ const FloatingConsultationButton = () => {
     return (
         <>
             <Fab
-                color="primary"
                 aria-label="chat"
                 style={{
                     position: "fixed",
                     bottom: "20px",
                     right: "20px",
+                    backgroundColor: "#4169E1", // 로얄 블루 색상
+                    color: "white", // 아이콘 색상
+                    '&:hover': {
+                        backgroundColor: "#3a5fc8", // 호버 시 약간 어두운 색상
+                    },
                 }}
                 onClick={handleToggleOptions}
             >
