@@ -519,12 +519,14 @@ public class ProductDataInitializer implements CommandLineRunner {
 
         List<Product> savedProducts = productRepository.saveAll(products);
 
+        String baseImagePath = "/static-images/products/"; // 정적 리소스 폴더 내 이미지 경로
+
         for (int i = 0; i < savedProducts.size(); i++) {
             Product product = savedProducts.get(i);
 
-            // ✅ 이미지 파일명 자동 설정 (01.jpg, 02.jpg ...)
+            // 이미지 파일명 자동 설정 (01.jpg, 02.jpg ...)
             String imageFileName = String.format("%02d.jpg", i + 1);
-            String imageUrl = "/api/products/images/" + imageFileName; // API를 통해 제공될 URL
+            String imageUrl = baseImagePath + imageFileName; // 새로운 이미지 URL
 
             ProductImg 대표이미지 = ProductImg.builder()
                     .product(product)
@@ -537,8 +539,9 @@ public class ProductDataInitializer implements CommandLineRunner {
 
             product.setMainImageUrl(imageUrl);
             productRepository.save(product);
+}
+
         }
 
     }
-}
 */

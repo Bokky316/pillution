@@ -32,12 +32,12 @@ const OrderDetail = () => {
     const [name, setName] = useState(userData?.name || '');
     const [email, setEmail] = useState(userData?.email || '');
     const [phone, setPhone] = useState(userData?.phone || '');
-    const [zipCode, setZipCode] = useState("");  // 배송지 우편번호
-    const [address1, setAddress1] = useState(""); // 배송지 주소
-    const [address2, setAddress2] = useState(""); // 배송지 상세주소
-    const [userZipCode, setUserZipCode] = useState(""); // 사용자 우편번호
-    const [userAddress1, setUserAddress1] = useState(""); // 사용자 주소
-    const [userAddress2, setUserAddress2] = useState(""); // 사용자 상세주소
+    const [postalCode, setPostalCode] = useState("");  // 배송지 우편번호
+    const [roadAddress, setRoadAddress] = useState(""); // 배송지 도로명 주소
+    const [detailAddress, setDetailAddress] = useState(""); // 배송지 상세주소
+    const [userPostalCode, setUserPostalCode] = useState(""); // 사용자 우편번호
+    const [userRoadAddress, setUserRoadAddress] = useState(""); // 사용자 도로명 주소
+    const [userDetailAddress, setUserDetailAddress] = useState(""); // 사용자 상세주소
     const [deliveryName, setDeliveryName] = useState('');
     const [deliveryPhone, setDeliveryPhone] = useState('');
     const [merchantId, setMerchantId] = useState("");
@@ -64,9 +64,9 @@ const OrderDetail = () => {
         if (selectedAddress) {
             setDeliveryName(selectedAddress.recipientName);
             setDeliveryPhone(selectedAddress.recipientPhone);
-            setZipCode(selectedAddress.postalCode);
-            setAddress1(selectedAddress.roadAddress);
-            setAddress2(selectedAddress.detailAddress);
+            setPostalCode(selectedAddress.postalCode);
+            setRoadAddress(selectedAddress.roadAddress);
+            setDetailAddress(selectedAddress.detailAddress);
             setDeliveryMessage(selectedAddress.deliveryMemo);
         }
     };
@@ -112,9 +112,9 @@ const OrderDetail = () => {
                     setSelectedSavedAddressId(defaultDeliveryInfo.id);
                     setDeliveryName(defaultDeliveryInfo.recipientName);
                     setDeliveryPhone(defaultDeliveryInfo.recipientPhone);
-                    setZipCode(defaultDeliveryInfo.postalCode);
-                    setAddress1(defaultDeliveryInfo.roadAddress);
-                    setAddress2(defaultDeliveryInfo.detailAddress);
+                    setPostalCode(defaultDeliveryInfo.postalCode);
+                    setRoadAddress(defaultDeliveryInfo.roadAddress);
+                    setDetailAddress(defaultDeliveryInfo.detailAddress);
                     setDeliveryMessage(defaultDeliveryInfo.deliveryMemo);
                 }
             } catch (error) {
@@ -125,9 +125,9 @@ const OrderDetail = () => {
         fetchSavedAddresses();
 
         if (userData) {
-            setUserZipCode(userData.zipCode || "");
-            setUserAddress1(userData.address1 || "");
-            setUserAddress2(userData.address2 || "");
+            setUserPostalCode(userData.postalCode || "");
+            setUserRoadAddress(userData.roadAddress || "");
+            setUserDetailAddress(userData.detailAddress || "");
         }
 
         return () => {
@@ -172,8 +172,8 @@ const OrderDetail = () => {
             buyerName: name,
             buyerEmail: email,
             buyerTel: phone,
-            buyerAddr: `${address1} ${address2}`,
-            buyerPostcode: zipCode,
+            buyerAddr: `${roadAddress} ${detailAddress}`,
+            buyerPostcode: postalCode,
             deliveryMessage: deliveryMessage === 'custom' ? customDeliveryMessage : deliveryMessage,
             savedAddressId: selectedSavedAddressId,
         };
@@ -206,14 +206,15 @@ const OrderDetail = () => {
                 buyer_email: email,
                 buyer_name: name,
                 buyer_tel: phone,
-                buyer_addr: `${address1} ${address2}`,
-                buyer_postcode: zipCode,
+                buyer_addr: `${roadAddress} ${detailAddress}`,
+                buyer_postcode: postalCode,
             };
 
             IMP.request_pay(paymentData, async (rsp) => {
                 if (rsp.success) {
                     console.log("결제 완료 응답:", rsp);
 
+                    // 결제 성공 후 서버에 결제 정보 전송 및 주문 완료 처리
                     const paymentRequest = {
                         impUid: rsp.imp_uid,
                         merchantUid: response.id,
@@ -261,7 +262,7 @@ const OrderDetail = () => {
             console.error("주문 생성 실패:", error);
             alert("주문 생성에 실패했습니다.");
         }
-    }, [isDeliveryInfoComplete, selectedItems, name, email, phone, address1, address2, zipCode, deliveryMessage, customDeliveryMessage, selectedSavedAddressId, purchaseType, totalAmount, dispatch, isImpReady, merchantId, selectedPaymentMethod, navigate, pg]);
+    }, [isDeliveryInfoComplete, selectedItems, name, email, phone, roadAddress, detailAddress, postalCode, deliveryMessage, customDeliveryMessage, selectedSavedAddressId, purchaseType, totalAmount, dispatch, isImpReady, merchantId, selectedPaymentMethod, navigate, pg]);
 
     /**
      * PG사 제공자를 가져옵니다.
@@ -315,9 +316,9 @@ const OrderDetail = () => {
     const handleAddressSearch = () => {
         new window.daum.Postcode({
             oncomplete: function (data) {
-                setZipCode(data.zonecode);
-                setAddress1(data.address);
-                setAddress2('');
+                setPostalCode(data.zonecode);
+                setRoadAddress(data.address);
+                setDetailAddress('');
             }
         }).open();
     };
@@ -329,9 +330,12 @@ const OrderDetail = () => {
         setName(userData?.name || '');
         setEmail(userData?.email || '');
         setPhone(userData?.phone || '');
-        setZipCode(userZipCode);
-        setAddress1(userAddress1);
-        setAddress2(userAddress2);
+        setUserPostalCode(userData.postalCode);
+        setUserRoadAddress(userData.roadAddress);
+        setUserDetailAddress(userData.detailAddress);
+        setPostalCode(userData.postalCode);
+        setRoadAddress(userData.roadAddress);
+        setDetailAddress(userData.detailAddress);
     };
 
     /**
@@ -351,9 +355,9 @@ const OrderDetail = () => {
     const handleUseUserInfoForDelivery = () => {
         setDeliveryName(name);
         setDeliveryPhone(phone);
-        setZipCode(zipCode);
-        setAddress1(address1);
-        setAddress2(address2);
+        setPostalCode(postalCode);
+        setRoadAddress(roadAddress);
+        setDetailAddress(detailAddress);
     };
 
     /**
@@ -380,9 +384,9 @@ const OrderDetail = () => {
             deliveryName: deliveryInfoName,
             recipientName: deliveryName,
             recipientPhone: deliveryPhone,
-            postalCode: zipCode,
-            roadAddress: address1,
-            detailAddress: address2,
+            postalCode: postalCode,
+            roadAddress: roadAddress,
+            detailAddress: detailAddress,
             deliveryMemo: deliveryMessage === 'custom' ? customDeliveryMessage : deliveryMessage,
             isDefault: isDefault
         };
@@ -426,8 +430,8 @@ const OrderDetail = () => {
      * 배송 정보가 모두 채워졌는지 확인하는 함수
      */
     const checkDeliveryInfoComplete = useCallback(() => {
-        return deliveryName && deliveryPhone && zipCode && address1 && address2;
-    }, [deliveryName, deliveryPhone, zipCode, address1, address2]);
+        return deliveryName && deliveryPhone && postalCode && roadAddress && detailAddress;
+    }, [deliveryName, deliveryPhone, postalCode, roadAddress, detailAddress]);
 
     useEffect(() => {
         setIsDeliveryInfoComplete(checkDeliveryInfoComplete());
@@ -444,17 +448,17 @@ const OrderDetail = () => {
                     name={name}
                     email={email}
                     phone={phone}
-                    zipCode={userZipCode}
-                    address1={userAddress1}
-                    address2={userAddress2}
+                    postalCode={userPostalCode}
+                    roadAddress={userRoadAddress}
+                    detailAddress={userDetailAddress}
                     handleUseUserInfo={handleUseUserInfo}
                 />
                 <DeliveryInfo
                     deliveryName={deliveryName}
                     deliveryPhone={deliveryPhone}
-                    zipCode={zipCode}
-                    address1={address1}
-                    address2={address2}
+                    postalCode={postalCode}
+                    roadAddress={roadAddress}
+                    detailAddress={detailAddress}
                     deliveryMessage={deliveryMessage}
                     customDeliveryMessage={customDeliveryMessage}
                     savedAddresses={savedAddresses}
@@ -470,7 +474,9 @@ const OrderDetail = () => {
                     handleConfirmSave={handleConfirmSave}
                     setDeliveryName={setDeliveryName}
                     setDeliveryPhone={setDeliveryPhone}
-                    setAddress2={setAddress2}
+                    setPostalCode={setPostalCode}
+                    setRoadAddress={setRoadAddress}
+                    setDetailAddress={setDetailAddress}
                     setCustomDeliveryMessage={setCustomDeliveryMessage}
                     setIsDefault={setIsDefault}
                     setDeliveryInfoName={setDeliveryInfoName}

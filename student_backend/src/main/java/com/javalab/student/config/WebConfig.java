@@ -53,11 +53,6 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/images/**")   // /images/** 요청이 오면 uploadPath로 매핑
                 .addResourceLocations(uploadPath);  // 로컬 컴퓨터에 저장된 파일을 읽어올 root 경로를 설정합니다.
 
-        // aws
-        //registry.addResourceHandler("/images/**")
-        //    .addResourceLocations("file:///home/ec2-user/shop/chap05_shop_social/build/libs/upload/");
-
-
         registry.addResourceHandler("/static-images/**")
                 .addResourceLocations("classpath:/static/images/");  // 정적 리소스
 
