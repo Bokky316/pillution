@@ -1,5 +1,3 @@
-// ViewOrder.js
-
 import { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -15,8 +13,7 @@ import {
   Divider,
   Chip,
   IconButton,
-  Snackbar,
-  Alert
+  Paper
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
@@ -28,11 +25,7 @@ import { API_URL } from '@/utils/constants';
 
 const ViewOrder = ({ open, order, onClose, onStatusChange, getOrderStatusKorean }) => {
   const [selectedStatus, setSelectedStatus] = useState('');
-  //const [snackbarOpen, setSnackbarOpen] = useState(false); // Snackbar 관련 상태 제거
-  //const [snackbarMessage, setSnackbarMessage] = useState(""); // Snackbar 관련 상태 제거
-  //const [errorMessage, setErrorMessage] = useState(""); // Snackbar/에러 관련 상태 제거
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false); // 확인 대화창 상태 추가
-
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
   useEffect(() => {
     if (order) {
@@ -43,116 +36,136 @@ const ViewOrder = ({ open, order, onClose, onStatusChange, getOrderStatusKorean 
   if (!order) return null;
 
   const handleStatusChange = (event) => {
-    const newStatus = event.target.value;
-    setSelectedStatus(newStatus);
+    setSelectedStatus(event.target.value);
   };
 
   const handleSaveStatus = () => {
     onStatusChange(order.orderId, selectedStatus);
   };
 
-  // 취소 버튼 클릭 시 확인 대화창 표시
   const handleCancelButtonClick = () => {
     setConfirmDialogOpen(true);
   };
 
-  // 확인 대화창에서 '취소' 버튼 클릭 시
   const handleConfirmDialogClose = () => {
     setConfirmDialogOpen(false);
   };
 
- // 확인 대화창에서 '확인' 버튼 클릭 시 -> handleCancelOrder 호출.
   const handleCancelConfirm = () => {
-      setConfirmDialogOpen(false);
-      handleCancelOrder();
+    setConfirmDialogOpen(false);
+    handleCancelOrder();
   };
 
-
-
-  // 주문 취소 처리 함수 (수정)
-    const handleCancelOrder = () => {
-      fetch(`${API_URL}admin/orders/${order.orderId}/cancel`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem("accToken")}`
-        },
-        credentials: 'include'
-      })
-        .then(response => {
-          if (!response.ok) {
-            return response.text().then(text => {
-              let errorMessage = text || '주문 취소 실패';
-                try {
-                    const parsedError = JSON.parse(text);
-                    if (parsedError.message) {
-                        errorMessage = parsedError.message;
-                    }
-                } catch (parseError) {
-                    // JSON 파싱 실패 시, 원래 text를 그대로 사용
-                }
-              throw new Error(errorMessage);
-            });
-          }
-          return response.text(); // 성공 응답도 텍스트로 파싱
-        })
-        .then(data => {
-            let successMessage = data || '주문이 취소되었습니다.';
+  const handleCancelOrder = () => {
+    fetch(`${API_URL}admin/orders/${order.orderId}/cancel`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem("accToken")}`
+      },
+      credentials: 'include'
+    })
+      .then(response => {
+        if (!response.ok) {
+          return response.text().then(text => {
+            let errorMessage = text || '주문 취소 실패';
             try {
-              const parsedData = JSON.parse(data);
-              if(parsedData.message){
-                successMessage = parsedData.message;
+              const parsedError = JSON.parse(text);
+              if (parsedError.message) {
+                errorMessage = parsedError.message;
               }
-            } catch (error) {
-              //파싱에러
-            }
-            onStatusChange(order.orderId, "CANCELED"); // 상태를 즉시 CANCELED로 업데이트
-            onClose(); // 다이얼로그 닫기
-            // showAlert 함수를 직접 호출 (성공 메시지 전달)
-            if(typeof onStatusChange ==='function'){ //onStatusChange가 함수인지 확인.
-              onStatusChange(order.orderId, 'CANCELED', successMessage, "success"); //성공메시지
-            }
-
-
-        })
-        .catch(error => {
-          console.error('주문 취소 에러:', error);
-           if(typeof onStatusChange ==='function'){ //onStatusChange가 함수인지 확인.
-              onStatusChange(order.orderId, order.orderStatus, error.message, "error"); //실패메시지
-           }
-        });
-    };
+            } catch (parseError) {}
+            throw new Error(errorMessage);
+          });
+        }
+        return response.text();
+      })
+      .then(data => {
+        let successMessage = data || '주문이 취소되었습니다.';
+        try {
+          const parsedData = JSON.parse(data);
+          if (parsedData.message) {
+            successMessage = parsedData.message;
+          }
+        } catch (error) {}
+        onStatusChange(order.orderId, "CANCELED");
+        onClose();
+        if (typeof onStatusChange === 'function') {
+          onStatusChange(order.orderId, 'CANCELED', successMessage, "success");
+        }
+      })
+      .catch(error => {
+        console.error('주문 취소 에러:', error);
+        if (typeof onStatusChange === 'function') {
+          onStatusChange(order.orderId, order.orderStatus, error.message, "error");
+        }
+      });
+  };
 
   const getStatusColor = (status) => {
     const colors = {
-      'ORDERED': '#2196f3',
-      'PAYMENT_PENDING': '#ff9800',
-      'PAYMENT_COMPLETED': '#4caf50',
-      'PREPARING_SHIPMENT': '#9c27b0',
-      'IN_TRANSIT': '#3f51b5',
-      'DELIVERED': '#009688',
-      'RETURN_REQUESTED': '#f44336',
-      'CANCELED': '#757575',
-      'ORDER_COMPLETED': '#2e7d32'
+      'ORDERED': '#2563eb',        // 밝은 파랑
+      'PAYMENT_PENDING': '#f59e0b', // 밝은 주황
+      'PAYMENT_COMPLETED': '#10b981', // 밝은 초록
+      'PREPARING_SHIPMENT': '#8b5cf6', // 밝은 보라
+      'IN_TRANSIT': '#6366f1',     // 밝은 인디고
+      'DELIVERED': '#0d9488',      // 밝은 청록
+      'RETURN_REQUESTED': '#ef4444', // 밝은 빨강
+      'CANCELED': '#6b7280',       // 밝은 회색
+      'ORDER_COMPLETED': '#059669'  // 밝은 에메랄드
     };
-    return colors[status] || '#757575';
+    return colors[status] || '#6b7280';
   };
 
-  const InfoRow = ({ icon, label, value, color }) => (
-    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+  const getStatusBackgroundColor = (status) => {
+    const colors = {
+      'ORDERED': '#dbeafe',        // 연한 파랑
+      'PAYMENT_PENDING': '#fef3c7', // 연한 주황
+      'PAYMENT_COMPLETED': '#d1fae5', // 연한 초록
+      'PREPARING_SHIPMENT': '#ede9fe', // 연한 보라
+      'IN_TRANSIT': '#e0e7ff',     // 연한 인디고
+      'DELIVERED': '#ccfbf1',      // 연한 청록
+      'RETURN_REQUESTED': '#fee2e2', // 연한 빨강
+      'CANCELED': '#f3f4f6',       // 연한 회색
+      'ORDER_COMPLETED': '#ecfdf5'  // 연한 에메랄드
+    };
+    return colors[status] || '#f3f4f6';
+  };
+
+  const InfoRow = ({ icon, label, value }) => (
+    <Box sx={{
+      display: 'flex',
+      alignItems: 'flex-start',
+      mb: 3,
+      '&:last-child': { mb: 0 }
+    }}>
       <Box sx={{
         mr: 2,
+        mt: 0.5,
         display: 'flex',
         alignItems: 'center',
-        color: color || 'primary.main'
+        color: 'primary.main'
       }}>
         {icon}
       </Box>
-      <Box>
-        <Typography variant="caption" color="text.secondary" display="block">
+      <Box sx={{ flex: 1 }}>
+        <Typography
+          variant="caption"
+          sx={{
+            color: 'text.secondary',
+            display: 'block',
+            mb: 0.5
+          }}
+        >
           {label}
         </Typography>
-        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+        <Typography
+          variant="body1"
+          sx={{
+            fontWeight: 500,
+            color: 'text.primary'
+          }}
+        >
           {value}
         </Typography>
       </Box>
@@ -168,106 +181,152 @@ const ViewOrder = ({ open, order, onClose, onStatusChange, getOrderStatusKorean 
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: '12px',
+            borderRadius: 2,
             overflow: 'hidden'
           }
         }}
       >
         <DialogTitle
+          id="view-order-title" // DialogTitle 에 id 추가 (접근성 향상)
           sx={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            bgcolor: 'primary.main',
-            color: 'white',
-            py: 2
+            bgcolor: 'background.paper',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            padding: '16px 24px' // padding 값 직접 지정 (기본 p: 2.5 는 20px)
           }}
         >
-          <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
+          <Typography variant="h5" component="div" sx={{ fontWeight: 600, color: 'text.primary' }}> {/* variant 를 h5 로, component 를 div 로 변경 */}
             주문 상세 정보
           </Typography>
           <IconButton
             onClick={onClose}
-            sx={{ color: 'white' }}
             size="small"
+            sx={{
+              color: 'text.secondary',
+              '&:hover': { color: 'text.primary' }
+            }}
           >
             <CloseIcon />
           </IconButton>
         </DialogTitle>
 
-        <DialogContent sx={{ px: 4, py: 3 }}>
-          <Grid container spacing={4}>
+        <DialogContent sx={{ p: 3 }}>
+          <Grid container spacing={3}>
             <Grid item xs={12}>
-              <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box sx={{
+                mb: 3,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5
+              }}>
                 <Chip
                   label={`주문 ID: ${order.orderId}`}
-                  color="primary"
                   variant="outlined"
+                  sx={{
+                    borderRadius: 1.5,
+                    height: 32,
+                    fontWeight: 500
+                  }}
                 />
                 <Chip
                   label={getOrderStatusKorean(order.orderStatus)}
                   sx={{
-                    bgcolor: `${getStatusColor(order.orderStatus)}15`,
+                    borderRadius: 1.5,
+                    height: 32,
+                    fontWeight: 500,
                     color: getStatusColor(order.orderStatus),
-                    fontWeight: 500
+                    bgcolor: getStatusBackgroundColor(order.orderStatus),
+                    border: 'none'
                   }}
                 />
               </Box>
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <InfoRow
-                icon={<PersonIcon />}
-                label="회원 이름"
-                value={order.memberName}
-              />
-              <InfoRow
-                icon={<InventoryIcon />}
-                label="상품 정보"
-                value={`${order.productName} (${order.quantity}개)`}
-              />
-              <InfoRow
-                icon={<PaymentIcon />}
-                label="결제 정보"
-                value={`${new Intl.NumberFormat('ko-KR').format(order.totalPrice)}원 / ${order.paymentMethod}`}
-              />
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  height: '100%',
+                  borderRadius: 2,
+                  bgcolor: 'grey.50'
+                }}
+              >
+                <InfoRow
+                  icon={<PersonIcon />}
+                  label="회원 이름"
+                  value={order.memberName}
+                />
+                <InfoRow
+                  icon={<InventoryIcon />}
+                  label="상품 정보"
+                  value={`${order.productName} (${order.quantity}개)`}
+                />
+                <InfoRow
+                  icon={<PaymentIcon />}
+                  label="결제 정보"
+                  value={`${new Intl.NumberFormat('ko-KR').format(order.totalPrice)}원 / ${order.paymentMethod}`}
+                />
+              </Paper>
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <InfoRow
-                icon={<LocalShippingIcon />}
-                label="주문일자"
-                value={order.orderDate}
-              />
-              <InfoRow
-                icon={<LocationOnIcon />}
-                label="배송 주소"
-                value={order.buyerAddr || "배송 주소 없음"}
-              />
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  height: '100%',
+                  borderRadius: 2,
+                  bgcolor: 'grey.50'
+                }}
+              >
+                <InfoRow
+                  icon={<LocalShippingIcon />}
+                  label="주문일자"
+                  value={order.orderDate}
+                />
+                <InfoRow
+                  icon={<LocationOnIcon />}
+                  label="배송 주소"
+                  value={order.buyerAddr || "배송 주소 없음"}
+                />
 
-              <Box sx={{ mt: 3 }}>
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                  주문 상태 변경
-                </Typography>
-                <Select
-                  fullWidth
-                  value={selectedStatus}
-                  onChange={handleStatusChange}
-                  disabled={order.orderStatus === 'CANCELED'}
-                  sx={{
-                    '& .MuiSelect-select': {
-                      py: 1.5
-                    }
-                  }}
-                >
-                  {['ORDERED', 'ORDER_COMPLETED', 'PAYMENT_PENDING', 'PAYMENT_COMPLETED', 'PREPARING_SHIPMENT',
-                    'IN_TRANSIT', 'DELIVERED', 'RETURN_REQUESTED'].map(status => (
-                    <MenuItem key={status} value={status}>
-                      {getOrderStatusKorean(status)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </Box>
+                {order.orderStatus !== 'CANCELED' && (
+                  <Box sx={{ mt: 3 }}>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{
+                        mb: 1,
+                        color: 'text.secondary',
+                        fontWeight: 500
+                      }}
+                    >
+                      주문 상태 변경
+                    </Typography>
+                    <Select
+                      fullWidth
+                      value={selectedStatus}
+                      onChange={handleStatusChange}
+                      sx={{
+                        borderRadius: 1.5,
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'divider'
+                        }
+                      }}
+                    >
+                      {['ORDERED', 'ORDER_COMPLETED', 'PAYMENT_PENDING', 'PAYMENT_COMPLETED',
+                        'PREPARING_SHIPMENT', 'IN_TRANSIT', 'DELIVERED', 'RETURN_REQUESTED'].map(status => (
+                        <MenuItem key={status} value={status}>
+                          {getOrderStatusKorean(status)}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </Box>
+                )}
+              </Paper>
             </Grid>
           </Grid>
 
@@ -275,11 +334,19 @@ const ViewOrder = ({ open, order, onClose, onStatusChange, getOrderStatusKorean 
             <Box sx={{
               mt: 3,
               p: 2,
-              bgcolor: '#fff3e0',
-              borderRadius: '8px',
-              border: '1px solid #ffe0b2'
+              borderRadius: 2,
+              bgcolor: '#fff8f1',
+              border: '1px solid',
+              borderColor: '#ffe4cc'
             }}>
-              <Typography color="warning.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  color: '#f97316'
+                }}
+              >
                 <InventoryIcon fontSize="small" />
                 이 주문은 취소된 상태입니다
               </Typography>
@@ -294,9 +361,13 @@ const ViewOrder = ({ open, order, onClose, onStatusChange, getOrderStatusKorean 
             onClick={onClose}
             variant="outlined"
             sx={{
-              borderRadius: '8px',
+              borderRadius: 1.5,
               textTransform: 'none',
-              px: 3
+              px: 3,
+              borderColor: 'divider',
+              '&:hover': {
+                borderColor: 'primary.main'
+              }
             }}
           >
             닫기
@@ -308,9 +379,13 @@ const ViewOrder = ({ open, order, onClose, onStatusChange, getOrderStatusKorean 
                 onClick={handleSaveStatus}
                 disabled={selectedStatus === order.orderStatus}
                 sx={{
-                  borderRadius: '8px',
+                  borderRadius: 1.5,
                   textTransform: 'none',
-                  px: 3
+                  px: 3,
+                  bgcolor: '#4169E1',
+                  '&:hover': {
+                    bgcolor: '#3457b2'  // 원래 색상보다 약간 어두운 색상
+                  }
                 }}
               >
                 상태 변경
@@ -320,7 +395,7 @@ const ViewOrder = ({ open, order, onClose, onStatusChange, getOrderStatusKorean 
                 color="error"
                 onClick={handleCancelButtonClick}
                 sx={{
-                  borderRadius: '8px',
+                  borderRadius: 1.5,
                   textTransform: 'none',
                   px: 3
                 }}
@@ -330,31 +405,28 @@ const ViewOrder = ({ open, order, onClose, onStatusChange, getOrderStatusKorean 
             </>
           )}
         </DialogActions>
-
-        {/* 스낵바 제거 */}
-        {/* <Snackbar ... /> */}
       </Dialog>
 
-      {/* 취소 확인 대화창 */}
       <Dialog
         open={confirmDialogOpen}
         onClose={handleConfirmDialogClose}
         PaperProps={{
           sx: {
-            borderRadius: '12px',
-            px: 1,
-            py: 1
+            borderRadius: 2,
+            p: 1
           }
         }}
       >
         <DialogTitle>
-          <Typography variant="h6">주문 취소 확인</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            주문 취소 확인
+          </Typography>
         </DialogTitle>
         <DialogContent>
-          <Typography variant="body1">
+          <Typography variant="body1" sx={{ mb: 2 }}>
             정말 이 주문을 취소하시겠습니까?
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          <Typography variant="body2" color="text.secondary">
             주문 ID: {order.orderId}
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -366,7 +438,7 @@ const ViewOrder = ({ open, order, onClose, onStatusChange, getOrderStatusKorean 
             onClick={handleConfirmDialogClose}
             variant="outlined"
             sx={{
-              borderRadius: '8px',
+              borderRadius: 1.5,
               textTransform: 'none'
             }}
           >
@@ -377,7 +449,7 @@ const ViewOrder = ({ open, order, onClose, onStatusChange, getOrderStatusKorean 
             variant="contained"
             color="error"
             sx={{
-              borderRadius: '8px',
+              borderRadius: 1.5,
               textTransform: 'none'
             }}
           >

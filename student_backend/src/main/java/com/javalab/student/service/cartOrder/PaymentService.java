@@ -74,8 +74,9 @@ public class PaymentService {
     public Map<String, Object> processPayment(PaymentRequestDto requestDto, String email, String purchaseType) {
         log.info("🔹 결제 검증 시작: {}", requestDto);
 
-        // 1. 주문 생성 및 정보 조회
-        Order order = createOrder(requestDto, email, purchaseType);
+        // 1. 주문 정보 조회
+        Order order = orderRepository.findById(requestDto.getMerchantUid())
+                .orElseThrow(() -> new EntityNotFoundException("주문 ID [" + requestDto.getMerchantUid() + "]에 해당하는 주문을 찾을 수 없습니다."));
 
         // 2. 포트원 API를 사용하여 결제 정보 조회 및 검증
         verifyPayment(requestDto, order);
@@ -90,13 +91,7 @@ public class PaymentService {
         // 5. 장바구니 비우기
         clearCart(email);
 
-        // 6. 구독 처리 (구독 결제인 경우)
-        if ("subscription".equals(purchaseType)) {
-            log.info("정기구독 결제입니다. SubscriptionService를 호출하여 구독을 처리합니다.");
-            processSubscription(order,email,requestDto);//구독 처리 로직 분리
-        }
-
-        // 7. 응답 데이터 구성
+        // 6. 응답 데이터 구성
         Map<String, Object> response = new HashMap<>();
         response.put("paymentId", payment.getId());
         response.put("impUid", payment.getImpUid());
@@ -457,5 +452,6 @@ public class PaymentService {
 
         log.info("주문 ID {}의 상태가 {}로 변경되었습니다.", orderId, newStatus);
     }
+
 
 }
