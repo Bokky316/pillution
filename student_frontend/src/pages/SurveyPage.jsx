@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Box, Typography, CircularProgress } from "@mui/material";
 import { useNavigate } from 'react-router-dom';
 import SurveyContent from '@/features/survey/SurveyContent';
@@ -36,6 +36,21 @@ const SurveyPage = () => {
     navigate('/'); // 메인 페이지 경로로 수정 필요
   };
 
+  // 엔터 키 이벤트 핸들러 추가
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if (event.key === 'Enter' && !isNextButtonDisabled()) {
+        handleNext();
+      }
+    };
+
+    window.addEventListener('keypress', handleKeyPress);
+
+    return () => {
+      window.removeEventListener('keypress', handleKeyPress);
+    };
+  }, [handleNext, isNextButtonDisabled]);
+
   console.log("SurveyPage 렌더링");
 
   if (categoriesLoading || questionsLoading) {
@@ -71,7 +86,6 @@ const SurveyPage = () => {
         maxWidth: '800px',
         margin: '0 auto'
       }}>
-        {/* ProgressIndicator는 한 번만 렌더링 */}
         <ProgressIndicator
           categories={categoriesToUse}
           currentCategoryIndex={currentCategoryIndex}
@@ -87,6 +101,7 @@ const SurveyPage = () => {
           questions={questions}
           responses={responses}
           onResponseChange={handleResponseChange}
+          onAutoNext={handleNext}
         />
       </Box>
 
