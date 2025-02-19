@@ -348,7 +348,7 @@ public class PaymentService {
         }
         if (currentOrderStatus == OrderStatus.IN_TRANSIT ||
                 currentOrderStatus == OrderStatus.DELIVERED ||
-                currentOrderStatus == OrderStatus.ORDER_COMPLETED) {
+                currentOrderStatus == OrderStatus.PREPARING_SHIPMENT) {
             throw new IllegalStateException("배송이 시작된 주문은 취소할 수 없습니다. 주문 ID: " + orderId);
         }
 
