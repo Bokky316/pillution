@@ -384,7 +384,7 @@ const ViewOrder = ({ open, order, onClose, onStatusChange, getOrderStatusKorean 
                   px: 3,
                   bgcolor: '#4169E1',
                   '&:hover': {
-                    bgcolor: '#3457b2'  // 원래 색상보다 약간 어두운 색상
+                    bgcolor: '#3457b2'  // 어두운 색
                   }
                 }}
               >
