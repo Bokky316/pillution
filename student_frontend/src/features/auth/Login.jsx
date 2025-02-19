@@ -15,7 +15,10 @@ export default function Login({ onLogin }) {
     const dispatch = useDispatch();
 
     const handleChange = (event) => {
-        setCredentials({ ...credentials, [event.target.name]: event.target.value });
+        setCredentials((prev) => ({
+            ...prev,
+            [event.target.name]: event.target.value
+        }));
     };
 
     const handleLogin = async () => {
@@ -78,18 +81,16 @@ export default function Login({ onLogin }) {
     useEffect(() => {
         const handleKeyDown = (event) => {
             if (event.key === "Enter") {
+                event.preventDefault(); // ✅ Enter 키 이벤트 중복 실행 방지
+                setTimeout(() => {
                 handleLogin();
+                }, 10);
             }
         };
 
         document.addEventListener("keydown", handleKeyDown);
-
-        // ✅ 컴포넌트 언마운트 시 이벤트 리스너 제거 (메모리 누수 방지)
-        return () => {
-            document.removeEventListener("keydown", handleKeyDown);
-        };
-    }, []);
-
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [credentials]); // ✅ credentials가 변경될 때마다 useEffect 실행
 
     return (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "20px" }}>
