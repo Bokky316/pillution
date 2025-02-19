@@ -199,7 +199,7 @@ const ProductList = () => {
                 variant="body2"
                 component="span"
                 sx={{
-                  color: '#1976d2',
+                  color: '#4169E1',
                   cursor: 'pointer',
                   '&:hover': {
                     textDecoration: 'underline'
@@ -237,7 +237,7 @@ const ProductList = () => {
                       size="small"
                       sx={{
                         backgroundColor: '#e3f2fd',
-                        color: '#1976d2',
+                        color: '#4169E1',
                         fontSize: '0.75rem'
                       }}
                     />

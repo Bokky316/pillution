@@ -42,7 +42,7 @@ const ProgressFill = styled(Box)`
   top: 0;
   left: 0;
   height: 100%;
-  background-color: #FF5733;
+  background-color: #4169E1;
   transition: width 0.3s ease;
 `;
 
@@ -86,7 +86,7 @@ const ProgressIndicator = ({
               <ProgressFill
                 sx={{
                   width: `${calculateSubProgress(index)}%`,
-                  backgroundColor: index <= currentCategoryIndex ? '#FF5733' : '#EEEEEE'
+                  backgroundColor: index <= currentCategoryIndex ? '#4169E1' : '#EEEEEE'
                 }}
               />
             </CategorySegment>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { TextField, Box, Typography, Button } from "@mui/material";
+import { TextField, Box, Typography } from "@mui/material";
 import PropTypes from 'prop-types';
 
 /**
@@ -14,53 +14,81 @@ import PropTypes from 'prop-types';
  * @description 사용자 정보를 표시하는 컴포넌트입니다.
  */
 const UserInfo = ({ name, email, phone, postalCode, roadAddress, detailAddress, handleUseUserInfo }) => {
+    const textFieldStyle = {
+        '& .MuiOutlinedInput-notchedOutline': {
+            border: '1px solid #eee'
+        },
+        '&:hover .MuiOutlinedInput-notchedOutline': {
+            border: '1px solid #eee'
+        },
+        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            border: '1px solid #4169E1'
+        },
+        borderRadius: 0
+    };
+
     return (
         <Box>
-            <Typography variant="h6" mt={3} gutterBottom>
-                사용자 정보
-            </Typography>
             <TextField
-                label="이름"
+                placeholder="이름"
                 value={name}
-                InputProps={{ readOnly: true }}
+                InputProps={{
+                    readOnly: true,
+                    sx: textFieldStyle
+                }}
                 fullWidth
-                margin="normal"
+                sx={{ mb: 1 }}
             />
             <TextField
-                label="이메일"
+                placeholder="이메일"
                 value={email}
-                InputProps={{ readOnly: true }}
+                InputProps={{
+                    readOnly: true,
+                    sx: textFieldStyle
+                }}
                 fullWidth
-                margin="normal"
+                sx={{ mb: 1 }}
             />
             <TextField
-                label="전화번호"
+                placeholder="전화번호"
                 value={phone}
-                InputProps={{ readOnly: true }}
+                InputProps={{
+                    readOnly: true,
+                    sx: textFieldStyle
+                }}
                 fullWidth
-                margin="normal"
+                sx={{ mb: 1 }}
             />
-             <TextField
-                label="우편번호"
+            <TextField
+                placeholder="우편번호"
                 value={postalCode}
-                InputProps={{ readOnly: true }}
+                InputProps={{
+                    readOnly: true,
+                    sx: textFieldStyle
+                }}
                 fullWidth
-                margin="normal"
-              />
-              <TextField
-                label="도로명 주소"
+                sx={{ mb: 1 }}
+            />
+            <TextField
+                placeholder="도로명 주소"
                 value={roadAddress}
-                InputProps={{ readOnly: true }}
+                InputProps={{
+                    readOnly: true,
+                    sx: textFieldStyle
+                }}
                 fullWidth
-                margin="normal"
-              />
-              <TextField
-                label="상세주소"
+                sx={{ mb: 1 }}
+            />
+            <TextField
+                placeholder="상세주소"
                 value={detailAddress}
-                InputProps={{ readOnly: true }}
+                InputProps={{
+                    readOnly: true,
+                    sx: textFieldStyle
+                }}
                 fullWidth
-                margin="normal"
-              />
+                sx={{ mb: 1 }}
+            />
         </Box>
     );
 };

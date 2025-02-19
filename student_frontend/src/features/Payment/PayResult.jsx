@@ -1,12 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from "react-router-dom";
-import { Box, Typography, Paper, Button } from "@mui/material";
+import { Box, Typography, Paper, Button, Divider } from "@mui/material";
 
-
-/**
- * PayResult 컴포넌트
- * 결제 결과를 표시하고 확인 버튼을 통해 메인 페이지로 이동합니다.
- */
 const PayResult = () => {
     const location = useLocation();
     const navigate = useNavigate();
@@ -35,28 +30,94 @@ const PayResult = () => {
         }
     };
 
-    return (
-        <Box sx={{ maxWidth: 600, margin: "auto", padding: 3 }}>
-            <Typography variant="h4" gutterBottom>
-                결제 결과
-            </Typography>
+    // 결제 방법을 한글로 변환하는 함수
+    const getPaymentMethodKorean = (method) => {
+        const methods = {
+            'card': '신용카드',
+            'trans': '실시간계좌이체',
+            'vbank': '가상계좌',
+            'phone': '휴대폰소액결제',
+            'samsung': '삼성페이',
+            'kpay': 'KPay',
+            'kakaopay': '카카오페이',
+            'payco': '페이코',
+            'lpay': 'LPAY',
+            'ssgpay': 'SSG페이',
+            'tosspay': '토스',
+            'cultureland': '문화상품권',
+            'smartculture': '스마트문상',
+            'happymoney': '해피머니',
+            'booknlife': '도서문화상품권',
+            'point': '포인트',
+            'naverpay': '네이버페이',
+        };
+        return methods[method] || method;
+    };
 
+    return (
+        <Box sx={{
+            maxWidth: 600,
+            margin: "auto",
+            padding: 2,
+            backgroundColor: '#f5f5f5',
+            minHeight: '100vh'
+        }}>
             {paymentInfo ? (
-                <Paper sx={{ padding: 3 }}>
-                    <Typography variant="h6">결제 완료!</Typography>
-                    <Typography>결제 금액: {paymentInfo.amount}원</Typography>
-                    <Typography>결제 방법: {paymentInfo.paymentMethod}</Typography>
-                    <Typography>주문 번호: {paymentInfo.merchantUid}</Typography>
-                    <Typography>승인 번호: {paymentInfo.impUid}</Typography>
-                    <Typography>결제 상태: {paymentInfo.status}</Typography>
-                    <Typography>결제 시각: {new Date(paymentInfo.paidAt * 1000).toLocaleString()}</Typography>
+                <Box sx={{ mb: 3 }}>
+                    <Paper sx={{
+                        p: 2,
+                        mb: 2,
+                        boxShadow: 'none',
+                        borderRadius: 1
+                    }}>
+                        <Typography variant="h6" sx={{ mb: 2 }}>결제 완료!</Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography>결제 금액</Typography>
+                            <Typography>{paymentInfo.amount}원</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography>결제 방법</Typography>
+                            <Typography>{getPaymentMethodKorean(paymentInfo.paymentMethod)}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography>주문 번호</Typography>
+                            <Typography>{paymentInfo.merchantUid}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography>승인 번호</Typography>
+                            <Typography>{paymentInfo.impUid}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography>결제 상태</Typography>
+                            <Typography>{paymentInfo.status}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography>결제 시각</Typography>
+                            <Typography>{new Date(paymentInfo.paidAt * 1000).toLocaleString()}</Typography>
+                        </Box>
+                    </Paper>
 
                     <Box mt={3}>
-                        <Button variant="contained" color="primary" fullWidth onClick={handleClose}>
+                        <Button
+                            variant="contained"
+                            fullWidth
+                            onClick={handleClose}
+                            sx={{
+                                backgroundColor: '#4169E1',
+                                color: 'white',
+                                '&:hover': {
+                                    backgroundColor: '#3a5fcf',
+                                },
+                                boxShadow: 'none',
+                                borderRadius: '8px',
+                                fontWeight: 'bold',
+                                textTransform: 'none'
+                            }}
+                        >
                             확인
                         </Button>
                     </Box>
-                </Paper>
+                </Box>
             ) : (
                 <Typography>결제 정보를 불러올 수 없습니다.</Typography>
             )}

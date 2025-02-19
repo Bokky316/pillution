@@ -8,13 +8,13 @@ const StyledBox = styled(Box, {
   width: 90%; /* 너비를 90%로 설정 */
   padding: 16px;
   margin-bottom: 12px;
-  background-color: ${props => props.isSelected ? '#FF5733' : '#f5f5f5'};
+  background-color: ${props => props.isSelected ? '#4169E1' : '#f5f5f5'};
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background-color: ${props => props.isSelected ? '#FF5733' : '#f0f0f0'};
+    background-color: ${props => props.isSelected ? '#4169E1' : '#f0f0f0'};
   }
 `;
 

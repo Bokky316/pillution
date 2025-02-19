@@ -40,7 +40,7 @@
 }
 
 .amount-row.discount {
-  color: #ff5c35;
+  color:  #4169E1;
 }
 
 .type-buttons {
@@ -63,13 +63,13 @@
 }
 
 .type-button.selected {
-  border-color: #ff5c35;
-  background-color: #fff4f1;
+  border-color:  #4169E1;
+  background-color: #e9efff;
 }
 
 .type-button .price {
   font-weight: 500;
-  color: #ff5c35;
+  color:  #4169E1;
 }
 
 .payment-button {
@@ -77,7 +77,7 @@
   padding: 16px;
   border: none;
   border-radius: 8px;
-  background: #ff5c35;
+  background:  #4169E1;
   color: white;
   font-size: 16px;
   font-weight: 500;
@@ -87,12 +87,12 @@
 .subscription-benefits {
   margin-top: 16px;
   padding: 16px;
-  background: #fff4f1;
+  background: #e9efff;
   border-radius: 8px;
 }
 
 .subscription-benefits h4 {
-  color: #ff5c35;
+  color:  #4169E1;
   font-size: 14px;
   margin: 0 0 8px 0;
 }
@@ -115,5 +115,5 @@
   content: "•";
   position: absolute;
   left: 0;
-  color: #ff5c35;
+  color:  #4169E1;
 }

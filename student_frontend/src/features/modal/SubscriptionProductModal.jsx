@@ -54,7 +54,7 @@ export default function SubscriptionProductModal({ isOpen, onClose, products, se
                             <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 0.5 }}>
                                 {product.name}
                             </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: "bold", color: "#ff5733", mb: 1 }}>
+                            <Typography variant="body2" sx={{ fontWeight: "bold", color: "#4169E1", mb: 1 }}>
                                 {product.price.toLocaleString()}원
                             </Typography>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
@@ -70,7 +70,7 @@ export default function SubscriptionProductModal({ isOpen, onClose, products, se
                         </Box>
 
                         {isAdded ? (
-                            <Typography sx={{ fontSize: "14px", fontWeight: "bold", color: "#ff5733" }}>
+                            <Typography sx={{ fontSize: "14px", fontWeight: "bold", color: "#4169E1" }}>
                                 추가됨 ✔️
                             </Typography>
                         ) : (

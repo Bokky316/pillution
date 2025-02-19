@@ -38,17 +38,17 @@
 }
 
 .purchase-type-selection {
-  display: flex; /* Flexbox 레이아웃 사용 */
-  flex-direction: row; /* 가로 방향으로 요소 배치 */
-  justify-content: space-between; /* 요소 사이에 동일한 간격 배치 */
-  gap: 12px; /* 버튼 사이의 간격 */
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 12px;
   margin: 20px 0;
 }
 
 .checkout-btn {
   width: 100%;
   padding: 20px;
-  background-color: #ff5c35;
+  background-color: #4169E1;
   color: white;
   border: none;
   border-radius: 8px;

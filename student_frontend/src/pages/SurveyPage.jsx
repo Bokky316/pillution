@@ -80,24 +80,6 @@ const SurveyPage = () => {
           onClose={handleClose}
         />
 
-{/*          */}{/* 카테고리 및 서브카테고리 이름 표시 */}
-{/*         <Box sx={{ mb: 4, px: 2 }}> */}
-{/*           <Typography variant="h6" sx={{ */}
-{/*             fontWeight: 'bold', */}
-{/*             fontSize: '1.1rem', */}
-{/*             color: '#333' */}
-{/*           }}> */}
-{/*             {currentCategory?.name} */}
-{/*           </Typography> */}
-{/*           <Typography sx={{ */}
-{/*             color: '#666', */}
-{/*             fontSize: '0.9rem', */}
-{/*             mt: 1 */}
-{/*           }}> */}
-{/*             {currentSubCategory?.name} */}
-{/*           </Typography> */}
-{/*         </Box> */}
-
       <Box sx={{ flexGrow: 1 }}>
         <SurveyContent
           currentCategory={currentCategory}
