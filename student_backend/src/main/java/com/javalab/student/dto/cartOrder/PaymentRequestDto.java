@@ -32,6 +32,7 @@ public class PaymentRequestDto {
     private Long paidAt;          // Unix Timestamp
     private List<CartOrderItemDto> cartOrderItems; // 카트 아이템 정보
     private String deliveryMessage; //배송메세지
+    private String selectedPaymentMethod; // 결제수단
     /**
      * 저장된 배송지 ID
      */

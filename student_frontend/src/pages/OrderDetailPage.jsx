@@ -192,6 +192,7 @@ const OrderDetail = () => {
         try {
             const response = await dispatch(createOrder({ orderData, purchaseType })).unwrap();
             console.log("주문 생성 성공:", response);
+
             setOrder({
                 ...response,
                 id: String(response.id),
@@ -225,7 +226,6 @@ const OrderDetail = () => {
                 if (rsp.success) {
                     console.log("결제 완료 응답:", rsp);
 
-                    // 결제 성공 후 서버에 결제 정보 전송 및 주문 완료 처리
                     const paymentRequest = {
                         impUid: rsp.imp_uid,
                         merchantUid: response.id,
@@ -239,15 +239,18 @@ const OrderDetail = () => {
                         buyerPostcode: rsp.buyer_postcode,
                         paidAt: rsp.paid_at,
                         status: "PAYMENT_COMPLETED",
+                        selectedPaymentMethod: selectedPaymentMethod, // ✅ selectedPaymentMethod 추가
                         cartOrderItems: selectedItems.map(item => ({
                             cartItemId: item.cartItemId,
                             quantity: item.quantity,
                             price: item.price
                         }))
                     };
-
+                     // ✅ 콘솔로 확인: paymentRequest 객체 전체 출력
+                    console.log("PaymentRequest 객체:", paymentRequest);
                     try {
                         const result = await dispatch(processPayment({ paymentRequestDto: paymentRequest, purchaseType: purchaseType })).unwrap();
+
                         if (result) {
                             const paymentInfo = {
                                 amount: rsp.paid_amount,

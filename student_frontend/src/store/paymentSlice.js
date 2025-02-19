@@ -27,23 +27,25 @@ export const fetchMerchantId = createAsyncThunk(
  * @returns {Promise<Object>} 결제 처리 결과
  */
 export const processPayment = createAsyncThunk(
-  'payment/processPayment',
-  async ({ paymentRequestDto, purchaseType }, { rejectWithValue }) => {
-    try {
-      const response = await fetchWithAuth(`${API_URL}payments/request?purchaseType=${purchaseType}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(paymentRequestDto),
-      });
-      if (!response.ok) throw new Error('Failed to process payment');
-      return await response.json();
-    } catch (error) {
-      return rejectWithValue(error.message);
+    'payment/processPayment',
+    async ({ paymentRequestDto, purchaseType }, { rejectWithValue }) => {
+        try {
+            const response = await fetchWithAuth(`${API_URL}payments/request?purchaseType=${purchaseType}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                // ✅ paymentRequestDto에 selectedPaymentMethod가 포함됨
+                body: JSON.stringify(paymentRequestDto),
+            });
+            if (!response.ok) throw new Error('Failed to process payment');
+            return await response.json();
+        } catch (error) {
+            return rejectWithValue(error.message);
+        }
     }
-  }
 );
+
 
 /**
  * 결제 슬라이스

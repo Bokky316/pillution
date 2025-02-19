@@ -93,9 +93,10 @@ public class Order {
      * @param orderItemList 주문 아이템 리스트
      * @return 생성된 주문 객체
      */
-    public static Order createOrder(Member member, List<OrderItem> orderItemList) {
+    public static Order createOrder(Member member, List<OrderItem> orderItemList, String paymentMethod) {
         Order order = new Order();
         order.setMember(member);
+        order.setPaymentMethod(paymentMethod);
 
         BigDecimal totalAmount = BigDecimal.ZERO;
 
@@ -156,6 +157,7 @@ public class Order {
                 .waybillNum(this.waybillNum)
                 .parcelCd(this.parcelCd)
                 .orderItems(orderItemDtos)
+                .paymentMethod(this.paymentMethod)
                 .build();
     }
 
@@ -177,5 +179,10 @@ public class Order {
         // ... (추가적인 상태 변경 검증 로직이 필요하면 여기에 추가) ...
 
         this.orderStatus = newStatus; // 상태 변경
+    }
+
+    public void completePayment(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
+        this.orderStatus = OrderStatus.PAYMENT_COMPLETED;
     }
 }

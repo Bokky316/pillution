@@ -1,6 +1,7 @@
 package com.javalab.student.service.cartOrder;
 
 import com.javalab.student.constant.OrderStatus;
+import com.javalab.student.constant.PayStatus;
 import com.javalab.student.dto.cartOrder.OrderDto;
 import com.javalab.student.dto.cartOrder.PaymentRequestDto;
 import com.javalab.student.dto.cartOrder.OrderItemDto;
@@ -55,11 +56,9 @@ public class PaymentService {
     private final CartItemRepository cartItemRepository;
     private final CartRepository cartRepository;
     private final MemberRepository memberRepository;
-    private final SubscriptionService subscriptionService;
     private final SubscriptionRepository subscriptionRepository;
-    private final OrderItemRepository orderItemRepository;
     private final SubscriptionNextItemRepository subscriptionNextItemRepository;
-    private final ProductRepository productRepository;
+
 
     /**
      * 결제를 처리하고 검증합니다.
@@ -74,8 +73,8 @@ public class PaymentService {
     public Map<String, Object> processPayment(PaymentRequestDto requestDto, String email, String purchaseType) {
         log.info("🔹 결제 검증 시작: {}", requestDto);
 
-        // 1. 주문 정보 조회
-        Order order = orderRepository.findById(requestDto.getMerchantUid())
+        // 1. 주문 정보 조회 (merchantUid는 주문 ID)
+        Order order = orderRepository.findById(Long.valueOf(requestDto.getMerchantUid()))
                 .orElseThrow(() -> new EntityNotFoundException("주문 ID [" + requestDto.getMerchantUid() + "]에 해당하는 주문을 찾을 수 없습니다."));
 
         // 2. 포트원 API를 사용하여 결제 정보 조회 및 검증
@@ -84,8 +83,9 @@ public class PaymentService {
         // 3. Payment 엔티티 생성 및 저장
         com.javalab.student.entity.cartOrder.Payment payment = createAndSavePayment(requestDto, order);
 
-        // 4. 주문 상태 업데이트
+        // 4. 주문 상태 업데이트 (결제 완료) 및 결제 수단 정보 저장
         order.setOrderStatus(OrderStatus.PAYMENT_COMPLETED);
+        order.setPaymentMethod(requestDto.getSelectedPaymentMethod()); // 결제 수단 정보 저장
         orderRepository.save(order);
 
         // 5. 장바구니 비우기
@@ -97,11 +97,12 @@ public class PaymentService {
         response.put("impUid", payment.getImpUid());
         response.put("merchantUid", order.getId());
         response.put("amount", payment.getAmount());
-        response.put("paymentMethod", payment.getPaymentMethod());
+        response.put("paymentMethod", payment.getPaymentMethod()); // 결제 수단 정보 반환
         response.put("status", payment.getOrderStatus());
         response.put("paidAt", payment.getPaidAt());
         return response;
     }
+
 
     /**
      * 장바구니 상품들을 주문으로 변환하고 처리합니다.
@@ -240,7 +241,7 @@ public class PaymentService {
                 .itemNm(requestDto.getName())
                 .orderStatus(OrderStatus.PAYMENT_COMPLETED)
                 .amount(requestDto.getPaidAmount())
-                .paymentMethod(requestDto.getPayMethod())
+                .paymentMethod(requestDto.getSelectedPaymentMethod()) // ✅ 수정됨
                 .buyerEmail(requestDto.getBuyerEmail())
                 .buyerName(requestDto.getBuyerName())
                 .buyerTel(requestDto.getBuyerTel())
@@ -453,5 +454,18 @@ public class PaymentService {
         log.info("주문 ID {}의 상태가 {}로 변경되었습니다.", orderId, newStatus);
     }
 
+    @Transactional
+    public void completePayment(Long paymentId, String paymentMethod) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new EntityNotFoundException("Payment not found with id: " + paymentId));
 
+        payment.setPaymentMethod(paymentMethod);
+        payment.setPayStatus(PayStatus.PAYMENT);
+        payment.setOrderStatus(OrderStatus.PAYMENT_COMPLETED);
+
+        paymentRepository.save(payment);
+
+        // 변경 사항 확인을 위한 로그
+        System.out.println("Updated payment: " + paymentRepository.findById(paymentId).orElse(null));
+    }
 }
