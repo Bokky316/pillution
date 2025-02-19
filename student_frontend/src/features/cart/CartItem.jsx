@@ -18,7 +18,7 @@ const CartItem = ({ item, onSelect, onQuantityChange, onRemove }) => {
             <Grid container alignItems="center">
                 <Grid item xs={1}>
                     <Checkbox
-                        checked={item.selected !== false}
+                        checked={item.selected} // prop으로 전달받은 selected 값 사용
                         onChange={() => onSelect(item.cartItemId)}
                         sx={{
                             color: blue[700],
