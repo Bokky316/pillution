@@ -1,3 +1,5 @@
+// OrderList.js
+
 import { DataGrid } from '@mui/x-data-grid';
 import { useState, useEffect } from 'react';
 import { API_URL } from '@/utils/constants';
@@ -64,33 +66,66 @@ const OrderList = () => {
         setLoading(false);
       });
   };
+// showAlert 함수 수정
+    const showAlert = (message, severity) => {
+      setAlertMessage(message);
+      setAlertSeverity(severity);
+      setAlertOpen(true);
+    };
 
-  const handleOrderStatusChange = async (orderId, newStatus) => {
-    if (newStatus !== orders.find(order => order.orderId === orderId)?.orderStatus) {
-      try {
-        const response = await fetch(`${API_URL}admin/orders/${orderId}/status`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem("accToken")}`
-          },
-          body: JSON.stringify({ status: newStatus }),
-          credentials: 'include'
-        });
 
-        if (!response.ok) {
-          const errorData = await response.text(); // 에러 메시지 받기
-          throw new Error(errorData || '상태 변경 실패'); // 받은 에러 메시지 사용
-        }
+// handleOrderStatusChange 함수 수정
+  const handleOrderStatusChange = async (orderId, newStatus, message, severity) => {
+    // message와 severity는 주문 취소/상태 변경 완료 시에만 사용
 
-        showAlert("주문 상태가 변경되었습니다.", "success");
-      } catch (error) {
-        console.error('상태 변경 에러:', error);
-        showAlert(error.message || "주문 상태 변경에 실패했습니다.", "error");
-      }
+    //상태변경 요청.
+    if(newStatus !=="CANCELED"){ //취소요청이 아닐때.
+        try {
+              const response = await fetch(`${API_URL}admin/orders/${orderId}/status`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${localStorage.getItem("accToken")}`
+                },
+                body: JSON.stringify({ status: newStatus }),
+                credentials: 'include'
+              });
+
+              if (!response.ok) {
+                let errorData = await response.text();
+                let errorMessage = '상태 변경 실패'; // 기본 에러 메시지
+
+                try {
+                  // JSON 파싱 시도
+                  const parsedError = JSON.parse(errorData);
+                  if (parsedError.message) {
+                    errorMessage = parsedError.message; // JSON에 message 필드가 있으면 사용
+                  }
+                } catch (parseError) {
+                  // JSON 파싱 실패 시, 원래 errorData를 그대로 사용 (일반 텍스트로 간주)
+                  errorMessage = errorData;
+                }
+
+                throw new Error(errorMessage);
+              }
+              showAlert("주문 상태가 변경되었습니다.", "success");
+            } catch (error) {
+              console.error('상태 변경 에러:', error);
+              showAlert(error.message || "주문 상태 변경에 실패했습니다.", "error");
+            }
     }
-    setDialogOpen(false);
-    fetchOrders();
+
+    //ViewOrder에서 넘어온 취소/성공 관련 알림.
+    if (message && severity) {
+      showAlert(message, severity);  // 넘어온 메시지와 심각도 사용
+      if (severity === 'success') {
+          // 성공 알림일 경우에만 fetchOrders
+          // 상태가 CANCELED로 즉시 업데이트되므로, fetchOrders는 성공시에만 호출.
+          fetchOrders();
+      }
+    }else{ //상태변경 완료후, 데이터 다시 불러옴
+      fetchOrders();
+    }
   };
 
   const getOrderStatusKorean = (status) => {
@@ -168,14 +203,6 @@ const OrderList = () => {
   const handleSearch = () => {
     fetchOrders();
   };
-
-  // 알림 표시 함수
-  const showAlert = (message, severity) => {
-    setAlertMessage(message);
-    setAlertSeverity(severity);
-    setAlertOpen(true);
-  };
-
 
   return (
     <Paper
@@ -270,6 +297,7 @@ const OrderList = () => {
         }}
       />
 
+      {/* onStatusChange prop 전달 */}
       <ViewOrder
         open={dialogOpen}
         order={selectedOrder}

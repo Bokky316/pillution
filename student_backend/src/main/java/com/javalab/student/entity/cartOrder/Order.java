@@ -168,7 +168,7 @@ public class Order {
         // 상태 변경 가능 여부 검증 로직
         if (this.orderStatus == OrderStatus.IN_TRANSIT ||
                 this.orderStatus == OrderStatus.DELIVERED ||
-                this.orderStatus == OrderStatus.ORDER_COMPLETED) {
+                this.orderStatus == OrderStatus.PREPARING_SHIPMENT) {
             throw new IllegalStateException("배송이 시작된 주문은 상태를 변경할 수 없습니다.");
         }
         if (this.orderStatus == OrderStatus.CANCELED) {

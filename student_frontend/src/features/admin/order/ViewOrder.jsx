@@ -1,3 +1,5 @@
+// ViewOrder.js
+
 import { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -26,10 +28,11 @@ import { API_URL } from '@/utils/constants';
 
 const ViewOrder = ({ open, order, onClose, onStatusChange, getOrderStatusKorean }) => {
   const [selectedStatus, setSelectedStatus] = useState('');
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
+  //const [snackbarOpen, setSnackbarOpen] = useState(false); // Snackbar 관련 상태 제거
+  //const [snackbarMessage, setSnackbarMessage] = useState(""); // Snackbar 관련 상태 제거
+  //const [errorMessage, setErrorMessage] = useState(""); // Snackbar/에러 관련 상태 제거
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false); // 확인 대화창 상태 추가
+
 
   useEffect(() => {
     if (order) {
@@ -58,48 +61,67 @@ const ViewOrder = ({ open, order, onClose, onStatusChange, getOrderStatusKorean 
     setConfirmDialogOpen(false);
   };
 
-  // 확인 대화창에서 '확인' 버튼 클릭 시
+ // 확인 대화창에서 '확인' 버튼 클릭 시 -> handleCancelOrder 호출.
   const handleCancelConfirm = () => {
-    setConfirmDialogOpen(false);
-    handleCancelOrder();
+      setConfirmDialogOpen(false);
+      handleCancelOrder();
   };
 
-  // 주문 취소 처리 함수
-  const handleCancelOrder = () => {
-    fetch(`${API_URL}admin/orders/${order.orderId}/cancel`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem("accToken")}`
-      },
-      credentials: 'include'
-    })
-      .then(response => {
-        if (!response.ok) {
-          return response.text().then(text => {
-            throw new Error(text || '주문 취소 실패');
-          });
-        }
-        return response.text();
+
+
+  // 주문 취소 처리 함수 (수정)
+    const handleCancelOrder = () => {
+      fetch(`${API_URL}admin/orders/${order.orderId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem("accToken")}`
+        },
+        credentials: 'include'
       })
-      .then(data => {
-        setSnackbarMessage(data || '주문이 취소되었습니다.');
-        setSnackbarOpen(true);
-        // 부모 컴포넌트에 취소 완료 알림
-        onClose();
-        // 주문 목록 새로고침 (부모 컴포넌트에서 prop으로 전달 필요)
-        if (typeof onStatusChange === 'function') {
-          // 여기서는 상태를 변경하지 않고, 단순히 주문 목록을 새로고침하기 위해 호출
-          onStatusChange(order.orderId, order.orderStatus);
-        }
-      })
-      .catch(error => {
-        console.error('주문 취소 에러:', error);
-        setErrorMessage(error.message || '주문 취소 실패');
-        setSnackbarMessage(`주문 취소 실패: ${error.message || '알 수 없는 오류'}`);
-        setSnackbarOpen(true);
-      });
-  };
+        .then(response => {
+          if (!response.ok) {
+            return response.text().then(text => {
+              let errorMessage = text || '주문 취소 실패';
+                try {
+                    const parsedError = JSON.parse(text);
+                    if (parsedError.message) {
+                        errorMessage = parsedError.message;
+                    }
+                } catch (parseError) {
+                    // JSON 파싱 실패 시, 원래 text를 그대로 사용
+                }
+              throw new Error(errorMessage);
+            });
+          }
+          return response.text(); // 성공 응답도 텍스트로 파싱
+        })
+        .then(data => {
+            let successMessage = data || '주문이 취소되었습니다.';
+            try {
+              const parsedData = JSON.parse(data);
+              if(parsedData.message){
+                successMessage = parsedData.message;
+              }
+            } catch (error) {
+              //파싱에러
+            }
+            onStatusChange(order.orderId, "CANCELED"); // 상태를 즉시 CANCELED로 업데이트
+            onClose(); // 다이얼로그 닫기
+            // showAlert 함수를 직접 호출 (성공 메시지 전달)
+            if(typeof onStatusChange ==='function'){ //onStatusChange가 함수인지 확인.
+              onStatusChange(order.orderId, 'CANCELED', successMessage, "success"); //성공메시지
+            }
+
+
+        })
+        .catch(error => {
+          console.error('주문 취소 에러:', error);
+           if(typeof onStatusChange ==='function'){ //onStatusChange가 함수인지 확인.
+              onStatusChange(order.orderId, order.orderStatus, error.message, "error"); //실패메시지
+           }
+        });
+    };
 
   const getStatusColor = (status) => {
     const colors = {
@@ -238,8 +260,8 @@ const ViewOrder = ({ open, order, onClose, onStatusChange, getOrderStatusKorean 
                     }
                   }}
                 >
-                  {['ORDERED', 'PAYMENT_PENDING', 'PAYMENT_COMPLETED', 'PREPARING_SHIPMENT',
-                    'IN_TRANSIT', 'DELIVERED', 'RETURN_REQUESTED', 'CANCELED', 'ORDER_COMPLETED'].map(status => (
+                  {['ORDERED', 'ORDER_COMPLETED', 'PAYMENT_PENDING', 'PAYMENT_COMPLETED', 'PREPARING_SHIPMENT',
+                    'IN_TRANSIT', 'DELIVERED', 'RETURN_REQUESTED'].map(status => (
                     <MenuItem key={status} value={status}>
                       {getOrderStatusKorean(status)}
                     </MenuItem>
@@ -309,21 +331,8 @@ const ViewOrder = ({ open, order, onClose, onStatusChange, getOrderStatusKorean 
           )}
         </DialogActions>
 
-        {/* 스낵바 */}
-        <Snackbar
-          open={snackbarOpen}
-          autoHideDuration={3000}
-          onClose={() => setSnackbarOpen(false)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        >
-          <Alert
-            onClose={() => setSnackbarOpen(false)}
-            severity={errorMessage ? "error" : "success"}
-            sx={{ width: '100%', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}
-          >
-            {snackbarMessage}
-          </Alert>
-        </Snackbar>
+        {/* 스낵바 제거 */}
+        {/* <Snackbar ... /> */}
       </Dialog>
 
       {/* 취소 확인 대화창 */}
