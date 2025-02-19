@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Box, Typography } from "@mui/material";
 import styled from '@emotion/styled';
 
@@ -9,6 +9,7 @@ const StyledBox = styled(Box, {
   padding: 16px;
   margin-bottom: 12px;
   background-color: ${props => props.isSelected ? '#4169E1' : '#f5f5f5'};
+  color: ${props => props.isSelected ? '#FFFFFF' : 'inherit'}; // 텍스트 색상 추가
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -88,9 +89,8 @@ const QuestionComponent = ({ question, response, onResponseChange, onAutoNext })
 
   const handleSingleChoiceChange = (optionId) => {
     onResponseChange(optionId, true);
-    // 싱글 초이스 선택 시 즉시 다음으로 넘어가기
     if (onAutoNext) {
-      setTimeout(() => onAutoNext(), 300); // 약간의 지연을 두어 사용자가 선택을 인지할 수 있게 함
+      setTimeout(() => onAutoNext(), 300);
     }
   };
 
