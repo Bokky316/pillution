@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography } from "@mui/material";
 import styled from '@emotion/styled';
 
@@ -17,7 +17,6 @@ const StyledBox = styled(Box, {
     background-color: ${props => props.isSelected ? '#4169E1' : '#f0f0f0'};
   }
 `;
-
 
 const StyledInput = styled.input`
   width: 90%; /* 텍스트 입력 필드도 동일한 너비 */
@@ -45,7 +44,7 @@ const WarningMessage = styled(Typography)`
   border-radius: 4px;
 `;
 
-const QuestionComponent = ({ question, response, onResponseChange }) => {
+const QuestionComponent = ({ question, response, onResponseChange, onAutoNext }) => {
   const [warning, setWarning] = useState('');
   const [isValid, setIsValid] = useState(true);
 
@@ -87,6 +86,14 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
     onResponseChange(value, newIsValid);
   };
 
+  const handleSingleChoiceChange = (optionId) => {
+    onResponseChange(optionId, true);
+    // 싱글 초이스 선택 시 즉시 다음으로 넘어가기
+    if (onAutoNext) {
+      setTimeout(() => onAutoNext(), 300); // 약간의 지연을 두어 사용자가 선택을 인지할 수 있게 함
+    }
+  };
+
   const getPlaceholder = () => {
     if (question.questionText.includes('키')) return '키를 입력하세요 (예: 최대값은 "250")';
     if (question.questionText.includes('몸무게')) return '몸무게를 입력하세요 (예시 : 최대값은 "300")';
@@ -95,13 +102,11 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
    };
 
   return (
-    <Box sx={{ mb: 3, position: 'relative' }}> {/* position: relative로 설정하여 경고 메시지 위치 조정 */}
-      {/* 질문 텍스트 */}
+    <Box sx={{ mb: 3, position: 'relative' }}>
       <Typography sx={{ mb: 2, fontWeight: 'bold' }}>
         {question.questionText}
       </Typography>
 
-      {/* TEXT 타입 질문 */}
       {question.questionType === 'TEXT' ? (
         <>
           <StyledInput
@@ -109,14 +114,14 @@ const QuestionComponent = ({ question, response, onResponseChange }) => {
             onChange={handleChange}
             placeholder={getPlaceholder()}
           />
-          {warning && <WarningMessage>{warning}</WarningMessage>} {/* 경고 메시지 표시 */}
+          {warning && <WarningMessage>{warning}</WarningMessage>}
         </>
       ) : question.questionType === 'SINGLE_CHOICE' ? (
         question.options.map((option) => (
           <StyledBox
             key={option.id}
             isSelected={response === option.id}
-            onClick={() => onResponseChange(option.id)}
+            onClick={() => handleSingleChoiceChange(option.id)}
           >
             <Typography>{option.optionText}</Typography>
           </StyledBox>
