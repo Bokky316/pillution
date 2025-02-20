@@ -316,9 +316,9 @@ const ProductList = () => {
                           }
                         }
                       : {
-                          backgroundColor: '#26a69a', // 변경된 활성화 배경색: 청록색
+                          backgroundColor: '#29B6F6', // 변경된 활성화 배경색: 청록색
                           '&:hover': {
-                            backgroundColor: '#00796b', // 변경된 hover 배경색: 짙은 청록색
+                            backgroundColor: '#64C1F7', // 변경된 hover 배경색: 짙은 청록색
                           }
                         }
                     )
