@@ -12,7 +12,6 @@ import {
     setOpenCancelDialog, setOpenEditDialog
 } from '@/store/postEditSlice';
 
-
 const faqCategories = ["제품", "회원정보", "주문/결제", "교환/반품", "배송", "기타"];
 
 function PostEditPage() {
@@ -148,8 +147,9 @@ function PostEditPage() {
             };
 
             const token = auth.user.token;
+            const isAdmin = userRole === 'ADMIN';
 
-            await dispatch(updatePost({ postId, updateData, token })).unwrap();
+            await dispatch(updatePost({ postId, updateData, token, isAdmin })).unwrap();
 
             setSnackbarMessage("게시물이 성공적으로 수정되었습니다.");
             setSnackbarOpen(true);

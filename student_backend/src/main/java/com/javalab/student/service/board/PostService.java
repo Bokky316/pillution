@@ -44,11 +44,12 @@ public class PostService {
         return PostDto.fromEntity(savedPost);
     }
 
-    public PostDto updatePost(Long postId, PostDto postDto) {
+    public PostDto updatePost(Long postId, PostDto postDto, String currentUserId, boolean isAdmin) {
         Post existingPost = postRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 게시글이 존재하지 않습니다."));
 
-        if (!existingPost.getAuthorId().equals(postDto.getAuthorId())) {
+        // 현재 사용자가 게시글 작성자이거나 관리자인 경우에만 수정 허용
+        if (!existingPost.getAuthorId().equals(currentUserId) && !isAdmin) {
             throw new UnauthorizedException("게시글 수정 권한이 없습니다.");
         }
 
@@ -61,6 +62,7 @@ public class PostService {
         Post updatedPost = postRepository.save(existingPost);
         return PostDto.fromEntity(updatedPost);
     }
+
 
     public PostDto getPostById(Long id) {
         Post post = postRepository.findById(id)
