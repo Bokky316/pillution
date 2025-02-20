@@ -35,7 +35,7 @@ const CategoryNavigation = ({
       position: 'sticky',
       bottom: 20,
       padding: '0 16px',
-      backgroundColor: 'transparent', // 배경을 투명하게 변경
+      backgroundColor: 'transparent',
       zIndex: 10,
       display: 'flex',
       justifyContent: 'center',

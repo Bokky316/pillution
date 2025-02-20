@@ -208,9 +208,15 @@ const CartPage = () => {
         }
     };
 
+    const { finalPrice } = calculateTotal(cartItems, selectedPurchaseType);
+
     return (
         <div className="cart-page">
-            <h2>CART</h2>
+            <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.1rem', mb: 2 }}>
+                    장바구니
+                </Typography>
+            </Box>
             <main className="cart-container">
                 <section className="cart-items">
                     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
@@ -270,6 +276,23 @@ const CartPage = () => {
                         onSelect={() => handlePurchaseTypeSelect("oneTime")}
                     />
                 </div>
+                 <Box sx={{
+                    position: 'sticky',
+                    bottom: '20px',
+                    bgcolor: 'transparent',
+                    padding:0
+                }}>
+                    <button
+                        className="checkout-btn"
+                        onClick={handleCheckout}
+                        disabled={!selectedPurchaseType}
+                        style={{
+                            backgroundColor: selectedPurchaseType === "oneTime" ? '#333' : undefined,
+                        }}
+                    >
+                        {`${finalPrice?.toLocaleString()} 원 | ${selectedPurchaseType === "subscription" ? "정기구독 시작" : "한 번만 구매"}`}
+                    </button>
+                </Box>
                 <div className="subscription-benefits">
                     <h4>정기 구독 혜택</h4>
                     <ul>
@@ -277,14 +300,8 @@ const CartPage = () => {
                         <li>1만원 이상 구매 시 무료 배송</li>
                     </ul>
                 </div>
-                <button
-                    className="checkout-btn"
-                    onClick={handleCheckout}
-                    disabled={!selectedPurchaseType}
-                >
-                    결제하기
-                </button>
             </main>
+
         </div>
     );
 };
