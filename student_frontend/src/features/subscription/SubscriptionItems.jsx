@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Typography, Divider, Grid } from "@mui/material";
 import { useSelector } from "react-redux"; // ✅ Redux에서 제품 정보 가져오기
-
+import "@/styles/subscription.css"; // ✅ CSS 파일 추가
 
 function SubscriptionItems({ subscription }) {
     const products = useSelector((state) => state.subscription.products); // ✅ Redux에서 전체 제품 목록 가져오기
@@ -23,7 +23,7 @@ function SubscriptionItems({ subscription }) {
     }
 
     return (
-        <Box sx={{ mb: 2 }}>
+        <Box className="subscription-items-container">
             {/* ✅ 섹션 제목 */}
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>구독 중인 제품</Typography>
             <Divider sx={{ mb: 2 }} />
@@ -37,52 +37,36 @@ function SubscriptionItems({ subscription }) {
                 console.log("📌 [SubscriptionItems] 상품명:", item.productName, "| 이미지 URL:", imageUrl);
 
                 return (
-                    <Box key={index} sx={{ mb: 2, borderBottom: "1px solid #eee", pb: 1 }}>
+                    <Box key={index} className="subscription-item">
                         <Grid container spacing={2} alignItems="center">
                             {/* ✅ 제품 이미지 */}
                             <Grid item xs={3}>
                                 <img
                                     src={imageUrl}
                                     alt={item.productName || "상품 이미지"}
-                                    style={{
-                                        width: "70px",
-                                        height: "70px",
-                                        objectFit: "cover",
-                                        borderRadius: "5px",
-                                    }}
+                                    className="subscription-item-image"
                                 />
                             </Grid>
 
                             {/* ✅ 제품 정보 */}
-                            <Grid item xs={6}>
-                                <Typography
-                                    variant="body2"
-                                    sx={{
-                                        fontSize: "12px",
-                                        color: "#555",
-                                        border: "1px solid #ccc",
-                                        padding: "2px 5px",
-                                        display: "inline-block",
-                                        borderRadius: "3px",
-                                        mb: 0.5,
-                                    }}
-                                >
+                            <Grid item xs={6} className="subscription-item-info">
+                                <Typography className="subscription-item-tag">
                                     건강기능식품
                                 </Typography>
-                                <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+                                <Typography className="subscription-item-name">
                                     {item.productName || "상품명 없음"}
                                 </Typography>
-                                <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+                                <Typography className="subscription-item-quantity">
                                     {item.quantity}개
                                 </Typography>
                             </Grid>
 
                             {/* ✅ 가격 정보 */}
-                            <Grid item xs={3} sx={{ textAlign: "right" }}>
-                                <Typography variant="body2" color="textSecondary">
+                            <Grid item xs={3} className="subscription-item-price">
+                                <Typography className="subscription-item-unit-price">
                                     {price.toLocaleString()} 원 / 개
                                 </Typography>
-                                <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+                                <Typography className="subscription-item-total-price">
                                     {totalPrice.toLocaleString()} 원
                                 </Typography>
                             </Grid>
@@ -91,7 +75,7 @@ function SubscriptionItems({ subscription }) {
                 );
             })}
             {/* ✅ 할인 정보 */}
-            <p style={{ color: "#888", fontSize: "13px", marginTop: "10px" }}>
+            <p className="subscription-discount-info">
                 #구독혜택 #무료배송 #구독할인5% #건강설문할인10% #장기고객우대(4회차부터)5%
             </p>
         </Box>

@@ -1,0 +1,68 @@
+/* 전체 컨테이너 */
+.mypage-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+}
+
+/* 제목 스타일 */
+.mypage-title {
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+/* 입력 필드 스타일 (간격 유지) */
+.input-field {
+  width: 400px;
+  padding: 10px 0; /* 상하 패딩 추가 */
+}
+
+/* MUI 기본 클래스 활용 (TextField 내부 요소에 여백 추가) */
+.input-field .MuiInputBase-root {
+  margin-bottom: 20px !important; /* 인풋 간격 유지 */
+}
+
+/* 우편번호 검색 필드 */
+.address-container {
+  display: flex;
+  width: 400px;
+  margin-bottom: 20px;
+  align-items: center; /* ✅ 세로 정렬: 가운데 */
+}
+
+
+/* 우편번호 필드 */
+.postal-code {
+  flex: 1;
+  width: auto !important; /* ✅ 너비 자동 조절 */
+  max-width: 120px; /* ✅ 너무 길어지는 걸 방지 */
+  margin-right: 10px;
+}
+
+.postal-code .MuiInputBase-input {
+  text-align: left !important; /* ✅ 내부 텍스트 왼쪽 정렬 */
+  padding-left: 10px !important; /* ✅ 좌측 패딩 추가 */
+}
+
+.search-button {
+  white-space: nowrap; /* 버튼 크기 고정 */
+}
+
+/* 저장 버튼 */
+.save-button {
+  margin-top: 20px;
+}
+
+/* 스낵바 성공 스타일 */
+.snackbar-success {
+  background-color: #4CAF50 !important; /* 초록색 */
+  color: white;
+}
+
+/* 스낵바 실패 스타일 */
+.snackbar-error {
+  background-color: #EF5350 !important; /* 빨간색 */
+  color: white;
+}
+
