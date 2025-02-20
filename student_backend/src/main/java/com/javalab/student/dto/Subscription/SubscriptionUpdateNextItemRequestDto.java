@@ -1,9 +1,6 @@
-package com.javalab.student.dto;
+package com.javalab.student.dto.Subscription;
 
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
 
 import java.util.List;
 

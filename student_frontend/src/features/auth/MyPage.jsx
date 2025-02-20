@@ -4,8 +4,9 @@ import { API_URL } from "@/utils/constants";
 import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Button, TextField, Typography } from "@mui/material";
+import { Button, TextField, Typography, Snackbar } from "@mui/material";
 import KakaoAddressSearch from "@/features/auth/KakaoAddressSearch"; // ✅ 카카오 주소 검색 추가
+import "@/styles/MyPage.css"; // CSS 파일 import
 
 export default function MyPage() {
     const dispatch = useDispatch(); // Redux 디스패치 가져오기
@@ -27,6 +28,8 @@ export default function MyPage() {
         birthDate: "",
         gender: "",
     });
+
+    const [snackbar, setSnackbar] = useState({ open: false, message: "" });
 
     /**
      * 컴포넌트가 처음 렌더링될 때 사용자 정보를 불러옴
@@ -65,11 +68,11 @@ export default function MyPage() {
                 });
             } else {
                 console.error("사용자 정보 로드 실패:", response.status);
-                alert("사용자 정보를 불러올 수 없습니다.");
+                showSnackbar("사용자 정보를 불러올 수 없습니다.");
             }
         } catch (error) {
             console.error("사용자 정보 로드 중 오류 발생:", error.message);
-            alert("사용자 정보 로드 실패: 네트워크 또는 서버 오류");
+            showSnackbar("사용자 정보 로드 실패: 네트워크 또는 서버 오류");
         }
     };
 
@@ -106,14 +109,14 @@ export default function MyPage() {
                 // Redux 상태 업데이트
                 dispatch(setUser(updatedData));
 
-                alert("사용자 정보가 수정되었습니다.");
+                showSnackbar("사용자 정보가 수정되었습니다.");
             } else {
                 console.error("사용자 정보 수정 실패:", response.status);
-                alert("사용자 정보 수정 실패");
+                showSnackbar("사용자 정보 수정 실패");
             }
         } catch (error) {
             console.error("사용자 정보 수정 중 오류 발생:", error.message);
-            alert("사용자 정보 수정 실패: 네트워크 또는 서버 오류");
+            showSnackbar("사용자 정보 수정 실패: 네트워크 또는 서버 오류");
         }
     };
 
@@ -132,45 +135,78 @@ export default function MyPage() {
         });
     };
 
+    // 스낵바 메시지를 표시하는 함수
+    const showSnackbar = (message) => {
+        setSnackbar({ open: true, message });
+    };
     return (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "20px" }}>
-            <Typography variant="h4" style={{ marginBottom: "20px", fontWeight: "bold" }}>
+        <div className="mypage-container">
+            <Typography variant="h4" className="mypage-title">
                 마이페이지
             </Typography>
-            <TextField label="Name" name="name" value={member.name} onChange={handleInputChange} style={{ width: "400px", marginBottom: "10px" }} />
-            <TextField label="Email" name="email" value={member.email} disabled style={{ width: "400px", marginBottom: "10px" }} />
-            <TextField label="Phone" name="phone" value={member.phone} onChange={handleInputChange} style={{ width: "400px", marginBottom: "10px" }} />
+            <TextField className="input-field" label="Name" name="name" value={member.name} onChange={handleInputChange} fullWidth />
+            <TextField className="input-field" label="Email" name="email" value={member.email} disabled fullWidth />
+            <TextField className="input-field" label="Phone" name="phone" value={member.phone} onChange={handleInputChange} fullWidth />
 
-            {/* ✅ 우편번호 검색 필드 */}
-            <div style={{ display: "flex", width: "400px", marginBottom: "10px" }}>
-                <TextField label="우편번호" name="postalCode" value={member.postalCode} style={{ flex: 1, marginRight: "10px" }} disabled />
-                <KakaoAddressSearch onAddressSelect={handleAddressSelect} />
+            <div className="address-container">
+                <TextField
+                    className="postal-code"
+                    label="우편번호"
+                    name="postalCode"
+                    value={member.postalCode}
+                    disabled
+                    InputProps={{
+                        style: { textAlign: "left", paddingLeft: "10px" } // ✅ 내부 텍스트 왼쪽 정렬 & 패딩 추가
+                    }}
+                />
+                <KakaoAddressSearch onAddressSelect={handleAddressSelect} className="search-button" />
             </div>
 
-            <TextField label="도로명 주소" name="roadAddress" value={member.roadAddress} style={{ width: "400px", marginBottom: "10px" }} disabled />
-            <TextField label="상세 주소" name="detailAddress" value={member.detailAddress} onChange={handleInputChange} style={{ width: "400px", marginBottom: "10px" }} />
-
+            <TextField className="input-field" label="도로명 주소" name="roadAddress" value={member.roadAddress} disabled fullWidth />
+            <TextField className="input-field" label="상세 주소" name="detailAddress" value={member.detailAddress} onChange={handleInputChange} fullWidth />
 
             <TextField
+                className="input-field"
                 label="Birth Date"
                 name="birthDate"
                 type="date"
-                value={member.birthDate || 'Not set'}
+                value={member.birthDate || ""}
                 onChange={handleInputChange}
-                style={{ width: "400px", marginBottom: "10px" }}
+                InputLabelProps={{ shrink: true }}
+                fullWidth
             />
 
             <TextField
+                className="input-field"
                 label="Gender"
                 name="gender"
-                value={member.gender || 'Not specified'}
+                value={member.gender || ""}
                 disabled
-                style={{ width: "400px", marginBottom: "10px" }}
+                fullWidth
             />
-            <TextField label="Points" name="points" value={member.points} disabled style={{ width: "400px", marginBottom: "10px" }} />
-            <Button variant="contained" onClick={handleUpdate} style={{ marginTop: "20px" }}>
+            <TextField
+                className="input-field"
+                label="Points"
+                name="points"
+                value={member.points || ''}
+                disabled
+                InputLabelProps={{ shrink: true }}
+                fullWidth
+            />
+            <Button variant="contained" onClick={handleUpdate} className="save-button">
                 저장
             </Button>
+
+            <Snackbar
+                open={snackbar.open}
+                message={snackbar.message}
+                autoHideDuration={3000}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                ContentProps={{
+                    className: snackbar.message.includes("실패") ? "snackbar-error" : "snackbar-success"
+                }}
+            />
         </div>
     );
 }

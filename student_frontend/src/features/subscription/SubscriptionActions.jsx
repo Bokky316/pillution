@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Dialog, DialogActions, DialogTitle, Box, Typography, Button } from "@mui/material";
 import { useDispatch } from "react-redux";
 import { cancelSubscription, fetchSubscription } from "@/store/subscriptionSlice";
+import "@/styles/Subscription.css"; // ✅ CSS 파일 적용
 
 function SubscriptionActions({ subscription }) {
     const dispatch = useDispatch();
@@ -22,17 +23,9 @@ function SubscriptionActions({ subscription }) {
     };
 
     return (
-        <Box sx={{ mt: 1, textAlign: "right" }}>
-            {/* ✅ 더 작은 글씨 + 더 흐린 색상 + 마우스 올리면 밑줄 효과 */}
+        <Box className="subscription-actions-container">
             <Typography
-                variant="caption" // 더 작은 폰트 크기 적용 (기존 body2 → caption)
-                sx={{
-                    color: "rgba(136, 136, 136, 0.6)", // 반투명한 회색 적용
-                    cursor: "pointer",
-                    textDecoration: "none",
-                    fontSize: "12px", // 추가적으로 명확한 폰트 크기 지정
-                    "&:hover": { textDecoration: "underline" }
-                }}
+                className="subscription-cancel-text"
                 onClick={handleCancelSubscription}
             >
                 구독 취소

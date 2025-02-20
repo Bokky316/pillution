@@ -10,14 +10,20 @@ import {
     Typography,
     Chip,
     Stack,
-    Paper, // Paper 추가
+    Paper,
     Grid,
     IconButton,
+    Snackbar,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { API_URL } from '@/utils/constants';
 import { useNavigate } from 'react-router-dom';
-import '@/styles/AddProduct.css'; // 스타일은 유지
+import '@/styles/AddProduct.css';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchCategoriesByIngredient } from '@features/product/productApi';
 import { clearSelectedCategories } from '@/store/productSlice';
@@ -27,6 +33,12 @@ const AddProduct = () => {
     const dispatch = useDispatch();
     const selectedCategories = useSelector((state) => state.products.selectedCategories) || [];
 
+    // 알림창과 대화상자를 위한 상태 추가
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [dialogOpen, setDialogOpen] = useState(false);
+
+    // ... (기존의 다른 state들은 유지)
     const [product, setProduct] = useState({
         categoryIds: [],
         ingredientIds: [],
@@ -56,27 +68,34 @@ const AddProduct = () => {
         fetchIngredients();
     }, []);
 
+    const handleCloseSnackbar = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        setSnackbarOpen(false);
+    };
+
     const fetchIngredients = async () => {
-      // fetchIngredients 함수 내용 (기존 코드 유지)
-      try {
-          const token = localStorage.getItem('accessToken');
-          const response = await fetch(`${API_URL}ingredients`, {
-              method: 'GET',
-              headers: {
-                  'Authorization': token ? `Bearer ${token}` : '',
-              },
-              credentials: 'include'
-          });
+        try {
+            const token = localStorage.getItem('accessToken');
+            const response = await fetch(`${API_URL}ingredients`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                },
+                credentials: 'include'
+            });
 
-          if (!response.ok) throw new Error('영양성분 목록을 불러오는 데 실패했습니다.');
+            if (!response.ok) throw new Error('영양성분 목록을 불러오는 데 실패했습니다.');
 
-          const data = await response.json();
-          setIngredients(Array.isArray(data) ? data : []);
+            const data = await response.json();
+            setIngredients(Array.isArray(data) ? data : []);
 
-      } catch (error) {
-          console.error("영양성분 데이터 로딩 실패:", error);
-          alert(error.message);
-      }
+        } catch (error) {
+            console.error("영양성분 데이터 로딩 실패:", error);
+            setSnackbarMessage(error.message);
+            setSnackbarOpen(true);
+        }
     };
 
     const handleChange = (e) => {
@@ -148,9 +167,15 @@ const AddProduct = () => {
         setDetailImagePreviews(newDetailImagePreviews);
     };
 
+    const handleSubmitConfirm = async () => {
+        setDialogOpen(false);
+        await handleSubmit();
+    };
+
     const handleSubmit = async (event) => {
-        // handleSubmit 함수 내용 (기존 코드 유지)
-        event.preventDefault();
+        if (event) {
+            event.preventDefault();
+        }
 
         const formData = new FormData();
         const productData = {
@@ -188,21 +213,30 @@ const AddProduct = () => {
             });
 
             if (!response.ok) {
-                throw new Error(`상품 업데이트 실패: ${response.status}`);
+                throw new Error(`상품 등록 실패: ${response.status}`);
             }
 
-            alert('상품이 성공적으로 업데이트되었습니다.');
-            navigate('/adminPage/products');
+            setSnackbarMessage('상품이 성공적으로 등록되었습니다.');
+            setSnackbarOpen(true);
+            setTimeout(() => {
+                navigate('/adminPage/products');
+            }, 1000);
         } catch (error) {
-            console.error('Error updating product:', error);
-            alert('상품 업데이트 중 오류가 발생했습니다.');
+            console.error('Error creating product:', error);
+            setSnackbarMessage('상품 등록 중 오류가 발생했습니다.');
+            setSnackbarOpen(true);
         }
     };
+
+    // ... (기존의 다른 핸들러 함수들은 유지)
 
     return (
         <Paper elevation={3} sx={{ maxWidth: '800px', margin: '0 auto', padding: '20px', borderRadius: '12px' }}>
             <Typography variant="h5" sx={{ fontWeight: 600, color: '#1a237e', mb: 3 }}>상품 추가</Typography>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={(e) => {
+                e.preventDefault();
+                setDialogOpen(true);
+            }}>
                 <TextField
                     fullWidth
                     label="상품명"
@@ -392,7 +426,14 @@ const AddProduct = () => {
                     </Select>
                 </FormControl>
                 <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
-                    <Button type="submit" variant="contained" color="primary" sx={{ textTransform: 'none' }}>저장</Button>
+                    <Button
+                        type="submit"
+                        variant="contained"
+                        color="primary"
+                        sx={{ textTransform: 'none' }}
+                    >
+                        저장
+                    </Button>
                     <Button
                         variant="outlined"
                         color="secondary"
@@ -403,6 +444,53 @@ const AddProduct = () => {
                     </Button>
                 </Box>
             </form>
+
+            {/* Snackbar for notifications */}
+            <Snackbar
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                }}
+                open={snackbarOpen}
+                autoHideDuration={3000}
+                onClose={handleCloseSnackbar}
+                message={snackbarMessage}
+                action={
+                    <IconButton
+                        size="small"
+                        aria-label="close"
+                        color="inherit"
+                        onClick={handleCloseSnackbar}
+                    >
+                        <CloseIcon fontSize="small" />
+                    </IconButton>
+                }
+            />
+
+            {/* Confirmation Dialog */}
+            <Dialog
+                open={dialogOpen}
+                onClose={() => setDialogOpen(false)}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+            >
+                <DialogTitle id="alert-dialog-title">
+                    상품 등록
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        상품을 등록하시겠습니까?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleSubmitConfirm} sx={{ color: '#29B6F6' }} autoFocus>
+                        확인
+                    </Button>
+                    <Button onClick={() => setDialogOpen(false)} sx={{ color: '#EF5350' }}>
+                        취소
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Paper>
     );
 };

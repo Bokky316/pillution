@@ -1,8 +1,8 @@
-package com.javalab.student.service;
+package com.javalab.student.service.subscription;
 
-import com.javalab.student.entity.Subscription;
-import com.javalab.student.entity.SubscriptionItem;
-import com.javalab.student.entity.SubscriptionNextItem;
+import com.javalab.student.entity.subscription.Subscription;
+import com.javalab.student.entity.subscription.SubscriptionItem;
+import com.javalab.student.entity.subscription.SubscriptionNextItem;
 import com.javalab.student.repository.SubscriptionItemRepository;
 import com.javalab.student.repository.SubscriptionNextItemRepository;
 import com.javalab.student.repository.SubscriptionRepository;

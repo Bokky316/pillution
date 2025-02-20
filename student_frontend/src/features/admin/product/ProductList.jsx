@@ -4,6 +4,7 @@ import {
   InputLabel, TextField, Box, IconButton, Paper,
   Typography, Chip, Alert, Card, CardContent, Divider
 } from '@mui/material';
+import { Close as CloseIcon } from '@mui/icons-material';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
@@ -186,6 +187,13 @@ const ProductList = () => {
           setModalOpen(true);
         };
 
+        const handleCloseSnackbar = (event, reason) => {
+          if (reason === 'clickaway') {
+              return;
+          }
+          setSnackbarOpen(false);
+      };
+
         // DataGrid 컬럼 설정 - 더 현대적인 디자인으로 수정
         const columns = [
           { field: 'id', headerName: 'ID', flex: 0.5, minWidth: 50 },
@@ -308,9 +316,9 @@ const ProductList = () => {
                           }
                         }
                       : {
-                          backgroundColor: '#4caf50',
+                          backgroundColor: '#26a69a', // 변경된 활성화 배경색: 청록색
                           '&:hover': {
-                            backgroundColor: '#388e3c',
+                            backgroundColor: '#00796b', // 변경된 hover 배경색: 짙은 청록색
                           }
                         }
                     )
@@ -592,22 +600,25 @@ const ProductList = () => {
 
             {/* 스낵바 알림 */}
             <Snackbar
-              open={snackbarOpen}
-              autoHideDuration={3000}
-              onClose={() => setSnackbarOpen(false)}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            >
-              <Alert
-                onClose={() => setSnackbarOpen(false)}
-                severity="success"
-                sx={{
-                  width: '100%',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'left',
                 }}
-              >
-                {snackbarMessage}
-              </Alert>
-            </Snackbar>
+                open={snackbarOpen}
+                autoHideDuration={3000}
+                onClose={handleCloseSnackbar}
+                message={snackbarMessage}
+                action={
+                    <IconButton
+                        size="small"
+                        aria-label="close"
+                        color="inherit"
+                        onClick={handleCloseSnackbar}
+                    >
+                        <CloseIcon fontSize="small" />
+                    </IconButton>
+                }
+            />
 
             {/* 상품 상세보기 모달 */}
             <ViewProduct

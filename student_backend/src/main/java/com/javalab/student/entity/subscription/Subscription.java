@@ -1,10 +1,10 @@
-package com.javalab.student.entity;
+package com.javalab.student.entity.subscription;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.javalab.student.entity.Member;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 /**

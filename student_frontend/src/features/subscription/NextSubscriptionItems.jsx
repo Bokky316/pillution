@@ -9,7 +9,8 @@ import {
 } from "@/store/subscriptionSlice";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { IconButton, Button, Box, Typography, Divider, Grid, Dialog, DialogTitle, DialogActions } from "@mui/material";
-import SubscriptionProductModal from "@/features/modal/SubscriptionProductModal"; // ✅ 모달 컴포넌트 추가
+import SubscriptionProductModal from "@/features/modal/SubscriptionProductModal";
+import "@/styles/subscription.css"; // ✅ 스타일 추가
 
 export default function NextSubscriptionItems({ subscription }) {
     const dispatch = useDispatch();
@@ -94,7 +95,7 @@ export default function NextSubscriptionItems({ subscription }) {
     };
 
     return (
-        <Box sx={{ mb: 2 }}>
+        <Box className="next-subscription-container">
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1, display: "flex", justifyContent: "space-between" }}>
                 다음 구독 제품 편집
                 <Button variant="contained" size="small" onClick={() => setIsModalOpen(true)}>추가하기</Button>
@@ -105,54 +106,20 @@ export default function NextSubscriptionItems({ subscription }) {
                 const imageUrl = getProductImageUrl(item.productName); // ✅ Redux에서 이미지 URL 가져오기
 
                 return (
-                    <Box key={index} sx={{ mb: 2, borderBottom: "1px solid #eee", pb: 1 }}>
+                    <Box key={index} className="next-subscription-item">
                         <Grid container spacing={2} alignItems="center">
                             {/* ✅ 제품 이미지 */}
                             <Grid item xs={3}>
-                                <img
-                                    src={imageUrl}
-                                    alt={item.productName}
-                                    style={{ width: "70px", height: "70px", objectFit: "cover", borderRadius: "5px" }}
-                                />
+                                <img src={imageUrl} alt={item.productName} className="next-subscription-image" />
                             </Grid>
 
-                            {/* ✅ 제품 정보 */}
-                            <Grid item xs={5}>
-                                {/* ✅ 건강기능식품 태그 (제품명 위) */}
-                                <Typography
-                                    variant="body2"
-                                    sx={{
-                                        fontSize: "12px",
-                                        color: "#555",
-                                        border: "1px solid #ccc",
-                                        padding: "2px 5px",
-                                        display: "inline-block",
-                                        borderRadius: "3px",
-                                        mb: 0.5, // ✅ 아래 간격 조정
-                                    }}
-                                >
-                                    건강기능식품
-                                </Typography>
+                            <Grid item xs={5} className="next-subscription-info">
+                                <Typography className="next-subscription-tag">건강기능식품</Typography>
+                                <Typography className="next-subscription-name">{item.productName}</Typography>
 
-                                {/* ✅ 제품명 */}
-                                <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 0.5 }}>
-                                    {item.productName}
-                                </Typography>
-
-                                {/* ✅ 카테고리 태그 (제품명 아래) - 모달 코드 참고해서 적용 */}
                                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
                                     {[...(item.categories || []), ...(item.ingredients || [])].map((tag, index) => (
-                                        <Typography
-                                            key={index}
-                                            variant="body2"
-                                            sx={{
-                                                fontSize: "12px",
-                                                color: "#666",
-                                                background: "#f0f0f0",
-                                                padding: "3px 6px",
-                                                borderRadius: "10px",
-                                            }}
-                                        >
+                                        <Typography key={index} className="next-subscription-category">
                                             #{tag}
                                         </Typography>
                                     ))}
@@ -161,21 +128,15 @@ export default function NextSubscriptionItems({ subscription }) {
 
                             {/* ✅ 가격 & 수량 조절 & 삭제 버튼 */}
                             <Grid item xs={4} sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                                {/* ✅ 가격 (제품 가격 * 수량) */}
-                                <Typography variant="body2" sx={{ fontWeight: "bold", mb: 1 }}>
+                                <Typography className="next-subscription-price">
                                     {(item.nextMonthPrice * item.nextMonthQuantity).toLocaleString()}원
                                 </Typography>
 
-                                {/* ✅ 수량 조절 & 삭제 버튼 */}
-                                <Box sx={{ display: "flex", alignItems: "center" }}>
-                                    <IconButton onClick={() => handleQuantityChange(item.productId, Math.max(1, item.nextMonthQuantity - 1))}>
-                                        -
-                                    </IconButton>
-                                    <span style={{ margin: "0 10px" }}>{item.nextMonthQuantity}</span>
-                                    <IconButton onClick={() => handleQuantityChange(item.productId, item.nextMonthQuantity + 1)}>
-                                        +
-                                    </IconButton>
-                                    <IconButton onClick={() => handleDeleteItem(item.productId)} color="error">
+                                <Box className="next-subscription-quantity">
+                                    <IconButton onClick={() => handleQuantityChange(item.productId, Math.max(1, item.nextMonthQuantity - 1))}>-</IconButton>
+                                    <span>{item.nextMonthQuantity}</span>
+                                    <IconButton onClick={() => handleQuantityChange(item.productId, item.nextMonthQuantity + 1)}>+</IconButton>
+                                    <IconButton onClick={() => handleDeleteItem(item.productId)} className="next-subscription-delete">
                                         <DeleteIcon />
                                     </IconButton>
                                 </Box>
@@ -185,28 +146,13 @@ export default function NextSubscriptionItems({ subscription }) {
                 );
             })}
 
-            {/* ✅ 모달 추가 */}
-            <SubscriptionProductModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                products={products}
-                selectedItems={nextItems}
-                onSelectProduct={handleSelectProduct}
-            />
+            <SubscriptionProductModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} products={products} selectedItems={nextItems} onSelectProduct={handleSelectProduct} />
 
-            {/* ✅ 구독 해지 알림 다이얼로그 */}
-            <Dialog
-                open={confirmCancel}
-                onClose={() => setConfirmCancel(false)}
-                aria-labelledby="alert-dialog-title"
-                aria-describedby="alert-dialog-description"
-            >
-                <DialogTitle id="alert-dialog-title">{"마지막 구독 제품입니다. 구독을 해지하시겠습니까?"}</DialogTitle>
+            <Dialog open={confirmCancel} onClose={() => setConfirmCancel(false)}>
+                <DialogTitle>마지막 구독 제품입니다. 구독을 해지하시겠습니까?</DialogTitle>
                 <DialogActions>
                     <Button onClick={() => setConfirmCancel(false)}>취소</Button>
-                    <Button onClick={confirmCancelSubscription} autoFocus>
-                        확인
-                    </Button>
+                    <Button onClick={confirmCancelSubscription} autoFocus>확인</Button>
                 </DialogActions>
             </Dialog>
         </Box>

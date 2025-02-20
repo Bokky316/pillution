@@ -29,9 +29,14 @@ public class PostController {
     }
 
     // 게시글 수정
+    // 게시글 수정 (관리자 권한 고려)
     @PutMapping("/{id}")
-    public ResponseEntity<PostDto> updatePost(@PathVariable("id") Long id, @RequestBody @Valid PostDto postDto) {
-        return ResponseEntity.ok(postService.updatePost(id, postDto));
+    public ResponseEntity<PostDto> updatePost(
+            @PathVariable("id") Long id,
+            @RequestBody @Valid PostDto postDto,
+            @RequestHeader("X-User-Id") String currentUserId,
+            @RequestHeader("X-User-Is-Admin") boolean isAdmin) {
+        return ResponseEntity.ok(postService.updatePost(id, postDto, currentUserId, isAdmin));
     }
 
     // 게시글 정보 조회

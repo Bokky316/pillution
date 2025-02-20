@@ -1,11 +1,8 @@
 package com.javalab.student.controller.cartOrder;
 
-import com.fasterxml.jackson.annotation.JsonView;
 import com.javalab.student.config.portone.PortOneProperties;
-import com.javalab.student.dto.SubscriptionItemDto;
 import com.javalab.student.dto.cartOrder.*;
-import com.javalab.student.entity.Subscription;
-import com.javalab.student.service.SubscriptionService;
+import com.javalab.student.service.subscription.SubscriptionService;
 import com.javalab.student.service.cartOrder.PaymentService;
 import com.javalab.student.repository.MemberRepository;
 import com.javalab.student.entity.Member;
@@ -26,8 +23,8 @@ import jakarta.persistence.EntityNotFoundException;
 import com.javalab.student.dto.cartOrder.OrderDto;
 import java.util.stream.Collectors;
 import java.util.List;
-import com.javalab.student.dto.SubscriptionUpdateNextItemDto;
-import com.javalab.student.dto.cartOrder.OrderItemDto;
+import com.javalab.student.dto.Subscription.SubscriptionUpdateNextItemDto;
+
 /**
  * 결제 관련 API를 처리하는 컨트롤러
  */

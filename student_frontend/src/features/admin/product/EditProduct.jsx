@@ -18,6 +18,12 @@ import {
     Paper,
     Card,
     CardContent,
+    Snackbar,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { API_URL } from "@/utils/constants";
@@ -57,6 +63,11 @@ const EditProduct = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // ✅ 알림창과 대화상자를 위한 상태 추가
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [dialogOpen, setDialogOpen] = useState(false);
+
     const getAbsoluteImageUrl = (imageUrl) => {
         if (!imageUrl) return '';
         const baseUrl = API_URL.substring(0, API_URL.indexOf('/api'));
@@ -80,6 +91,8 @@ const EditProduct = () => {
         } catch (error) {
             console.error("영양성분 데이터 로딩 실패:", error);
             setError(error.message);
+            setSnackbarMessage(error.message);
+            setSnackbarOpen(true);
         }
     };
 
@@ -156,7 +169,8 @@ const EditProduct = () => {
             } catch (error) {
                 console.error("Error fetching data:", error);
                 setError(error.message);
-                alert("상품 정보를 불러오는 중 오류가 발생했습니다."); // 사용자에게 알림 표시
+                setSnackbarMessage("상품 정보를 불러오는 중 오류가 발생했습니다.");
+                setSnackbarOpen(true);
             } finally {
                 setLoading(false);
             }
@@ -236,11 +250,13 @@ const EditProduct = () => {
 
             setMainImageFile(null);
             setMainImagePreview(null);
-            alert('대표 이미지가 삭제되었습니다.');
+            setSnackbarMessage('대표 이미지가 삭제되었습니다.');
+            setSnackbarOpen(true);
 
         } catch (error) {
             console.error("Error deleting main image:", error);
-            alert('대표 이미지 삭제 중 오류가 발생했습니다.');
+            setSnackbarMessage('대표 이미지 삭제 중 오류가 발생했습니다.');
+            setSnackbarOpen(true);
         }
     };
 
@@ -268,11 +284,13 @@ const EditProduct = () => {
 
             setDetailImageFiles(newDetailImageFiles);
             setDetailImagePreviews(newDetailImagePreviews);
-            alert('상세 이미지가 삭제되었습니다.');
+            setSnackbarMessage('상세 이미지가 삭제되었습니다.');
+            setSnackbarOpen(true);
 
         } catch (error) {
             console.error("Error deleting detail image:", error);
-            alert('상세 이미지 삭제 중 오류가 발생했습니다.');
+            setSnackbarMessage('상세 이미지 삭제 중 오류가 발생했습니다.');
+            setSnackbarOpen(true);
         }
     };
 
@@ -288,9 +306,19 @@ const EditProduct = () => {
         dispatch(fetchCategoriesByIngredient(selectedIngredients));
     };
 
-    const handleSubmit = async (event) => {
-        event.preventDefault();
+    const handleCloseSnackbar = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        setSnackbarOpen(false);
+    };
 
+    const handleSubmitConfirm = async () => {
+        setDialogOpen(false);
+        await handleSubmitAction();
+    };
+
+    const handleSubmitAction = async () => {
         const formData = new FormData();
 
         const productData = {
@@ -328,13 +356,18 @@ const EditProduct = () => {
                 throw new Error(`상품 업데이트 실패: ${response.status}`);
             }
 
-            alert('상품이 성공적으로 업데이트되었습니다.');
-            navigate('/adminPage/products');
+            setSnackbarMessage('상품이 성공적으로 업데이트되었습니다.');
+            setSnackbarOpen(true);
+            setTimeout(() => {
+                navigate('/adminPage/products');
+            }, 1000);
         } catch (error) {
             console.error('Error updating product:', error);
-            alert('상품 업데이트 중 오류가 발생했습니다.');
+            setSnackbarMessage('상품 업데이트 중 오류가 발생했습니다.');
+            setSnackbarOpen(true);
         }
     };
+
 
     if (loading) return <div>Loading...</div>;
     if (error) return <div>Error: {error}</div>;
@@ -372,7 +405,10 @@ const EditProduct = () => {
             </Box>
             <Card variant="outlined" sx={{ mb: 3, borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                 <CardContent sx={{ p: 2 }}>
-                    <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Box component="form" onSubmit={(e) => {
+                        e.preventDefault();
+                        setDialogOpen(true);
+                    }} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         <TextField
                             fullWidth
                             label="상품명"
@@ -596,6 +632,53 @@ const EditProduct = () => {
                     </Box>
                 </CardContent>
             </Card>
+
+            {/* Snackbar for notifications */}
+            <Snackbar
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                }}
+                open={snackbarOpen}
+                autoHideDuration={3000}
+                onClose={handleCloseSnackbar}
+                message={snackbarMessage}
+                action={
+                    <IconButton
+                        size="small"
+                        aria-label="close"
+                        color="inherit"
+                        onClick={handleCloseSnackbar}
+                    >
+                        <CloseIcon fontSize="small" />
+                    </IconButton>
+                }
+            />
+
+            {/* Confirmation Dialog */}
+            <Dialog
+                open={dialogOpen}
+                onClose={() => setDialogOpen(false)}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+            >
+                <DialogTitle id="alert-dialog-title">
+                    상품 수정
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        상품 정보를 수정하시겠습니까?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleSubmitConfirm} sx={{ color: '#29B6F6' }} autoFocus>
+                        확인
+                    </Button>
+                    <Button onClick={() => setDialogOpen(false)} sx={{ color: '#EF5350' }}>
+                        취소
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Paper>
     );
 };

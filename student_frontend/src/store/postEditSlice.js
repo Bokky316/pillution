@@ -1,3 +1,4 @@
+// postEditSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { fetchWithAuth } from '@features/auth/fetchWithAuth';
 import { API_URL } from "@/utils/constants";
@@ -26,12 +27,14 @@ export const fetchPost = createAsyncThunk(
 // 게시글 수정 비동기 액션
 export const updatePost = createAsyncThunk(
     'postEdit/updatePost',
-    async ({ postId, updateData }, { rejectWithValue }) => {
+    async ({ postId, updateData, token, isAdmin }, { rejectWithValue }) => {
         try {
             const response = await fetchWithAuth(`${API_URL}posts/${postId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-User-Id': token, // Use token as user id
+                    'X-User-Is-Admin': isAdmin.toString(), // Convert isAdmin to string
                 },
                 body: JSON.stringify(updateData),
             });

@@ -1,0 +1,594 @@
+/*----------------------------------------- SubscriptionInfo------------------------------------------ */
+/* ✅ 구독 정보 컨테이너 */
+.subscription-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0px;
+}
+
+/* ✅ 제목 */
+.subscription-title {
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+
+/* ✅ 결제 정보 */
+.subscription-date {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.subscription-number {
+  color: #666;
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+/* ✅ 가격 정보 */
+.subscription-price-original {
+  text-decoration: line-through;
+  color: #999;
+  font-size: 1rem;
+  text-align: right;
+}
+
+.subscription-price-final {
+  color: red;
+  font-weight: bold;
+  font-size: 1.3rem;
+  text-align: right;
+}
+
+/* ✅ 진행중 표시 */
+.subscription-progress {
+  color: green;
+  font-weight: bold;
+}
+
+/* ✅ 제품 구독 리스트 */
+.subscription-product-list {
+  margin-top: 10px;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+/*---------------------------------------- SubscriptionItem -------------------------------------------*/
+/* ✅ 구독 중인 제품 리스트 컨테이너 */
+.subscription-items-container {
+  margin-bottom: 16px;
+}
+
+/* ✅ 개별 제품 항목 */
+.subscription-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 16px;
+}
+
+/* ✅ 제품 이미지 스타일 */
+.subscription-item-image {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+/* ✅ 제품 정보 컨테이너 */
+.subscription-item-info {
+  flex: 1;
+  padding: 0 12px;
+}
+
+/* ✅ 제품 태그 (예: 건강기능식품) */
+.subscription-item-tag {
+  font-size: 12px;
+  color: #555;
+  border: 1px solid #ccc;
+  padding: 2px 5px;
+  display: inline-block;
+  border-radius: 3px;
+  margin-bottom: 4px;
+}
+
+/* ✅ 제품명 스타일 */
+.subscription-item-name {
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+/* ✅ 제품 개수 스타일 */
+.subscription-item-quantity {
+  color: #666;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+/* ✅ 가격 정보 컨테이너 */
+.subscription-item-price {
+  text-align: right;
+}
+
+/* ✅ 개별 가격 스타일 */
+.subscription-item-unit-price {
+  font-size: 14px;
+  color: #777;
+}
+
+/* ✅ 총 가격 스타일 */
+.subscription-item-total-price {
+  font-weight: bold;
+  font-size: 16px;
+  color: black;
+}
+
+/* ✅ 할인 정보 */
+.subscription-discount-info {
+  color: #888;
+  font-size: 13px;
+  margin-top: 10px;
+}
+
+
+
+
+/*-------------------------------- NextSubscription Item--------------------------------- */
+/* ✅ 넥스트 구독 컨테이너 */
+.next-subscription-container {
+  margin-bottom: 16px;
+}
+
+/* ✅ 제품 아이템 */
+.next-subscription-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 16px;
+}
+
+/* ✅ 제품 이미지 스타일 */
+.next-subscription-image {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+/* ✅ 제품 정보 컨테이너 */
+.next-subscription-info {
+  flex: 1;
+  padding: 0 12px;
+}
+
+/* ✅ 제품 태그 (예: 건강기능식품) */
+.next-subscription-tag {
+  font-size: 12px;
+  color: #555;
+  border: 1px solid #ccc;
+  padding: 2px 5px;
+  display: inline-block;
+  border-radius: 3px;
+  margin-bottom: 4px;
+}
+
+/* ✅ 제품명 스타일 */
+.next-subscription-name {
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+/* ✅ 제품 카테고리 태그 */
+.next-subscription-category {
+  font-size: 12px;
+  color: #666;
+  background: #f0f0f0;
+  padding: 3px 6px;
+  border-radius: 10px;
+  margin-right: 5px;
+}
+
+/* ✅ 가격 정보 */
+.next-subscription-price {
+  font-weight: bold;
+  font-size: 14px;
+  text-align: right;
+}
+
+/* ✅ 수량 조절 버튼 */
+.next-subscription-quantity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ✅ 삭제 버튼 */
+.next-subscription-delete {
+  color: red;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*--------------------------------- PaymentMethod ----------------------------------------*/
+/* ✅ 전체 컨테이너 */
+.payment-method-container {
+    margin-bottom: 16px;
+}
+
+/* ✅ 제목 스타일 */
+.payment-method-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+/* ✅ 결제수단 선택 박스 */
+.payment-method-paper {
+    padding: 16px;
+    background-color: #f5f5f5 !important;  /* ✅ 회색 배경 유지 */
+    border-radius: 8px;
+}
+
+/* ✅ 결제수단 선택 라벨 */
+.payment-method-label {
+    display: flex;
+    align-items: center;
+    border-radius: 5px;
+    padding: 8px;
+    transition: background 0.3s;
+    cursor: pointer; /* ✅ 클릭 가능하도록 변경 */
+}
+
+.payment-method-label:hover {
+    background-color: #f0f0f0;
+}
+
+/* ✅ 선택된 결제수단 스타일 */
+.payment-method-selected {
+    background-color: #E3F2FD !important;  /* ✅ 선택된 항목 강조 */
+    font-weight: bold !important; /* ✅ 글씨 더 진하게 */
+}
+
+/* ✅ 결제수단 아이콘 */
+.payment-method-logo {
+    width: 50px;
+    height: auto;
+    margin-right: 12px;
+}
+
+/* ✅ 결제수단 텍스트 */
+.payment-method-text {
+    font-weight: bold !important; /* ✅ 글씨 더 진하게 */
+    font-size: 1.1rem !important; /* ✅ 크기 키움 */
+    color: #333 !important; /* ✅ 색상 조정 */
+}
+
+/* ✅ 스낵바 스타일 */
+.snackbar-success {
+    background-color: #4CAF50 !important;
+    color: white !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ---------------------------- Subscriptionmodal---------------------------  */
+/* ✅ 모달 컨테이너 */
+.subscription-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+/* ✅ 모달 헤더 */
+.subscription-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+/* ✅ 모달 닫기 버튼 */
+.subscription-modal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* ✅ 상품 리스트 */
+.subscription-modal-product {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+/* ✅ 상품 이미지 */
+.subscription-modal-product img {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  margin-right: 15px;
+  border-radius: 5px;
+}
+
+/* ✅ 상품 태그 */
+.subscription-modal-tag {
+  font-size: 12px;
+  color: #666;
+  background: #f0f0f0;
+  padding: 3px 6px;
+  border-radius: 10px;
+  margin-right: 5px;
+}
+
+/* ✅ 추가 버튼 */
+.add-button {
+  background: #4169E1;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.add-button:hover {
+  background: #3458B0;
+}
+
+/* ✅ 닫기 버튼 */
+.subscription-modal-close-button {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.subscription-modal-close-button:hover {
+  background: #333;
+}
+
+/* ✅ 스낵바 스타일 */
+.snackbar-success {
+  background-color: #4CAF50 !important; /* ✅ 초록색 성공 메시지 */
+  color: white;
+}
+
+.snackbar-error {
+  background-color: #EF5350 !important; /* ✅ 빨간색 실패 메시지 */
+  color: white;
+}
+
+
+
+
+/*-----------------------------------BillingDate --------------------------------------   */
+/* ✅ BillingDate 스타일 */
+
+/* 전체 컨테이너 */
+.billing-date-container {
+    margin-bottom: 16px;
+}
+
+/* 제목 스타일 */
+.billing-date-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 1.2rem;
+}
+
+/* ✅ 결제일 선택 박스 (회색 배경 유지) */
+.billing-date-paper {
+    padding: 16px;
+    background-color: #f5f5f5 !important; /* ✅ 회색 배경 유지 */
+    border-radius: 8px;
+}
+
+/* ✅ 결제일 입력 필드 */
+.billing-date-input .MuiOutlinedInput-root {
+    border-radius: 4px;
+}
+
+.billing-date-input .MuiOutlinedInput-root fieldset {
+    border-color: #4CAF50;
+}
+
+.billing-date-input .MuiOutlinedInput-root:hover fieldset {
+    border-color: #45a049;
+}
+
+.billing-date-input .MuiOutlinedInput-root.Mui-focused fieldset {
+    border-color: #45a049;
+}
+
+/* ✅ 스낵바 스타일 */
+.snackbar-success {
+    background-color: #4CAF50 !important; /* ✅ 초록색 성공 메시지 */
+    color: white !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ------------------------------------------- DeliveryInfo ---------------------------------------- */
+.delivery-info-container {
+    margin-bottom: 20px;
+}
+
+.delivery-info-title {
+    font-weight: 900;  /* ✅ 볼드체 (더 두껍게) */
+    font-size: 1.3rem; /* ✅ 글씨 크기 원래대로 */
+    margin-bottom: 12px;
+}
+
+.delivery-info-box {
+    padding: 16px;
+    background-color: #f5f5f5 !important;
+    border-radius: 8px;
+}
+
+.delivery-info-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.delivery-info-input {
+    margin-bottom: 12px !important;
+    background: white;
+}
+
+.delivery-info-button {
+    width: 100%;
+    background-color: #1976d2 !important;
+    color: white !important;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.delivery-info-button:hover {
+    background-color: #1565c0 !important;
+}
+
+.delivery-info-select {
+    margin-bottom: 12px !important;
+}
+
+.snackbar-success {
+    background-color: #4CAF50 !important;
+    color: white !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*------------------------------ DiscountDetail ------------------------------------ */
+
+/* ✅ 할인 디테일 전체 컨테이너 */
+.discount-details-container {
+    margin-bottom: 16px;
+}
+
+/* ✅ 할인 디테일 카드 (배경 회색 유지) */
+.discount-details-card {
+    padding: 16px;
+    background-color: #f5f5f5 !important; /* ✅ 회색 배경 유지 */
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+/* ✅ 할인 디테일 아이템 (가로 정렬) */
+.discount-details-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+/* ✅ 할인 금액 (빨간색) */
+.discount-details-discount {
+    color: red;
+    font-weight: bold;
+}
+
+/* ✅ 총 결제 금액 */
+.discount-details-total {
+    font-weight: bold;
+    color: red;
+    font-size: 1.1rem;
+}
+
+/* ✅ 상세 할인 내역 제목 */
+.discount-details-subtitle {
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+/* ✅ 상세 할인 구분선 */
+.discount-details-divider {
+    margin: 8px 0;
+}
+
+
+
+
+
+
+
+
+/* ------------------------- 구독 취소 버튼 컨테이너 -----------------------------*/
+.subscription-actions-container {
+    margin-top: 8px;
+    text-align: right;
+}
+
+/* 구독 취소 텍스트 스타일 */
+.subscription-cancel-text {
+    color: rgba(136, 136, 136, 0.6);
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 12px;
+    transition: text-decoration 0.2s ease-in-out;
+}
+
+.subscription-cancel-text:hover {
+    text-decoration: underline;
+}
