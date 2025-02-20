@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Box, Typography, TextField, Button, Paper, MenuItem, Select, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
+import { Box, Typography, TextField, Button, Paper, MenuItem, Select, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Snackbar, Alert } from "@mui/material";
 import SockJS from "sockjs-client";
 import { useParams } from "react-router-dom";
 import { Client } from "@stomp/stompjs";
@@ -19,6 +19,8 @@ const ChatRoom = () => {
     const stompClientRef = useRef(null); // Stomp 클라이언트 참조
     const isSubscribedRef = useRef(false); // Stomp 구독 여부 참조
     const [isCloseDialogOpen, setIsCloseDialogOpen] = useState(false); // 종료 확인 다이얼로그 상태
+    const [openSnackbar, setOpenSnackbar] = useState(false); // 스낵바 상태
+    const [snackbarMessage, setSnackbarMessage] = useState(""); // 스낵바 메시지
 
     // 상담 주제 옵션
     const topicOptions = {
@@ -106,7 +108,7 @@ const ChatRoom = () => {
         }
     }, [roomId]); // roomId가 변경될 때만 함수 재생성
 
-     // 상담 종료 요청 (useCallback으로 메모이제이션)
+    // 상담 종료 요청 (useCallback으로 메모이제이션)
     const handleCloseChat = useCallback(async () => {
         try {
             const response = await fetchWithAuth(`${API_URL}chat/rooms/${roomId}/close`, { method: "POST" });
@@ -163,6 +165,16 @@ const ChatRoom = () => {
     // 토픽 선택 핸들러
     const handleTopicChange = (event) => {
         setTopic(event.target.value);
+        setSnackbarMessage(`${topicOptions[event.target.value]}을(를) 선택하셨습니다.`);
+        setOpenSnackbar(true);
+    };
+
+    // 스낵바 닫기 핸들러
+    const handleCloseSnackbar = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        setOpenSnackbar(false);
     };
 
     // 초기 데이터 로드 및 WebSocket 연결 설정 (useEffect 훅 사용)
@@ -195,7 +207,6 @@ const ChatRoom = () => {
         fetchChatRoomDetails(); // 채팅방 상세 정보 가져오기
         fetchPreviousMessages(); // 이전 메시지 불러오기
 
-
         // 컴포넌트 언마운트 시 실행될 cleanup 함수 반환
         return () => {
             if (stompClientRef.current && stompClientRef.current.connected) {
@@ -223,32 +234,90 @@ const ChatRoom = () => {
     };
 
     return (
-        <Box sx={{ height: "100vh", display: "flex", flexDirection: "column", bgcolor: "#f5f5f5" }}>
+        <Box sx={{
+            display: "flex",
+            flexDirection: "column",
+            minHeight: "100vh",
+            maxWidth: "800px",
+            margin: "0 auto", // 가운데 정렬
+            bgcolor: "#f5f5f5",  // 전체 배경색
+            borderRadius: '12px',
+            border: '1px solid rgba(0, 0, 0, 0.1)',
+        }}>
             {/* 헤더 부분 */}
-            <Paper elevation={3} sx={{ p: 2, bgcolor: "#4a4a4a", color: "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <Typography variant="h6">
+            <Paper
+                elevation={0}
+                sx={{
+                    p: 2,
+                    bgcolor: "#f5f5f5",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    border: "none",
+                    borderTopLeftRadius: '12px',
+                    borderTopRightRadius: '12px',
+                    borderBottomLeftRadius: '0px',
+                    borderBottomRightRadius: '0px',
+                    position: 'relative',
+                }}
+            >
+                <Typography variant="h6" sx={{
+                    fontWeight: 700,
+                    textAlign: 'center',
+                    color: '#333'
+                }}>
                     {topic ? `1:1 채팅 상담 - ${topicOptions[topic]}` : "1:1 채팅 상담"}
                 </Typography>
                 {!isChatClosed && (
-                    <Button variant="contained" color="secondary" onClick={handleCloseClick}>
+                    <Button
+                        variant="text"
+                        onClick={handleCloseClick}
+                        sx={{
+                            color: '#333333',
+                            '&:hover': {
+                                backgroundColor: 'transparent',
+                                textDecoration: 'underline',
+                            },
+                            fontWeight: 'bold',
+                            textTransform: 'none',
+                            boxShadow: 'none',
+                            textDecoration: 'none', // 기본 밑줄 제거
+                            position: 'absolute',
+                            top: '50%',
+                            right: '16px',
+                            transform: 'translateY(-50%)',
+                            fontSize: '0.8rem',
+                        }}
+                    >
                         종료하기
                     </Button>
                 )}
             </Paper>
 
-            {/* 상태 메시지 */}
-            <Typography variant="body1" color={isChatClosed ? "error" : isCounselorConnected ? "primary" : "textSecondary"} sx={{ p: 2 }}>
+              {/* 상담 상태 메시지 (상단으로 이동) */}
+             <Typography
+                variant="body1"
+                color={isChatClosed ? "error" : isCounselorConnected ? "primary" : "textSecondary"}
+                sx={{ p: 1, textAlign: 'center' }} // 가운데 정렬
+            >
                 {getStatusMessage()}
             </Typography>
 
             {/* 주제 선택 */}
             {!topic && !isChatClosed && (
-                <Box sx={{ p: 2 }}>
+                <Box sx={{
+                    p: 1,
+                    mt: 1,
+                    mx: 'auto', // 가운데 정렬
+                    width: '80%', // 가로 길이 줄임
+                    borderRadius: '4px', // 모서리 둥글게
+                }}>
                     <Select
                         value={topic}
                         onChange={handleTopicChange}
                         displayEmpty
                         fullWidth
+                        size="small" // 크기 줄임
                     >
                         <MenuItem value="" disabled>상담 주제를 선택하세요</MenuItem>
                         {Object.entries(topicOptions).map(([key, value]) => (
@@ -257,6 +326,7 @@ const ChatRoom = () => {
                     </Select>
                 </Box>
             )}
+
 
             {/* 메시지 목록 */}
             <Box sx={{ flexGrow: 1, overflowY: "auto", p: 2 }}>
@@ -285,22 +355,22 @@ const ChatRoom = () => {
                                         borderRadius: "50%",
                                         mr: msg.senderId === user?.id ? 0 : 1,
                                         ml: msg.senderId === user?.id ? 1 : 0,
-                                        bgcolor: "#e0e0e0"
+                                        bgcolor: "#f5f5f5"
                                     }}
                                 />
                             )}
                             <Paper
-                                elevation={0}
                                 sx={{
                                     p: 1.5,
                                     px: 2,
                                     maxWidth: "70%",
-                                    bgcolor: msg.senderId === user?.id ? "#AC8A57" : "#ffffff",
-                                    color: msg.senderId === user?.id ? "#ffffff" : "#000000",
+                                    bgcolor: msg.senderId === user?.id ? "#f9f9f9" : "#e9efff",
+                                    color: msg.senderId === user?.id ? "#333" : "#333",
+                                    border: msg.senderId === user?.id ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(0, 0, 0, 0.1)",
                                     borderRadius: msg.senderId === user?.id
                                         ? "20px 3px 20px 20px"
                                         : "3px 20px 20px 20px",
-                                    boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                                    boxShadow: "none", // 그림자 제거
                                     position: "relative",
                                     wordBreak: "break-word"
                                 }}
@@ -339,48 +409,82 @@ const ChatRoom = () => {
                         display: "flex",
                         alignItems: "center",
                         borderTop: "1px solid #e0e0e0",
-                        bgcolor: "#ffffff"
+                        bgcolor: "#ffffff",
+                        position: 'sticky', // 스티키 속성 적용
+                        bottom: 0,           // 화면 하단에 고정
+                        left: 0,
+                        right: 0,
+                        zIndex: 100,         // 다른 요소 위에 표시
+                        borderTopLeftRadius: '0px',
+                        borderTopRightRadius: '0px',
+                        borderBottomLeftRadius: '12px',
+                        borderBottomRightRadius: '12px',
                     }}
                 >
-                    <TextField
-                        fullWidth
-                        value={messageInput}
-                        onChange={(e) => setMessageInput(e.target.value)}
-                        onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
-                        placeholder="메시지를 입력하세요"
-                        variant="standard"
-                        size="small"
-                        sx={{
-                            mr: 1,
-                            "& .MuiInputBase-root": {
-                                padding: "8px 12px",
-                                fontSize: "14px",
-                            },
-                            "& .MuiInputBase-input": {
-                                padding: "0px"
-                            },
-                            "& fieldset": { border: "none" }
-                        }}
-                        multiline
-                        maxRows={4}
-                    />
-                    <Button
-                        onClick={handleSendMessage}
-                        sx={{
-                            minWidth: "inherit",
-                            bgcolor: "#AC8A57",
-                            color: "white",
-                            p: "8px 16px",
-                            "&:hover": {
-                                bgcolor: "#8B7355"
-                            }
-                        }}
-                        disabled={!messageInput.trim()}
-                    >
-                        전송
-                    </Button>
+                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                        <TextField
+                            value={messageInput}
+                            onChange={(e) => setMessageInput(e.target.value)}
+                            onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
+                            placeholder="메시지를 입력하세요"
+                            variant="standard"
+                            size="small"
+                            sx={{
+                                flexGrow: 1,
+                                mr: 1,
+                                "& .MuiInputBase-root": {
+                                    padding: "8px 12px",
+                                    fontSize: "14px",
+                                },
+                                "& .MuiInputBase-input": {
+                                    padding: "0px"
+                                },
+                                "& fieldset": { border: "none" }
+                            }}
+                            multiline
+                            maxRows={4}
+                        />
+                        <Button
+                            onClick={handleSendMessage}
+                            sx={{
+                                minWidth: "inherit",
+                                bgcolor: '#333333',
+                                color: "#FFFFFF !important", // !important를 추가하여 우선순위 높임
+                                p: "8px 16px",
+                                "&:hover": {
+                                    backgroundColor: '#3a5fcf',
+                                    color: "white", // hover 상태에서도 흰색 유지
+                                },
+                                boxShadow: 'none',
+                                borderRadius: '12px',
+                                fontWeight: 'bold',
+                                textTransform: 'none',
+                                // 추가적인 스타일 오버라이드
+                                '& .MuiButton-root': {
+                                    color: 'white',
+                                },
+                                '& .MuiButton-text': {
+                                    color: 'white',
+                                },
+                            }}
+                            disabled={!messageInput.trim()}
+                        >
+                            전송
+                        </Button>
+                    </Box>
                 </Paper>
             )}
+
+            <Snackbar
+                open={openSnackbar}
+                autoHideDuration={3000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            >
+                <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: '100%' }}>
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
 
             {/* 종료 확인 다이얼로그 */}
             <Dialog

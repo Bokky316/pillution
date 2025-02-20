@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button } from "@mui/material";
+import { Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Chip } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
 import { API_URL, SERVER_URL } from "@/utils/constants";
@@ -124,36 +124,32 @@ const ConsultationRequestList = () => {
     };
 
     /// 행 클릭 핸들러
-     const handleRowClick = async (params) => {
-         const roomId = params.id;
-         const status = params.row.statusDisplay;
+    const handleRowClick = async (params) => {
+        const roomId = params.id;
+        const status = params.row.statusDisplay;
 
-         switch (status) {
-             case "대기중":
-                 const accepted = await acceptConsultation(roomId);
-                 if (accepted) {
-                     navigate(`/chatroom/${roomId}`);
-                 } else {
-                     alert("상담 수락에 실패했습니다. 다시 시도해주세요.");
-                 }
-                 break;
-             case "진행중":
-             case "종료":
-                 navigate(`/chatroom/${roomId}`);
-                 break;
-             default:
-                 console.error("알 수 없는 상태:", status);
-                 alert("알 수 없는 상태입니다. 관리자에게 문의하세요.");
-         }
-     };
-
+        switch (status) {
+            case "대기중":
+                const accepted = await acceptConsultation(roomId);
+                if (accepted) {
+                    navigate(`/chatroom/${roomId}`);
+                } else {
+                    alert("상담 수락에 실패했습니다. 다시 시도해주세요.");
+                }
+                break;
+            case "진행중":
+            case "종료":
+                navigate(`/chatroom/${roomId}`);
+                break;
+            default:
+                console.error("알 수 없는 상태:", status);
+                alert("알 수 없는 상태입니다. 관리자에게 문의하세요.");
+        }
+    };
 
     // 컴포넌트 마운트 시 데이터 및 WebSocket 연결 설정
     useEffect(() => {
         fetchChatRooms();
-    }, []);
-
-    useEffect(() => {
         if (chatRooms.length > 0) {
             connectWebSocket();
         }
@@ -167,136 +163,102 @@ const ConsultationRequestList = () => {
         };
     }, [chatRooms]);
 
-    // DataGrid 컬럼 정의
-    const columns = [
-        { field: "id", headerName: "ID", flex: 1 },
-        { field: "name", headerName: "채팅방 이름", flex: 2 },
-        {
-            field: "statusDisplay",
-            headerName: "상태",
-            flex: 1,
-            renderCell: (params) => (
-                <Chip
-                    label={params.value}
-                    color={getStatusColor(params.value)}
-                    style={params.value === "대기중" ? { backgroundColor: "#4caf50", color: "white" } : {}}
-                />
-            ),
-        },
-        { field: "createdAt", headerName: "생성 날짜", flex: 2 },
-    ];
-
-    useEffect(() => {
-            fetchChatRooms();
-        }, []);
-
-        useEffect(() => {
-            if (chatRooms.length > 0) {
-                connectWebSocket();
-            }
-
-            return () => {
-                if (stompClientRef.current && stompClientRef.current.connected) {
-                    stompClientRef.current.deactivate();
-                    stompClientRef.current = null;
-                    console.log("WebSocket 연결 해제");
-                }
-            };
-        }, [chatRooms]);
-
-        /**
-         * 상태에 따른 배경색 반환
-         * @param {string} status - 상담 상태
-         * @returns {string} - 배경색 CSS 값
-         */
-        const getStatusBackgroundColor = (status) => {
-            switch (status) {
-                case "대기중":
-                    return "#e3f2fd";  // 연한 파란색
-                case "진행중":
-                    return "#f5f5f5";  // 연한 회색
-                case "종료":
-                    return "#ffebee";  // 연한 빨간색
-                default:
-                    return "white";
-            }
-        };
-
-        return (
-            <Box sx={{ padding: 3 }}>
-                {/* 상단 필터 영역 */}
-                <Box sx={{
-                    mb: 3,
-                    p: 2,
-                    backgroundColor: '#f5f5f5',
-                    borderRadius: 1,
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: 2
-                }}>
-                    <Typography variant="subtitle1" sx={{ mr: 2 }}>
-                        상담시간: 2022.12.11 ~ 2023.06.09
-                    </Typography>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        size="small"
-                        sx={{ ml: 'auto' }}
-                    >
-                        검색
-                    </Button>
-                </Box>
-
-                {/* 테이블 컨테이너 */}
-                <TableContainer component={Paper} sx={{ boxShadow: 1 }}>
-                    <Table>
-                        <TableHead>
-                            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                                <TableCell>채팅 ID</TableCell>
-                                <TableCell>일임시간</TableCell>
-                                <TableCell>담당자</TableCell>
-                                <TableCell>유저명</TableCell>
-                                <TableCell>상태</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {chatRooms.map((room) => (
-                                <TableRow
-                                    key={room.id}
-                                    onClick={() => handleRowClick({ id: room.id, row: room })}
-                                    sx={{
-                                        cursor: 'pointer',
-                                        backgroundColor: getStatusBackgroundColor(room.statusDisplay),
-                                        '&:hover': {
-                                            backgroundColor: '#fafafa',
-                                        }
-                                    }}
-                                >
-                                    <TableCell>{room.id}</TableCell>
-                                    <TableCell>{room.createdAt}</TableCell>
-                                    <TableCell>{room.manager || '-'}</TableCell>
-                                    <TableCell>{room.userName || '-'}</TableCell>
-                                    <TableCell>{room.statusDisplay}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-
-                {/* 페이지네이션 영역 */}
-                <Box sx={{
-                    mt: 2,
-                    display: 'flex',
-                    justifyContent: 'flex-end',
-                    alignItems: 'center',
-                    gap: 2
-                }}>
-                    <Typography variant="body2">
-                        10/page
-                    </Typography>
-                </Box>
-            </Box>
-        );
+    /**
+     * 상태에 따른 배경색 반환
+     * @param {string} status - 상담 상태
+     * @returns {string} - 배경색 CSS 값
+     */
+    const getStatusBackgroundColor = (status) => {
+        switch (status) {
+            case "대기중":
+                return "#e9efff";  // 연한 파란색
+            case "진행중":
+                return "#f5f5f5";  // 연한 회색
+            case "종료":
+                return "#FFE6E0";  // 연한 빨간색
+            default:
+                return "white";
+        }
     };
 
-    export default ConsultationRequestList;
+    return (
+        <Box sx={{ padding: 3 }}>
+            {/* 상단 필터 영역 */}
+            <Box sx={{
+                mb: 3,
+                p: 2,
+                backgroundColor: '#f5f5f5',
+                borderRadius: 1,
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 2
+            }}>
+                <Typography variant="subtitle1" sx={{ mr: 2 }}>
+                    상담시간: 2022.12.11 ~ 2023.06.09
+                </Typography>
+                <Button
+                    variant="contained"
+                    size="small"
+                    sx={{
+                        ml: 'auto',
+                        backgroundColor: '#4169E1', // 포인트 색상 적용
+                        color: 'white', // 텍스트 색상 설정 (선택 사항)
+                    }}
+                >
+                    검색
+                </Button>
+            </Box>
+
+            {/* 테이블 컨테이너 */}
+            <TableContainer component={Paper} sx={{ boxShadow: 1 }}>
+                <Table>
+                    <TableHead>
+                        <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                            <TableCell>채팅 ID</TableCell>
+                            <TableCell>일임시간</TableCell>
+                            <TableCell>담당자</TableCell>
+                            <TableCell>유저명</TableCell>
+                            <TableCell>상태</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {chatRooms.map((room) => (
+                            <TableRow
+                                key={room.id}
+                                onClick={() => handleRowClick({ id: room.id, row: room })}
+                                sx={{
+                                    cursor: 'pointer',
+                                    backgroundColor: getStatusBackgroundColor(room.statusDisplay),
+                                    '&:hover': {
+                                        backgroundColor: '#fafafa',
+                                    }
+                                }}
+                            >
+                                <TableCell>{room.id}</TableCell>
+                                <TableCell>{room.createdAt}</TableCell>
+                                <TableCell>{room.manager || '-'}</TableCell>
+                                <TableCell>{room.userName || '-'}</TableCell>
+                                <TableCell>{room.statusDisplay}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+
+            {/* 페이지네이션 영역 */}
+            <Box sx={{
+                mt: 2,
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                gap: 2
+            }}>
+                <Typography variant="body2">
+                    10/page
+                </Typography>
+            </Box>
+        </Box>
+    );
+};
+
+export default ConsultationRequestList;

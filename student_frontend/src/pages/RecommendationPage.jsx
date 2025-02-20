@@ -186,7 +186,7 @@ const RecommendationPage = () => {
                         sx={{
                             p: 4,
                             borderRadius: '16px',
-                            backgroundColor: 'rgba(255, 241, 240, 0.5)',
+                            backgroundColor: '#e9efff',
                             border: '1px solid rgba(0, 0, 0, 0.1)'
                         }}
                     >
@@ -323,6 +323,7 @@ const RecommendationPage = () => {
                                 fontSize: '1.1rem',
                                 fontWeight: 'bold',
                                 textTransform: 'none',
+                                backgroundColor: '#4169E1',
                                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                                 '&:hover': {
                                     backgroundColor: 'primary.dark',

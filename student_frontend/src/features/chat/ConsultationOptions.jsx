@@ -57,10 +57,30 @@ const ConsultationOptions = ({ onClose }) => {
                 무엇을 도와드릴까요?
             </Typography>
             <Box display="flex" flexDirection="column" gap={2}>
-                <Button variant="outlined" onClick={handleFAQ}>
+                <Button
+                    variant="outlined"
+                    onClick={handleFAQ}
+                    sx={{
+                        color: '#4169E1',
+                        borderColor: '#4169E1',
+                        '&:hover': {
+                            borderColor: '#3a5fcf',
+                            backgroundColor: 'rgba(65, 105, 225, 0.04)'
+                        }
+                    }}
+                >
                     FAQ 보기
                 </Button>
-                <Button variant="contained" onClick={handleStartChat}>
+                <Button
+                    variant="contained"
+                    onClick={handleStartChat}
+                    sx={{
+                        backgroundColor: '#4169E1',
+                        '&:hover': {
+                            backgroundColor: '#3a5fcf'
+                        }
+                    }}
+                >
                     상담원과 채팅하기
                 </Button>
             </Box>

@@ -10,6 +10,15 @@ import { Link } from 'react-router-dom';
  * @returns {JSX.Element} RecommendationProductCard 컴포넌트
  */
 const RecommendationProductCard = ({ product }) => {
+    // 이미지 URL을 가져오는 함수
+    const getProductImageUrl = (imageUrl) => {
+        if (imageUrl) {
+            const baseUrl = import.meta.env.VITE_PUBLIC_URL || "http://localhost:8080";
+            return `${baseUrl}${imageUrl.startsWith("/") ? imageUrl : "/" + imageUrl}`;
+        }
+        return "https://dummyimage.com/200x200/cccccc/ffffff&text=No+Image"; // 기본 이미지
+    };
+
     // 상품별 배경색 매핑
     const getBackgroundColor = (index) => {
         const colors = ['#E6F3FF', '#E8F6E8', '#FFF3E6'];
@@ -54,7 +63,7 @@ const RecommendationProductCard = ({ product }) => {
                 }}>
                     <CardMedia
                         component="img"
-                        image={product.mainImageUrl}
+                        image={getProductImageUrl(product.mainImageUrl)} // 이미지 URL 연결
                         alt={product.productName}
                         sx={{
                             width: '80%',

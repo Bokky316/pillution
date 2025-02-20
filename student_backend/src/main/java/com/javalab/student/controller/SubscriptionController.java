@@ -182,6 +182,35 @@ public class SubscriptionController {
         ));
     }
 
+    /**
+     * 배송정보 변경 API
+     */
+    @PutMapping("/update-delivery")
+    public ResponseEntity<?> updateDeliveryAddress(@RequestBody Map<String, String> request) {
+        try {
+            Long subscriptionId = Long.parseLong(request.get("subscriptionId"));
+            String postalCode = request.get("postalCode");
+            String roadAddress = request.get("roadAddress");
+            String detailAddress = request.get("detailAddress");
+
+            boolean updated = subscriptionService.updateDeliveryAddress(subscriptionId, postalCode, roadAddress, detailAddress);
+
+            if (updated) {
+                return ResponseEntity.ok(Map.of(
+                        "message", "✅ 배송 주소가 성공적으로 업데이트되었습니다!",
+                        "postalCode", postalCode,
+                        "roadAddress", roadAddress,
+                        "detailAddress", detailAddress
+                ));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("message", "❌ 배송 주소 업데이트 실패"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "서버 오류 발생: " + e.getMessage()));
+        }
+    }
+
 
 
 

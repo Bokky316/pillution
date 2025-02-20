@@ -1,6 +1,7 @@
 package com.javalab.student.service.cartOrder;
 
 import com.javalab.student.constant.OrderStatus;
+import com.javalab.student.constant.PayStatus;
 import com.javalab.student.dto.cartOrder.OrderDto;
 import com.javalab.student.dto.cartOrder.PaymentRequestDto;
 import com.javalab.student.dto.cartOrder.OrderItemDto;
@@ -55,11 +56,9 @@ public class PaymentService {
     private final CartItemRepository cartItemRepository;
     private final CartRepository cartRepository;
     private final MemberRepository memberRepository;
-    private final SubscriptionService subscriptionService;
     private final SubscriptionRepository subscriptionRepository;
-    private final OrderItemRepository orderItemRepository;
     private final SubscriptionNextItemRepository subscriptionNextItemRepository;
-    private final ProductRepository productRepository;
+
 
     /**
      * 결제를 처리하고 검증합니다.
@@ -74,8 +73,9 @@ public class PaymentService {
     public Map<String, Object> processPayment(PaymentRequestDto requestDto, String email, String purchaseType) {
         log.info("🔹 결제 검증 시작: {}", requestDto);
 
-        // 1. 주문 생성 및 정보 조회
-        Order order = createOrder(requestDto, email, purchaseType);
+        // 1. 주문 정보 조회 (merchantUid는 주문 ID)
+        Order order = orderRepository.findById(Long.valueOf(requestDto.getMerchantUid()))
+                .orElseThrow(() -> new EntityNotFoundException("주문 ID [" + requestDto.getMerchantUid() + "]에 해당하는 주문을 찾을 수 없습니다."));
 
         // 2. 포트원 API를 사용하여 결제 정보 조회 및 검증
         verifyPayment(requestDto, order);
@@ -83,30 +83,26 @@ public class PaymentService {
         // 3. Payment 엔티티 생성 및 저장
         com.javalab.student.entity.cartOrder.Payment payment = createAndSavePayment(requestDto, order);
 
-        // 4. 주문 상태 업데이트
+        // 4. 주문 상태 업데이트 (결제 완료) 및 결제 수단 정보 저장
         order.setOrderStatus(OrderStatus.PAYMENT_COMPLETED);
+        order.setPaymentMethod(requestDto.getSelectedPaymentMethod()); // 결제 수단 정보 저장
         orderRepository.save(order);
 
         // 5. 장바구니 비우기
         clearCart(email);
 
-        // 6. 구독 처리 (구독 결제인 경우)
-        if ("subscription".equals(purchaseType)) {
-            log.info("정기구독 결제입니다. SubscriptionService를 호출하여 구독을 처리합니다.");
-            processSubscription(order,email,requestDto);//구독 처리 로직 분리
-        }
-
-        // 7. 응답 데이터 구성
+        // 6. 응답 데이터 구성
         Map<String, Object> response = new HashMap<>();
         response.put("paymentId", payment.getId());
         response.put("impUid", payment.getImpUid());
         response.put("merchantUid", order.getId());
         response.put("amount", payment.getAmount());
-        response.put("paymentMethod", payment.getPaymentMethod());
+        response.put("paymentMethod", payment.getPaymentMethod()); // 결제 수단 정보 반환
         response.put("status", payment.getOrderStatus());
         response.put("paidAt", payment.getPaidAt());
         return response;
     }
+
 
     /**
      * 장바구니 상품들을 주문으로 변환하고 처리합니다.
@@ -245,7 +241,7 @@ public class PaymentService {
                 .itemNm(requestDto.getName())
                 .orderStatus(OrderStatus.PAYMENT_COMPLETED)
                 .amount(requestDto.getPaidAmount())
-                .paymentMethod(requestDto.getPayMethod())
+                .paymentMethod(requestDto.getSelectedPaymentMethod()) // ✅ 수정됨
                 .buyerEmail(requestDto.getBuyerEmail())
                 .buyerName(requestDto.getBuyerName())
                 .buyerTel(requestDto.getBuyerTel())
@@ -353,7 +349,7 @@ public class PaymentService {
         }
         if (currentOrderStatus == OrderStatus.IN_TRANSIT ||
                 currentOrderStatus == OrderStatus.DELIVERED ||
-                currentOrderStatus == OrderStatus.ORDER_COMPLETED) {
+                currentOrderStatus == OrderStatus.PREPARING_SHIPMENT) {
             throw new IllegalStateException("배송이 시작된 주문은 취소할 수 없습니다. 주문 ID: " + orderId);
         }
 
@@ -395,28 +391,32 @@ public class PaymentService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
         for (Order order : ordersPage.getContent()) {
-            String orderDateStr = order.getOrderDate().format(formatter); // 주문일자 포맷팅
+            String orderDateStr = order.getOrderDate().format(formatter);
 
-            String shippingAddress = ""; // 배송주소 구성 (Address 엔티티가 있을 경우)
+            String shippingAddress = "";
             if (order.getAddress() != null) {
                 shippingAddress = order.getAddress().getAddr() + " " +
                         order.getAddress().getAddrDetail() + " (" +
                         order.getAddress().getZipcode() + ")";
             }
 
+            // Payment 정보에서 buyerAddr 가져오기 (null 처리)
+            String buyerAddr = (order.getPayment() != null) ? order.getPayment().getBuyerAddr() : null;
+
+
             for (OrderItem orderItem : order.getOrderItems()) {
                 AdminOrderDto dto = AdminOrderDto.builder()
-                        .id(orderItem.getId())  // 주문 아이템 ID
-                        .orderId(order.getId()) // 주문 ID
-                        .memberName(order.getMember().getName()) // 회원 이름
-                        .productName(orderItem.getProduct().getName()) // 상품명
-                        .quantity(orderItem.getCount()) // 수량
-                        .totalPrice(orderItem.getOrderPrice().multiply(
-                                BigDecimal.valueOf(orderItem.getCount()))) // 총 금액 계산
-                        .orderDate(orderDateStr) // 주문일자 문자열 변환
-                        .shippingAddress(shippingAddress) // 배송주소 설정
-                        .paymentMethod(order.getPaymentMethod()) // 결제수단 설정
-                        .orderStatus(order.getOrderStatus().name()) // 주문 상태 설정
+                        .id(orderItem.getId())
+                        .orderId(order.getId())
+                        .memberName(order.getMember().getName())
+                        .productName(orderItem.getProduct().getName())
+                        .quantity(orderItem.getCount())
+                        .totalPrice(orderItem.getOrderPrice().multiply(BigDecimal.valueOf(orderItem.getCount())))
+                        .orderDate(orderDateStr)
+                        .shippingAddress(shippingAddress)
+                        .paymentMethod(order.getPaymentMethod())
+                        .orderStatus(order.getOrderStatus().name())
+                        .buyerAddr(buyerAddr) // buyerAddr 설정
                         .build();
                 dtoList.add(dto);
             }
@@ -429,5 +429,43 @@ public class PaymentService {
         response.put("number", ordersPage.getNumber()); // 현재 페이지 번호 추가
 
         return response; // 결과 반환
+    }
+
+    /**
+     * 주문 상태를 변경합니다.
+     *
+     * @param orderId   상태를 변경할 주문의 ID
+     * @param newStatus 새로운 주문 상태
+     * @throws EntityNotFoundException 주문을 찾을 수 없을 때
+     * @throws IllegalStateException  주문 상태를 변경할 수 없을 때 (배송 시작 등)
+     */
+    @Transactional
+    public void updateOrderStatus(Long orderId, OrderStatus newStatus) {
+        // 1. 주문 조회
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("주문 ID " + orderId + "에 해당하는 주문을 찾을 수 없습니다."));
+
+        // 2. 주문 상태 변경 (Order 엔티티의 메서드 호출)
+        order.changeOrderStatus(newStatus);
+
+        // 3. 변경 사항 저장
+        orderRepository.save(order);
+
+        log.info("주문 ID {}의 상태가 {}로 변경되었습니다.", orderId, newStatus);
+    }
+
+    @Transactional
+    public void completePayment(Long paymentId, String paymentMethod) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new EntityNotFoundException("Payment not found with id: " + paymentId));
+
+        payment.setPaymentMethod(paymentMethod);
+        payment.setPayStatus(PayStatus.PAYMENT);
+        payment.setOrderStatus(OrderStatus.PAYMENT_COMPLETED);
+
+        paymentRepository.save(payment);
+
+        // 변경 사항 확인을 위한 로그
+        System.out.println("Updated payment: " + paymentRepository.findById(paymentId).orElse(null));
     }
 }

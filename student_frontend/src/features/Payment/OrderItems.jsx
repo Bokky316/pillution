@@ -2,28 +2,43 @@ import React from 'react';
 import { Box, Typography } from "@mui/material";
 import PropTypes from 'prop-types';
 
-/**
- * @param {Object[]} selectedItems - 선택된 주문 아이템 목록
- * @returns {JSX.Element} 주문 상품 목록 컴포넌트
- * @description 주문 상품 목록을 표시하는 컴포넌트입니다.
- */
 const OrderItems = ({ selectedItems }) => {
+    // 이미지 URL을 가져오는 함수
+    const getProductImageUrl = (imageUrl) => {
+        if (imageUrl) {
+            const baseUrl = import.meta.env.VITE_PUBLIC_URL || "http://localhost:8080";
+            return `${baseUrl}${imageUrl.startsWith("/") ? imageUrl : "/" + imageUrl}`;
+        }
+        return "https://dummyimage.com/80x80/cccccc/ffffff&text=No+Image"; // 기본 이미지
+    };
+
     return (
         <Box>
-            <Typography variant="h6" gutterBottom>
-                주문 정보
-            </Typography>
             {selectedItems.map((item, index) => (
-                <Box key={index} display="flex" alignItems="center" mb={2}>
+                <Box
+                    key={index}
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        borderBottom: '1px solid #eee',
+                        py: 2
+                    }}
+                >
                     <img
-                        src={item.imageUrl}
+                        src={getProductImageUrl(item.imageUrl)}
                         alt={item.name}
-                        style={{ width: 100, height: 100, marginRight: 20 }}
+                        style={{ width: 80, height: 80, marginRight: 16, objectFit: "cover" }}
                     />
-                    <Box>
-                        <Typography variant="h6">{item.name}</Typography>
-                        <Typography variant="body1">가격: {item.price}원</Typography>
-                        <Typography variant="body1">수량: {item.quantity}</Typography>
+                    <Box sx={{ flex: 1 }}>
+                        <Typography sx={{ fontSize: '0.9rem', mb: 1 }}>
+                            {item.name}
+                        </Typography>
+                        <Typography sx={{ color: '#666', fontSize: '0.85rem' }}>
+                            {item.quantity}개
+                        </Typography>
+                        <Typography sx={{ fontWeight: 600, fontSize: '0.9rem', mt: 1 }}>
+                            {item.price.toLocaleString()}원
+                        </Typography>
                     </Box>
                 </Box>
             ))}

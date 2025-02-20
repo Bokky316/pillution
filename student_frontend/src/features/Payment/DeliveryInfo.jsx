@@ -1,18 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     TextField,
     Box,
     Typography,
     Button,
+    Menu,
+    MenuItem,
     FormControl,
     InputLabel,
     Select,
-    MenuItem,
     Dialog,
     DialogActions,
     DialogContent,
     DialogContentText,
-    DialogTitle
+    DialogTitle,
+    Modal
 } from "@mui/material";
 import PropTypes from 'prop-types';
 
@@ -46,100 +48,220 @@ import PropTypes from 'prop-types';
  * @description 배송 정보를 입력하고 저장하는 컴포넌트입니다.
  */
 const DeliveryInfo = ({
-                          deliveryName,
-                          deliveryPhone,
-                          postalCode,
-                          roadAddress,
-                          detailAddress,
-                          deliveryMessage,
-                          customDeliveryMessage,
-                          savedAddresses,
-                          selectedSavedAddressId,
-                          openDialog,
-                          deliveryInfoName,
-                          handleSavedAddressChange,
-                          handleAddressSearch,
-                          handleDeliveryMessageChange,
-                          handleUseUserInfoForDelivery,
-                          handleSaveDeliveryInfo,
-                          handleCloseDialog,
-                          handleConfirmSave,
-                          setDeliveryName,
-                          setDeliveryPhone,
-                          setRoadAddress,
-                          setDetailAddress,
-                          setCustomDeliveryMessage,
-                          setIsDefault,
-                          setDeliveryInfoName
-                      }) => {
+    deliveryName,
+    deliveryPhone,
+    postalCode,
+    roadAddress,
+    detailAddress,
+    deliveryMessage,
+    customDeliveryMessage,
+    savedAddresses,
+    selectedSavedAddressId,
+    openDialog,
+    deliveryInfoName,
+    handleSavedAddressChange,
+    handleAddressSearch,
+    handleDeliveryMessageChange,
+    handleUseUserInfoForDelivery,
+    handleSaveDeliveryInfo,
+    handleCloseDialog,
+    handleConfirmSave,
+    setDeliveryName,
+    setDeliveryPhone,
+    setRoadAddress,
+    setDetailAddress,
+    setCustomDeliveryMessage,
+    setIsDefault,
+    setDeliveryInfoName
+}) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const openModal = () => {
+        setIsModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setIsModalOpen(false);
+    };
+
+    const textFieldStyle = {
+        '& .MuiOutlinedInput-notchedOutline': {
+            border: '1px solid #eee'
+        },
+        '&:hover .MuiOutlinedInput-notchedOutline': {
+            border: '1px solid #eee'
+        },
+        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            border: '1px solid #4169E1'
+        },
+        borderRadius: 0
+    };
+
+    // buttonStyle 정의
+    const buttonStyle = {
+        background: 'none',
+        border: 'none',
+        fontSize: '0.8rem',
+        textDecoration: 'underline',
+        color: 'inherit',
+        '&:hover': {
+            background: 'none',
+        },
+        '&:focus': {
+            outline: 'none',
+        },
+        boxShadow: 'none',
+    };
+
+    const modalStyle = {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: 400,
+        bgcolor: 'background.paper',
+        boxShadow: 24,
+        p: 4,
+    };
+
     return (
         <Box>
-            <Typography variant="h6" mt={3} gutterBottom>
-                배송 정보
-            </Typography>
-
-            {/* 저장된 배송지 선택 */}
-            <FormControl fullWidth margin="normal">
-                <InputLabel id="saved-address-label">저장된 배송지</InputLabel>
-                <Select
-                    labelId="saved-address-label"
-                    id="saved-address"
-                    value={selectedSavedAddressId}
-                    onChange={handleSavedAddressChange}
-                    label="저장된 배송지"
+            {/* 주문 정보 불러오기와 저장된 배송지 선택을 한 줄에 배치 */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+                <Button
+                    onClick={handleUseUserInfoForDelivery}
+                    sx={buttonStyle}
                 >
-                    <MenuItem value="">선택 안 함</MenuItem>
-                    {savedAddresses.map(address => (
-                        <MenuItem key={address.id} value={address.id}>
-                            {address.deliveryName} - {address.recipientName}, {address.roadAddress}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
+                    주문 정보 불러오기
+                </Button>
+                <Button
+                    onClick={openModal}
+                    sx={buttonStyle}
+                >
+                    배송 정보 저장
+                </Button>
+            </Box>
+
+            {/* 저장된 배송지 선택 모달 */}
+            <Modal
+                open={isModalOpen}
+                onClose={closeModal}
+                aria-labelledby="saved-address-modal-title"
+                aria-describedby="saved-address-modal-description"
+            >
+                <Box sx={modalStyle}>
+                    <Typography id="saved-address-modal-title" variant="h6" component="h2">
+                        배송 정보 저장
+                    </Typography>
+                    <Box mt={2}>
+                        <Button
+                            onClick={handleSaveDeliveryInfo}
+                            sx={{
+                                background: 'none',
+                                border: 'none',
+                                fontSize: '0.8rem',
+                                textDecoration: 'underline',
+                                color: 'inherit',
+                                '&:hover': {
+                                    background: 'none',
+                                },
+                                '&:focus': {
+                                    outline: 'none',
+                                },
+                                boxShadow: 'none',
+                                display: 'block', // 전체 폭을 사용하도록 설정
+                                textAlign: 'right', // 텍스트를 오른쪽으로 정렬
+                                padding: 0, // 패딩 제거
+                                marginBottom: '10px'
+                            }}
+                        >
+                            현재 배송 정보 기억하기
+                        </Button>
+                        <FormControl fullWidth>
+                            <InputLabel id="saved-address-label">저장된 배송지</InputLabel>
+                            <Select
+                                labelId="saved-address-label"
+                                id="saved-address"
+                                value={selectedSavedAddressId}
+                                onChange={handleSavedAddressChange}
+                                label="저장된 배송지"
+                            >
+                                <MenuItem value="">선택 안 함</MenuItem>
+                                {savedAddresses.map(address => (
+                                    <MenuItem key={address.id} value={address.id}>
+                                        {address.deliveryName} - {address.recipientName}, {address.roadAddress}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Box>
+                </Box>
+            </Modal>
 
             {/* 배송 정보 - 이름 */}
             <TextField
-                label="이름"
+                placeholder="이름"
                 value={deliveryName}
                 onChange={(e) => setDeliveryName(e.target.value)}
                 fullWidth
                 margin="normal"
+                InputProps={{ sx: textFieldStyle }}
             />
 
             {/* 배송 정보 - 전화번호 */}
             <TextField
-                label="전화번호"
+                placeholder="전화번호"
                 value={deliveryPhone}
                 onChange={(e) => setDeliveryPhone(e.target.value)}
                 fullWidth
                 margin="normal"
+                InputProps={{ sx: textFieldStyle }}
             />
 
             {/* 배송 정보 - 주소 */}
             <Box display="flex" alignItems="center" mb={2}>
                 <TextField
-                    label="우편번호"
+                    placeholder="우편번호"
                     value={postalCode}
                     readOnly
                     sx={{ width: '150px', marginRight: 2 }}
+                    InputProps={{ sx: textFieldStyle }}
                 />
-                <Button variant="outlined" onClick={handleAddressSearch}>
-                    주소 검색
+                <Button
+                    variant="contained"
+                    onClick={handleAddressSearch}
+                    sx={{
+                        backgroundColor: '#333', // 검정색 배경
+                        color: 'white', // 흰색 글씨
+                        fontSize: '0.8rem',
+                        fontWeight: 'bold', // 글씨 굵게
+                        borderRadius: '8px', // 모서리 둥글게
+                        textTransform: 'none', // 대문자 변환 방지
+                        boxShadow: 'none', // 그림자 제거
+                        '&:hover': {
+                            backgroundColor: '#555', // 호버 시 약간 밝은 검정색
+                            boxShadow: 'none', // 호버 시 그림자 제거
+                        },
+                    }}
+                >
+                    우편번호 검색
                 </Button>
             </Box>
             <TextField
-                label="도로명 주소"
+                placeholder="도로명 주소"
                 value={roadAddress}
                 readOnly
                 fullWidth
                 margin="normal"
+                InputProps={{ sx: textFieldStyle }}
             />
             <TextField
-                label="상세주소"
+                placeholder="상세주소"
                 value={detailAddress}
                 onChange={(e) => setDetailAddress(e.target.value)}
                 fullWidth
                 margin="normal"
+                InputProps={{ sx: textFieldStyle }}
             />
 
             {/* 배송 메시지 선택 */}
@@ -160,28 +282,15 @@ const DeliveryInfo = ({
                 </Select>
                 {deliveryMessage === 'custom' && (
                     <TextField
-                        label="배송 메시지 직접 입력"
+                        placeholder="배송 메시지 직접 입력"
                         value={customDeliveryMessage}
                         onChange={(e) => setCustomDeliveryMessage(e.target.value)}
                         fullWidth
                         margin="normal"
+                        InputProps={{ sx: textFieldStyle }}
                     />
                 )}
             </FormControl>
-
-            {/* 배송 정보 - 사용자 정보 이용 버튼 */}
-            <Box mt={2}>
-                <Button variant="contained" color="primary" onClick={handleUseUserInfoForDelivery}>
-                    사용자 정보와 동일하게
-                </Button>
-            </Box>
-
-            {/* 배송 정보 - 배송 정보 기억하기 버튼 */}
-            <Box mt={2}>
-                <Button variant="contained" color="secondary" onClick={handleSaveDeliveryInfo}>
-                    배송 정보 기억하기
-                </Button>
-            </Box>
 
             {/* 배송 정보 저장 다이얼로그 */}
             <Dialog open={openDialog} onClose={handleCloseDialog}>
@@ -229,7 +338,7 @@ DeliveryInfo.propTypes = {
         recipientName: PropTypes.string.isRequired,
         roadAddress: PropTypes.string.isRequired,
     })).isRequired,
-     selectedSavedAddressId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    selectedSavedAddressId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     openDialog: PropTypes.bool.isRequired,
     deliveryInfoName: PropTypes.string.isRequired,
     handleSavedAddressChange: PropTypes.func.isRequired,

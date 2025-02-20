@@ -25,6 +25,7 @@ public class AdminOrderDto {
     private String orderDate;
     // 배송주소 (예: addr + addrDetail + (zipcode))
     private String shippingAddress;
+    private String buyerAddr;
     // 결제 수단 (Payment.paymentMethod)
     private String paymentMethod;
     // 주문 상태 필드 추가

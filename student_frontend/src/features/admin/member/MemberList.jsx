@@ -94,7 +94,7 @@ const MemberList = () => {
             renderCell: (params) => (
                 <Typography
                     sx={{
-                        color: '#1976d2',
+                        color: '#4169E1',
                         cursor: 'pointer',
                         '&:hover': { textDecoration: 'underline' }
                     }}
@@ -201,7 +201,7 @@ const MemberList = () => {
                     color="primary"
                     sx={{
                         backgroundColor: '#e3f2fd',
-                        color: '#1976d2',
+                        color: '#4169E1',
                         fontWeight: 500,
                         px: 1,
                     }}

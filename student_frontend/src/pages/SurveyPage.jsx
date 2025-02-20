@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { Box, Typography, CircularProgress } from "@mui/material";
 import { useNavigate } from 'react-router-dom';
 import SurveyContent from '@/features/survey/SurveyContent';
@@ -6,11 +6,9 @@ import CategoryNavigation from '@/features/survey/CategoryNavigation';
 import useSurveyData from '@/hooks/useSurveyData';
 import useNavigation from '@/hooks/useNavigation';
 import ProgressIndicator from '@/features/survey/ProgressIndicator';
-import AnalysisLoading from '@/features/survey/AnalysisLoading';
 
 const SurveyPage = () => {
   const navigate = useNavigate();
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const {
     categories,
@@ -38,14 +36,20 @@ const SurveyPage = () => {
     navigate('/'); // 메인 페이지 경로로 수정 필요
   };
 
-  // 분석 시작 및 결과 페이지로 이동
-  const handleAnalysis = () => {
-    setIsAnalyzing(true);
-    setTimeout(() => {
-      setIsAnalyzing(false);
-      navigate('/recommendation'); // 결과 페이지 경로로 수정 필요
-    }, 2500); // 2.5초 후 결과 페이지로 이동
-  };
+  // 엔터 키 이벤트 핸들러 추가
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if (event.key === 'Enter' && !isNextButtonDisabled()) {
+        handleNext();
+      }
+    };
+
+    window.addEventListener('keypress', handleKeyPress);
+
+    return () => {
+      window.removeEventListener('keypress', handleKeyPress);
+    };
+  }, [handleNext, isNextButtonDisabled]);
 
   console.log("SurveyPage 렌더링");
 
@@ -65,10 +69,6 @@ const SurveyPage = () => {
     return <Typography>설문을 불러오는 중입니다...</Typography>;
   }
 
-  if (isAnalyzing) {
-    return <AnalysisLoading />;
-  }
-
   const categoriesToUse = filteredCategories || categories;
   const currentCategory = categoriesToUse[currentCategoryIndex];
   const subCategoriesToDisplay = filteredSubCategories || currentCategory?.subCategories;
@@ -79,20 +79,20 @@ const SurveyPage = () => {
                          currentSubCategoryIndex === subCategoriesToDisplay.length - 1;
 
   return (
-    <Box sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      minHeight: '100vh',
-      maxWidth: '800px',
-      margin: '0 auto'
-    }}>
-      <ProgressIndicator
-        categories={categoriesToUse}
-        currentCategoryIndex={currentCategoryIndex}
-        currentSubCategoryIndex={currentSubCategoryIndex}
-        onPrevious={handlePrevious}
-        onClose={handleClose}
-      />
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        maxWidth: '800px',
+        margin: '0 auto'
+      }}>
+        <ProgressIndicator
+          categories={categoriesToUse}
+          currentCategoryIndex={currentCategoryIndex}
+          currentSubCategoryIndex={currentSubCategoryIndex}
+          onPrevious={handlePrevious}
+          onClose={handleClose}
+        />
 
       <Box sx={{ flexGrow: 1 }}>
         <SurveyContent
@@ -101,6 +101,7 @@ const SurveyPage = () => {
           questions={questions}
           responses={responses}
           onResponseChange={handleResponseChange}
+          onAutoNext={handleNext}
         />
       </Box>
 
@@ -115,7 +116,7 @@ const SurveyPage = () => {
       }}>
         <CategoryNavigation
           handlePrevious={handlePrevious}
-          handleNext={isLastCategory ? handleAnalysis : handleNext}
+          handleNext={handleNext}
           isNextButtonDisabled={isNextButtonDisabled()}
           isFirstCategory={isFirstCategory}
           isLastCategory={isLastCategory}

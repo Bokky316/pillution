@@ -20,6 +20,7 @@ public class OrderDto {
     private String waybillNum;
     private String parcelCd;
     private List<OrderItemDto> orderItems;
+    private String paymentMethod;
 
     @Getter @Setter
     @Builder

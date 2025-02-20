@@ -1,6 +1,17 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Button, Box, Typography, Paper, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio } from "@mui/material";
+import {
+    Button,
+    Box,
+    Typography,
+    Paper,
+    FormControl,
+    FormLabel,
+    RadioGroup,
+    FormControlLabel,
+    Radio,
+    Grid
+} from "@mui/material";
 import { API_URL } from "@/utils/constants";
 import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
 import { useDispatch } from "react-redux";
@@ -181,6 +192,7 @@ const OrderDetail = () => {
         try {
             const response = await dispatch(createOrder({ orderData, purchaseType })).unwrap();
             console.log("주문 생성 성공:", response);
+
             setOrder({
                 ...response,
                 id: String(response.id),
@@ -214,7 +226,6 @@ const OrderDetail = () => {
                 if (rsp.success) {
                     console.log("결제 완료 응답:", rsp);
 
-                    // 결제 성공 후 서버에 결제 정보 전송 및 주문 완료 처리
                     const paymentRequest = {
                         impUid: rsp.imp_uid,
                         merchantUid: response.id,
@@ -228,15 +239,18 @@ const OrderDetail = () => {
                         buyerPostcode: rsp.buyer_postcode,
                         paidAt: rsp.paid_at,
                         status: "PAYMENT_COMPLETED",
+                        selectedPaymentMethod: selectedPaymentMethod, // ✅ selectedPaymentMethod 추가
                         cartOrderItems: selectedItems.map(item => ({
                             cartItemId: item.cartItemId,
                             quantity: item.quantity,
                             price: item.price
                         }))
                     };
-
+                     // ✅ 콘솔로 확인: paymentRequest 객체 전체 출력
+                    console.log("PaymentRequest 객체:", paymentRequest);
                     try {
                         const result = await dispatch(processPayment({ paymentRequestDto: paymentRequest, purchaseType: purchaseType })).unwrap();
+
                         if (result) {
                             const paymentInfo = {
                                 amount: rsp.paid_amount,
@@ -269,22 +283,22 @@ const OrderDetail = () => {
      * @param {string} method - 결제 수단
      * @returns {string} PG사 제공자
      */
-       const getPgProvider = (method) => {
-              switch (method) {
-                  case 'kakaopay':
-                      return 'kakaopay';
-                  case 'payco':
-                      return 'payco';
-                  case 'tosspay':
-                      return 'tosspay';
-                  case 'card':
-                  case 'trans':
-                  case 'vbank':
-                      return 'html5_inicis';
-                  default:
-                      return 'html5_inicis';
-              }
-          };
+     const getPgProvider = (method) => {
+        switch (method) {
+            case 'kakaopay':
+                return 'kakaopay';
+            case 'payco':
+                return 'payco';
+            case 'tosspay':
+                return 'tosspay';
+            case 'card':
+            case 'trans':
+            case 'vbank':
+                return 'html5_inicis';
+            default:
+                return 'html5_inicis';
+        }
+    };
 
     /**
      * 결제 방식을 가져옵니다.
@@ -322,8 +336,7 @@ const OrderDetail = () => {
             }
         }).open();
     };
-
-    /**
+   /**
      * 사용자 정보 탭에서 주문 정보 탭으로 정보 복사
      */
     const handleUseUserInfo = () => {
@@ -349,16 +362,17 @@ const OrderDetail = () => {
         }
     };
 
-    /**
-     * 배송지 정보를 사용자 정보와 동일하게 설정합니다.
-     */
-    const handleUseUserInfoForDelivery = () => {
-        setDeliveryName(name);
-        setDeliveryPhone(phone);
-        setPostalCode(postalCode);
-        setRoadAddress(roadAddress);
-        setDetailAddress(detailAddress);
-    };
+       /**
+        * 배송 정보를 사용자 정보와 동일하게 설정합니다.
+        */
+       const handleUseUserInfoForDelivery = () => {
+           setDeliveryName(name);
+           setDeliveryPhone(phone);
+           setPostalCode(userPostalCode);
+           setRoadAddress(userRoadAddress);
+           setDetailAddress(userDetailAddress);
+       };
+
 
     /**
      * 배송 정보 저장 다이얼로그 열기
@@ -437,77 +451,157 @@ const OrderDetail = () => {
         setIsDeliveryInfoComplete(checkDeliveryInfoComplete());
     }, [checkDeliveryInfoComplete]);
 
-    return (
-        <Box sx={{ maxWidth: 800, margin: "auto", padding: 3 }}>
-            <Typography variant="h4" gutterBottom>
-                주문서
-            </Typography>
-            <Paper sx={{ padding: 3 }}>
-                <OrderItems selectedItems={selectedItems} />
-                <UserInfo
-                    name={name}
-                    email={email}
-                    phone={phone}
-                    postalCode={userPostalCode}
-                    roadAddress={userRoadAddress}
-                    detailAddress={userDetailAddress}
-                    handleUseUserInfo={handleUseUserInfo}
-                />
-                <DeliveryInfo
-                    deliveryName={deliveryName}
-                    deliveryPhone={deliveryPhone}
-                    postalCode={postalCode}
-                    roadAddress={roadAddress}
-                    detailAddress={detailAddress}
-                    deliveryMessage={deliveryMessage}
-                    customDeliveryMessage={customDeliveryMessage}
-                    savedAddresses={savedAddresses}
-                    selectedSavedAddressId={selectedSavedAddressId}
-                    openDialog={openDialog}
-                    deliveryInfoName={deliveryInfoName}
-                    handleSavedAddressChange={handleSavedAddressChange}
-                    handleAddressSearch={handleAddressSearch}
-                    handleDeliveryMessageChange={handleDeliveryMessageChange}
-                    handleUseUserInfoForDelivery={handleUseUserInfoForDelivery}
-                    handleSaveDeliveryInfo={handleSaveDeliveryInfo}
-                    handleCloseDialog={handleCloseDialog}
-                    handleConfirmSave={handleConfirmSave}
-                    setDeliveryName={setDeliveryName}
-                    setDeliveryPhone={setDeliveryPhone}
-                    setPostalCode={setPostalCode}
-                    setRoadAddress={setRoadAddress}
-                    setDetailAddress={setDetailAddress}
-                    setCustomDeliveryMessage={setCustomDeliveryMessage}
-                    setIsDefault={setIsDefault}
-                    setDeliveryInfoName={setDeliveryInfoName}
-                />
-               <PaymentSummary
-                    totalAmount={totalAmount}
-                    selectedPaymentMethod={selectedPaymentMethod}
-                    onPaymentMethodChange={handlePaymentMethodChange}
-                    onPayment={handlePayment}
-                    isDeliveryInfoComplete={isDeliveryInfoComplete}
-                />
-                <FormControl component="fieldset" sx={{ mt: 2 }}>
-                    <FormLabel component="legend">결제 수단 선택</FormLabel>
-                    <RadioGroup
-                        aria-label="payment-method"
-                        name="payment-method"
-                        value={selectedPaymentMethod}
-                        onChange={handlePaymentMethodChange}
-                        row
-                    >
-                        <FormControlLabel value="kakaopay" control={<Radio />} label="카카오페이" />
-                        <FormControlLabel value="payco" control={<Radio />} label="페이코" />
-                        <FormControlLabel value="tosspay" control={<Radio />} label="토스페이" />
-                        <FormControlLabel value="card" control={<Radio />} label="신용카드" />
-                        <FormControlLabel value="trans" control={<Radio />} label="실시간계좌이체" />
-                        <FormControlLabel value="vbank" control={<Radio />} label="가상계좌" />
-                    </RadioGroup>
-                </FormControl>
-            </Paper>
-        </Box>
-    );
-};
+    const paymentMethods = [
+        { id: "kakaopay", name: "카카오페이", logo: "/src/assets/images/kakaopay.png" },
+        { id: "payco", name: "페이코", logo: "/src/assets/images/payco.png" },
+        { id: "tosspay", name: "토스페이", logo: "/src/assets/images/tosspay.png" },
+        { id: "card", name: "신용 / 체크카드" },
+        { id: "trans", name: "실시간 계좌이체" },
+        { id: "vbank", name: "가상계좌" },
+    ];
 
-export default OrderDetail;
+        return (
+            <Box sx={{ maxWidth: 800, margin: "auto", padding: 2 }}>
+                <Box sx={{ mb: 3 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.1rem', mb: 2 }}>
+                        주문서 작성
+                    </Typography>
+                </Box>
+
+                <Box sx={{ bgcolor: '#fff', borderRadius: 0 }}>
+                    {/* 주문 상품 정보 */}
+                    <Box sx={{ mb: 3 }}>
+                        <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, mb: 1 }}>
+                            제품정보
+                        </Typography>
+                        <OrderItems selectedItems={selectedItems} />
+                    </Box>
+
+                    {/* 주문자 정보 */}
+                    <Box sx={{ mb: 3 }}>
+                        <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, mb: 1 }}>
+                            주문자 정보
+                        </Typography>
+                        <UserInfo
+                            name={name}
+                            email={email}
+                            phone={phone}
+                            postalCode={userPostalCode}
+                            roadAddress={userRoadAddress}
+                            detailAddress={userDetailAddress}
+                            handleUseUserInfo={handleUseUserInfo}
+                        />
+                    </Box>
+
+                    {/* 배송 정보 */}
+                    <Box sx={{ mb: 3 }}>
+                        <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, mb: 1 }}>
+                            배송 정보
+                        </Typography>
+                        <DeliveryInfo
+                            deliveryName={deliveryName}
+                            deliveryPhone={deliveryPhone}
+                            postalCode={postalCode}
+                            roadAddress={roadAddress}
+                            detailAddress={detailAddress}
+                            deliveryMessage={deliveryMessage}
+                            customDeliveryMessage={customDeliveryMessage}
+                            savedAddresses={savedAddresses}
+                            selectedSavedAddressId={selectedSavedAddressId}
+                            openDialog={openDialog}
+                            deliveryInfoName={deliveryInfoName}
+                            handleSavedAddressChange={handleSavedAddressChange}
+                            handleAddressSearch={handleAddressSearch}
+                            handleDeliveryMessageChange={handleDeliveryMessageChange}
+                            handleUseUserInfoForDelivery={handleUseUserInfoForDelivery}
+                            handleSaveDeliveryInfo={handleSaveDeliveryInfo}
+                            handleCloseDialog={handleCloseDialog}
+                            handleConfirmSave={handleConfirmSave}
+                            setDeliveryName={setDeliveryName}
+                            setDeliveryPhone={setDeliveryPhone}
+                            setPostalCode={setPostalCode}
+                            setRoadAddress={setRoadAddress}
+                            setDetailAddress={setDetailAddress}
+                            setCustomDeliveryMessage={setCustomDeliveryMessage}
+                            setIsDefault={setIsDefault}
+                            setDeliveryInfoName={setDeliveryInfoName}
+                        />
+                    </Box>
+
+                    {/* 결제 수단 선택 */}
+                    <Box sx={{ mb: 3 }}>
+                        <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, mb: 1 }}>
+                                  결제수단 선택
+                                </Typography>
+                                <RadioGroup
+                                  value={selectedPaymentMethod}
+                                  onChange={handlePaymentMethodChange}
+                                >
+                                  {paymentMethods.map((method) => (
+                                    <FormControlLabel
+                                      key={method.id}
+                                      value={method.id}
+                                      control={
+                                        <Radio
+                                          sx={{
+                                            '&.Mui-checked': {
+                                              color: '#4169E1',
+                                            },
+                                            p: 1
+                                          }}
+                                        />
+                                      }
+                                      label={
+                                        <Box sx={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          width: '100%',
+                                          py: 1
+                                        }}>
+                                          {method.logo ? (
+                                            <img
+                                              src={method.logo}
+                                              alt={method.name}
+                                              style={{
+                                                height: "24px",
+                                                marginRight: "8px"
+                                              }}
+                                            />
+                                          ) : (
+                                            <Typography sx={{
+                                                fontSize: '14px',
+                                                color: '#333'
+                                            }}>
+                                              {method.name}
+                                            </Typography>
+                                          )}
+                                        </Box>
+                                      }
+                                      sx={{
+                                        margin: 0,
+                                        width: '100%',
+                                        borderBottom: '1px solid #eee',
+                                        '&:last-child': {
+                                          borderBottom: 'none'
+                                        }
+                                      }}
+                                    />
+                                  ))}
+                                </RadioGroup>
+                              </Box>
+                            </Box>
+                    {/* 결제 요약 및 버튼 */}
+                    <Box sx={{ mb: 2 }}>
+                        <PaymentSummary
+                            totalAmount={totalAmount}
+                            selectedPaymentMethod={selectedPaymentMethod}
+                            onPaymentMethodChange={handlePaymentMethodChange}
+                            onPayment={handlePayment}
+                            isDeliveryInfoComplete={isDeliveryInfoComplete}
+                        />
+                    </Box>
+                </Box>
+        );
+    };
+
+    export default OrderDetail;
