@@ -88,15 +88,15 @@ function PaymentMethod({ subscription }) {
                 </RadioGroup>
             </Paper>
 
-            {/* ✅ 스낵바 추가 */}
-            <Snackbar
-                open={snackbarOpen}
-                message={snackbarMessage}
-                autoHideDuration={1500}
-                onClose={() => setSnackbarOpen(false)}
-                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                ContentProps={{ className: "snackbar-success" }}
-            />
+{/*              */}{/* ✅ 스낵바 추가 */}
+{/*             <Snackbar */}
+{/*                 open={snackbarOpen} */}
+{/*                 message={snackbarMessage} */}
+{/*                 autoHideDuration={1500} */}
+{/*                 onClose={() => setSnackbarOpen(false)} */}
+{/*                 anchorOrigin={{ vertical: "bottom", horizontal: "left" }} */}
+{/*                 ContentProps={{ className: "snackbar-success" }} */}
+{/*             /> */}
         </Box>
     );
 }
