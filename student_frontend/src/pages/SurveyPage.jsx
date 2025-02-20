@@ -106,14 +106,13 @@ const SurveyPage = () => {
       </Box>
 
       <Box sx={{
-        marginTop: '20px',
-        borderTop: '1px solid #ccc',
-        paddingTop: '20px',
-        position: 'sticky',
-        bottom: '20px',
-        backgroundColor: 'white',
-        zIndex: 1
-      }}>
+         marginTop: '20px',
+         paddingTop: '20px',
+         position: 'sticky',
+         bottom: '20px',
+         backgroundColor: 'transparent',
+         zIndex: 1
+           }}>
         <CategoryNavigation
           handlePrevious={handlePrevious}
           handleNext={handleNext}

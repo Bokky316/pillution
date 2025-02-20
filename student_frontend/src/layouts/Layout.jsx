@@ -36,7 +36,7 @@ const Layout = ({ children }) => {
                 padding: isHomePage ? 0 : '20px', // 홈 페이지에서만 padding 제거, 나머지는 '20px'
                 paddingTop: isHomePage ? 0 : '80px', // 홈 페이지에서는 paddingTop 제거, 나머지는 '80px'
                 backgroundColor: '#ffffff', // 컨텐츠 배경색 (선택 사항)
-                boxShadow: isHomePage || isAdminPage ? "none" : "0px 4px 10px rgba(0, 0, 0, 0.1)", // 홈,어드민 페이지에서는 그림자 제거
+//                 boxShadow: isHomePage || isAdminPage ? "none" : "0px 4px 10px rgba(0, 0, 0, 0.1)", // 홈,어드민 페이지에서는 그림자 제거
                 borderRadius: isHomePage || isAdminPage ? 0 : '8px', // 홈,어드민 페이지에서는 모서리 제거
             }}>
                 {children}

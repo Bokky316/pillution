@@ -11,7 +11,7 @@ const SurveyContent = ({ currentCategory, currentSubCategory, questions, respons
           question={question}
           response={responses[question.id]}
           onResponseChange={(value) => onResponseChange(question.id, value)}
-          onAutoNext={onAutoNext} // 이 줄을 추가
+          onAutoNext={onAutoNext}
         />
       ))}
     </Box>
