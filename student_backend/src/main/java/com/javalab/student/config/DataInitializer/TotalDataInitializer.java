@@ -1,3 +1,4 @@
+/*
 package com.javalab.student.config.DataInitializer;
 
 import com.javalab.student.constant.Role;
@@ -1360,3 +1361,4 @@ private void initializeMemberData() {
         subscriptionNextItemRepository.save(nextItem);
     }
 }
+*/

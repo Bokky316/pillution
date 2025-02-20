@@ -12,6 +12,7 @@ export const fetchHealthAnalysis = createAsyncThunk(
             const response = await fetchWithAuth(`${API_URL}recommendation/analysis`, {
                 method: 'GET',
                 credentials: 'include',
+                cache: 'no-cache' // 캐싱 방지
             });
             const data = await response.json();
 
@@ -36,6 +37,7 @@ export const fetchRecommendedIngredients = createAsyncThunk(
             const response = await fetchWithAuth(`${API_URL}recommendation/ingredients`, {
                 method: 'GET',
                 credentials: 'include',
+                cache: 'no-cache' // 캐싱 방지
             });
             const data = await response.json();
 
@@ -60,6 +62,7 @@ export const fetchRecommendedProducts = createAsyncThunk(
             const response = await fetchWithAuth(`${API_URL}recommendation/products`, {
                 method: 'GET',
                 credentials: 'include',
+                cache: 'no-cache' // 캐싱 방지
             });
             const data = await response.json();
 
@@ -120,15 +123,15 @@ const recommendationSlice = createSlice({
     reducers: {
         /**
          * 모든 추천 관련 상태를 초기화하는 리듀서
-         * (건강 분석 정보 제외)
          */
         resetRecommendationState: (state) => {
+            state.healthAnalysis = null;
             state.recommendedIngredients = [];
             state.recommendedProducts = [];
             state.loading = false;
             state.error = null;
             state.cartAddingStatus = 'idle';
-            state.snackbarMessage = null; // 스낵바 메시지 초기화 추가
+            state.snackbarMessage = null;
         },
         /**
          * 스낵바 메시지를 초기화하는 리듀서
