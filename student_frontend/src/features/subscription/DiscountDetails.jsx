@@ -1,5 +1,6 @@
 import React from "react";
 import { Box, Typography, Divider, Paper } from "@mui/material";
+import "@/styles/Subscription.css"; // ✅ CSS 추가
 
 function DiscountDetails({ subscription }) {
     const shippingFee = 3000;
@@ -54,68 +55,68 @@ function DiscountDetails({ subscription }) {
     console.log("🔍 ✅ 최종 결제 금액:", finalPayment);
 
     return (
-        <Box sx={{ mb: 2 }}>
+        <Box className="discount-details-container">
             {/* ✅ 다음 구독 제품 결제 정보 */}
-            <Paper elevation={1} sx={{ p: 2, bgcolor: "#f5f5f5", mb: 2 }}>
-                <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Paper elevation={1} className="discount-details-card">
+                <Box className="discount-details-item">
                     <Typography>제품 합계 금액</Typography>
                     <Typography>{nextOriginalTotalPrice.toLocaleString()}원</Typography>
                 </Box>
-                <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Box className="discount-details-item">
                     <Typography>기본 배송비</Typography>
                     <Typography>{appliedShippingFee.toLocaleString()}원</Typography>
                 </Box>
-                <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Box className="discount-details-item">
                     <Typography>총 할인 금액</Typography>
-                    <Typography sx={{ color: "red" }}>
+                    <Typography className="discount-details-discount">
                         -{totalDiscount.toLocaleString()}원
                     </Typography>
                 </Box>
-                <Divider sx={{ my: 1 }} />
-                <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography sx={{ fontWeight: "bold" }}>총 결제 금액</Typography>
-                    <Typography sx={{ fontWeight: "bold", color: "red" }}>
+                <Divider className="discount-details-divider" />
+                <Box className="discount-details-item">
+                    <Typography className="discount-details-subtitle">총 결제 금액</Typography>
+                    <Typography className="discount-details-total">
                         {finalPayment.toLocaleString()}원
                     </Typography>
                 </Box>
             </Paper>
 
             {/* ✅ 상세 할인 내역 */}
-            <Paper elevation={1} sx={{ p: 2, bgcolor: "#f5f5f5" }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+            <Paper elevation={1} className="discount-details-card">
+                <Typography variant="subtitle1" className="discount-details-subtitle">
                     상세 할인 내역
                 </Typography>
 
                 {isFreeShipping && (
-                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Box className="discount-details-item">
                         <Typography>무료배송 할인 적용됨</Typography>
                         <Typography>-{shippingDiscount.toLocaleString()}원</Typography>
                     </Box>
                 )}
 
-                <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Box className="discount-details-item">
                     <Typography>구독 할인 (5%)</Typography>
                     <Typography>-{subscriptionDiscount.toLocaleString()}원</Typography>
                 </Box>
 
                 {subscription?.hasHealthSurvey && (
-                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Box className="discount-details-item">
                         <Typography>건강 설문 할인 (10%)</Typography>
                         <Typography>-{healthSurveyDiscount.toLocaleString()}원</Typography>
                     </Box>
                 )}
 
                 {subscription?.currentCycle >= 3 && (
-                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Box className="discount-details-item">
                         <Typography>장기 고객 우대 (4회차부터 5%)</Typography>
                         <Typography>-{longTermDiscount.toLocaleString()}원</Typography>
                     </Box>
                 )}
 
-                <Divider sx={{ my: 1 }} />
-                <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography sx={{ fontWeight: "bold" }}>정기구독 할인 합계</Typography>
-                    <Typography sx={{ color: "red", fontWeight: "bold" }}>
+                <Divider className="discount-details-divider" />
+                <Box className="discount-details-item">
+                    <Typography className="discount-details-subtitle">정기구독 할인 합계</Typography>
+                    <Typography className="discount-details-discount">
                         -{totalDiscount.toLocaleString()}원
                     </Typography>
                 </Box>

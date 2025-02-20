@@ -24,41 +24,31 @@ function SubscriptionInfo({ subscription }) {
     const finalSubscriptionPrice = discountSubscriptionPrice - shippingDiscount;
 
     return (
-        <Box>
+        <Box className="subscription-container">
             <Grid container justifyContent="space-between" alignItems="center">
                 <Grid item>
-                    <Typography variant="subtitle2" color="textSecondary">
+                    <Typography className="subscription-date">
                         {subscription?.nextBillingDate ? formatDate(subscription.nextBillingDate) : "결제 정보 없음"}
                     </Typography>
                 </Grid>
                 <Grid item>
-                    <Typography variant="body2" color="textSecondary">
+                    <Typography className="subscription-number">
                         구독번호: {subscription?.id}
                     </Typography>
                 </Grid>
             </Grid>
+
             <Box mt={1} display="flex" justifyContent="space-between" alignItems="center">
-                <Typography variant="h6" component="div" sx={{ fontWeight: "bold", fontSize: "1.2rem" }}>
-                    {subscription?.currentCycle}회차 <span style={{ color: 'green' }}>진행중</span> {subscription?.items?.length}건
+                <Typography className="subscription-title">
+                    {subscription?.currentCycle}회차
+                    <span className="subscription-progress">진행중</span>
+                    {subscription?.items?.length}건
                 </Typography>
                 <Box>
-                    {/* ✅ 원래 가격 (취소선, 배송비 포함) */}
-                    <Typography
-                        variant="body1"
-                        sx={{
-                            textDecoration: "line-through",
-                            color: "textSecondary",
-                            textAlign: "right"
-                        }}
-                    >
+                    <Typography className="subscription-price-original">
                         {(totalBeforeDiscount).toLocaleString()}원
                     </Typography>
-
-                    {/* ✅ 최종 결제 금액 (할인 및 무료배송 적용 후) */}
-                    <Typography
-                        variant="h6"
-                        sx={{ color: "red", fontWeight: "bold", fontSize: "1.3rem" }}
-                    >
+                    <Typography className="subscription-price-final">
                         {finalSubscriptionPrice.toLocaleString()}원
                     </Typography>
                 </Box>

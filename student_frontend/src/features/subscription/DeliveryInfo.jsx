@@ -8,14 +8,18 @@ import {
     MenuItem,
     Select,
     FormControl,
-    InputLabel
+    InputLabel,
+    Snackbar
 } from "@mui/material";
 import KakaoAddressSearch from "@/features/auth/KakaoAddressSearch";
 import { useDispatch } from "react-redux";
 import { updateDeliveryAddress, updateDeliveryRequest, fetchSubscription } from "@/store/subscriptionSlice";
+import "@/styles/Subscription.css"; // ✅ 새로운 CSS 파일 적용
 
 function DeliveryInfo({ subscription }) {
     const dispatch = useDispatch();
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState("");
 
     // 🔹 배송 요청 옵션 리스트
     const deliveryOptions = [
@@ -72,13 +76,10 @@ function DeliveryInfo({ subscription }) {
             subscriptionId: subscription.id,
             deliveryRequest: finalRequest
         }))
-        .then((result) => {
-            if (updateDeliveryRequest.fulfilled.match(result)) {
-                console.log("✅ 배송 요청 저장 성공:", result.payload);
-                dispatch(fetchSubscription()); // 🔹 Redux 상태 새로고침
-            } else {
-                console.error("❌ 배송 요청 저장 실패:", result.error);
-            }
+        .then(() => {
+            setSnackbarMessage("배송 요청사항이 저장되었습니다.");
+            setSnackbarOpen(true);
+            dispatch(fetchSubscription());
         });
     };
 
@@ -89,7 +90,11 @@ function DeliveryInfo({ subscription }) {
             postalCode: data.zonecode,
             roadAddress: data.address,
             detailAddress: detailAddress,
-        })).then(() => dispatch(fetchSubscription()));
+        })).then(() => {
+            setSnackbarMessage("배송지가 변경되었습니다.");
+            setSnackbarOpen(true);
+            dispatch(fetchSubscription());
+        });
     };
 
     // 🔹 상세 주소 입력 핸들러
@@ -104,23 +109,25 @@ function DeliveryInfo({ subscription }) {
             postalCode: subscription.postalCode,
             roadAddress: subscription.roadAddress,
             detailAddress: detailAddress,
-        })).then(() => dispatch(fetchSubscription()));
+        })).then(() => {
+            setSnackbarMessage("배송지가 변경되었습니다.");
+            setSnackbarOpen(true);
+            dispatch(fetchSubscription());
+        });
     };
 
     return (
-        <Box sx={{ mb: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
-                배송정보
-            </Typography>
-            <Paper elevation={1} sx={{ p: 2, bgcolor: "#f5f5f5" }}>
-                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+        <Box className="delivery-info-container">
+            <Typography className="delivery-info-title">배송정보</Typography>
+            <Paper className="delivery-info-box">
+                <Box className="delivery-info-row">
                     <TextField
                         label="우편번호"
                         value={subscription?.postalCode || ""}
                         disabled
                         variant="outlined"
                         size="small"
-                        sx={{ mr: 1, width: "120px", bgcolor: "#eee" }}
+                        className="delivery-info-input"
                     />
                     <KakaoAddressSearch onAddressSelect={handleAddressSelect} />
                 </Box>
@@ -131,7 +138,7 @@ function DeliveryInfo({ subscription }) {
                     variant="outlined"
                     size="small"
                     fullWidth
-                    sx={{ mb: 2, bgcolor: "#eee" }}
+                    className="delivery-info-input"
                 />
                 <TextField
                     label="상세주소"
@@ -140,16 +147,16 @@ function DeliveryInfo({ subscription }) {
                     variant="outlined"
                     size="small"
                     fullWidth
-                    sx={{ mb: 2, bgcolor: "white" }}
+                    className="delivery-info-input"
                 />
-                <Button variant="contained" onClick={handleAddressUpdate}>
+                <Button className="delivery-info-button" onClick={handleAddressUpdate}>
                     배송지 변경
                 </Button>
             </Paper>
 
-            <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>배송 요청사항</Typography>
-            <Paper elevation={1} sx={{ p: 2, bgcolor: "#f5f5f5" }}>
-                <FormControl fullWidth sx={{ mb: 2 }}>
+            <Typography className="delivery-info-title">배송 요청사항</Typography>
+            <Paper className="delivery-info-box">
+                <FormControl fullWidth className="delivery-info-select">
                     <InputLabel>배송 요청사항</InputLabel>
                     <Select
                         value={isCustomInput ? "직접 입력" : deliveryRequest}
@@ -167,14 +174,22 @@ function DeliveryInfo({ subscription }) {
                         value={customRequest}
                         onChange={handleCustomRequestChange}
                         fullWidth
-                        sx={{ mb: 2.5 }}
+                        className="delivery-info-input"
                     />
                 )}
 
-                <Button variant="contained" onClick={handleUpdate}>
+                <Button className="delivery-info-button" onClick={handleUpdate}>
                     배송요청사항 저장
                 </Button>
             </Paper>
+            <Snackbar
+                open={snackbarOpen}
+                message={snackbarMessage}
+                autoHideDuration={3000}
+                onClose={() => setSnackbarOpen(false)}
+                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                className="snackbar-success"
+            />
         </Box>
     );
 }
