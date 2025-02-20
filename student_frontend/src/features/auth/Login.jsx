@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { Button, TextField, Snackbar, IconButton, InputAdornment } from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material"; // ✅ 아이콘 추가
+import { Visibility, VisibilityOff } from "@mui/icons-material"; // 아이콘 추가
 import { useNavigate } from "react-router-dom";
 import { API_URL, SERVER_URL } from "@/utils/constants";
 import { useDispatch } from "react-redux";
 import { setUser } from "@/store/authSlice";
+import logo from "@/assets/images/logo.png"; // 필루션 로고 추가
 
 export default function Login({ onLogin }) {
     const [credentials, setCredentials] = useState({ email: "test@example.com", password: "1234" });
-    const [showPassword, setShowPassword] = useState(false); // ✅ 비밀번호 보기 상태 추가
+    const [showPassword, setShowPassword] = useState(false); // 비밀번호 보기 상태 추가
     const [errorMessage, setErrorMessage] = useState("");
     const [openSnackbar, setOpenSnackbar] = useState(false);
+    const [showLoginFields, setShowLoginFields] = useState(false); // 이메일/패스워드 입력칸 표시 여부
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
@@ -68,83 +70,115 @@ export default function Login({ onLogin }) {
 
     const handleKakaoLogin = (e) => {
         e.preventDefault();
-        if (window.Kakao) {
-            window.Kakao.Auth.logout(() => {
-                window.location.href = `${SERVER_URL}oauth2/authorization/kakao`;
-            });
-        } else {
-            window.location.href = `${SERVER_URL}oauth2/authorization/kakao`;
-        }
+        window.location.href = `${SERVER_URL}oauth2/authorization/kakao`;
     };
 
-    // ✅ 어디서든 "Enter" 키를 누르면 로그인 실행
+    // Enter 키로 로그인 실행
     useEffect(() => {
         const handleKeyDown = (event) => {
-            if (event.key === "Enter") {
-                event.preventDefault(); // ✅ Enter 키 이벤트 중복 실행 방지
-                setTimeout(() => {
+            if (event.key === "Enter" && showLoginFields) {
+                event.preventDefault();
                 handleLogin();
-                }, 10);
             }
         };
 
         document.addEventListener("keydown", handleKeyDown);
         return () => document.removeEventListener("keydown", handleKeyDown);
-    }, [credentials]); // ✅ credentials가 변경될 때마다 useEffect 실행
+    }, [credentials, showLoginFields]);
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "20px" }}>
-            <TextField
-                label="Email"
-                name="email"
-                value={credentials.email}
-                onChange={handleChange}
-                style={{ width: "400px", marginBottom: "10px" }}
-            />
-            <TextField
-                label="Password"
-                name="password"
-                type={showPassword ? "text" : "password"} // ✅ 상태에 따라 텍스트/비밀번호 전환
-                value={credentials.password}
-                onChange={handleChange}
-                style={{ width: "400px", marginBottom: "10px" }}
-                error={!!errorMessage}
-                helperText={errorMessage}
-                InputProps={{
-                    endAdornment: (
-                        <InputAdornment position="end">
-                            <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                                {showPassword ? <VisibilityOff /> : <Visibility />}  {/* 👁️ 아이콘 변경 */}
-                            </IconButton>
-                        </InputAdornment>
-                    ),
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "50px" }}>
+            {/* 로고 및 메인 문구 */}
+            <img src={logo} alt="필루션 로고" style={{ width: "180px", marginBottom: "20px" }} />
+            <h2 style={{ margin: "5px 0", fontSize: "22px", fontWeight: "bold" }}>내일의 나를 만드는</h2>
+            <h2 style={{ margin: "0", fontSize: "22px", fontWeight: "bold" }}>
+                <span style={{ color: "#FF6F61" }}>[ 건강메이트 ]</span> 필루션
+            </h2>
+            <p style={{ marginTop: "5px", fontSize: "14px", color: "#666" }}>맞춤 영양제 정기구독 서비스</p>
+
+            {/* 카카오 로그인 버튼 */}
+            <Button
+                onClick={handleKakaoLogin}
+                style={{
+                    width: "350px",
+                    backgroundColor: "#FEE500",
+                    color: "#000",
+                    padding: "12px 0",
+                    marginTop: "30px",
+                    fontSize: "16px",
+                    fontWeight: "bold",
+                    borderRadius: "8px",
                 }}
-            />
-            <div style={{ display: "flex", justifyContent: "space-between", width: "400px", marginBottom: "20px" }}>
-                <Button variant="contained" onClick={handleLogin}>
-                    로그인
-                </Button>
-                <Button variant="outlined" onClick={() => navigate("/registerMember")}>
-                    회원가입
-                </Button>
-            </div>
-            <div className="social-login" style={{ width: "400px", textAlign: "center" }}>
-                <p>소셜 계정으로 로그인</p>
-                <a
-                    href={`${SERVER_URL}oauth2/authorization/kakao`}
-                    style={{
-                        display: "inline-block",
-                        backgroundColor: "#FEE500",
-                        color: "#000",
-                        padding: "10px 20px",
-                        borderRadius: "5px",
-                        textDecoration: "none",
-                        fontWeight: "bold",
-                    }}
-                >
-                    카카오로 로그인
-                </a>
-            </div>
+            >
+                카카오로 로그인
+            </Button>
+
+            {/* 이메일 로그인 버튼 (클릭하면 입력 필드 나타남) */}
+            <Button
+                variant="contained"
+                onClick={() => setShowLoginFields(!showLoginFields)}
+                style={{
+                    width: "350px",
+                    backgroundColor: "#4285F4",
+                    color: "#fff",
+                    padding: "12px 0",
+                    marginTop: "15px",
+                    fontSize: "16px",
+                    fontWeight: "bold",
+                    borderRadius: "8px",
+                }}
+            >
+                이메일로 로그인
+            </Button>
+
+            {/* 이메일/패스워드 입력 필드 (버튼 클릭 시 표시) */}
+            {showLoginFields && (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "20px" }}>
+                    <TextField
+                        label="Email"
+                        name="email"
+                        value={credentials.email}
+                        onChange={handleChange}
+                        style={{ width: "350px", marginBottom: "10px" }}
+                    />
+                    <TextField
+                        label="Password"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        value={credentials.password}
+                        onChange={handleChange}
+                        style={{ width: "350px", marginBottom: "10px" }}
+                        error={!!errorMessage}
+                        helperText={errorMessage}
+                        InputProps={{
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                    <div style={{ display: "flex", justifyContent: "space-between", width: "350px", marginTop: "10px" }}>
+                        <Button
+                            variant="contained"
+                            onClick={handleLogin}
+                            style={{ width: "48%", padding: "10px 0", fontSize: "14px" }}
+                        >
+                            로그인
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            onClick={() => navigate("/registerMember")}
+                            style={{ width: "48%", padding: "10px 0", fontSize: "14px" }}
+                        >
+                            회원가입
+                        </Button>
+                    </div>
+                </div>
+            )}
+
             <Snackbar
                 open={openSnackbar}
                 autoHideDuration={3000}
