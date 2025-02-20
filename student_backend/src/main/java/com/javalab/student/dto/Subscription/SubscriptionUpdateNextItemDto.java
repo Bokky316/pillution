@@ -1,4 +1,4 @@
-package com.javalab.student.dto;
+package com.javalab.student.dto.Subscription;
 
 import lombok.Getter;
 import lombok.Setter;

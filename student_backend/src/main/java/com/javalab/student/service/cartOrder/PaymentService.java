@@ -4,19 +4,16 @@ import com.javalab.student.constant.OrderStatus;
 import com.javalab.student.constant.PayStatus;
 import com.javalab.student.dto.cartOrder.OrderDto;
 import com.javalab.student.dto.cartOrder.PaymentRequestDto;
-import com.javalab.student.dto.cartOrder.OrderItemDto;
 import com.javalab.student.dto.cartOrder.AdminOrderDto;
 import com.javalab.student.entity.Member;
-import com.javalab.student.entity.Subscription;
-import com.javalab.student.entity.SubscriptionNextItem;
+import com.javalab.student.entity.subscription.Subscription;
+import com.javalab.student.entity.subscription.SubscriptionNextItem;
 import com.javalab.student.entity.cartOrder.*;
 import com.javalab.student.entity.product.Product;
 import com.javalab.student.repository.MemberRepository;
 import com.javalab.student.repository.SubscriptionNextItemRepository;
 import com.javalab.student.repository.SubscriptionRepository;
 import com.javalab.student.repository.cartOrder.*;
-import com.javalab.student.repository.product.ProductRepository;
-import com.javalab.student.service.SubscriptionService;
 import com.siot.IamportRestClient.IamportClient;
 import com.siot.IamportRestClient.exception.IamportResponseException;
 import com.siot.IamportRestClient.response.IamportResponse;
@@ -37,7 +34,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * 결제 서비스 (포트원 SDK 적용)

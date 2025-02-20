@@ -1,4 +1,4 @@
-package com.javalab.student.entity;
+package com.javalab.student.entity.subscription;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.javalab.student.entity.product.Product;

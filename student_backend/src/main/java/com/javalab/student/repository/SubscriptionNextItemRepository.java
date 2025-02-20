@@ -1,8 +1,8 @@
 package com.javalab.student.repository;
 
-import com.javalab.student.entity.Subscription;
+import com.javalab.student.entity.subscription.Subscription;
 import com.javalab.student.entity.product.Product;
-import com.javalab.student.entity.SubscriptionNextItem;
+import com.javalab.student.entity.subscription.SubscriptionNextItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

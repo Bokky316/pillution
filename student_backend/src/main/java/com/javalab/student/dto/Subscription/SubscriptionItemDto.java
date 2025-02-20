@@ -1,6 +1,6 @@
-package com.javalab.student.dto;
+package com.javalab.student.dto.Subscription;
 
-import com.javalab.student.entity.SubscriptionItem;
+import com.javalab.student.entity.subscription.SubscriptionItem;
 import lombok.Getter;
 
 @Getter

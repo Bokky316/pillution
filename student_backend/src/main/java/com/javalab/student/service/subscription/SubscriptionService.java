@@ -1,12 +1,12 @@
-package com.javalab.student.service;
+package com.javalab.student.service.subscription;
 
-import com.javalab.student.dto.SubscriptionResponseDto;
-import com.javalab.student.dto.SubscriptionUpdateNextItemDto;
+import com.javalab.student.dto.Subscription.SubscriptionResponseDto;
+import com.javalab.student.dto.Subscription.SubscriptionUpdateNextItemDto;
 import com.javalab.student.entity.Member;
 import com.javalab.student.entity.product.Product;
-import com.javalab.student.entity.Subscription;
-import com.javalab.student.entity.SubscriptionItem;
-import com.javalab.student.entity.SubscriptionNextItem;
+import com.javalab.student.entity.subscription.Subscription;
+import com.javalab.student.entity.subscription.SubscriptionItem;
+import com.javalab.student.entity.subscription.SubscriptionNextItem;
 import com.javalab.student.repository.MemberRepository;
 import com.javalab.student.repository.product.ProductRepository;
 import com.javalab.student.repository.SubscriptionItemRepository;
@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;

@@ -1,8 +1,7 @@
 package com.javalab.student.repository;
 
-import com.javalab.student.entity.Subscription;
+import com.javalab.student.entity.subscription.Subscription;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
 import java.util.List;
