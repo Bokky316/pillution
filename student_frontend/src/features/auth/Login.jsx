@@ -90,10 +90,17 @@ export default function Login({ onLogin }) {
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "50px" }}>
             {/* 로고 및 메인 문구 */}
             <img src={logo} alt="필루션 로고" style={{ width: "180px", marginBottom: "20px" }} />
-            <h2 style={{ margin: "5px 0", fontSize: "22px", fontWeight: "bold" }}>내일의 나를 만드는</h2>
-            <h2 style={{ margin: "0", fontSize: "22px", fontWeight: "bold" }}>
-                <span style={{ color: "#FF6F61" }}>[ 건강메이트 ]</span> 필루션
-            </h2>
+            <div style={{ textAlign: "center", fontWeight: "bold", fontSize: "24px", lineHeight: "1.4" }}>
+                <div>내일의 나를 만드는</div>
+                <div>
+                    <span style={{ color: "#FF6B6B", fontWeight: "bold" }}>[</span>
+                    <span style={{ color: "black", fontWeight: "bold" }}>건강메이트</span>
+                    <span style={{ color: "#FF6B6B", fontWeight: "bold" }}>]</span> 필루션
+                </div>
+            </div>
+
+
+
             <p style={{ marginTop: "5px", fontSize: "14px", color: "#666" }}>맞춤 영양제 정기구독 서비스</p>
 
             {/* 카카오 로그인 버튼 */}
