@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Typography, Divider, Grid } from "@mui/material";
 import { useSelector } from "react-redux"; // ✅ Redux에서 제품 정보 가져오기
-import "@/styles/subscription.css"; // ✅ CSS 파일 추가
+import "@/styles/Subscription.css"; // ✅ CSS 파일 추가
 
 function SubscriptionItems({ subscription }) {
     const products = useSelector((state) => state.subscription.products); // ✅ Redux에서 전체 제품 목록 가져오기
