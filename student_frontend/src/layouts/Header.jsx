@@ -84,7 +84,7 @@ const Header = () => {
                     <Box className="logo-box" position="absolute" >
                         <Link to="/" style={{ textDecoration: 'none' }}>
                             <img
-                                src={logo} {/* import한 로고 이미지 사용 */}
+                                src={logo}
                                 alt="Pillution Logo"
                                 className="logo"
                             />
