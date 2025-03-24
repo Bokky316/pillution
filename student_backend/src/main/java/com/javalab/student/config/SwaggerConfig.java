@@ -40,7 +40,7 @@ public class SwaggerConfig {
                         .description("My application API documentation")    // API 명세의 설명
                         .version("v1.0")    // API 명세의 버전
                         .license(new License().name("Apache 2.0").url("http://springdoc.org")))   // API 명세의 라이선스 정보
-                .servers(List.of(new Server().url("http://localhost:8080")))    // API를 호스팅하는 서버를 정의합니다.(이 경우 로컬 서버)
+                .servers(List.of(new Server().url("http://43.202.198.161:8080")))    // API를 호스팅하는 서버를 정의합니다.(이 경우 로컬 서버)
                 .externalDocs(new ExternalDocumentation()
                         .description("My API Wiki Documentation")   // 외부 문서 설명
                         .url("https://myapi.wiki.github.org/docs"))    // 외부 문서 URL
