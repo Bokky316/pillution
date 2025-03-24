@@ -1,4 +1,4 @@
-import React, { useState,useEffect  } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useLocation } from "react-router-dom";
 
@@ -13,8 +13,10 @@ import { clearUser } from "@/store/authSlice";
 import { fetchWithAuth } from "@/features/auth/fetchWithAuth";
 import { API_URL } from "@/utils/constants";
 import "@/styles/header.css";
+// 이미지 import 방식으로 변경
 import menuModalImg1 from "@/assets/images/menu-modal-img1.png";
 import menuModalImg2 from "@/assets/images/menu-modal-img2.png";
+import logo from "@/assets/images/logo.png"; // 로고 이미지 import
 
 const Header = () => {
     const dispatch = useDispatch();
@@ -82,7 +84,7 @@ const Header = () => {
                     <Box className="logo-box" position="absolute" >
                         <Link to="/" style={{ textDecoration: 'none' }}>
                             <img
-                                src="/src/assets/images/logo.png"
+                                src={logo} {/* import한 로고 이미지 사용 */}
                                 alt="Pillution Logo"
                                 className="logo"
                             />
@@ -239,132 +241,132 @@ const Header = () => {
             </AppBar>
 
             {/* 모달 메뉴 */}
-            <Modal open={open} onClose={handleClose}  disableScrollLock={true}>
-                        <Box
+            <Modal open={open} onClose={handleClose} disableScrollLock={true}>
+                <Box
+                    sx={{
+                        width: "100%",
+                        maxWidth: "350px",
+                        height: "100vh",
+                        backgroundColor: "#fff",
+                        position: "fixed",
+                        left: 0,
+                        top: 0,
+                        padding: "20px",
+                        boxShadow: "2px 0px 12px rgba(0,0,0,0.1)",
+                        overflowY: "auto",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "10px"
+                    }}
+                >
+                    <Box sx={{ display: "flex", justifyContent: "flex-end", width: "100%" }}>
+                        <Button
+                            onClick={handleClose}
                             sx={{
-                                width: "100%",
-                                maxWidth: "350px",
-                                height: "100vh",
-                                backgroundColor: "#fff",
-                                position: "fixed",
-                                left: 0,
-                                top: 0,
-                                padding: "20px",
-                                boxShadow: "2px 0px 12px rgba(0,0,0,0.1)",
-                                overflowY: "auto",
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "10px"
+                                all: "unset",  // 기본 버튼 스타일 제거
+                                cursor: "pointer",  // "X" 표시 부분만 클릭 가능
+                                display: "inline-block",  // 내용(X)만 차지하도록 변경
+                                fontSize: "18px"  // X 글자 크기 유지
                             }}
                         >
-                            <Box sx={{ display: "flex", justifyContent: "flex-end", width: "100%" }}>
-                                <Button
-                                    onClick={handleClose}
+                            ✕
+                        </Button>
+                    </Box>
+                    <Link to="/survey" style={{ textDecoration: "none", color: "inherit" }} onClick={handleClose} >
+                        <Typography variant="h6" sx={{ fontWeight: "bold", marginBottom: "16px", fontSize: "18px" }}>
+                            영양제 추천받기
+                            <Typography component="span" sx={{ fontSize: "12px", backgroundColor: "#FF6B6B", color: "white", padding: "3px 5px", borderRadius: "4px", marginLeft: "4px" }}>HOT</Typography>
+                        </Typography>
+                    </Link>
+                    {menuItems.map((item, index) => (
+                        item.path ? (
+                            // 링크가 있는 경우, <Link> 사용
+                            <Link
+                                key={index}
+                                to={item.path}
+                                style={{ textDecoration: "none", color: "inherit" }}
+                                onClick={handleClose}
+                            >
+                                <Typography
                                     sx={{
-                                        all: "unset",  // 기본 버튼 스타일 제거
-                                        cursor: "pointer",  // "X" 표시 부분만 클릭 가능
-                                        display: "inline-block",  // 내용(X)만 차지하도록 변경
-                                        fontSize: "18px"  // X 글자 크기 유지
+                                        fontSize: "16px",
+                                        cursor: "pointer",
+                                        marginBottom: "8px",
                                     }}
                                 >
-                                    ✕
-                                </Button>
-                            </Box>
-                            <Link to="/survey" style={{ textDecoration: "none", color: "inherit" }} onClick={handleClose} >
-                                <Typography variant="h6" sx={{ fontWeight: "bold", marginBottom: "16px", fontSize: "18px" }}>
-                                    영양제 추천받기
-                                    <Typography component="span" sx={{ fontSize: "12px", backgroundColor: "#FF6B6B", color: "white", padding: "3px 5px", borderRadius: "4px", marginLeft: "4px" }}>HOT</Typography>
+                                    {item.label}
                                 </Typography>
                             </Link>
-                            {menuItems.map((item, index) => (
-                                item.path ? (
-                                    // 링크가 있는 경우, <Link> 사용
-                                    <Link
-                                        key={index}
-                                        to={item.path}
-                                        style={{ textDecoration: "none", color: "inherit" }}
-                                        onClick={handleClose}
-                                    >
-                                        <Typography
-                                            sx={{
-                                                fontSize: "16px",
-                                                cursor: "pointer",
-                                                marginBottom: "8px",
-                                            }}
-                                        >
-                                            {item.label}
-                                        </Typography>
-                                    </Link>
-                                ) : (
-                                    <Typography
-                                        key={index}
-                                        sx={{
-                                            fontSize: "16px",
-                                            marginBottom: "8px",
-                                            cursor: "default"
-                                        }}
-                                    >
-                                        {item.label}
-                                    </Typography>
-                                )
-                            ))}
-                            <Box sx={{ display: "flex", gap: "8px", marginTop: "10px", justifyContent: "center",marginBottom: "15px" }}>
-                                <img src={menuModalImg1} alt="필리 투게더딜" style={{ width: "150px", height: "auto", borderRadius: "12px 12px 0 0" ,margin:"0 8px"}} />
-                                <img src={menuModalImg2} alt="PHEW by.pilly" style={{ width: "150px", height: "auto", borderRadius: "12px 12px 0 0" ,margin:"0 8px"}} />
-                            </Box>
-                            <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                                {/* 필루션소식 및 FAQ */}
-                                <Link to="/board" style={{ textDecoration: "none", color: "inherit" }} onClick={handleClose}>
-                                    <Typography sx={{ fontSize: "16px", cursor: "pointer",marginBottom: "8px" }}>
-                                        필루션소식 및 FAQ
-                                    </Typography>
-                                </Link>
+                        ) : (
+                            <Typography
+                                key={index}
+                                sx={{
+                                    fontSize: "16px",
+                                    marginBottom: "8px",
+                                    cursor: "default"
+                                }}
+                            >
+                                {item.label}
+                            </Typography>
+                        )
+                    ))}
+                    <Box sx={{ display: "flex", gap: "8px", marginTop: "10px", justifyContent: "center", marginBottom: "15px" }}>
+                        <img src={menuModalImg1} alt="필리 투게더딜" style={{ width: "150px", height: "auto", borderRadius: "12px 12px 0 0", margin: "0 8px" }} />
+                        <img src={menuModalImg2} alt="PHEW by.pilly" style={{ width: "150px", height: "auto", borderRadius: "12px 12px 0 0", margin: "0 8px" }} />
+                    </Box>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                        {/* 필루션소식 및 FAQ */}
+                        <Link to="/board" style={{ textDecoration: "none", color: "inherit" }} onClick={handleClose}>
+                            <Typography sx={{ fontSize: "16px", cursor: "pointer", marginBottom: "8px" }}>
+                                필루션소식 및 FAQ
+                            </Typography>
+                        </Link>
 
-                                {/* 회원 혜택 */}
-                                <Typography sx={{ fontSize: "16px",cursor: "default" }}>
-                                    회원 혜택
-                                </Typography>
+                        {/* 회원 혜택 */}
+                        <Typography sx={{ fontSize: "16px", cursor: "default" }}>
+                            회원 혜택
+                        </Typography>
 
-                                {/* 필루션 사용 가이드 + 말풍선 */}
-                                <Box sx={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                    <Typography sx={{ fontSize: "16px",cursor: "default" }}>
-                                        필루션 사용 가이드
-                                    </Typography>
+                        {/* 필루션 사용 가이드 + 말풍선 */}
+                        <Box sx={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <Typography sx={{ fontSize: "16px", cursor: "default" }}>
+                                필루션 사용 가이드
+                            </Typography>
 
-                                    {/* 말풍선 스타일 적용 */}
-                                    <Typography
-                                        sx={{
-                                            position: "relative",
-                                            marginLeft: "15px",
-                                            backgroundColor: "black",
-                                            color: "white",
-                                            padding: "7px 10px",
-                                            borderRadius: "6px",
-                                            display: "inline-block",
-                                            fontSize: "14px",
-                                            cursor: "default",
-                                            "&::before": {
-                                                content: '""',
-                                                position: "absolute",
-                                                left: "-12px", // 꼬리 위치 조정
-                                                top: "50%",
-                                                transform: "translateY(-50%)",
-                                                borderWidth: "6px",
-                                                borderStyle: "solid",
-                                                borderColor: "transparent black transparent transparent",
-                                            }
-                                        }}
-                                    >
-                                        필루션 서비스, 혜택, FAQ
-                                    </Typography>
-                                </Box>
-                            </Box>
-
-                            <Typography sx={{ marginTop: "34px", fontSize: "12px", color: "gray", textAlign: "center" }}>
-                                © Carewith Inc. All Rights Reserved.
+                            {/* 말풍선 스타일 적용 */}
+                            <Typography
+                                sx={{
+                                    position: "relative",
+                                    marginLeft: "15px",
+                                    backgroundColor: "black",
+                                    color: "white",
+                                    padding: "7px 10px",
+                                    borderRadius: "6px",
+                                    display: "inline-block",
+                                    fontSize: "14px",
+                                    cursor: "default",
+                                    "&::before": {
+                                        content: '""',
+                                        position: "absolute",
+                                        left: "-12px", // 꼬리 위치 조정
+                                        top: "50%",
+                                        transform: "translateY(-50%)",
+                                        borderWidth: "6px",
+                                        borderStyle: "solid",
+                                        borderColor: "transparent black transparent transparent",
+                                    }
+                                }}
+                            >
+                                필루션 서비스, 혜택, FAQ
                             </Typography>
                         </Box>
-                    </Modal>
+                    </Box>
+
+                    <Typography sx={{ marginTop: "34px", fontSize: "12px", color: "gray", textAlign: "center" }}>
+                        © Carewith Inc. All Rights Reserved.
+                    </Typography>
+                </Box>
+            </Modal>
         </>
     );
 };

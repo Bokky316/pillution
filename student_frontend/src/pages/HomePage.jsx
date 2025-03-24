@@ -3,16 +3,20 @@ import { Box, Button, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import "@/styles/HomePage.css";
 
+// 모든 이미지를 import 방식으로 변경
+import slideImage from "@/assets/images/slide.jpg";
+import content1Image from "@/assets/images/content_1.jpg";
+import content3Image from "@/assets/images/content_3.jpg";
+
 const HomePage = () => {
     const navigate = useNavigate();
-
 
     return (
         <Box className="home-page" sx={{ maxWidth: "100%", width: "100%", margin: "0 auto" }}>
             {/* Hero Section */}
             <Box
                 sx={{
-                    backgroundImage: 'url(/src/assets/images/slide.jpg)',  // 배경 이미지 경로 설정
+                    backgroundImage: `url(${slideImage})`,  // import한 이미지 사용
                     backgroundSize: 'cover',  // 이미지가 영역을 꽉 채우도록 설정
                     backgroundPosition: '50% 37%',  // 이미지를 중앙에 배치
                     backgroundRepeat: 'no-repeat',  // 배경 이미지 반복 안 함
@@ -264,7 +268,7 @@ const HomePage = () => {
                                 }}
                             >
                                 <img
-                                    src="src/assets/images/content_1.jpg"
+                                    src={content1Image} {/* import한 이미지 사용 */}
                                     alt="맞춤 영양제"
                                     style={{
                                         width: "100%",
@@ -301,7 +305,7 @@ const HomePage = () => {
                                 }}
                             >
                                 <img
-                                    src="src/assets/images/content_3.jpg"
+                                    src={content3Image} {/* import한 이미지 사용 */}
                                     alt="맞춤 영양제"
                                     style={{
                                         width: "100%",
