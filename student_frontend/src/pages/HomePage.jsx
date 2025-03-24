@@ -268,7 +268,7 @@ const HomePage = () => {
                                 }}
                             >
                                 <img
-                                    src={content1Image} {/* import한 이미지 사용 */}
+                                    src={content1Image} /* import한 이미지 사용 */
                                     alt="맞춤 영양제"
                                     style={{
                                         width: "100%",
@@ -305,7 +305,7 @@ const HomePage = () => {
                                 }}
                             >
                                 <img
-                                    src={content3Image} {/* import한 이미지 사용 */}
+                                    src={content3Image} /* import한 이미지 사용 */
                                     alt="맞춤 영양제"
                                     style={{
                                         width: "100%",
