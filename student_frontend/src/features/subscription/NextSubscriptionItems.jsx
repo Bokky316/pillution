@@ -10,7 +10,7 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import { IconButton, Button, Box, Typography, Divider, Grid, Dialog, DialogTitle, DialogActions } from "@mui/material";
 import SubscriptionProductModal from "@/features/modal/SubscriptionProductModal";
-import "@/styles/subscription.css"; // ✅ 스타일 추가
+import "@/styles/Subscription.css"; // ✅ 스타일 추가
 
 export default function NextSubscriptionItems({ subscription }) {
     const dispatch = useDispatch();
