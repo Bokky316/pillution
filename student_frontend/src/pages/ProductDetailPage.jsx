@@ -35,8 +35,8 @@ const ProductDetailPage = () => {
         if (product?.productImgList && product.productImgList.length > 0) {
             const mainImage = product.productImgList.find(img => img.imageType === "대표");
             if (mainImage) {
-                // 밑에꺼 쓰려면 .env 파일 생성 후 VITE_PUBLIC_URL=http://localhost:8080 주입
-                return `http://localhost:8080${mainImage.imageUrl}`; // ✅ 절대 경로 사용
+                // 밑에꺼 쓰려면 .env 파일 생성 후 VITE_PUBLIC_URL=http://43.202.198.161:8080 주입
+                return `http://43.202.198.161:8080${mainImage.imageUrl}`; // ✅ 절대 경로 사용
                 //return `${import.meta.env.VITE_PUBLIC_URL}${mainImage.imageUrl}`;
             }
         }
@@ -48,7 +48,7 @@ const ProductDetailPage = () => {
         if (product?.productImgList && product.productImgList.length > 0) {
             return product.productImgList
             .filter(img => img.imageType === "상세")
-            .map(img => `http://localhost:8080${img.imageUrl}`); // ✅ 절대 경로 사용
+            .map(img => `http://43.202.198.161:8080${img.imageUrl}`); // ✅ 절대 경로 사용
         }
         return [];
     };
