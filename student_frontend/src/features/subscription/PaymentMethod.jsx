@@ -12,6 +12,11 @@ import { updateNextPaymentMethod, fetchSubscription } from "@/store/subscription
 import { useDispatch, useSelector } from "react-redux";
 import "@/styles/Subscription.css";  // ✅ CSS 불러오기
 
+// 이미지 파일 import
+import kakaoPayLogo from "@/assets/images/kakaopay.png";
+import paycoLogo from "@/assets/images/payco.png";
+import tossPayLogo from "@/assets/images/tosspay.png";
+
 function PaymentMethod({ subscription }) {
     const dispatch = useDispatch();
     const nextPaymentMethod = useSelector((state) => state.subscription.data?.nextPaymentMethod || subscription?.paymentMethod);
@@ -21,9 +26,9 @@ function PaymentMethod({ subscription }) {
     const [snackbarMessage, setSnackbarMessage] = useState("");
 
     const paymentMethods = [
-        { id: "kakaopay", name: "카카오페이", logo: "/src/assets/images/kakaopay.png" },
-        { id: "payco", name: "페이코", logo: "/src/assets/images/payco.png" },
-        { id: "tosspay", name: "토스페이", logo: "/src/assets/images/tosspay.png" },
+        { id: "kakaopay", name: "카카오페이", logo: kakaoPayLogo },
+        { id: "payco", name: "페이코", logo: paycoLogo },
+        { id: "tosspay", name: "토스페이", logo: tossPayLogo },
         { id: "card", name: "신용 / 체크카드" },
         { id: "trans", name: "실시간 계좌이체" },
         { id: "vbank", name: "가상계좌" },
