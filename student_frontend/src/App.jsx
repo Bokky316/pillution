@@ -30,7 +30,7 @@ import RegisterMember from "@/features/auth/RegisterMember";
 import UnauthorizedPage from "@/features/auth/UnAuthorizedPage";
 import OAuth2RedirectHandler from '@/features/auth/OAuth2RedirectHandler';
 import KakaoAddressSearch from "@/features/auth/KakaoAddressSearch";
-import PayResult from "@/features/Payment/PayResult";
+import PayResult from "@/features/payment/PayResult";
 import PostDetailPage from "@/features/board/PostDetailPage";
 import PostCreatePage from "@/features/board/PostCreatePage";
 import PostEditPage from "@/features/board/PostEditPage";
