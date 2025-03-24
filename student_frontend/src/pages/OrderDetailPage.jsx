@@ -24,6 +24,11 @@ import UserInfo from "@features/payment/UserInfo";
 import DeliveryInfo from "@features/payment/DeliveryInfo";
 import PaymentSummary from "@features/payment/PaymentSummary";
 
+// 이미지 import 방식으로 변경
+import kakaoPayLogo from "@/assets/images/kakaopay.png";
+import paycoLogo from "@/assets/images/payco.png";
+import tossPayLogo from "@/assets/images/tosspay.png";
+
 /**
  * OrderDetail 컴포넌트
  * 주문 상세 정보를 표시하고 결제 프로세스를 처리합니다.
@@ -451,10 +456,11 @@ const OrderDetail = () => {
         setIsDeliveryInfoComplete(checkDeliveryInfoComplete());
     }, [checkDeliveryInfoComplete]);
 
+    // 결제 수단 배열 - 이미지를 import로 사용
     const paymentMethods = [
-        { id: "kakaopay", name: "카카오페이", logo: "/src/assets/images/kakaopay.png" },
-        { id: "payco", name: "페이코", logo: "/src/assets/images/payco.png" },
-        { id: "tosspay", name: "토스페이", logo: "/src/assets/images/tosspay.png" },
+        { id: "kakaopay", name: "카카오페이", logo: kakaoPayLogo },
+        { id: "payco", name: "페이코", logo: paycoLogo },
+        { id: "tosspay", name: "토스페이", logo: tossPayLogo },
         { id: "card", name: "신용 / 체크카드" },
         { id: "trans", name: "실시간 계좌이체" },
         { id: "vbank", name: "가상계좌" },
