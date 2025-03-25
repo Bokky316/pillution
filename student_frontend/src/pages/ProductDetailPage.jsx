@@ -392,8 +392,4 @@ const ProductDetailPage = () => {
     );
 };
 
-
-CloudShell
-의견
-© 2025, Amazon Web Services, Inc. 또는 계열사.
 export default ProductDetailPage;
