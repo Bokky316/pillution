@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { setUser } from '@/store/authSlice';
-import { API_URL } from '@/utils/constants';
 import { useNavigate } from 'react-router-dom';
 
 function OAuth2RedirectHandler() {
@@ -9,10 +8,12 @@ function OAuth2RedirectHandler() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("OAuth2RedirectHandler 실행됨");
+
     const fetchUserInfo = async () => {
       try {
-        // 쿠키는 자동으로 포함되므로 credentials: 'include'만 설정
-        const response = await fetch(`${API_URL}auth/userInfo`, {
+        // 절대 경로 사용
+        const response = await fetch('/api/auth/userInfo', {
           method: 'GET',
           credentials: 'include',
         });
@@ -22,23 +23,17 @@ function OAuth2RedirectHandler() {
         }
 
         const data = await response.json();
-        console.log("OAuth2RedirectHandler - Full response data:", data);
+        console.log("OAuth2RedirectHandler - 사용자 정보:", data);
 
-        if (data.status === 'success') {
-          // 사용자 정보를 Redux store에 저장
-          dispatch(setUser({
-            ...data.data,
-            isSocialLogin: true,
-            isLoggedIn: true,
-            provider: data.data.provider || 'kakao'
-          }));
+        dispatch(setUser({
+          ...data.data,
+          isSocialLogin: true,
+          isLoggedIn: true,
+        }));
 
-          navigate('/');
-        } else {
-          throw new Error('Failed to fetch user info');
-        }
+        navigate('/');
       } catch (error) {
-        console.error('Error fetching user info:', error);
+        console.error('사용자 정보 가져오기 실패:', error);
         navigate('/login');
       }
     };
@@ -46,7 +41,7 @@ function OAuth2RedirectHandler() {
     fetchUserInfo();
   }, [dispatch, navigate]);
 
-  return <div>로그인 처리 중...</div>;
+  return <div>카카오 로그인 처리 중...</div>;
 }
 
 export default OAuth2RedirectHandler;
