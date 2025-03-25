@@ -122,7 +122,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         // ✅ **OAuth2 로그인인 경우 React로 리디렉트**
         if (request.getParameter("username") == null) {
             log.info("OAuth2 로그인 - 프론트엔드로 리디렉트");
-            response.sendRedirect("http://localhost:3000/oauth2/redirect?token=" + accessToken);
+            response.sendRedirect("http://43.202.198.161:3000/oauth2/redirect?token=" + accessToken);
         } else {
             // ✅ 폼 로그인인 경우 JSON 응답 반환
             response.setContentType("application/json");
