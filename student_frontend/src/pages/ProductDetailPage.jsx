@@ -35,20 +35,18 @@ const ProductDetailPage = () => {
         if (product?.productImgList && product.productImgList.length > 0) {
             const mainImage = product.productImgList.find(img => img.imageType === "대표");
             if (mainImage) {
-                // 밑에꺼 쓰려면 .env 파일 생성 후 VITE_PUBLIC_URL=http://43.202.198.161:8080 주입
-                return `http://43.202.198.161:8080${mainImage.imageUrl}`; // ✅ 절대 경로 사용
-                //return `${import.meta.env.VITE_PUBLIC_URL}${mainImage.imageUrl}`;
+                return `${import.meta.env.VITE_PUBLIC_URL}${mainImage.imageUrl}`;
             }
         }
         return null;
     };
 
-    // ✅ 상세 이미지 URL들을 추출하는 함수
+    // 상세 이미지 URL들을 추출하는 함수 - VITE_PUBLIC_URL 사용
     const getDetailImageUrls = (product) => {
         if (product?.productImgList && product.productImgList.length > 0) {
             return product.productImgList
             .filter(img => img.imageType === "상세")
-            .map(img => `http://43.202.198.161:8080${img.imageUrl}`); // ✅ 절대 경로 사용
+            .map(img => `${import.meta.env.VITE_PUBLIC_URL}${img.imageUrl}`);
         }
         return [];
     };
@@ -183,7 +181,7 @@ const ProductDetailPage = () => {
                 <Grid item xs={12}>
                     <CardMedia
                         component="img"
-                        image={getImageUrl(product)} // 수정: getImageUrl 함수 사용
+                        image={getImageUrl(product)}
                         alt={product?.name || "상품 이미지"}
                         sx={{
                             borderRadius: "8px",
@@ -230,7 +228,7 @@ const ProductDetailPage = () => {
                     </Box>
                     <Divider sx={{ marginBottom: 1 }} />
 
-                    {/* ✅ 상세 이미지 리스트 렌더링 */}
+                    {/* 상세 이미지 리스트 렌더링 */}
                     <Grid item xs={12} sx={{ mt: 2, mb: 2 }}>
                         <ImageList gap={8}
                             sx={{
