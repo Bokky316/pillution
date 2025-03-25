@@ -85,7 +85,6 @@ function App() {
                     <Route path="/faq/post/:postId/edit" element={<PostEditPage />} />
 
                     <Route path="/login" element={<Login />} />
-                    <Route path="/oauth2/authorization/kakao" element={<Navigate to="/login" />} />
                     <Route path="/mypage" element={<ProtectedRoute><MyPage /></ProtectedRoute>} />
                     <Route path="/registerMember" element={<RegisterMember />} />
                     <Route path="/unauthorized" element={<UnauthorizedPage />} />
