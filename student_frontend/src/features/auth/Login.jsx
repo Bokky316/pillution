@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button, TextField, Snackbar, IconButton, InputAdornment } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material"; // 아이콘 추가
 import { useNavigate } from "react-router-dom";
-import { API_URL, SERVER_URL } from "@/utils/constants";
+import { SERVER_URL, API_URL } from "@/utils/constants";
 import { useDispatch } from "react-redux";
 import { setUser } from "@/store/authSlice";
 import logo from "@/assets/images/logo.png"; // 필루션 로고 추가
@@ -15,6 +15,7 @@ export default function Login({ onLogin }) {
     const [showLoginFields, setShowLoginFields] = useState(false); // 이메일/패스워드 입력칸 표시 여부
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const PUBLIC_URL = import.meta.env.VITE_PUBLIC_URL;
 
     const handleChange = (event) => {
         setCredentials((prev) => ({
@@ -70,7 +71,7 @@ export default function Login({ onLogin }) {
 
     const handleKakaoLogin = (e) => {
       e.preventDefault();
-      window.location.href = "http://43.202.198.161/oauth2/authorization/kakao";
+      window.location.href = `${PUBLIC_URL}/oauth2/authorization/kakao`;
     };
 
     // Enter 키로 로그인 실행
