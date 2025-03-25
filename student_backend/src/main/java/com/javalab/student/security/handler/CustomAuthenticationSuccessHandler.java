@@ -107,6 +107,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         accessTokenCookie.setHttpOnly(true); // HttpOnly 속성 설정
         accessTokenCookie.setSecure(false); // HTTPS 환경에서는 true로 설정
         accessTokenCookie.setPath("/");
+        accessTokenCookie.setDomain("43.202.198.161");
         response.addCookie(accessTokenCookie);
         log.info("액세스 토큰이 HttpOnly 쿠키로 저장되었습니다.");
 

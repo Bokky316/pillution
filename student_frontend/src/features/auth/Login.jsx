@@ -70,8 +70,7 @@ export default function Login({ onLogin }) {
 
     const handleKakaoLogin = (e) => {
         e.preventDefault();
-        // 서버의 OAuth2 엔드포인트로 리다이렉트
-        window.location.href = "/oauth2/authorization/kakao";
+        window.location.href = "http://43.202.198.161/oauth2/authorization/kakao";
     };
 
     // Enter 키로 로그인 실행
