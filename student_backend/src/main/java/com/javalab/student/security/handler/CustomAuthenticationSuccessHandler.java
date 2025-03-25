@@ -119,10 +119,11 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         response.addCookie(refreshTokenCookie);
         log.info("리프레시 토큰이 HttpOnly 쿠키로 저장되었습니다.");
 
-        // ✅ **OAuth2 로그인인 경우 React로 리디렉트**
+        // OAuth2 로그인인 경우 React로 리디렉트
         if (request.getParameter("username") == null) {
             log.info("OAuth2 로그인 - 프론트엔드로 리디렉트");
-            response.sendRedirect("http://43.202.198.161/oauth2/redirect?token=" + accessToken);
+            // 토큰을 URL에 노출시키지 않고 리다이렉트
+            response.sendRedirect("http://43.202.198.161/oauth2/redirect");
         } else {
             // ✅ 폼 로그인인 경우 JSON 응답 반환
             response.setContentType("application/json");
