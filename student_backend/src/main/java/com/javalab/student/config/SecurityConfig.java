@@ -204,7 +204,7 @@ public class SecurityConfig {
                 .loginPage("/members/login")
                 .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                 .successHandler(customAuthenticationSuccessHandler)
-                .defaultSuccessUrl("http://localhost:3000/oauth2/redirect", true)
+                .defaultSuccessUrl("http://43.202.198.161/oauth2/redirect", true)
         );
 
 
