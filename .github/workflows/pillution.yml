@@ -1,10 +1,8 @@
 name: Deploy Student Application
-
 on:
   push:
     branches:
       - main
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -12,7 +10,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
-
       - name: Fix SSH Key Permissions
         run: |
           echo "${{ secrets.EC2_SSH_KEY }}" > ec2-key.pem
@@ -49,7 +46,7 @@ jobs:
             cd ../student_frontend || exit 1
             npm install --legacy-peer-deps
             echo " build 시작"
-            npm run build
+            NODE_OPTIONS="--max-old-space-size=2048" npm run build
             echo " build 종료"
             
             # 🔹 Nginx 정적 파일 업데이트
