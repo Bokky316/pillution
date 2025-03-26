@@ -1,19 +1,67 @@
-name: Test SSH Connection Only  # GitHub Actions 워크플로우 이름
-
+name: Deploy Student Application
 on:
   push:
     branches:
-      - main  # main 브랜치에 push될 때 실행
-
+      - main
 jobs:
-  test-ssh:
-    runs-on: ubuntu-latest  # GitHub Actions가 실행될 환경 지정
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
     steps:
-      - name: Test Basic SSH Connection  # SSH 연결 테스트 단계
-        uses: appleboy/ssh-action@v0.1.4  # SSH 연결을 위한 GitHub Action 사용
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      
+      - name: Fix SSH Key Permissions
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > ec2-key.pem
+          chmod 600 ec2-key.pem
+      
+      - name: Deploy to AWS EC2
+        uses: appleboy/ssh-action@v0.1.4
         with:
-          host: ${{ secrets.EC2_HOST }}  # EC2 인스턴스의 호스트 주소 (GitHub Secrets에서 가져옴)
-          username: ${{ secrets.EC2_USER }}  # SSH 접속할 EC2 사용자명
-          key: ${{ secrets.EC2_SSH_KEY }}  # SSH 접속을 위한 개인키
-          script: echo "✅ GitHub Actions에서 EC2 SSH 연결 성공!"  # EC2에서 실행할 명령어 (SSH 연결 확인 메시지 출력)
-          ssh_options: "-o StrictHostKeyChecking=no"  # 호스트 키 확인을 건너뛰어 SSH 접속이 원활하게 이루어지도록 설정
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          command_timeout: 40m
+          script: |
+            echo "🔹 SSH 연결 테스트 성공!"
+            cd /home/ec2-user/pillution
+            
+            # 🔹 최신 코드 가져오기
+            export GIT_SSH_COMMAND="ssh -i ~/.ssh/github-key -o StrictHostKeyChecking=no"
+            git pull origin main
+            
+            # 🔹 백엔드 빌드 및 배포
+            cd student_backend
+            chmod +x gradlew
+            ./gradlew build -x test
+            
+            # 🔹 실행 중인 JAR 프로세스 종료 및 새 실행
+            if [ -f /home/ec2-user/pillution/backend.pid ]; then
+              pkill -F /home/ec2-user/pillution/backend.pid || true
+              rm /home/ec2-user/pillution/backend.pid
+            else
+              # PID 파일이 없는 경우 프로세스 이름으로 종료 시도
+              pkill -f "java -jar.*student-0.0.1-SNAPSHOT.jar" || true
+            fi
+            
+            # screen 사용하여 백그라운드에서 실행
+            screen -dmS spring_server java -jar build/libs/student-0.0.1-SNAPSHOT.jar --server.port=8080
+            echo $! > /home/ec2-user/pillution/backend.pid
+            sleep 3
+            echo "🔹 백엔드 배포 완료"
+            
+            # 🔹 프론트엔드 빌드
+            cd ../student_frontend || exit 1
+            npm install --legacy-peer-deps
+            echo " build 시작"
+            npm run build
+            echo " build 종료"
+            
+            # 🔹 Nginx 정적 파일 업데이트
+            sudo rm -rf /usr/share/nginx/html/*
+            echo "🔹 프론트 dist 복사 시작"
+            sudo cp -r dist/* /usr/share/nginx/html/
+            echo "🔹 복사 완료"
+            sudo nginx -t && sudo systemctl restart nginx
+            echo "🔹 배포 완료!"
