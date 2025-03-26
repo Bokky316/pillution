@@ -1,59 +1,92 @@
-name: Deploy Pillution Application
-on:
-  push:
-    branches:
+name: Deploy Student Application 
+on: 
+  push: 
+    branches: 
       - main
-jobs:
-  deploy:
+jobs: 
+  deploy: 
     runs-on: ubuntu-latest
-    timeout-minutes: 60  # 타임아웃 늘림
-    steps:
+    timeout-minutes: 40
+    steps: 
       - name: Checkout Repository
         uses: actions/checkout@v3
+      
+      - name: Fix SSH Key Permissions
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > ec2-key.pem
+          chmod 600 ec2-key.pem
       
       - name: Deploy to AWS EC2
         uses: appleboy/ssh-action@v0.1.4
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host: 43.200.140.40
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          command_timeout: 60m  # 명령 타임아웃 늘림
+          command_timeout: 40m
           script: |
-            echo "$(date) - 🔹 SSH 연결 테스트 성공!"
-            cd ~/pillution
+            echo "🔹 SSH 연결 테스트 성공!"
+            cd ~/student/boot_react_student
             
-            echo "$(date) - 🔹 최신 코드 가져오기"
+            # 🔹 최신 코드 가져오기
             export GIT_SSH_COMMAND="ssh -i ~/.ssh/github-key -o StrictHostKeyChecking=no"
             git pull origin main
             
-            echo "$(date) - 🔹 백엔드 빌드 및 배포"
-            cd student_backend
+            # 🔹 백엔드 빌드 및 배포
+            cd backend_student
             chmod +x gradlew
             ./gradlew build -x test
             
-            echo "$(date) - 🔹 실행 중인 JAR 프로세스 종료"
-            if [ -f ~/pillution/backend.pid ]; then
-              pkill -F ~/pillution/backend.pid || true
-              rm ~/pillution/backend.pid
-            else
-              pkill -f "java -jar.*student-0.0.1-SNAPSHOT.jar" || true
+            # 🔹 실행 중인 JAR 프로세스 종료
+            echo "🔹 실행 중인 JAR 프로세스 확인 및 종료"
+            if screen -list | grep -q "spring_server"; then
+              echo "🔹 기존 spring_server screen 세션 종료"
+              screen -S spring_server -X quit
             fi
             
-            echo "$(date) - 🔹 백엔드 실행"
-            nohup java -jar build/libs/student-0.0.1-SNAPSHOT.jar --server.port=8080 > ~/pillution/backend.log 2>&1 &
-            echo $! > ~/pillution/backend.pid
-            sleep 3
-            echo "$(date) - 🔹 백엔드 배포 완료"
+            # 기존 Java 프로세스 종료 (PID 파일 사용 방식 백업)
+            if [ -f ~/student/backend.pid ]; then
+              echo "🔹 기존 PID 파일로 프로세스 종료 시도"
+              pkill -F ~/student/backend.pid || true
+              rm ~/student/backend.pid
+            fi
             
-            echo "$(date) - 🔹 프론트엔드 빌드 시작"
-            cd ../student_frontend || exit 1
-            npm ci --prefer-offline --no-audit --legacy-peer-deps
-            echo "$(date) - 🔹 npm 패키지 설치 완료, 빌드 시작"
+            # 프로세스 이름으로 종료 (추가 안전장치)
+            echo "🔹 프로세스명으로 종료 시도"
+            pkill -f "java -jar.*student-0.0.1-SNAPSHOT.jar" || true
+            
+            # 새 프로세스 시작
+            echo "🔹 새 백엔드 프로세스 시작"
+            screen -dmS spring_server java -jar build/libs/student-0.0.1-SNAPSHOT.jar --server.port=8080
+            sleep 5
+            
+            # 실행 확인
+            echo "🔹 백엔드 프로세스 실행 확인"
+            if screen -list | grep -q "spring_server"; then
+              echo "🔹 백엔드 서비스가 정상적으로 실행 중입니다."
+            else
+              echo "❌ 백엔드 서비스 시작 실패"
+              exit 1
+            fi
+            
+            echo "🔹 백엔드 배포 완료"
+            
+            # 🔹 프론트엔드 빌드
+            cd ../frontend_student || exit 1
+            echo "🔹 npm 패키지 설치 시작"
+            npm install --legacy-peer-deps
+            echo "🔹 build 시작"
             NODE_OPTIONS="--max-old-space-size=2048" npm run build
-            echo "$(date) - 🔹 프론트엔드 빌드 완료"
+            echo "🔹 build 종료"
             
-            echo "$(date) - 🔹 Nginx 정적 파일 업데이트 시작"
+            # 🔹 Nginx 정적 파일 업데이트
+            echo "🔹 Nginx 정적 파일 제거"
             sudo rm -rf /usr/share/nginx/html/*
+            
+            echo "🔹 프론트 dist 복사 시작"
             sudo cp -r dist/* /usr/share/nginx/html/
+            echo "🔹 복사 완료"
+            
+            # Nginx 설정 테스트 및 재시작
+            echo "🔹 Nginx 설정 테스트 및 재시작"
             sudo nginx -t && sudo systemctl restart nginx
-            echo "$(date) - 🔹 배포 완료!"
+            echo "🔹 배포 완료!"
