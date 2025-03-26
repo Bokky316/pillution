@@ -10,10 +10,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
-      - name: Fix SSH Key Permissions
-        run: |
-          echo "${{ secrets.EC2_SSH_KEY }}" > ec2-key.pem
-          chmod 600 ec2-key.pem
       - name: Deploy to AWS EC2
         uses: appleboy/ssh-action@v0.1.4
         with:
@@ -49,12 +45,12 @@ jobs:
             sleep 3
             echo "🔹 백엔드 배포 완료"
             
-            # 🔹 프론트엔드 빌드
+            # 🔹 프론트엔드 빌드 (메모리 옵션 추가)
             cd ../student_frontend || exit 1
             npm install --legacy-peer-deps
-            echo " build 시작"
-            npm run build
-            echo " build 종료"
+            echo "🔹 빌드 시작 (메모리 옵션 추가)"
+            NODE_OPTIONS="--max-old-space-size=2048" npm run build
+            echo "🔹 빌드 종료"
             
             # 🔹 Nginx 정적 파일 업데이트
             sudo rm -rf /usr/share/nginx/html/*
