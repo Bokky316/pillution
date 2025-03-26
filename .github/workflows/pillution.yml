@@ -6,56 +6,53 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 60  # 타임아웃 늘림
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+      
       - name: Deploy to AWS EC2
         uses: appleboy/ssh-action@v0.1.4
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          command_timeout: 40m
+          command_timeout: 60m  # 명령 타임아웃 늘림
           script: |
-            echo "🔹 SSH 연결 테스트 성공!"
+            echo "$(date) - 🔹 SSH 연결 테스트 성공!"
             cd ~/pillution
             
-            # 🔹 최신 코드 가져오기
+            echo "$(date) - 🔹 최신 코드 가져오기"
             export GIT_SSH_COMMAND="ssh -i ~/.ssh/github-key -o StrictHostKeyChecking=no"
             git pull origin main
             
-            # 🔹 백엔드 빌드 및 배포
+            echo "$(date) - 🔹 백엔드 빌드 및 배포"
             cd student_backend
             chmod +x gradlew
             ./gradlew build -x test
             
-            # 🔹 실행 중인 JAR 프로세스 종료 및 새 실행
+            echo "$(date) - 🔹 실행 중인 JAR 프로세스 종료"
             if [ -f ~/pillution/backend.pid ]; then
               pkill -F ~/pillution/backend.pid || true
               rm ~/pillution/backend.pid
             else
-              # PID 파일이 없는 경우 프로세스 이름으로 종료 시도
               pkill -f "java -jar.*student-0.0.1-SNAPSHOT.jar" || true
             fi
             
-            # screen 사용하여 백그라운드에서 실행
-            screen -dmS spring_server java -jar build/libs/student-0.0.1-SNAPSHOT.jar --server.port=8080
+            echo "$(date) - 🔹 백엔드 실행"
+            nohup java -jar build/libs/student-0.0.1-SNAPSHOT.jar --server.port=8080 > ~/pillution/backend.log 2>&1 &
             echo $! > ~/pillution/backend.pid
             sleep 3
-            echo "🔹 백엔드 배포 완료"
+            echo "$(date) - 🔹 백엔드 배포 완료"
             
-            # 🔹 프론트엔드 빌드 (메모리 옵션 추가)
+            echo "$(date) - 🔹 프론트엔드 빌드 시작"
             cd ../student_frontend || exit 1
-            npm install --legacy-peer-deps
-            echo "🔹 빌드 시작 (메모리 옵션 추가)"
-            NODE_OPTIONS="--max-old-space-size=2048" npm run build
-            echo "🔹 빌드 종료"
+            npm ci --prefer-offline --no-audit --legacy-peer-deps
+            npm run build
+            echo "$(date) - 🔹 프론트엔드 빌드 완료"
             
-            # 🔹 Nginx 정적 파일 업데이트
+            echo "$(date) - 🔹 Nginx 정적 파일 업데이트 시작"
             sudo rm -rf /usr/share/nginx/html/*
-            echo "🔹 프론트 dist 복사 시작"
             sudo cp -r dist/* /usr/share/nginx/html/
-            echo "🔹 복사 완료"
             sudo nginx -t && sudo systemctl restart nginx
-            echo "🔹 배포 완료!"
+            echo "$(date) - 🔹 배포 완료!"
