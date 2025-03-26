@@ -48,7 +48,8 @@ jobs:
             echo "$(date) - 🔹 프론트엔드 빌드 시작"
             cd ../student_frontend || exit 1
             npm ci --prefer-offline --no-audit --legacy-peer-deps
-            npm run build
+            echo "$(date) - 🔹 npm 패키지 설치 완료, 빌드 시작"
+            NODE_OPTIONS="--max-old-space-size=2048" npm run build
             echo "$(date) - 🔹 프론트엔드 빌드 완료"
             
             echo "$(date) - 🔹 Nginx 정적 파일 업데이트 시작"
