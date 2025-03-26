@@ -1,4 +1,4 @@
-name: Deploy Student Application
+name: Deploy Pillution Application
 on:
   push:
     branches:
@@ -10,22 +10,20 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
-      
       - name: Fix SSH Key Permissions
         run: |
           echo "${{ secrets.EC2_SSH_KEY }}" > ec2-key.pem
           chmod 600 ec2-key.pem
-      
       - name: Deploy to AWS EC2
         uses: appleboy/ssh-action@v0.1.4
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host: 43.200.140.40
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           command_timeout: 40m
           script: |
             echo "🔹 SSH 연결 테스트 성공!"
-            cd /home/ec2-user/pillution
+            cd ~/pillution
             
             # 🔹 최신 코드 가져오기
             export GIT_SSH_COMMAND="ssh -i ~/.ssh/github-key -o StrictHostKeyChecking=no"
@@ -37,9 +35,9 @@ jobs:
             ./gradlew build -x test
             
             # 🔹 실행 중인 JAR 프로세스 종료 및 새 실행
-            if [ -f /home/ec2-user/pillution/backend.pid ]; then
-              pkill -F /home/ec2-user/pillution/backend.pid || true
-              rm /home/ec2-user/pillution/backend.pid
+            if [ -f ~/pillution/backend.pid ]; then
+              pkill -F ~/pillution/backend.pid || true
+              rm ~/pillution/backend.pid
             else
               # PID 파일이 없는 경우 프로세스 이름으로 종료 시도
               pkill -f "java -jar.*student-0.0.1-SNAPSHOT.jar" || true
@@ -47,7 +45,7 @@ jobs:
             
             # screen 사용하여 백그라운드에서 실행
             screen -dmS spring_server java -jar build/libs/student-0.0.1-SNAPSHOT.jar --server.port=8080
-            echo $! > /home/ec2-user/pillution/backend.pid
+            echo $! > ~/pillution/backend.pid
             sleep 3
             echo "🔹 백엔드 배포 완료"
             
