@@ -42,7 +42,7 @@ jobs:
             # nohup java -jar build/libs/student-0.0.1-SNAPSHOT.jar --server.port=8080 > ~/pillution/backend.log 2>&1 &
             # 개선된 방식 (screen 사용)
             screen -dmS spring_server java -jar build/libs/student-0.0.1-SNAPSHOT.jar --server.port=8080
-            echo $! > ~/student/backend.pid
+            echo $! > ~/pillution/backend.pid
             sleep 3
             echo "🔹 백엔드 배포 완료"
             # 🔹 프론트엔드 빌드
