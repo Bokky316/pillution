@@ -8,7 +8,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080', // 백엔드 서버 주소
+        target: 'http://43.202.198.161', // 백엔드 서버 주소
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       }
