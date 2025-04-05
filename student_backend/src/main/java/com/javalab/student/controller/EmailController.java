@@ -82,9 +82,10 @@ public class EmailController {
             return ResponseEntity.badRequest().body(Map.of("error", "이메일이 제공되지 않았습니다."));
         }
 
-        // 이미 인증된 이메일이면 인증 코드 발송 차단
+        // 이미 인증된 이메일이면 인증 코드 발송 차단 하지않고
+        // 이메일 인증 완료 후 가입안하고 다시 인증시도하는경우 기존인증 제거되도록 수정
         if (emailVerificationService.isVerified(email)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "이미 인증이 완료된 이메일입니다."));
+            emailVerificationService.removeVerified(email);
         }
 
         try {
