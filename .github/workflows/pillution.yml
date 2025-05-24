@@ -31,14 +31,20 @@ jobs:
             cd student_backend
             chmod +x gradlew
             ./gradlew build -x test
-            # 🔹 실행 중인 JAR 프로세스 종료 및 새 실행
+            # 🔹 실행 중인 JAR 프로세스 종료 (확실하게)
+            pkill -f "student-0.0.1-SNAPSHOT.jar" || true
+            screen -S spring_server -X quit || true
             if [ -f ~/pillution/backend.pid ]; then
-              pkill -F ~/pillution/backend.pid || true
               rm ~/pillution/backend.pid
             fi
-            nohup java -jar build/libs/student-0.0.1-SNAPSHOT.jar --server.port=8080 > ~/pillution/backend.log 2>&1 &
-            echo $! > ~/pillution/backend.pid
+            sleep 2
+            echo "🔹 기존 프로세스 종료 완료"
+            
+            # 🔹 새로운 Spring 서버 실행 (screen 방식)
+            screen -dmS spring_server java -jar build/libs/student-0.0.1-SNAPSHOT.jar --server.port=8080
             sleep 3
+            # PID 저장 (실제 Java 프로세스)
+            pgrep -f "student-0.0.1-SNAPSHOT.jar" > ~/pillution/backend.pid || true
             echo "🔹 백엔드 배포 완료"
             
             # 🔹 프론트엔드 빌드
