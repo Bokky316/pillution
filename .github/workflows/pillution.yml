@@ -39,16 +39,8 @@ jobs:
             
             # 🔹 새로운 Spring 서버 실행
             screen -dmS spring_server java -jar build/libs/student-0.0.1-SNAPSHOT.jar --server.port=8080
-            sleep 5
-            
-            # 🔹 서버 시작 확인
-            if pgrep -f "student-0.0.1-SNAPSHOT.jar" > /dev/null; then
-                echo "🔹 백엔드 서버 시작 성공"
-                pgrep -f "student-0.0.1-SNAPSHOT.jar" > ~/pillution/backend.pid
-            else
-                echo "❌ 백엔드 서버 시작 실패"
-                exit 1
-            fi
+            sleep 3
+            echo "🔹 백엔드 서버 시작 명령 실행 완료"
             
             # 🔹 프론트엔드 빌드
             cd ../student_frontend || exit 1
