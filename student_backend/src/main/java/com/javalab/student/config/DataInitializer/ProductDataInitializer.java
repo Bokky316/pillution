@@ -1,3 +1,4 @@
+/*
 package com.javalab.student.config.DataInitializer;
 
 import com.javalab.student.entity.product.*;
@@ -543,3 +544,4 @@ public class ProductDataInitializer implements CommandLineRunner {
         }
 
     }
+*/
